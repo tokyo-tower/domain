@@ -1,0 +1,27 @@
+{
+  "name": "@motionpicture/ttts-domain",
+  "version": "1.0.0",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "dependencies": {
+    "@types/mongoose": "^4.7.3",
+    "@types/numeral": "0.0.19",
+    "@types/redis": "^0.12.35",
+    "moment": "^2.17.1",
+    "mongoose": "^4.8.1",
+    "numeral": "^2.0.4",
+    "redis": "^2.6.5"
+  },
+  "description": "This is a TTTS domain repository.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {},
+  "keywords": [],
+  "author": "Tetsu Yamazaki <yamazaki@motionpicture.jp>",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=7.4.0",
+    "npm": ">=4.0.0"
+  }
+}

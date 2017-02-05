@@ -1,0 +1,10 @@
+// 既定の設定とユーザー設定を上書きするには、このファイル内に設定を挿入します
+{
+    "files.eol": "\n",
+    // ファイルとフォルダーを除外するための glob パターンを構成します。
+    "files.exclude": {
+        "lib/**/*.js": true,
+        "*.js": true
+    },
+    "typescript.tsdk": "C:\\Users\\Tetsu\\AppData\\Roaming\\npm\\node_modules\\typescript\\lib"
+}
