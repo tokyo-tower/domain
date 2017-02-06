@@ -1,15 +1,17 @@
-import PerformanceUtil from '../models/Performance/PerformanceUtil';
-import redis = require('redis');
+import PerformanceUtil from "../models/Performance/PerformanceUtil";
+import redis = require("redis");
 
-let redisClient = redis.createClient(
-    process.env.PERFORMANCE_STATUS_REDIS_PORT,
-    process.env.PERFORMANCE_STATUS_REDIS_HOST,
+const redisClient = redis.createClient(
+    process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT,
+    process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST,
     {
-        password: process.env.PERFORMANCE_STATUS_REDIS_KEY,
-        tls: { servername: process.env.PERFORMANCE_STATUS_REDIS_HOST },
+        password: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY,
+        tls: { servername: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST },
         return_buffers: true
     }
 );
+
+const REDIS_KEY = "TTTSSeatStatusesByPerformanceId";
 
 /**
  * パフォーマンス情報モデル
@@ -30,23 +32,23 @@ export default class PerformanceStatusesModel {
     }
 
     public save(cb: (err: Error | void) => void) {
-        redisClient.setex(PerformanceStatusesModel.getRedisKey(), 3600, JSON.stringify(this), (err: any) => {
+        redisClient.setex(REDIS_KEY, 3600, JSON.stringify(this), (err: any) => {
             cb(err);
         });
     }
 
     public remove(cb: (err: Error | void) => any) {
-        redisClient.del(PerformanceStatusesModel.getRedisKey(), (err: any) => {
+        redisClient.del(REDIS_KEY, (err: any) => {
             cb(err);
         });
     }
 
-    public static find(cb: (err: Error | undefined, performanceStatusesModel: PerformanceStatusesModel) => any): void {
-        let performanceStatusesModel = new PerformanceStatusesModel();
+    public static find(cb: (err: Error | undefined, performanceStatusesModel: PerformanceStatusesModel | undefined) => void): void {
+        redisClient.get(REDIS_KEY, (err, reply) => {
+            if (err) return cb(err, undefined);
+            if (reply === null) return cb(new Error("not found."), undefined);
 
-        redisClient.get(PerformanceStatusesModel.getRedisKey(), (err, reply) => {
-            if (err) return;
-            if (reply === null) return;
+            let performanceStatusesModel = new PerformanceStatusesModel();
 
             try {
                 let performanceStatusesModelInRedis = JSON.parse(reply.toString());
@@ -54,18 +56,10 @@ export default class PerformanceStatusesModel {
                     performanceStatusesModel.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
                 }
             } catch (error) {
+                return cb(error, undefined);
             }
 
             cb(undefined, performanceStatusesModel);
         });
-    }
-
-    /**
-     * ネームスペースを取得
-     *
-     * @return {string}
-     */
-    public static getRedisKey(): string {
-        return `TTTSSeatStatusesByPerformanceId`;
     }
 }

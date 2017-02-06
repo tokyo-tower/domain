@@ -21,50 +21,49 @@ Models.Performance.find(
             return;
         }
 
-        PerformanceStatusesModel.find((err, performanceStatusesModel) => {
-            if (err) throw err;
 
-            console.log('aggregating...');
-            Models.Reservation.aggregate(
-                [
-                    {
-                        $group: {
-                            _id: "$performance",
-                            count: { $sum: 1 }
-                        }
+        let performanceStatusesModel = new PerformanceStatusesModel();
+
+        console.log('aggregating...');
+        Models.Reservation.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$performance",
+                        count: { $sum: 1 }
                     }
-                ],
-                (err, results) => {
-                    console.log('aggregated.', err);
-                    if (err) {
-                        mongoose.disconnect();
-                        process.exit(0);
-                        return;
-                    }
-
-                    // パフォーマンスIDごとに
-                    let reservationNumbers = {};
-                    for (let result of results) {
-                        reservationNumbers[result._id] = parseInt(result.count);
-                    }
-
-                    performances.forEach((performance) => {
-                        // パフォーマンスごとに空席ステータスを算出する
-                        if (!reservationNumbers.hasOwnProperty(performance.get('_id').toString())) {
-                            reservationNumbers[performance.get('_id').toString()] = 0;
-                        }
-
-                        let status = performance['getSeatStatus'](reservationNumbers[performance.get('_id').toString()]);
-                        performanceStatusesModel.setStatus(performance._id.toString(), status);
-                    });
-
-                    console.log('saving performanceStatusesModel...', performanceStatusesModel);
-                    performanceStatusesModel.save((err) => {
-                        console.log('performanceStatusesModel saved.', err);
-                        mongoose.disconnect();
-                        process.exit(0);
-                    });
                 }
-            );
-        });
+            ],
+            (err, results) => {
+                console.log('aggregated.', err);
+                if (err) {
+                    mongoose.disconnect();
+                    process.exit(0);
+                    return;
+                }
+
+                // パフォーマンスIDごとに
+                let reservationNumbers = {};
+                for (let result of results) {
+                    reservationNumbers[result._id] = parseInt(result.count);
+                }
+
+                performances.forEach((performance) => {
+                    // パフォーマンスごとに空席ステータスを算出する
+                    if (!reservationNumbers.hasOwnProperty(performance.get('_id').toString())) {
+                        reservationNumbers[performance.get('_id').toString()] = 0;
+                    }
+
+                    let status = performance['getSeatStatus'](reservationNumbers[performance.get('_id').toString()]);
+                    performanceStatusesModel.setStatus(performance._id.toString(), status);
+                });
+
+                console.log('saving performanceStatusesModel...', performanceStatusesModel);
+                performanceStatusesModel.save((err) => {
+                    console.log('performanceStatusesModel saved.', err);
+                    mongoose.disconnect();
+                    process.exit(0);
+                });
+            }
+        );
     });
