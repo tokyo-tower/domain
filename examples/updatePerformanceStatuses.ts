@@ -1,10 +1,9 @@
-process.env.PERFORMANCE_STATUS_REDIS_PORT = 6380;
-process.env.PERFORMANCE_STATUS_REDIS_HOST = "devtttsfrontendprototype.redis.cache.windows.net";
-process.env.PERFORMANCE_STATUS_REDIS_KEY = "QLnxXJC0srbSaabgac+4tzlmN6abiNdkNvVco7954xc=";
+process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT = 6380;
+process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST = "devtttsfrontendprototype.redis.cache.windows.net";
+process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY = "QLnxXJC0srbSaabgac+4tzlmN6abiNdkNvVco7954xc=";
 
 import mongoose = require("mongoose");
-import Models from "../lib/models/Models";
-import PerformanceStatusesModel from "../lib/models/PerformanceStatusesModel";
+import {Models, PerformanceStatusesModel} from "../index";
 
 mongoose.connect("mongodb://devtttsmongodbuser:w6Zk6z62z3ZKBZ52Ku7kFstTRGmBfAVjXakKz8i6@ds056789.mlab.com:56789/devtttsmongodb", {});
 

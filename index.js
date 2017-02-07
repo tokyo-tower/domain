@@ -1,6 +1,6 @@
 "use strict";
-const Models_1 = require("./lib/models/Models");
-exports.Models = Models_1.default;
+const Models = require("./lib/models/Models");
+exports.Models = Models;
 const PerformanceStatusesModel_1 = require("./lib/models/PerformanceStatusesModel");
 exports.PerformanceStatusesModel = PerformanceStatusesModel_1.default;
 const FilmUtil_1 = require("./lib/models/Film/FilmUtil");

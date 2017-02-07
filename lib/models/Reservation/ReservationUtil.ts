@@ -1,4 +1,4 @@
-import Models from '../Models';
+import Sequence from '../Sequence/SequenceModel';
 
 export default class ReservationUtil {
     /** 仮予約 */
@@ -38,7 +38,7 @@ export default class ReservationUtil {
      * 購入管理番号生成
      */
     public static publishPaymentNo(cb: (err: Error, no: string | null) => void): void {
-        Models.Sequence.findOneAndUpdate(
+        Sequence.findOneAndUpdate(
             {target: 'payment_no'},
             {
                 $inc: {no: 1}

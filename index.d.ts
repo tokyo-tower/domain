@@ -1,4 +1,4 @@
-import Models from "./lib/models/Models";
+import * as Models from "./lib/models/Models";
 import PerformanceStatusesModel from "./lib/models/PerformanceStatusesModel";
 import FilmUtil from "./lib/models/Film/FilmUtil";
 import GMONotificationUtil from "./lib/models/GMONotification/GMONotificationUtil";

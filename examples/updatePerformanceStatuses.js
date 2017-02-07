@@ -1,12 +1,11 @@
 "use strict";
-process.env.PERFORMANCE_STATUS_REDIS_PORT = 6380;
-process.env.PERFORMANCE_STATUS_REDIS_HOST = "devtttsfrontendprototype.redis.cache.windows.net";
-process.env.PERFORMANCE_STATUS_REDIS_KEY = "QLnxXJC0srbSaabgac+4tzlmN6abiNdkNvVco7954xc=";
+process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT = 6380;
+process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST = "devtttsfrontendprototype.redis.cache.windows.net";
+process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY = "QLnxXJC0srbSaabgac+4tzlmN6abiNdkNvVco7954xc=";
 const mongoose = require("mongoose");
-const Models_1 = require("../lib/models/Models");
-const PerformanceStatusesModel_1 = require("../lib/models/PerformanceStatusesModel");
+const index_1 = require("../index");
 mongoose.connect("mongodb://devtttsmongodbuser:w6Zk6z62z3ZKBZ52Ku7kFstTRGmBfAVjXakKz8i6@ds056789.mlab.com:56789/devtttsmongodb", {});
-Models_1.default.Performance.find({}, 'day start_time screen')
+index_1.Models.Performance.find({}, 'day start_time screen')
     .populate('screen', 'seats_number')
     .exec((err, performances) => {
     console.log('performances found.', err);
@@ -15,9 +14,9 @@ Models_1.default.Performance.find({}, 'day start_time screen')
         process.exit(0);
         return;
     }
-    let performanceStatusesModel = new PerformanceStatusesModel_1.default();
+    let performanceStatusesModel = new index_1.PerformanceStatusesModel();
     console.log('aggregating...');
-    Models_1.default.Reservation.aggregate([
+    index_1.Models.Reservation.aggregate([
         {
             $group: {
                 _id: "$performance",

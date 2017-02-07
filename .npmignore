@@ -1,0 +1,12 @@
+# git #
+.git*
+
+# Node #
+node_modules/
+
+# typescript #
+**/*.ts
+
+!**/*.d.ts
+
+examples/**/*.d.ts
