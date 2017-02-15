@@ -1,13 +1,13 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * 採番スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     no: Number,
     target: String
-},{
+},                                 {
     collection: 'sequences'
 });
 
-export default mongoose.model("Sequence", Schema);
+export default mongoose.model('Sequence', schema);

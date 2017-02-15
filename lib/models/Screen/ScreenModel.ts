@@ -1,12 +1,12 @@
-import mongoose = require('mongoose');
-import Theater from "../Theater/TheaterModel";
+import * as mongoose from 'mongoose';
+import Theater from '../Theater/TheaterModel';
 
 /**
  * スクリーンスキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     _id: String,
-    theater: { 
+    theater: {
         type: String,
         ref: Theater.modelName
     },
@@ -26,7 +26,7 @@ let Schema = new mongoose.Schema({
              code: String,
              name: {
                  ja: String,
-                 en: String,
+                 en: String
              },
              seats: [
                  {
@@ -36,20 +36,20 @@ let Schema = new mongoose.Schema({
                          code: String, // 座席グレードコード
                          name: {
                             ja: String, // 座席レベル名
-                            en: String, // 座席レベル名(英語)
+                            en: String // 座席レベル名(英語)
                          },
                          additional_charge: Number // 追加料金
                      }
-                 },
+                 }
              ]
-        },
+        }
     ]
-},{
+},                                 {
     collection: 'screens',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-export default mongoose.model("Screen", Schema);
+export default mongoose.model('Screen', schema);

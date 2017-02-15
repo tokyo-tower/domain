@@ -1,5 +1,5 @@
-import PerformanceUtil from "../models/Performance/PerformanceUtil";
-import redis = require("redis");
+import * as redis from 'redis';
+import * as PerformanceUtil from '../models/Performance/PerformanceUtil';
 
 const redisClient = redis.createClient(
     process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT,
@@ -11,10 +11,13 @@ const redisClient = redis.createClient(
     }
 );
 
-const REDIS_KEY = "TTTSSeatStatusesByPerformanceId";
+const REDIS_KEY = 'TTTSSeatStatusesByPerformanceId';
+const EXPIRATION_SECONDS = 3600;
 
 /**
  * パフォーマンス情報モデル
+ *
+ * @class
  */
 export default class PerformanceStatusesModel {
     /**
@@ -32,7 +35,7 @@ export default class PerformanceStatusesModel {
     }
 
     public save(cb: (err: Error | void) => void) {
-        redisClient.setex(REDIS_KEY, 3600, JSON.stringify(this), (err: any) => {
+        redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(this), (err: any) => {
             cb(err);
         });
     }
@@ -43,18 +46,19 @@ export default class PerformanceStatusesModel {
         });
     }
 
+    // tslint:disable-next-line:function-name
     public static find(cb: (err: Error | undefined, performanceStatusesModel: PerformanceStatusesModel | undefined) => void): void {
         redisClient.get(REDIS_KEY, (err, reply) => {
             if (err) return cb(err, undefined);
-            if (reply === null) return cb(new Error("not found."), undefined);
+            if (reply === null) return cb(new Error('not found.'), undefined);
 
-            let performanceStatusesModel = new PerformanceStatusesModel();
+            const performanceStatusesModel = new PerformanceStatusesModel();
 
             try {
-                let performanceStatusesModelInRedis = JSON.parse(reply.toString());
-                for (let propertyName in performanceStatusesModelInRedis) {
+                const performanceStatusesModelInRedis = JSON.parse(reply.toString());
+                Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
                     performanceStatusesModel.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
-                }
+                });
             } catch (error) {
                 return cb(error, undefined);
             }

@@ -4,7 +4,6 @@
     // ファイルとフォルダーを除外するための glob パターンを構成します。
     "files.exclude": {
         "lib/**/*.js": true,
-        "*.js": true
-    },
-    "typescript.tsdk": "C:\\Users\\Tetsu\\AppData\\Roaming\\npm\\node_modules\\typescript\\lib"
+        "**/*.d.ts": true
+    }
 }

@@ -1,0 +1,3 @@
+export declare const PROCESS_STATUS_UNPROCESSED = "UNPROCESSED";
+export declare const PROCESS_STATUS_PROCESSING = "PROCESSING";
+export declare const PROCESS_STATUS_PROCESSED = "PROCESSED";

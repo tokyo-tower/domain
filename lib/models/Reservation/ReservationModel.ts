@@ -1,22 +1,22 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 import numeral = require('numeral');
 import moment = require('moment');
-import ReservationUtil from './ReservationUtil';
-import Performance from "../Performance/PerformanceModel";
-import Theater from "../Theater/TheaterModel";
-import Screen from "../Screen/ScreenModel";
-import Film from "../Film/FilmModel";
-import PreCustomer from "../PreCustomer/PreCustomerModel";
-import Sponsor from "../Sponsor/SponsorModel";
-import Staff from "../Staff/StaffModel";
-import Member from "../Member/MemberModel";
-import Window from "../Window/WindowModel";
-import TelStaff from "../TelStaff/TelStaffModel";
+import Film from '../Film/FilmModel';
+import Member from '../Member/MemberModel';
+import Performance from '../Performance/PerformanceModel';
+import PreCustomer from '../PreCustomer/PreCustomerModel';
+import Screen from '../Screen/ScreenModel';
+import Sponsor from '../Sponsor/SponsorModel';
+import Staff from '../Staff/StaffModel';
+import TelStaff from '../TelStaff/TelStaffModel';
+import Theater from '../Theater/TheaterModel';
+import Window from '../Window/WindowModel';
+import * as ReservationUtil from './ReservationUtil';
 
 /**
  * 予約スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     performance: {
         type: String,
         ref: Performance.modelName,
@@ -172,31 +172,31 @@ let Schema = new mongoose.Schema({
     paydesign_fuka: String,
 
     created_user: String,
-    updated_user: String,
-},{
+    updated_user: String
+},                                 {
     collection: 'reservations',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
         updatedAt: 'updated_at'
     }
 });
 
 // 開始文字列を表示形式で取得できるように
-Schema.virtual('performance_start_str_ja').get(function(this: any) {
+schema.virtual('performance_start_str_ja').get(function(this: any) {
     return `${this.performance_day.substr(0, 4)}/${this.performance_day.substr(4, 2)}/${this.performance_day.substr(6)} 開場 ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)} 開演 ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)}`;
 });
-Schema.virtual('performance_start_str_en').get(function(this: any) {
-    let date = `${moment(`${this.performance_day.substr(0, 4)}-${this.performance_day.substr(4, 2)}-${this.performance_day.substr(6)}T00:00:00+09:00`).format('MMMM DD, YYYY')}`;
+schema.virtual('performance_start_str_en').get(function(this: any) {
+    const date = `${moment(`${this.performance_day.substr(0, 4)}-${this.performance_day.substr(4, 2)}-${this.performance_day.substr(6)}T00:00:00+09:00`).format('MMMM DD, YYYY')}`;
     return `Open: ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)}/Start: ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)} on ${date}`;
 });
-Schema.virtual('location_str_ja').get(function(this: any) {
+schema.virtual('location_str_ja').get(function(this: any) {
     return `${this.get('theater_name_ja')} ${this.get('screen_name_ja')}`;
 });
-Schema.virtual('location_str_en').get(function(this: any) {
+schema.virtual('location_str_en').get(function(this: any) {
     return `at ${this.get('screen_name_en')}, ${this.get('theater_name_en')}`;
 });
 
-Schema.virtual('baloon_content4staff').get(function(this: any) {
+schema.virtual('baloon_content4staff').get(function(this: any) {
     let str = `${this.seat_code}`;
     str += (this.purchaser_group_str) ? `<br>${this.purchaser_group_str}` : '';
     str += (this.purchaser_name_ja) ? `<br>${this.purchaser_name_ja}` : '';
@@ -206,7 +206,7 @@ Schema.virtual('baloon_content4staff').get(function(this: any) {
     return str;
 });
 
-Schema.virtual('purchaser_name_ja').get(function(this: any) {
+schema.virtual('purchaser_name_ja').get(function(this: any) {
     let name = '';
 
     if (
@@ -230,7 +230,7 @@ Schema.virtual('purchaser_name_ja').get(function(this: any) {
     return name;
 });
 
-Schema.virtual('purchaser_name_en').get(function(this: any) {
+schema.virtual('purchaser_name_en').get(function(this: any) {
     let name = '';
 
     if (
@@ -254,7 +254,7 @@ Schema.virtual('purchaser_name_en').get(function(this: any) {
     return name;
 });
 
-Schema.virtual('purchaser_group_str').get(function(this: any) {
+schema.virtual('purchaser_group_str').get(function(this: any) {
     let str = '';
 
     switch (this.get('purchaser_group')) {
@@ -283,7 +283,7 @@ Schema.virtual('purchaser_group_str').get(function(this: any) {
     return str;
 });
 
-Schema.virtual('status_str').get(function(this: any) {
+schema.virtual('status_str').get(function(this: any) {
     let str = '';
 
     switch (this.get('status')) {
@@ -319,14 +319,14 @@ Schema.virtual('status_str').get(function(this: any) {
 /**
  * QRコード文字列
  */
-Schema.virtual('qr_str').get(function(this: any) {
+schema.virtual('qr_str').get(function(this: any) {
     return `${this.payment_no}-${this.payment_seat_index}`;
 });
 
 /**
  * 券種金額文字列
  */
-Schema.virtual('ticket_type_detail_str_ja').get(function(this: any) {
+schema.virtual('ticket_type_detail_str_ja').get(function(this: any) {
     let charge = 0;
     let str = this.get('ticket_type_name_ja');
 
@@ -353,7 +353,7 @@ Schema.virtual('ticket_type_detail_str_ja').get(function(this: any) {
 
     return str;
 });
-Schema.virtual('ticket_type_detail_str_en').get(function(this: any) {
+schema.virtual('ticket_type_detail_str_en').get(function(this: any) {
     let charge = 0;
     let str = this.get('ticket_type_name_en');
 
@@ -384,18 +384,18 @@ Schema.virtual('ticket_type_detail_str_en').get(function(this: any) {
 /**
  * TTTS確保への更新の場合、パフォーマンス情報だけ残して、購入者情報は削除する
  */
-Schema.post('findOneAndUpdate', function(this: any, err, doc, next){
+schema.post('findOneAndUpdate', function(this: any, err, doc, next){
     if (err) return next(err);
 
     if (doc.get('status') === ReservationUtil.STATUS_KEPT_BY_TTTS) {
-        let paths4set = [
+        const paths4set = [
             '_id', 'performance', 'seat_code', 'status', 'created_at', 'updated_at'
           , 'performance_day', 'performance_open_time', 'performance_start_time', 'performance_end_time', 'performance_canceled'
           , 'theater', 'theater_name_ja', 'theater_name_en', 'theater_address_ja', 'theater_address_en'
           , 'screen', 'screen_name_ja', 'screen_name_en'
           , 'film', 'film_name_ja', 'film_name_en', 'film_image', 'film_is_mx4d', 'film_copyright'
         ];
-        let unset: any = {};
+        const unset: any = {};
         this.schema.eachPath((path: string) => {
             if (paths4set.indexOf(path) < 0) {
                 unset[path] = '';
@@ -412,7 +412,7 @@ Schema.post('findOneAndUpdate', function(this: any, err, doc, next){
     }
 });
 
-Schema.index(
+schema.index(
     {
         performance: 1,
         seat_code: 1
@@ -422,4 +422,4 @@ Schema.index(
     }
 );
 
-export default mongoose.model("Reservation", Schema);
+export default mongoose.model('Reservation', schema);

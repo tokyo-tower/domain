@@ -4,9 +4,17 @@
 # Node #
 node_modules/
 
+# Test #
+test/
+
+# doc #
+docs/
+
 # typescript #
 **/*.ts
 
 !**/*.d.ts
 
 examples/**/*.d.ts
+
+.vscode/

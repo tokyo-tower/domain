@@ -1,9 +1,9 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * 電話窓口担当者スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     user_id: {
         type: String,
         unique: true
@@ -11,21 +11,21 @@ let Schema = new mongoose.Schema({
     password_salt: String,
     password_hash: String,
     name: String
-},{
+},                                 {
     collection: 'tel_staffs',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-Schema.index(
+schema.index(
     {
-        user_id: 1,
+        user_id: 1
     },
     {
         unique: true
     }
 );
 
-export default mongoose.model("TelStaff", Schema);
+export default mongoose.model('TelStaff', schema);

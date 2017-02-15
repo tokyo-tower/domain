@@ -5,11 +5,11 @@
         "allowUnusedLabels": false,
         "charset": "utf8",
         "declaration": true,
-        // "declarationDir": "./declarations",
+        "declarationDir": "./types",
         "diagnostics": false,
         "disableSizeLimit": false,
         "emitDecoratorMetadata": true,
-        "experimentalDecorators":true,
+        "experimentalDecorators": true,
         "forceConsistentCasingInFileNames": true,
         "inlineSourceMap": false,
         "inlineSources": false,
@@ -27,8 +27,6 @@
         "noResolve": false,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        // "outDir": "",
-        // "outFile": "./bin/tiff.js",
         "preserveConstEnums": false,
         "pretty": false,
         "removeComments": true,
@@ -41,7 +39,8 @@
         "watch": false
     },
     "exclude": [
+        "docs",
         "node_modules",
-        "declarations"
+        "types"
     ]
 }

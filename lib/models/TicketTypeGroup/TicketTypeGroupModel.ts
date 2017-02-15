@@ -1,13 +1,13 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * 券種グループスキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     _id: String,
     name: {
         ja: String, // 券種グループ名
-        en: String, // 券種グループ名(英語)
+        en: String // 券種グループ名(英語)
     },
     types: [
          {
@@ -18,14 +18,14 @@ let Schema = new mongoose.Schema({
                 en: String // 券種名(英語)
             },
             charge: Number // 料金
-        },
+        }
     ]
-},{
+},                                 {
     collection: 'ticket_type_groups',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-export default mongoose.model("TicketTypeGroup", Schema);
+export default mongoose.model('TicketTypeGroup', schema);

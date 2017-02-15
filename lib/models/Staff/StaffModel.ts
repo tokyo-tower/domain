@@ -1,9 +1,9 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * 内部関係者スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     user_id: {
         type: String,
         unique: true
@@ -13,21 +13,21 @@ let Schema = new mongoose.Schema({
     name: String,
     email: String,
     is_admin: Boolean // 管理者かどうか
-},{
+},                                 {
     collection: 'staffs',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-Schema.index(
+schema.index(
     {
-        user_id: 1,
+        user_id: 1
     },
     {
         unique: true
     }
 );
 
-export default mongoose.model("Staff", Schema);
+export default mongoose.model('Staff', schema);

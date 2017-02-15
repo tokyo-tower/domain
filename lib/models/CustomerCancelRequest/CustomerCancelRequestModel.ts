@@ -1,9 +1,9 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * 一般キャンセルリクエストスキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     payment_no: { // 購入番号
         type: String,
         required: true
@@ -20,12 +20,12 @@ let Schema = new mongoose.Schema({
         type: String,
         required: true
     }
-},{
+},                                 {
     collection: 'customer_cancel_requests',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-export default mongoose.model("CustomerCancelRequest", Schema);
+export default mongoose.model('CustomerCancelRequest', schema);

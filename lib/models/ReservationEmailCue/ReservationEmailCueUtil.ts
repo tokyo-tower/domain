@@ -1,13 +1,27 @@
-export default class ReservationEmailCueUtil {
-    /** 未送信 */
-    public static STATUS_UNSENT = 'UNSENT';
-    /** 送信中 */
-    public static STATUS_SENDING = 'SENDING';
-    /** 送信済 */
-    public static STATUS_SENT = 'SENT';
+/**
+ * 予約メールキューユーティリティ
+ *
+ * @namespace ReservationEmailCueUtil
+ */
 
-    /** 購入完了 */
-    public static TEMPLATE_COMPLETE = 'COMPLETE';
-    /** 仮予約完了 */
-    public static TEMPLATE_TEMPORARY = 'TEMPORARY';
-}
+/**
+ * 未送信
+ */
+export const STATUS_UNSENT = 'UNSENT';
+/**
+ * 送信中
+ */
+export const STATUS_SENDING = 'SENDING';
+/**
+ * 送信済
+ */
+export const STATUS_SENT = 'SENT';
+
+/**
+ * 購入完了
+ */
+export const TEMPLATE_COMPLETE = 'COMPLETE';
+/**
+ * 仮予約完了
+ */
+export const TEMPLATE_TEMPORARY = 'TEMPORARY';

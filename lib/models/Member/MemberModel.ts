@@ -1,27 +1,27 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * メルマガ会員スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     user_id: String,
     password_salt: String,
     password_hash: String
-},{
+},                                 {
     collection: 'members',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-Schema.index(
+schema.index(
     {
-        user_id: 1,
+        user_id: 1
     },
     {
         unique: true
     }
 );
 
-export default mongoose.model("Member", Schema);
+export default mongoose.model('Member', schema);

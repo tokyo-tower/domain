@@ -1,9 +1,9 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * GMO結果通知スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     shop_id: String, // ショップID
     order_id: String, // オーダーID
     status: String, // 結果ステータス
@@ -28,12 +28,12 @@ let Schema = new mongoose.Schema({
         type: String,
         required: true
     }
-},{
+},                                 {
     collection: 'gmo_notifications',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-export default mongoose.model("GMONotification", Schema);
+export default mongoose.model('GMONotification', schema);

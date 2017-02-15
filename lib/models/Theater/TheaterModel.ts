@@ -1,9 +1,9 @@
-import mongoose = require('mongoose');
+import * as mongoose from 'mongoose';
 
 /**
  * 劇場スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     _id: String,
     name: {
         ja: String,
@@ -13,12 +13,12 @@ let Schema = new mongoose.Schema({
         ja: String,
         en: String
     }
-},{
+},                                 {
     collection: 'theaters',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-export default mongoose.model("Theater", Schema);
+export default mongoose.model('Theater', schema);

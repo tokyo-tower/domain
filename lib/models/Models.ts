@@ -1,3 +1,9 @@
+/**
+ * MongoDBのモデルをまとめたモジュール
+ *
+ * @namespace
+ */
+
 import Authentication from '../models/Authentication/AuthenticationModel';
 import CustomerCancelRequest from '../models/CustomerCancelRequest/CustomerCancelRequestModel';
 import Film from '../models/Film/FilmModel';
@@ -186,13 +192,6 @@ import Window from '../models/Window/WindowModel';
 //     );
 // });
 
-
-
-
-
-/**
- * MongoDBのモデルをまとめたモジュール
- */
 export {
     Authentication,
     CustomerCancelRequest,

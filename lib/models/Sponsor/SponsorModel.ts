@@ -1,10 +1,10 @@
-import mongoose = require('mongoose');
-import Performance from "../Performance/PerformanceModel";
+import * as mongoose from 'mongoose';
+import Performance from '../Performance/PerformanceModel';
 
 /**
  * 外部関係者スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     user_id: {
         type: String,
         unique: true
@@ -20,19 +20,19 @@ let Schema = new mongoose.Schema({
     max_reservation_count: Number
 },{
     collection: 'sponsors',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-Schema.index(
+schema.index(
     {
-        user_id: 1,
+        user_id: 1
     },
     {
         unique: true
     }
 );
 
-export default mongoose.model("Sponsor", Schema);
+export default mongoose.model('Sponsor', schema);

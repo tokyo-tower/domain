@@ -1,14 +1,14 @@
-import mongoose = require('mongoose');
-import Sponsor from "../Sponsor/SponsorModel";
-import Staff from "../Staff/StaffModel";
-import TelStaff from "../TelStaff/TelStaffModel";
-import Window from "../Window/WindowModel";
-import PreCustomer from "../PreCustomer/PreCustomerModel";
+import * as mongoose from 'mongoose';
+import PreCustomer from '../PreCustomer/PreCustomerModel';
+import Sponsor from '../Sponsor/SponsorModel';
+import Staff from '../Staff/StaffModel';
+import TelStaff from '../TelStaff/TelStaffModel';
+import Window from '../Window/WindowModel';
 
 /**
  * ログイン認証スキーマ
  */
-let Schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     token: {
         type: String,
         required: true
@@ -36,12 +36,12 @@ let Schema = new mongoose.Schema({
     },
     signature: String, // 署名
     locale: String // 使用言語
-},{
+},                                 {
     collection: 'authentications',
-    timestamps: { 
+    timestamps: {
         createdAt: 'created_at',
-        updatedAt: 'updated_at',
+        updatedAt: 'updated_at'
     }
 });
 
-export default mongoose.model("Authentication", Schema);
+export default mongoose.model('Authentication', schema);
