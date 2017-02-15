@@ -3,21 +3,24 @@ import * as mongoose from 'mongoose';
 /**
  * 1.5次販売ユーザースキーマ
  */
-const schema = new mongoose.Schema({
-    user_id: {
-        type: String,
-        unique: true
+const schema = new mongoose.Schema(
+    {
+        user_id: {
+            type: String,
+            unique: true
+        },
+        password_salt: String,
+        password_hash: String,
+        max_reservation_count: Number
     },
-    password_salt: String,
-    password_hash: String,
-    max_reservation_count: Number
-},                                 {
-    collection: 'pre_customers',
-    timestamps: {
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
+    {
+        collection: 'pre_customers',
+        timestamps: {
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        }
     }
-});
+);
 
 schema.index(
     {

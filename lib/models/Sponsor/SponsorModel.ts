@@ -4,27 +4,30 @@ import Performance from '../Performance/PerformanceModel';
 /**
  * 外部関係者スキーマ
  */
-const schema = new mongoose.Schema({
-    user_id: {
-        type: String,
-        unique: true
+const schema = new mongoose.Schema(
+    {
+        user_id: {
+            type: String,
+            unique: true
+        },
+        password_salt: String,
+        password_hash: String,
+        name: String,
+        email: String,
+        performance: { // パフォーマンス指定
+            type: String,
+            ref: Performance.modelName
+        },
+        max_reservation_count: Number
     },
-    password_salt: String,
-    password_hash: String,
-    name: String,
-    email: String,
-    performance: { // パフォーマンス指定
-        type: String,
-        ref: Performance.modelName
-    },
-    max_reservation_count: Number
-},{
-    collection: 'sponsors',
-    timestamps: {
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
+    {
+        collection: 'sponsors',
+        timestamps: {
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        }
     }
-});
+);
 
 schema.index(
     {

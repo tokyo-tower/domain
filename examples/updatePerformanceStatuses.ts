@@ -1,12 +1,12 @@
-// tslint:disable:missing-jsdoc no-backbone-get-set-outside-model
-process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT = 6380;
-process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST = 'devtttsfrontendprototype.redis.cache.windows.net';
-process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY = 'QLnxXJC0srbSaabgac+4tzlmN6abiNdkNvVco7954xc=';
-
+/**
+ * パフォーマンス空席状況を更新するスクリプトの例
+ *
+ * @ignore
+ */
 import * as mongoose from 'mongoose';
 import { Models, PerformanceStatusesModel } from '../lib/ttts-domain';
 
-mongoose.connect('mongodb://devtttsmongodbuser:w6Zk6z62z3ZKBZ52Ku7kFstTRGmBfAVjXakKz8i6@ds056789.mlab.com:56789/devtttsmongodb', {});
+mongoose.connect(process.env.MONGOLAB_URI, {});
 
 Models.Performance.find(
     {},

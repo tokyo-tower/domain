@@ -43,5 +43,5 @@
     "tslint": "tslint -c tslint.json lib/**/*.ts examples/**/*.ts"
   },
   "types": "./types/lib/ttts-domain.d.ts",
-  "version": "1.0.5"
+  "version": "1.0.6"
 }

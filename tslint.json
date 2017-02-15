@@ -25,6 +25,7 @@
             true
         ],
         "no-any": false,
+        "no-backbone-get-set-outside-model": false,
         "no-boolean-literal-compare": false,
         "no-default-export": false,
         "no-floating-promises": false,
