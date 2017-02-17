@@ -35,7 +35,7 @@ Models.Performance.find(
                     }
                 }
             ],
-            (aggregateErr, results) => {
+            (aggregateErr: any, results: any) => {
                 // tslint:disable-next-line:no-console
                 console.log('aggregated.', aggregateErr);
                 if (aggregateErr) {
@@ -45,7 +45,7 @@ Models.Performance.find(
                 }
 
                 // パフォーマンスIDごとに
-                const reservationNumbers = {};
+                const reservationNumbers: any = {};
                 const DEFAULT_RADIX = 10;
                 for (const result of results) {
                     reservationNumbers[result._id] = parseInt(result.count, DEFAULT_RADIX);
@@ -58,7 +58,7 @@ Models.Performance.find(
                     }
 
                     // tslint:disable-next-line:no-string-literal
-                    const status = performance['getSeatStatus'](reservationNumbers[performance.get('_id').toString()]);
+                    const status = (<any>performance).getSeatStatus(reservationNumbers[performance.get('_id').toString()]);
                     performanceStatusesModel.setStatus(performance._id.toString(), status);
                 });
 

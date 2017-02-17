@@ -1,5 +1,16 @@
+/**
+ * パフォーマンス情報モデル
+ *
+ * @class
+ */
 export default class PerformanceStatusesModel {
+    /**
+     * パフォーマンスIDから空席ステータスを取得する
+     */
     getStatus(this: any, id: string): string;
+    /**
+     * パフォーマンスIDの空席ステータスをセットする
+     */
     setStatus(this: any, id: string, status: string): void;
     save(cb: (err: Error | void) => void): void;
     remove(cb: (err: Error | void) => any): void;

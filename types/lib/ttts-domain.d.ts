@@ -1,3 +1,8 @@
+/**
+ * TTTSドメインモジュール
+ *
+ * @global
+ */
 import * as Models from './../lib/models/Models';
 import PerformanceStatusesModel from './../lib/models/PerformanceStatusesModel';
 import * as FilmUtil from './../lib/models/Film/FilmUtil';
