@@ -40,17 +40,15 @@ export default class PerformanceStatusesModel {
         });
     }
 
-    public remove(cb: (err: Error | void) => any) {
-        redisClient.del(REDIS_KEY, (err: any) => {
-            cb(err);
-        });
-    }
-
     // tslint:disable-next-line:function-name
     public static find(cb: (err: Error | undefined, performanceStatusesModel: PerformanceStatusesModel | undefined) => void): void {
         redisClient.get(REDIS_KEY, (err, reply) => {
-            if (err) return cb(err, undefined);
-            if (reply === null) return cb(new Error('not found.'), undefined);
+            if (err) {
+                return cb(err, undefined);
+            }
+            if (reply === null) {
+                return cb(new Error('not found.'), undefined);
+            }
 
             const performanceStatusesModel = new PerformanceStatusesModel();
 

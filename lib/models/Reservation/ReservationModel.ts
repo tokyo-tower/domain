@@ -403,7 +403,9 @@ schema.virtual('ticket_type_detail_str_en').get(function (this: any) {
  * TTTS確保への更新の場合、パフォーマンス情報だけ残して、購入者情報は削除する
  */
 schema.post('findOneAndUpdate', function (this: any, err: any, doc: any, next: any) {
-    if (err) return next(err);
+    if (err) {
+        return next(err);
+    }
 
     if (doc.get('status') === ReservationUtil.STATUS_KEPT_BY_TTTS) {
         const paths4set = [

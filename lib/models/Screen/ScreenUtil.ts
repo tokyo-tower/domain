@@ -38,8 +38,13 @@ export function sortBySeatCode(a: string, b: string): number {
     const columnA = a.substr(hyphenIndexA + 1); // 列
     const columnB = b.substr(hyphenIndexB + 1); // 列
 
-    if (rowA < rowB) return -1; // 行は文字列比較
-    if (rowA > rowB) return 1; // 行は文字列比較
-    if (parseInt(columnA, DEFAULT_RADIX) < parseInt(columnB, DEFAULT_RADIX)) return -1; // 列は数値比較
+    if (rowA < rowB) {
+        return -1; // 行は文字列比較
+    } else if (rowA > rowB) {
+        return 1; // 行は文字列比較
+    } else if (parseInt(columnA, DEFAULT_RADIX) < parseInt(columnB, DEFAULT_RADIX)) {
+        return -1; // 列は数値比較
+    }
+
     return 1;
 }

@@ -77,16 +77,24 @@ schema.virtual('location_str_en').get(function (this: any) {
  */
 schema.methods.getSeatStatus = function (this: any, reservationNumber: number) {
     // 上映日当日過ぎていればG
-    if (parseInt(this.day, DEFAULT_RADIX) < parseInt(moment().format('YYYYMMDD'), DEFAULT_RADIX)) return PerformanceUtil.SEAT_STATUS_G;
+    if (parseInt(this.day, DEFAULT_RADIX) < parseInt(moment().format('YYYYMMDD'), DEFAULT_RADIX)) {
+        return PerformanceUtil.SEAT_STATUS_G;
+    }
 
     // 残席0以下なら問答無用に×
     const availableSeatNum = this.screen.seats_number - reservationNumber;
-    if (availableSeatNum <= 0) return PerformanceUtil.SEAT_STATUS_C;
+    if (availableSeatNum <= 0) {
+        return PerformanceUtil.SEAT_STATUS_C;
+    }
 
     // 残席数よりステータスを算出
     const seatNum = 100 * availableSeatNum;
-    if (PerformanceUtil.SEAT_STATUS_THRESHOLD_A * this.screen.seats_number < seatNum) return PerformanceUtil.SEAT_STATUS_A;
-    if (PerformanceUtil.SEAT_STATUS_THRESHOLD_B * this.screen.seats_number < seatNum) return PerformanceUtil.SEAT_STATUS_B;
+    if (PerformanceUtil.SEAT_STATUS_THRESHOLD_A * this.screen.seats_number < seatNum) {
+        return PerformanceUtil.SEAT_STATUS_A;
+    }
+    if (PerformanceUtil.SEAT_STATUS_THRESHOLD_B * this.screen.seats_number < seatNum) {
+        return PerformanceUtil.SEAT_STATUS_B;
+    }
 
     return PerformanceUtil.SEAT_STATUS_C;
 };

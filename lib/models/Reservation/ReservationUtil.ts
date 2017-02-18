@@ -103,7 +103,9 @@ export function publishPaymentNo(cb: (err: Error, no: string | null) => void): v
             new: true
         },
         (err, sequence) => {
-            if (err) return cb(err, null);
+            if (err) {
+                return cb(err, null);
+            }
 
             const no: number = sequence.get('no');
 
@@ -129,7 +131,9 @@ export function publishPaymentNo(cb: (err: Error, no: string | null) => void): v
  * @param {string} source
  */
 export function getCheckDigit(source: string): number {
-    if (source.length !== 9) throw new Error('source length must be 9.');
+    if (source.length !== 9) {
+        throw new Error('source length must be 9.');
+    }
 
     let sum = 0;
     source.split('').reverse().forEach((digitNumber, index) => {
@@ -147,7 +151,9 @@ export function getCheckDigit(source: string): number {
  * @param {string} source
  */
 export function getCheckDigit2(source: string): number {
-    if (source.length !== 9) throw new Error('source length must be 9.');
+    if (source.length !== 9) {
+        throw new Error('source length must be 9.');
+    }
 
     let sum = 0;
     source.split('').reverse().forEach((digitNumber, index) => {
@@ -163,7 +169,9 @@ export function getCheckDigit2(source: string): number {
  * @param {string} paymentNo
  */
 export function isValidPaymentNo(paymentNo: string): boolean {
-    if (paymentNo.length !== 11) return false;
+    if (paymentNo.length !== 11) {
+        return false;
+    }
 
     const sequeceNo = ReservationUtil.decodePaymentNo(paymentNo);
     const checkDigit = ReservationUtil.getCheckDigit(sequeceNo);
