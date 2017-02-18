@@ -1,9 +1,9 @@
 // tslint:disable:no-invalid-this no-magic-numbers space-before-function-paren
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
-import Film from '../Film/FilmModel';
-import Screen from '../Screen/ScreenModel';
-import Theater from '../Theater/TheaterModel';
+import { model as Film } from '../Film/FilmModel';
+import { model as Screen } from '../Screen/ScreenModel';
+import { model as Theater } from '../Theater/TheaterModel';
 import * as PerformanceUtil from './PerformanceUtil';
 
 const DEFAULT_RADIX = 10;
@@ -106,4 +106,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('Performance', schema);
+export const model = mongoose.model('Performance', schema);

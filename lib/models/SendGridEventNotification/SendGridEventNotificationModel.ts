@@ -39,4 +39,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('SendGridEventNotification', schema);
+export const model = mongoose.model('SendGridEventNotification', schema);

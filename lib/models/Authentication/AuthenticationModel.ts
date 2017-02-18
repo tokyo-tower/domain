@@ -1,9 +1,9 @@
 import * as mongoose from 'mongoose';
-import PreCustomer from '../PreCustomer/PreCustomerModel';
-import Sponsor from '../Sponsor/SponsorModel';
-import Staff from '../Staff/StaffModel';
-import TelStaff from '../TelStaff/TelStaffModel';
-import Window from '../Window/WindowModel';
+import { model as PreCustomer } from '../PreCustomer/PreCustomerModel';
+import { model as Sponsor } from '../Sponsor/SponsorModel';
+import { model as Staff } from '../Staff/StaffModel';
+import { model as TelStaff } from '../TelStaff/TelStaffModel';
+import { model as Window } from '../Window/WindowModel';
 
 /**
  * ログイン認証スキーマ
@@ -47,4 +47,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('Authentication', schema);
+export const model = mongoose.model('Authentication', schema);

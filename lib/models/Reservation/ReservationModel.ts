@@ -3,16 +3,16 @@ import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as numeral from 'numeral';
 
-import Film from '../Film/FilmModel';
-import Member from '../Member/MemberModel';
-import Performance from '../Performance/PerformanceModel';
-import PreCustomer from '../PreCustomer/PreCustomerModel';
-import Screen from '../Screen/ScreenModel';
-import Sponsor from '../Sponsor/SponsorModel';
-import Staff from '../Staff/StaffModel';
-import TelStaff from '../TelStaff/TelStaffModel';
-import Theater from '../Theater/TheaterModel';
-import Window from '../Window/WindowModel';
+import { model as Film } from '../Film/FilmModel';
+import { model as Member } from '../Member/MemberModel';
+import { model as Performance } from '../Performance/PerformanceModel';
+import { model as PreCustomer } from '../PreCustomer/PreCustomerModel';
+import { model as Screen } from '../Screen/ScreenModel';
+import { model as Sponsor } from '../Sponsor/SponsorModel';
+import { model as Staff } from '../Staff/StaffModel';
+import { model as TelStaff } from '../TelStaff/TelStaffModel';
+import { model as Theater } from '../Theater/TheaterModel';
+import { model as Window } from '../Window/WindowModel';
 import * as ReservationUtil from './ReservationUtil';
 
 /**
@@ -442,4 +442,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('Reservation', schema);
+export const model = mongoose.model('Reservation', schema);

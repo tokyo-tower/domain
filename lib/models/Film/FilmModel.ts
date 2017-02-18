@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import TicketTypeGroup from '../TicketTypeGroup/TicketTypeGroupModel';
+import { model as TicketTypeGroup } from '../TicketTypeGroup/TicketTypeGroupModel';
 
 /**
  * 作品スキーマ
@@ -42,4 +42,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('Film', schema);
+export const model = mongoose.model('Film', schema);

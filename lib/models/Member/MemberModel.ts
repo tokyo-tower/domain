@@ -27,4 +27,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('Member', schema);
+export const model = mongoose.model('Member', schema);

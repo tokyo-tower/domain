@@ -7,7 +7,7 @@
  */
 
 import * as ReservationUtil from '../Reservation/ReservationUtil';
-import Sequence from '../Sequence/SequenceModel';
+import { model as Sequence } from '../Sequence/SequenceModel';
 
 const DEFAULT_RADIX = 10;
 

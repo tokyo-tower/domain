@@ -4,7 +4,7 @@
  * @global
  */
 import * as Models from './../lib/models/Models';
-import PerformanceStatusesModel from './../lib/models/PerformanceStatusesModel';
+import * as PerformanceStatusesModel from './../lib/models/PerformanceStatusesModel';
 import * as FilmUtil from './../lib/models/Film/FilmUtil';
 import * as GMONotificationUtil from './../lib/models/GMONotification/GMONotificationUtil';
 import * as PerformanceUtil from './../lib/models/Performance/PerformanceUtil';

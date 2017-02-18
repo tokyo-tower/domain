@@ -31,4 +31,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('Window', schema);
+export const model = mongoose.model('Window', schema);

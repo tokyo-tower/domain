@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import Performance from '../Performance/PerformanceModel';
+import { model as Performance } from '../Performance/PerformanceModel';
 
 /**
  * 外部関係者スキーマ
@@ -38,4 +38,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('Sponsor', schema);
+export const model = mongoose.model('Sponsor', schema);

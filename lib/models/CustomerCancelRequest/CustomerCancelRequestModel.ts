@@ -31,4 +31,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('CustomerCancelRequest', schema);
+export const model = mongoose.model('CustomerCancelRequest', schema);

@@ -1,9 +1,9 @@
 /**
- * パフォーマンス情報モデル
+ * パフォーマンス情報
  *
  * @class
  */
-export default class PerformanceStatusesModel {
+export declare class PerformanceStatuses {
     /**
      * パフォーマンスIDから空席ステータスを取得する
      */
@@ -12,6 +12,22 @@ export default class PerformanceStatusesModel {
      * パフォーマンスIDの空席ステータスをセットする
      */
     setStatus(this: any, id: string, status: string): void;
-    save(cb: (err: Error | void) => void): void;
-    static find(cb: (err: Error | undefined, performanceStatusesModel: PerformanceStatusesModel | undefined) => void): void;
 }
+/**
+ * パフォーマンス情報を新規作成する
+ *
+ * @memberOf PerformanceStatusesModel
+ */
+export declare function create(): PerformanceStatuses;
+/**
+ * ストレージに保管する
+ *
+ * @memberOf PerformanceStatusesModel
+ */
+export declare function store(performanceStatuses: PerformanceStatuses, cb: (err: Error | void) => void): void;
+/**
+ * ストレージから検索する
+ *
+ * @memberOf PerformanceStatusesModel
+ */
+export declare function find(cb: (err: Error | undefined, performanceStatuses: PerformanceStatuses | undefined) => void): void;

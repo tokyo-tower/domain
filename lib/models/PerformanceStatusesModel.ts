@@ -1,3 +1,9 @@
+/**
+ * パフォーマンス情報モデル
+ *
+ * @namespace PerformanceStatusesModel
+ */
+
 import * as redis from 'redis';
 import * as PerformanceUtil from '../models/Performance/PerformanceUtil';
 
@@ -15,11 +21,11 @@ const REDIS_KEY = 'TTTSSeatStatusesByPerformanceId';
 const EXPIRATION_SECONDS = 3600;
 
 /**
- * パフォーマンス情報モデル
+ * パフォーマンス情報
  *
  * @class
  */
-export default class PerformanceStatusesModel {
+export class PerformanceStatuses {
     /**
      * パフォーマンスIDから空席ステータスを取得する
      */
@@ -33,35 +39,53 @@ export default class PerformanceStatusesModel {
     public setStatus(this: any, id: string, status: string): void {
         this[id] = status;
     }
+}
 
-    public save(cb: (err: Error | void) => void) {
-        redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(this), (err: any) => {
-            cb(err);
-        });
-    }
+/**
+ * パフォーマンス情報を新規作成する
+ *
+ * @memberOf PerformanceStatusesModel
+ */
+export function create() {
+    return new PerformanceStatuses();
+}
 
-    // tslint:disable-next-line:function-name
-    public static find(cb: (err: Error | undefined, performanceStatusesModel: PerformanceStatusesModel | undefined) => void): void {
-        redisClient.get(REDIS_KEY, (err, reply) => {
-            if (err) {
-                return cb(err, undefined);
-            }
-            if (reply === null) {
-                return cb(new Error('not found.'), undefined);
-            }
+/**
+ * ストレージに保管する
+ *
+ * @memberOf PerformanceStatusesModel
+ */
+export function store(performanceStatuses: PerformanceStatuses, cb: (err: Error | void) => void) {
+    redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(performanceStatuses), (err: any) => {
+        cb(err);
+    });
+}
 
-            const performanceStatusesModel = new PerformanceStatusesModel();
+/**
+ * ストレージから検索する
+ *
+ * @memberOf PerformanceStatusesModel
+ */
+export function find(cb: (err: Error | undefined, performanceStatuses: PerformanceStatuses | undefined) => void): void {
+    redisClient.get(REDIS_KEY, (err, reply) => {
+        if (err) {
+            return cb(err, undefined);
+        }
+        if (reply === null) {
+            return cb(new Error('not found.'), undefined);
+        }
 
-            try {
-                const performanceStatusesModelInRedis = JSON.parse(reply.toString());
-                Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
-                    performanceStatusesModel.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
-                });
-            } catch (error) {
-                return cb(error, undefined);
-            }
+        const performanceStatuses = new PerformanceStatuses();
 
-            cb(undefined, performanceStatusesModel);
-        });
-    }
+        try {
+            const performanceStatusesModelInRedis = JSON.parse(reply.toString());
+            Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
+                performanceStatuses.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
+            });
+        } catch (error) {
+            return cb(error, undefined);
+        }
+
+        cb(undefined, performanceStatuses);
+    });
 }

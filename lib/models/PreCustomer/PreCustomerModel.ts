@@ -31,4 +31,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('PreCustomer', schema);
+export const model = mongoose.model('PreCustomer', schema);

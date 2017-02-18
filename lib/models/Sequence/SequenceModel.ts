@@ -13,4 +13,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('Sequence', schema);
+export const model = mongoose.model('Sequence', schema);

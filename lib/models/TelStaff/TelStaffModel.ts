@@ -31,4 +31,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('TelStaff', schema);
+export const model = mongoose.model('TelStaff', schema);

@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import Theater from '../Theater/TheaterModel';
+import { model as Theater } from '../Theater/TheaterModel';
 
 /**
  * スクリーンスキーマ
@@ -55,4 +55,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('Screen', schema);
+export const model = mongoose.model('Screen', schema);

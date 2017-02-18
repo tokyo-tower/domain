@@ -22,7 +22,7 @@ Models.Performance.find(
             return;
         }
 
-        const performanceStatusesModel = new PerformanceStatusesModel();
+        const performanceStatusesModel = PerformanceStatusesModel.create();
 
         // tslint:disable-next-line:no-console
         console.log('aggregating...');
@@ -64,7 +64,7 @@ Models.Performance.find(
 
                 // tslint:disable-next-line:no-console
                 console.log('saving performanceStatusesModel...', performanceStatusesModel);
-                performanceStatusesModel.save((saveErr) => {
+                PerformanceStatusesModel.store(performanceStatusesModel, (saveErr) => {
                     // tslint:disable-next-line:no-console
                     console.log('performanceStatusesModel saved.', saveErr);
                     mongoose.disconnect();

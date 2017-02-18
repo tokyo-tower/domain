@@ -17,7 +17,7 @@ ttts_domain_1.Models.Performance.find({}, 'day start_time screen')
         process.exit(0);
         return;
     }
-    const performanceStatusesModel = new ttts_domain_1.PerformanceStatusesModel();
+    const performanceStatusesModel = ttts_domain_1.PerformanceStatusesModel.create();
     // tslint:disable-next-line:no-console
     console.log('aggregating...');
     ttts_domain_1.Models.Reservation.aggregate([
@@ -52,7 +52,7 @@ ttts_domain_1.Models.Performance.find({}, 'day start_time screen')
         });
         // tslint:disable-next-line:no-console
         console.log('saving performanceStatusesModel...', performanceStatusesModel);
-        performanceStatusesModel.save((saveErr) => {
+        ttts_domain_1.PerformanceStatusesModel.store(performanceStatusesModel, (saveErr) => {
             // tslint:disable-next-line:no-console
             console.log('performanceStatusesModel saved.', saveErr);
             mongoose.disconnect();

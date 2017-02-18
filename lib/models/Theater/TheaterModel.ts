@@ -23,4 +23,4 @@ const schema = new mongoose.Schema(
         }
     });
 
-export default mongoose.model('Theater', schema);
+export const model = mongoose.model('Theater', schema);

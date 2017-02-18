@@ -33,4 +33,4 @@ schema.index(
     }
 );
 
-export default mongoose.model('Staff', schema);
+export const model = mongoose.model('Staff', schema);
