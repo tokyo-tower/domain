@@ -6,6 +6,7 @@ node_modules
 examples/**/*.d.ts
 docs/
 env.bat
+.vscode/
 
 !.gitignore
 !.gitkeep
