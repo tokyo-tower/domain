@@ -2,11 +2,8 @@
 *.log
 logs
 npm-debug.log
-
 node_modules
 examples/**/*.d.ts
-
-.vscode/*
 docs/
 env.bat
 

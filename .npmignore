@@ -18,3 +18,4 @@ docs/
 examples/**/*.d.ts
 .vscode/
 env.bat
+.npmrc
