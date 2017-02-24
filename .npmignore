@@ -15,7 +15,6 @@ docs/
 
 !**/*.d.ts
 
-examples/**/*.d.ts
 .vscode/
 env.bat
 .npmrc

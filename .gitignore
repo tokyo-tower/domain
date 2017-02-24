@@ -3,7 +3,6 @@
 logs
 npm-debug.log
 node_modules
-examples/**/*.d.ts
 docs/
 env.bat
 .vscode/

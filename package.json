@@ -39,6 +39,7 @@
   "name": "@motionpicture/ttts-domain",
   "repository": {},
   "scripts": {
+    "tsc": "tsc -w",
     "test": "mocha --no-timeouts --recursive",
     "tslint": "tslint -c tslint.json lib/**/*.ts examples/**/*.ts"
   },
