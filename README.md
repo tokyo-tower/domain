@@ -1,6 +1,6 @@
-# 東京タワードメインモデル for Node.js
+# 元祖興行パッケージドメインモデル for Node.js
 
-東京タワーオンラインチケットシステムのドメインモデルをnode.jsで使いやすいようにまとめたパッケージです。
+元祖興行パッケージオンラインチケットシステムのドメインモデルをnode.jsで使いやすいようにまとめたパッケージです。
 
 # Features
 
@@ -9,13 +9,13 @@
 ## Install
 
 ```shell
-npm install --save @motionpicture/ttts-domain
+npm install --save @motionpicture/chevre-domain
 ```
 
 ## Usage
 
 ```Javascript
-var TTTS = require("@motionpicture/ttts-domain");
+var CHEVRE = require("@motionpicture/chevre-domain");
 ```
 
 前提として、mongooseでdefault connectionを確保することと、redis情報をセットすることが必要。
@@ -27,9 +27,9 @@ mongoose.connect();
 
 * set environment variables
 ```shell
-set TTTS_PERFORMANCE_STATUSES_REDIS_PORT=*****
-set TTTS_PERFORMANCE_STATUSES_REDIS_HOST=*****
-set TTTS_PERFORMANCE_STATUSES_REDIS_KEY=*****
+set CHEVRE_PERFORMANCE_STATUSES_REDIS_PORT=*****
+set CHEVRE_PERFORMANCE_STATUSES_REDIS_HOST=*****
+set CHEVRE_PERFORMANCE_STATUSES_REDIS_KEY=*****
 ```
 
 ## Code Samples
@@ -49,4 +49,4 @@ set TTTS_PERFORMANCE_STATUSES_REDIS_KEY=*****
 
 # JsDoc
 
-`grunt jsdoc`でjsdocを作成できます。./docsに出力されます。
+`npm run jsdoc`でjsdocを作成できます。./docsに出力されます。

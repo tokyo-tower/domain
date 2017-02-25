@@ -5,9 +5,9 @@
  * @ignore
  */
 const mongoose = require("mongoose");
-const ttts_domain_1 = require("../lib/ttts-domain");
+const index_1 = require("../lib/index");
 mongoose.connect(process.env.MONGOLAB_URI, {});
-ttts_domain_1.Models.Performance.find({}, 'day start_time screen')
+index_1.Models.Performance.find({}, 'day start_time screen')
     .populate('screen', 'seats_number')
     .exec((err, performances) => {
     // tslint:disable-next-line:no-console
@@ -17,10 +17,10 @@ ttts_domain_1.Models.Performance.find({}, 'day start_time screen')
         process.exit(0);
         return;
     }
-    const performanceStatusesModel = ttts_domain_1.PerformanceStatusesModel.create();
+    const performanceStatusesModel = index_1.PerformanceStatusesModel.create();
     // tslint:disable-next-line:no-console
     console.log('aggregating...');
-    ttts_domain_1.Models.Reservation.aggregate([
+    index_1.Models.Reservation.aggregate([
         {
             $group: {
                 _id: '$performance',
@@ -52,7 +52,7 @@ ttts_domain_1.Models.Performance.find({}, 'day start_time screen')
         });
         // tslint:disable-next-line:no-console
         console.log('saving performanceStatusesModel...', performanceStatusesModel);
-        ttts_domain_1.PerformanceStatusesModel.store(performanceStatusesModel, (saveErr) => {
+        index_1.PerformanceStatusesModel.store(performanceStatusesModel, (saveErr) => {
             // tslint:disable-next-line:no-console
             console.log('performanceStatusesModel saved.', saveErr);
             mongoose.disconnect();

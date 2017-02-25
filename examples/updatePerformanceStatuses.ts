@@ -4,7 +4,7 @@
  * @ignore
  */
 import * as mongoose from 'mongoose';
-import { Models, PerformanceStatusesModel } from '../lib/ttts-domain';
+import { Models, PerformanceStatusesModel } from '../lib/index';
 
 mongoose.connect(process.env.MONGOLAB_URI, {});
 

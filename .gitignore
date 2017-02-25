@@ -1,10 +1,10 @@
-# Logs
 *.log
 logs
+.env*
 npm-debug.log
+
 node_modules
 docs/
-env.bat
 .vscode/
 
 !.gitignore

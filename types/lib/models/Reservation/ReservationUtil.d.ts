@@ -3,9 +3,9 @@
  */
 export declare const STATUS_TEMPORARY = "TEMPORARY";
 /**
- * TTTS確保上の仮予約
+ * CHEVRE確保上の仮予約
  */
-export declare const STATUS_TEMPORARY_ON_KEPT_BY_TTTS = "TEMPORARY_ON_KEPT_BY_TTTS";
+export declare const STATUS_TEMPORARY_ON_KEPT_BY_CHEVRE = "TEMPORARY_ON_KEPT_BY_CHEVRE";
 /**
  * 決済待ち
  */
@@ -15,9 +15,9 @@ export declare const STATUS_WAITING_SETTLEMENT = "WAITING_SETTLEMENT";
  */
 export declare const STATUS_WAITING_SETTLEMENT_PAY_DESIGN = "WAITING_SETTLEMENT_PAY_DESIGN";
 /**
- * TTTS確保
+ * CHEVRE確保
  */
-export declare const STATUS_KEPT_BY_TTTS = "KEPT_BY_TTTS";
+export declare const STATUS_KEPT_BY_CHEVRE = "KEPT_BY_CHEVRE";
 /**
  * メルマガ会員保留
  */

@@ -1,17 +1,30 @@
 {
+    "opts": {
+        "template": "node_modules/ink-docstrap/template",
+        "encoding": "utf8",
+        "destination": "./docs/",
+        "recurse": true
+    },
     "tags": {
         "allowUnknownTags": true
     },
     "plugins": [
         "plugins/markdown"
     ],
+    "source": {
+        "include": [
+            "README.md",
+            "lib"
+        ],
+        "exclude": []
+    },
     "templates": {
         "cleverLinks": false,
         "monospaceLinks": false,
         "dateFormat": "ddd MMM Do YYYY",
         "outputSourceFiles": true,
         "outputSourcePath": true,
-        "systemName": "COA service library for node.js",
+        "systemName": "元祖興行パッケージドメインモデル for Node.js",
         "footer": "",
         "navType": "vertical",
         "theme": "cosmo",

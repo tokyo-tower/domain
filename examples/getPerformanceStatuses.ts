@@ -3,7 +3,7 @@
  *
  * @ignore
  */
-import { PerformanceStatusesModel } from '../lib/ttts-domain';
+import { PerformanceStatusesModel } from '../lib/index';
 
 PerformanceStatusesModel.find((err, performanceStatuses) => {
     // tslint:disable-next-line:no-console

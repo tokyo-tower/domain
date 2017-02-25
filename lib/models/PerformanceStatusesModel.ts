@@ -8,16 +8,16 @@ import * as redis from 'redis';
 import * as PerformanceUtil from '../models/Performance/PerformanceUtil';
 
 const redisClient = redis.createClient(
-    process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT,
-    process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST,
+    process.env.CHEVRE_PERFORMANCE_STATUSES_REDIS_PORT,
+    process.env.CHEVRE_PERFORMANCE_STATUSES_REDIS_HOST,
     {
-        password: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY,
-        tls: { servername: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST },
+        password: process.env.CHEVRE_PERFORMANCE_STATUSES_REDIS_KEY,
+        tls: { servername: process.env.CHEVRE_PERFORMANCE_STATUSES_REDIS_HOST },
         return_buffers: true
     }
 );
 
-const REDIS_KEY = 'TTTSSeatStatusesByPerformanceId';
+const REDIS_KEY = 'CHEVRESeatStatusesByPerformanceId';
 const EXPIRATION_SECONDS = 3600;
 
 /**
