@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /**
  * パフォーマンス空席状況を取得するスクリプトの例
  *
