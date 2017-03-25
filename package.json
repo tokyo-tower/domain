@@ -43,12 +43,12 @@
     "check": "tslint --type-check --project tsconfig.json -c tslint.json lib/**/*.ts && nsp check",
     "clean": "rimraf examples/**/*.js lib/**/*.js test/**/*.js types/**/*.d.ts npm-debug.log* docs/*",
     "jsdoc": "node_modules/.bin/jsdoc -c jsdoc.json",
-    "prepublishOnly": "npm run clean && npm run tslint && npm run build",
+    "prepublishOnly": "npm run clean && npm run build && npm test",
     "test": "npm run check && mocha --no-timeouts --recursive",
     "preversion": "npm run clean && npm run build && npm test",
     "version": "git add -A",
     "postversion": "git push origin --tags"
   },
   "types": "./types/lib/index.d.ts",
-  "version": "1.0.2"
+  "version": "1.0.3"
 }
