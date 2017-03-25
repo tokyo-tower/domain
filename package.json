@@ -10,10 +10,10 @@
   ],
   "dependencies": {
     "@types/mongoose": "4.7.5",
-    "moment": "^2.17.1",
+    "moment": "^2.18.1",
     "mongoose": "4.8.1",
     "numeral": "^2.0.4",
-    "redis": "^2.7.0"
+    "redis": "^2.7.1"
   },
   "description": "This is a CHEVRE domain repository.",
   "devDependencies": {
@@ -25,8 +25,8 @@
     "mocha": "^3.2.0",
     "nsp": "^2.6.3",
     "rimraf": "^2.6.1",
-    "tslint": "^4.4.2",
-    "tslint-microsoft-contrib": "^4.0.0",
+    "tslint": "^4.5.1",
+    "tslint-microsoft-contrib": "^4.0.1",
     "typescript": "^2.2.1"
   },
   "engines": {
@@ -40,7 +40,7 @@
   "repository": {},
   "scripts": {
     "build": "tsc",
-    "check": "tslint -c tslint.json lib/**/*.ts && nsp check",
+    "check": "tslint --type-check --project tsconfig.json -c tslint.json lib/**/*.ts && nsp check",
     "clean": "rimraf examples/**/*.js lib/**/*.js test/**/*.js types/**/*.d.ts npm-debug.log* docs/*",
     "jsdoc": "node_modules/.bin/jsdoc -c jsdoc.json",
     "prepublishOnly": "npm run clean && npm run tslint && npm run build",
@@ -50,5 +50,5 @@
     "postversion": "git push origin --tags"
   },
   "types": "./types/lib/index.d.ts",
-  "version": "1.0.1"
+  "version": "1.0.2"
 }

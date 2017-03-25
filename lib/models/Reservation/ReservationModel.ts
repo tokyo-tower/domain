@@ -211,10 +211,10 @@ schema.virtual('location_str_en').get(function (this: any) {
 
 schema.virtual('baloon_content4staff').get(function (this: any) {
     let str = `${this.seat_code}`;
-    str += (this.purchaser_group_str) ? `<br>${this.purchaser_group_str}` : '';
-    str += (this.purchaser_name_ja) ? `<br>${this.purchaser_name_ja}` : '';
-    str += (this.watcher_name) ? `<br>${this.watcher_name}` : '';
-    str += (this.status_str) ? `<br>${this.status_str}` : '';
+    str += (this.purchaser_group_str instanceof String) ? `<br>${this.purchaser_group_str}` : '';
+    str += (this.purchaser_name_ja instanceof String) ? `<br>${this.purchaser_name_ja}` : '';
+    str += (this.watcher_name instanceof String) ? `<br>${this.watcher_name}` : '';
+    str += (this.status_str instanceof String) ? `<br>${this.status_str}` : '';
 
     return str;
 });
@@ -353,9 +353,9 @@ schema.virtual('ticket_type_detail_str_ja').get(function (this: any) {
 
             break;
         default:
-            charge += this.get('ticket_type_charge') +
-                this.get('seat_grade_additional_charge') +
-                ((this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
+            charge += <number>this.get('ticket_type_charge') +
+                <number>this.get('seat_grade_additional_charge') +
+                (<boolean>(this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
             if (charge > 0) {
                 str += ` / \\${numeral(charge).format('0,0')}(税込)`;
                 if (this.get('seat_grade_additional_charge') > 0) {
@@ -382,9 +382,9 @@ schema.virtual('ticket_type_detail_str_en').get(function (this: any) {
 
             break;
         default:
-            charge += this.get('ticket_type_charge') +
-                this.get('seat_grade_additional_charge') +
-                ((this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
+            charge += <number>this.get('ticket_type_charge') +
+                <number>this.get('seat_grade_additional_charge') +
+                (<boolean>(this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
             if (charge > 0) {
                 str += ` / \\${numeral(charge).format('0,0')}(including tax)`;
                 if (this.get('seat_grade_additional_charge') > 0) {
@@ -403,7 +403,7 @@ schema.virtual('ticket_type_detail_str_en').get(function (this: any) {
  * CHEVRE確保への更新の場合、パフォーマンス情報だけ残して、購入者情報は削除する
  */
 schema.post('findOneAndUpdate', function (this: any, err: any, doc: any, next: any) {
-    if (err) {
+    if (err instanceof Error) {
         return next(err);
     }
 

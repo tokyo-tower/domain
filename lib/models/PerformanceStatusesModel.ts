@@ -30,7 +30,7 @@ export class PerformanceStatuses {
      * パフォーマンスIDから空席ステータスを取得する
      */
     public getStatus(this: any, id: string): string {
-        return (this.hasOwnProperty(id)) ? this[id] : PerformanceUtil.SEAT_STATUS_A;
+        return (this.id !== undefined) ? this[id] : PerformanceUtil.SEAT_STATUS_A;
     }
 
     /**
@@ -68,11 +68,13 @@ export function store(performanceStatuses: PerformanceStatuses, cb: (err: Error 
  */
 export function find(cb: (err: Error | undefined, performanceStatuses: PerformanceStatuses | undefined) => void): void {
     redisClient.get(REDIS_KEY, (err, reply) => {
-        if (err) {
-            return cb(err, undefined);
+        if (err instanceof Error) {
+            cb(err, undefined);
+            return;
         }
         if (reply === null) {
-            return cb(new Error('not found.'), undefined);
+            cb(new Error('not found.'), undefined);
+            return;
         }
 
         const performanceStatuses = new PerformanceStatuses();
@@ -83,7 +85,8 @@ export function find(cb: (err: Error | undefined, performanceStatuses: Performan
                 performanceStatuses.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
             });
         } catch (error) {
-            return cb(error, undefined);
+            cb(error, undefined);
+            return;
         }
 
         cb(undefined, performanceStatuses);

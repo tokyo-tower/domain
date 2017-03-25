@@ -103,8 +103,9 @@ export function publishPaymentNo(cb: (err: Error, no: string | null) => void): v
             new: true
         },
         (err, sequence) => {
-            if (err) {
-                return cb(err, null);
+            if (err !== null) {
+                cb(err, null);
+                return;
             }
 
             const no: number = sequence.get('no');

@@ -41,7 +41,7 @@ set CHEVRE_PERFORMANCE_STATUSES_REDIS_KEY=*****
 コード品質チェックをtslintで行っています。lintパッケージとして以下を仕様。
 * [tslint](https://github.com/palantir/tslint)
 * [tslint-microsoft-contrib](https://github.com/Microsoft/tslint-microsoft-contrib)
-`npm run tslint`でチェック実行。改修の際には、必ずチェックすること。
+`npm run check`でチェック実行。改修の際には、必ずチェックすること。
 
 # Test
 
