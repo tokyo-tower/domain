@@ -92,38 +92,29 @@ export const SORT_TYPES_PAYMENT_NO = [
 /**
  * 購入管理番号生成
  */
-export function publishPaymentNo(cb: (err: Error, no: string | null) => void): void {
-    Sequence.findOneAndUpdate(
+export async function publishPaymentNo(): Promise<string> {
+    const sequence = await Sequence.findOneAndUpdate(
         { target: 'payment_no' },
-        {
-            $inc: { no: 1 }
-        },
+        { $inc: { no: 1 } },
         {
             upsert: true, // 初めての購入連番発行であれば1をセットする
             new: true
-        },
-        (err, sequence) => {
-            if (err !== null) {
-                cb(err, null);
-                return;
-            }
-
-            const no: number = sequence.get('no');
-
-            // 9桁になるように0で埋める
-            let source = no.toString();
-            while (source.length < 9) {
-                source = '0' + source;
-            }
-            const checKDigit = ReservationUtil.getCheckDigit(source);
-            const checKDigit2 = ReservationUtil.getCheckDigit2(source);
-
-            // sortTypes[checkDigit]で並べ替える
-            const sortType = ReservationUtil.SORT_TYPES_PAYMENT_NO[checKDigit];
-            const paymentNo = checKDigit2.toString() + sortType.map((index) => source.substr(index, 1)).join('') + checKDigit.toString();
-            cb(err, paymentNo);
         }
-    );
+    ).exec();
+
+    const no: number = sequence.get('no');
+
+    // 9桁になるように0で埋める
+    let source = no.toString();
+    while (source.length < 9) {
+        source = '0' + source;
+    }
+    const checKDigit = ReservationUtil.getCheckDigit(source);
+    const checKDigit2 = ReservationUtil.getCheckDigit2(source);
+
+    // sortTypes[checkDigit]で並べ替える
+    const sortType = ReservationUtil.SORT_TYPES_PAYMENT_NO[checKDigit];
+    return checKDigit2.toString() + sortType.map((index) => source.substr(index, 1)).join('') + checKDigit.toString();
 }
 
 /**

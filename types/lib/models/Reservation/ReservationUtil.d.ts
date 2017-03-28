@@ -63,7 +63,7 @@ export declare const SORT_TYPES_PAYMENT_NO: number[][];
 /**
  * 購入管理番号生成
  */
-export declare function publishPaymentNo(cb: (err: Error, no: string | null) => void): void;
+export declare function publishPaymentNo(): Promise<string>;
 /**
  * チェックディジットを求める
  *
