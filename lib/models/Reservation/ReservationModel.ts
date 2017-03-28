@@ -211,10 +211,10 @@ schema.virtual('location_str_en').get(function (this: any) {
 
 schema.virtual('baloon_content4staff').get(function (this: any) {
     let str = `${this.seat_code}`;
-    str += (this.purchaser_group_str instanceof String) ? `<br>${this.purchaser_group_str}` : '';
-    str += (this.purchaser_name_ja instanceof String) ? `<br>${this.purchaser_name_ja}` : '';
-    str += (this.watcher_name instanceof String) ? `<br>${this.watcher_name}` : '';
-    str += (this.status_str instanceof String) ? `<br>${this.status_str}` : '';
+    str += (this.purchaser_group_str !== undefined) ? `<br>${this.purchaser_group_str}` : '';
+    str += (this.purchaser_name_ja !== undefined) ? `<br>${this.purchaser_name_ja}` : '';
+    str += (this.watcher_name !== undefined) ? `<br>${this.watcher_name}` : '';
+    str += (this.status_str !== undefined) ? `<br>${this.status_str}` : '';
 
     return str;
 });
