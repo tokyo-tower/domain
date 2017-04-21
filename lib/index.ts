@@ -4,16 +4,16 @@
  * @global
  */
 
-import * as Models from './../lib/models/Models';
-import * as PerformanceStatusesModel from './../lib/models/PerformanceStatusesModel';
+import * as Models from './model/mongoose';
+import * as PerformanceStatusesModel from './model/performanceStatuses';
 
-import * as FilmUtil from './../lib/models/Film/FilmUtil';
-import * as GMONotificationUtil from './../lib/models/GMONotification/GMONotificationUtil';
-import * as PerformanceUtil from './../lib/models/Performance/PerformanceUtil';
-import * as ReservationUtil from './../lib/models/Reservation/ReservationUtil';
-import * as ReservationEmailCueUtil from './../lib/models/ReservationEmailCue/ReservationEmailCueUtil';
-import * as ScreenUtil from './../lib/models/Screen/ScreenUtil';
-import * as TicketTypeGroupUtil from './../lib/models/TicketTypeGroup/TicketTypeGroupUtil';
+import * as FilmUtil from './../lib/util/film';
+import * as GMONotificationUtil from './../lib/util/gmoNotification';
+import * as PerformanceUtil from './../lib/util/performance';
+import * as ReservationUtil from './../lib/util/reservation';
+import * as ReservationEmailCueUtil from './../lib/util/reservationEmailCue';
+import * as ScreenUtil from './../lib/util/screen';
+import * as TicketTypeGroupUtil from './../lib/util/ticketTypeGroup';
 
 export {
     Models,
