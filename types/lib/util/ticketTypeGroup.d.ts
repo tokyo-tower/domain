@@ -29,14 +29,3 @@ export declare function getOne4staff(): {
     };
     charge: number;
 }[];
-/**
- * 外部関係者用券種グループを取得する
- */
-export declare function getOne4sponsor(): {
-    code: string;
-    name: {
-        ja: string;
-        en: string;
-    };
-    charge: number;
-}[];

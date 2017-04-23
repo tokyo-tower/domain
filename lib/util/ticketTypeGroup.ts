@@ -50,19 +50,3 @@ export function getOne4staff() {
         }
     ];
 }
-
-/**
- * 外部関係者用券種グループを取得する
- */
-export function getOne4sponsor() {
-    return [
-        {
-            code: TicketTypeGroupUtil.TICKET_TYPE_CODE_NOT_FOR_SALE,
-            name: {
-                ja: 'Not for sale',
-                en: 'Not for Sale'
-            },
-            charge: 0 // 料金
-        }
-    ];
-}

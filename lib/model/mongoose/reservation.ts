@@ -6,11 +6,8 @@ import * as numeral from 'numeral';
 import Film from './film';
 import Member from './member';
 import Performance from './performance';
-import PreCustomer from './preCustomer';
 import Screen from './screen';
-import Sponsor from './sponsor';
 import Staff from './staff';
-import TelStaff from './telStaff';
 import Theater from './theater';
 import Window from './window';
 
@@ -100,20 +97,6 @@ const schema = new mongoose.Schema(
 
         charge: Number, // 座席単体の料金
 
-        pre_customer: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: PreCustomer.modelName
-        },
-        pre_customer_user_id: String,
-
-        sponsor: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: Sponsor.modelName
-        },
-        sponsor_user_id: String,
-        sponsor_name: String,
-        sponsor_email: String,
-
         staff: {
             type: mongoose.Schema.Types.ObjectId,
             ref: Staff.modelName
@@ -134,12 +117,6 @@ const schema = new mongoose.Schema(
             ref: Window.modelName
         },
         window_user_id: String,
-
-        tel_staff: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: TelStaff.modelName
-        },
-        tel_staff_user_id: String,
 
         entered: { // 入場フラグ
             type: Boolean,
@@ -173,15 +150,6 @@ const schema = new mongoose.Schema(
         gmo_cvs_receipt_no: String,
         gmo_cvs_receipt_url: String,
         gmo_payment_term: String,
-
-        paydesign_seq: String,
-        paydesign_date: String,
-        paydesign_time: String,
-        paydesign_sid: String,
-        paydesign_kingaku: String,
-        paydesign_cvs: String,
-        paydesign_scode: String,
-        paydesign_fuka: String,
 
         created_user: String,
         updated_user: String
@@ -253,9 +221,6 @@ schema.virtual('purchaser_name_ja').get(function (this: any) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 name = `${this.get('staff_name')} ${this.get('staff_signature')}`;
                 break;
-            case ReservationUtil.PURCHASER_GROUP_SPONSOR:
-                name = `${this.get('sponsor_name')} ${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
-                break;
             default:
                 name = `${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
                 break;
@@ -277,9 +242,6 @@ schema.virtual('purchaser_name_en').get(function (this: any) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 name = `${this.get('staff_name')} ${this.get('staff_signature')}`;
                 break;
-            case ReservationUtil.PURCHASER_GROUP_SPONSOR:
-                name = `${this.get('sponsor_name')} ${this.get('purchaser_first_name')} ${this.get('purchaser_last_name')}`;
-                break;
             default:
                 name = `${this.get('purchaser_first_name')} ${this.get('purchaser_last_name')}`;
                 break;
@@ -299,14 +261,8 @@ schema.virtual('purchaser_group_str').get(function (this: any) {
         case ReservationUtil.PURCHASER_GROUP_MEMBER:
             str = 'メルマガ先行会員';
             break;
-        case ReservationUtil.PURCHASER_GROUP_SPONSOR:
-            str = '外部関係者';
-            break;
         case ReservationUtil.PURCHASER_GROUP_STAFF:
             str = '内部関係者';
-            break;
-        case ReservationUtil.PURCHASER_GROUP_TEL:
-            str = '電話窓口';
             break;
         case ReservationUtil.PURCHASER_GROUP_WINDOW:
             str = '当日窓口';
@@ -366,7 +322,6 @@ schema.virtual('ticket_type_detail_str_ja').get(function (this: any) {
     let str = this.get('ticket_type_name_ja');
 
     switch (this.get('purchaser_group')) {
-        case ReservationUtil.PURCHASER_GROUP_SPONSOR:
         case ReservationUtil.PURCHASER_GROUP_STAFF:
             charge += this.get('ticket_type_charge');
             if (charge > 0) {
@@ -395,7 +350,6 @@ schema.virtual('ticket_type_detail_str_en').get(function (this: any) {
     let str = this.get('ticket_type_name_en');
 
     switch (this.get('purchaser_group')) {
-        case ReservationUtil.PURCHASER_GROUP_SPONSOR:
         case ReservationUtil.PURCHASER_GROUP_STAFF:
             charge += this.get('ticket_type_charge');
             if (charge > 0) {

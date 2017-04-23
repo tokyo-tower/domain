@@ -35,17 +35,9 @@ export declare const PURCHASER_GROUP_CUSTOMER = "01";
  */
 export declare const PURCHASER_GROUP_MEMBER = "02";
 /**
- * 外部関係者
- */
-export declare const PURCHASER_GROUP_SPONSOR = "03";
-/**
  * 内部関係者
  */
 export declare const PURCHASER_GROUP_STAFF = "04";
-/**
- * 電話
- */
-export declare const PURCHASER_GROUP_TEL = "05";
 /**
  * 窓口
  */
