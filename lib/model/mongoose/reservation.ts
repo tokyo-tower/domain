@@ -202,6 +202,10 @@ const schema = new mongoose.Schema(
 
 // 開始文字列を表示形式で取得できるように
 schema.virtual('performance_start_str_ja').get(function (this: any) {
+    if (this.performance_day === undefined || this.performance_open_time === undefined || this.performance_start_time === undefined) {
+        return '';
+    }
+
     return `${this.performance_day.substr(0, 4)}/` +
         `${this.performance_day.substr(4, 2)}/` +
         `${this.performance_day.substr(6)} ` +
@@ -209,6 +213,10 @@ schema.virtual('performance_start_str_ja').get(function (this: any) {
         `開演 ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)}`;
 });
 schema.virtual('performance_start_str_en').get(function (this: any) {
+    if (this.performance_day === undefined || this.performance_open_time === undefined || this.performance_start_time === undefined) {
+        return '';
+    }
+
     const date = `${moment(`${this.performance_day.substr(0, 4)}-` +
         `${this.performance_day.substr(4, 2)}-` +
         `${this.performance_day.substr(6)}T00:00:00+09:00`).format('MMMM DD, YYYY')}`;
