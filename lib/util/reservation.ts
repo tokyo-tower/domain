@@ -6,9 +6,13 @@
  * @namespace ReservationUtil
  */
 
+import * as createDebug from 'debug';
+import * as moment from 'moment';
+
 import Sequence from '../model/mongoose/sequence';
 import * as ReservationUtil from './reservation';
 
+const debug = createDebug('chever-domain:util:reservation');
 const DEFAULT_RADIX = 10;
 
 /**
@@ -82,11 +86,20 @@ export const SORT_TYPES_PAYMENT_NO = [
 ];
 
 /**
+ * 採番対象名
+ */
+export const SEQUENCE_TARGET = 'payment_no';
+export const MAX_LENGTH_OF_SEQUENCE_NO = 9;
+
+/**
  * 購入管理番号生成
  */
 export async function publishPaymentNo(): Promise<string> {
     const sequence = await Sequence.findOneAndUpdate(
-        { target: 'payment_no' },
+        {
+            target: SEQUENCE_TARGET,
+            date: moment().format('YYYYMMDD')
+        },
         { $inc: { no: 1 } },
         {
             upsert: true, // 初めての購入連番発行であれば1をセットする
@@ -95,18 +108,30 @@ export async function publishPaymentNo(): Promise<string> {
     ).exec();
 
     const no: number = sequence.get('no');
+    debug('no:', no);
 
     // 9桁になるように0で埋める
-    let source = no.toString();
-    while (source.length < 9) {
-        source = '0' + source;
-    }
+    const source = pad(no.toString(), MAX_LENGTH_OF_SEQUENCE_NO, '0');
     const checKDigit = ReservationUtil.getCheckDigit(source);
     const checKDigit2 = ReservationUtil.getCheckDigit2(source);
+    debug('source:', source, 'checKDigit:', checKDigit, 'checKDigit2:', checKDigit2);
 
     // sortTypes[checkDigit]で並べ替える
     const sortType = ReservationUtil.SORT_TYPES_PAYMENT_NO[checKDigit];
+    debug('sortType:', sortType);
     return checKDigit2.toString() + sortType.map((index) => source.substr(index, 1)).join('') + checKDigit.toString();
+}
+
+/**
+ * 頭を指定文字列で埋める
+ *
+ * @param {string} input 元の文字列
+ * @param {number} length 最終的な文字列の長さ
+ * @param {string} padString 埋める文字列
+ * @returns {string} 結果文字列
+ */
+function pad(input: string, length: number, padString: string) {
+    return (padString.repeat(length) + input).slice(-length);
 }
 
 /**
@@ -115,8 +140,8 @@ export async function publishPaymentNo(): Promise<string> {
  * @param {string} source
  */
 export function getCheckDigit(source: string): number {
-    if (source.length !== 9) {
-        throw new Error('source length must be 9.');
+    if (source.length !== MAX_LENGTH_OF_SEQUENCE_NO) {
+        throw new Error(`source length must be ${MAX_LENGTH_OF_SEQUENCE_NO}`);
     }
 
     let sum = 0;
@@ -135,8 +160,8 @@ export function getCheckDigit(source: string): number {
  * @param {string} source
  */
 export function getCheckDigit2(source: string): number {
-    if (source.length !== 9) {
-        throw new Error('source length must be 9.');
+    if (source.length !== MAX_LENGTH_OF_SEQUENCE_NO) {
+        throw new Error(`source length must be ${MAX_LENGTH_OF_SEQUENCE_NO}`);
     }
 
     let sum = 0;
@@ -158,8 +183,8 @@ export function isValidPaymentNo(paymentNo: string): boolean {
     }
 
     const sequeceNo = ReservationUtil.decodePaymentNo(paymentNo);
-    const checkDigit = ReservationUtil.getCheckDigit(sequeceNo);
-    const checkDigit2 = ReservationUtil.getCheckDigit2(sequeceNo);
+    const checkDigit = ReservationUtil.getCheckDigit(pad(sequeceNo.toString(), MAX_LENGTH_OF_SEQUENCE_NO, '0'));
+    const checkDigit2 = ReservationUtil.getCheckDigit2(pad(sequeceNo.toString(), MAX_LENGTH_OF_SEQUENCE_NO, '0'));
 
     return (
         parseInt(paymentNo.substr(-1), DEFAULT_RADIX) === checkDigit &&
@@ -167,12 +192,22 @@ export function isValidPaymentNo(paymentNo: string): boolean {
     );
 }
 
-export function decodePaymentNo(paymentNo: string): string {
+/**
+ * 購入番号をデコードする
+ *
+ * @param {string} paymentNo 購入番号
+ * @returns {number} 連番
+ */
+export function decodePaymentNo(paymentNo: string): number {
     const checkDigit = parseInt(paymentNo.substr(-1), DEFAULT_RADIX);
     const strs = paymentNo.substr(1, paymentNo.length - 2);
     const sortType = ReservationUtil.SORT_TYPES_PAYMENT_NO[checkDigit];
+    debug(checkDigit, strs, sortType);
 
-    return sortType.map((weightNumber) => {
-        return strs.substr(weightNumber, 1);
-    }).join();
+    const source = Array.from(Array(MAX_LENGTH_OF_SEQUENCE_NO)).reduce(
+        (a, __, weightNumber) => a + strs.substr(sortType.indexOf(weightNumber), 1),
+        ''
+    );
+
+    return Number(source);
 }

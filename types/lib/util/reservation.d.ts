@@ -53,6 +53,11 @@ export declare const CHARGE_CVS = 150;
 export declare const CHECK_DIGIT_WEIGHTS: number[];
 export declare const SORT_TYPES_PAYMENT_NO: number[][];
 /**
+ * 採番対象名
+ */
+export declare const SEQUENCE_TARGET = "payment_no";
+export declare const MAX_LENGTH_OF_SEQUENCE_NO = 9;
+/**
  * 購入管理番号生成
  */
 export declare function publishPaymentNo(): Promise<string>;
@@ -74,4 +79,10 @@ export declare function getCheckDigit2(source: string): number;
  * @param {string} paymentNo
  */
 export declare function isValidPaymentNo(paymentNo: string): boolean;
-export declare function decodePaymentNo(paymentNo: string): string;
+/**
+ * 購入番号をデコードする
+ *
+ * @param {string} paymentNo 購入番号
+ * @returns {number} 連番
+ */
+export declare function decodePaymentNo(paymentNo: string): number;
