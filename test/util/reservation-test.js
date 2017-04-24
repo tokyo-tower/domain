@@ -21,14 +21,14 @@ describe('予約ユーティリティ 購入管理番号生成', () => {
     it('ok', () => __awaiter(this, void 0, void 0, function* () {
         const date = moment().format('YYYYMMDD');
         // 最新の連番取得
-        const paymentNo1 = yield ReservationUtil.publishPaymentNo();
+        const paymentNo1 = yield ReservationUtil.publishPaymentNo(date);
         assert(ReservationUtil.isValidPaymentNo(paymentNo1));
         const sequenceDoc1 = yield sequence_1.default.findOne({
             target: ReservationUtil.SEQUENCE_TARGET,
             date: date
         }).exec();
         // 購入番号生成
-        const paymentNo2 = yield ReservationUtil.publishPaymentNo();
+        const paymentNo2 = yield ReservationUtil.publishPaymentNo(date);
         assert(ReservationUtil.isValidPaymentNo(paymentNo2));
         // 番号をデコードして連番取得
         const no2 = ReservationUtil.decodePaymentNo(paymentNo2);

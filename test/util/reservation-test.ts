@@ -15,7 +15,7 @@ describe('予約ユーティリティ 購入管理番号生成', () => {
         const date = moment().format('YYYYMMDD');
 
         // 最新の連番取得
-        const paymentNo1 = await ReservationUtil.publishPaymentNo();
+        const paymentNo1 = await ReservationUtil.publishPaymentNo(date);
         assert(ReservationUtil.isValidPaymentNo(paymentNo1));
 
         const sequenceDoc1 = await Sequence.findOne({
@@ -24,7 +24,7 @@ describe('予約ユーティリティ 購入管理番号生成', () => {
         }).exec();
 
         // 購入番号生成
-        const paymentNo2 = await ReservationUtil.publishPaymentNo();
+        const paymentNo2 = await ReservationUtil.publishPaymentNo(date);
         assert(ReservationUtil.isValidPaymentNo(paymentNo2));
 
         // 番号をデコードして連番取得

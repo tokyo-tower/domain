@@ -7,7 +7,6 @@
  */
 
 import * as createDebug from 'debug';
-import * as moment from 'moment';
 
 import Sequence from '../model/mongoose/sequence';
 import * as ReservationUtil from './reservation';
@@ -70,35 +69,39 @@ export const CHARGE_MX4D = 1200;
  */
 export const CHARGE_CVS = 150;
 
-export const CHECK_DIGIT_WEIGHTS = [2, 6, 3, 4, 3, 7, 5, 4, 2];
+export const CHECK_DIGIT_WEIGHTS = [2, 6, 3, 7, 5, 4, 2];
 
 export const SORT_TYPES_PAYMENT_NO = [
-    [5, 0, 2, 3, 7, 6, 1, 8, 4],
-    [7, 6, 1, 0, 4, 8, 3, 5, 2],
-    [3, 2, 8, 4, 1, 0, 5, 7, 6],
-    [0, 1, 3, 8, 7, 2, 6, 5, 4],
-    [8, 2, 5, 0, 6, 1, 4, 7, 3],
-    [1, 8, 5, 4, 0, 7, 3, 2, 6],
-    [2, 3, 8, 6, 5, 7, 1, 0, 4],
-    [4, 0, 8, 5, 6, 2, 7, 1, 3],
-    [6, 4, 7, 8, 5, 2, 3, 0, 1],
-    [7, 2, 4, 8, 0, 3, 5, 6, 1]
+    [5, 0, 2, 3, 6, 1, 4],
+    [6, 1, 0, 4, 3, 5, 2],
+    [3, 2, 4, 1, 0, 5, 6],
+    [0, 1, 3, 2, 6, 5, 4],
+    [2, 5, 0, 6, 1, 4, 3],
+    [1, 5, 4, 0, 3, 2, 6],
+    [2, 3, 6, 5, 1, 0, 4],
+    [4, 0, 5, 6, 2, 1, 3],
+    [6, 4, 5, 2, 3, 0, 1],
+    [2, 4, 0, 3, 5, 6, 1]
 ];
 
 /**
  * 採番対象名
  */
 export const SEQUENCE_TARGET = 'payment_no';
-export const MAX_LENGTH_OF_SEQUENCE_NO = 9;
+export const MAX_LENGTH_OF_SEQUENCE_NO = 7;
 
 /**
  * 購入管理番号生成
  */
-export async function publishPaymentNo(): Promise<string> {
+export async function publishPaymentNo(date: string): Promise<string> {
+    if (!/\d{8}/.test(date)) {
+        throw new Error('invalid date');
+    }
+
     const sequence = await Sequence.findOneAndUpdate(
         {
             target: SEQUENCE_TARGET,
-            date: moment().format('YYYYMMDD')
+            date: date
         },
         { $inc: { no: 1 } },
         {
@@ -178,13 +181,14 @@ export function getCheckDigit2(source: string): number {
  * @param {string} paymentNo
  */
 export function isValidPaymentNo(paymentNo: string): boolean {
-    if (paymentNo.length !== 11) {
+    if (paymentNo.length !== MAX_LENGTH_OF_SEQUENCE_NO + 2) {
         return false;
     }
 
     const sequeceNo = ReservationUtil.decodePaymentNo(paymentNo);
     const checkDigit = ReservationUtil.getCheckDigit(pad(sequeceNo.toString(), MAX_LENGTH_OF_SEQUENCE_NO, '0'));
     const checkDigit2 = ReservationUtil.getCheckDigit2(pad(sequeceNo.toString(), MAX_LENGTH_OF_SEQUENCE_NO, '0'));
+    debug(paymentNo, sequeceNo, checkDigit, checkDigit2);
 
     return (
         parseInt(paymentNo.substr(-1), DEFAULT_RADIX) === checkDigit &&
