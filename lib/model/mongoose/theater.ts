@@ -10,6 +10,14 @@ const schema = new mongoose.Schema(
             ja: String,
             en: String
         },
+        description: { // 説明
+            ja: String,
+            en: String
+        },
+        notes: { // 備考
+            ja: String,
+            en: String
+        },
         address: {
             ja: String,
             en: String

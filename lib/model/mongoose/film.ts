@@ -14,6 +14,14 @@ const schema = new mongoose.Schema(
             },
             required: true
         },
+        description: { // 説明
+            ja: String,
+            en: String
+        },
+        notes: { // 備考
+            ja: String,
+            en: String
+        },
         sections: [
             {
                 _id: false,

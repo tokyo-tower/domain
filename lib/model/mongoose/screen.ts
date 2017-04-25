@@ -15,6 +15,14 @@ const schema = new mongoose.Schema(
             ja: String,
             en: String
         },
+        description: { // 説明
+            ja: String,
+            en: String
+        },
+        notes: { // 備考
+            ja: String,
+            en: String
+        },
         seats_number: Number, // 座席合計数
         seats_numbers_by_seat_grade: [{ // 座席グレードごとの座席数
             _id: false,

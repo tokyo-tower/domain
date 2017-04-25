@@ -18,6 +18,14 @@ const schema = new mongoose.Schema(
                     ja: String, // 券種名
                     en: String // 券種名(英語)
                 },
+                description: { // 説明
+                    ja: String,
+                    en: String
+                },
+                notes: { // 備考
+                    ja: String,
+                    en: String
+                },
                 charge: Number // 料金
             }
         ]
