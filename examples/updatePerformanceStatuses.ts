@@ -64,11 +64,11 @@ Models.Performance.find(
 
                 // tslint:disable-next-line:no-console
                 console.log('saving performanceStatusesModel...', performanceStatusesModel);
-                PerformanceStatusesModel.store(performanceStatusesModel, (saveErr) => {
+                PerformanceStatusesModel.store(performanceStatusesModel).then(() => {
                     // tslint:disable-next-line:no-console
-                    console.log('performanceStatusesModel saved.', saveErr);
-                    mongoose.disconnect();
-                    process.exit(0);
+                    console.log('success!');
+                }).catch((storeErr) => {
+                    console.error(storeErr);
                 });
             }
         );

@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * @ignore
  */
 const index_1 = require("../lib/index");
-index_1.PerformanceStatusesModel.find((err, performanceStatuses) => {
+index_1.PerformanceStatusesModel.find().then((performanceStatuses) => {
     // tslint:disable-next-line:no-console
-    console.log(err, performanceStatuses);
+    console.log(performanceStatuses);
+}).catch((err) => {
+    console.error(err);
 });

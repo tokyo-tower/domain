@@ -1,14 +1,8 @@
 // tslint:disable-next-line:missing-jsdoc
 import { PerformanceStatusesModel } from '../lib/index';
 
-describe('performance statuses', () => {
-    it('find ok', (done) => {
-        PerformanceStatusesModel.find((err) => {
-            if (err) {
-                done(err);
-            } else {
-                done();
-            }
-        });
+describe('パフォーマンス空席状況 検索', () => {
+    it('ok', async () => {
+        await PerformanceStatusesModel.find();
     });
 });

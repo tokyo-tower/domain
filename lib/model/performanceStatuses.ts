@@ -55,9 +55,11 @@ export function create() {
  *
  * @memberOf PerformanceStatusesModel
  */
-export function store(performanceStatuses: PerformanceStatuses, cb: (err: Error | void) => void) {
-    redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(performanceStatuses), (err: any) => {
-        cb(err);
+export async function store(performanceStatuses: PerformanceStatuses): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(performanceStatuses), (err: any) => {
+            return (err instanceof Error) ? reject(err) : resolve();
+        });
     });
 }
 
@@ -66,29 +68,32 @@ export function store(performanceStatuses: PerformanceStatuses, cb: (err: Error 
  *
  * @memberOf PerformanceStatusesModel
  */
-export function find(cb: (err: Error | undefined, performanceStatuses: PerformanceStatuses | undefined) => void): void {
-    redisClient.get(REDIS_KEY, (err, reply) => {
-        if (err instanceof Error) {
-            cb(err, undefined);
-            return;
-        }
-        if (reply === null) {
-            cb(new Error('not found.'), undefined);
-            return;
-        }
+export async function find(): Promise<PerformanceStatuses> {
+    return new Promise<PerformanceStatuses>((resolve, reject) => {
+        redisClient.get(REDIS_KEY, (err, reply) => {
+            if (err instanceof Error) {
+                reject(err);
+                return;
+            }
 
-        const performanceStatuses = new PerformanceStatuses();
+            if (reply === null) {
+                reject(new Error('not found'));
+                return;
+            }
 
-        try {
-            const performanceStatusesModelInRedis = JSON.parse(reply.toString());
-            Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
-                performanceStatuses.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
-            });
-        } catch (error) {
-            cb(error, undefined);
-            return;
-        }
+            const performanceStatuses = new PerformanceStatuses();
 
-        cb(undefined, performanceStatuses);
+            try {
+                const performanceStatusesModelInRedis = JSON.parse(reply.toString());
+                Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
+                    performanceStatuses.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
+                });
+            } catch (error) {
+                reject(error);
+                return;
+            }
+
+            resolve(performanceStatuses);
+        });
     });
 }

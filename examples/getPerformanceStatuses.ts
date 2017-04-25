@@ -5,7 +5,9 @@
  */
 import { PerformanceStatusesModel } from '../lib/index';
 
-PerformanceStatusesModel.find((err, performanceStatuses) => {
+PerformanceStatusesModel.find().then((performanceStatuses) => {
     // tslint:disable-next-line:no-console
-    console.log(err, performanceStatuses);
+    console.log(performanceStatuses);
+}).catch((err) => {
+    console.error(err);
 });

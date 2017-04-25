@@ -24,10 +24,10 @@ export declare function create(): PerformanceStatuses;
  *
  * @memberOf PerformanceStatusesModel
  */
-export declare function store(performanceStatuses: PerformanceStatuses, cb: (err: Error | void) => void): void;
+export declare function store(performanceStatuses: PerformanceStatuses): Promise<void>;
 /**
  * ストレージから検索する
  *
  * @memberOf PerformanceStatusesModel
  */
-export declare function find(cb: (err: Error | undefined, performanceStatuses: PerformanceStatuses | undefined) => void): void;
+export declare function find(): Promise<PerformanceStatuses>;

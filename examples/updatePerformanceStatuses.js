@@ -53,11 +53,11 @@ index_1.Models.Performance.find({}, 'day start_time screen')
         });
         // tslint:disable-next-line:no-console
         console.log('saving performanceStatusesModel...', performanceStatusesModel);
-        index_1.PerformanceStatusesModel.store(performanceStatusesModel, (saveErr) => {
+        index_1.PerformanceStatusesModel.store(performanceStatusesModel).then(() => {
             // tslint:disable-next-line:no-console
-            console.log('performanceStatusesModel saved.', saveErr);
-            mongoose.disconnect();
-            process.exit(0);
+            console.log('success!');
+        }).catch((storeErr) => {
+            console.error(storeErr);
         });
     });
 });
