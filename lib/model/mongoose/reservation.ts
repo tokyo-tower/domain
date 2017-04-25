@@ -118,11 +118,16 @@ const schema = new mongoose.Schema(
         },
         window_user_id: String,
 
-        entered: { // 入場フラグ
-            type: Boolean,
-            default: false
+        checkins: { // 入場履歴
+            type: [{
+                _id: false,
+                when: Date, // いつ
+                where: String, // どこで
+                why: String, // 何のために
+                how: String // どうやって
+            }],
+            default: []
         },
-        entered_at: Date, // 入場日時
 
         gmo_order_id: String, // GMOオーダーID
 
@@ -151,8 +156,8 @@ const schema = new mongoose.Schema(
         gmo_cvs_receipt_url: String,
         gmo_payment_term: String,
 
-        created_user: String,
-        updated_user: String
+        created_user: String, // todo 不要なので削除
+        updated_user: String // todo 不要なので削除
     },
     {
         collection: 'reservations',

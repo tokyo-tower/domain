@@ -203,13 +203,14 @@ export function isValidPaymentNo(paymentNo: string): boolean {
  * @returns {number} 連番
  */
 export function decodePaymentNo(paymentNo: string): number {
+    // 購入番号から、並び替えられた連番を取り出し、元の連番に並び替えなおす
     const checkDigit = parseInt(paymentNo.substr(-1), DEFAULT_RADIX);
     const strs = paymentNo.substr(1, paymentNo.length - 2);
     const sortType = ReservationUtil.SORT_TYPES_PAYMENT_NO[checkDigit];
     debug(checkDigit, strs, sortType);
 
     const source = Array.from(Array(MAX_LENGTH_OF_SEQUENCE_NO)).reduce(
-        (a, __, weightNumber) => a + strs.substr(sortType.indexOf(weightNumber), 1),
+        (a, __, weightNumber) => <string>a + strs.substr(sortType.indexOf(weightNumber), 1),
         ''
     );
 

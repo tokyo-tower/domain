@@ -58,7 +58,11 @@ export function create() {
 export async function store(performanceStatuses: PerformanceStatuses): Promise<void> {
     return new Promise<void>((resolve, reject) => {
         redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(performanceStatuses), (err: any) => {
-            return (err instanceof Error) ? reject(err) : resolve();
+            if (err instanceof Error) {
+                reject(err);
+            } else {
+                resolve();
+            }
         });
     });
 }

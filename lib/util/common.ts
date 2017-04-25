@@ -23,11 +23,10 @@ export interface IPrefecture {
 export function createToken(): string {
     // tslint:disable-next-line:no-require-imports
     const uniqid = require('uniqid');
+    // tslint:disable-next-line:no-magic-numbers insecure-random
+    const data = (Math.floor(Math.random() * 10000) + 1000).toString() + <string>uniqid();
 
-    return crypto.createHash('md5')
-        // tslint:disable-next-line:no-magic-numbers insecure-random
-        .update((Math.floor(Math.random() * 10000) + 1000).toString() + uniqid(), 'utf8')
-        .digest('hex');
+    return crypto.createHash('md5').update(data, 'utf8').digest('hex');
 }
 
 /**
