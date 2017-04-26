@@ -6,6 +6,7 @@ import * as PerformanceUtil from '../../util/performance';
 import Film from './film';
 import Screen from './screen';
 import Theater from './theater';
+import TicketTypeGroup from './ticketTypeGroup';
 
 const DEFAULT_RADIX = 10;
 
@@ -15,7 +16,7 @@ const DEFAULT_RADIX = 10;
 const schema = new mongoose.Schema(
     {
         _id: String,
-        theater: {
+        theater: { // 劇場ID
             type: String,
             ref: Theater.modelName
         },
@@ -23,7 +24,7 @@ const schema = new mongoose.Schema(
             ja: String,
             en: String
         },
-        screen: {
+        screen: { // スクリーンID
             type: String,
             ref: Screen.modelName
         },
@@ -31,9 +32,13 @@ const schema = new mongoose.Schema(
             ja: String,
             en: String
         },
-        film: {
+        film: { // 作品ID
             type: String,
             ref: Film.modelName
+        },
+        ticket_type_group: { // 券種グループID
+            type: String,
+            ref: TicketTypeGroup.modelName
         },
         day: String, // 上映日
         open_time: String, // 開演時刻
