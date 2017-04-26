@@ -87,7 +87,7 @@ const schema = new mongoose.Schema(
         seat_grade_name_en: String,
         seat_grade_additional_charge: Number,
 
-        ticket_type_code: String,
+        ticket_type: String, // 券種
         ticket_type_name_ja: String,
         ticket_type_name_en: String,
         ticket_type_charge: Number,

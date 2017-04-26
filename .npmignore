@@ -1,5 +1,7 @@
 .git*
 **/*.ts
+tsconfig.json
+tslint.json
 .npmrc
 .env*
 npm-debug.log*

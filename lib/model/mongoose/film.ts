@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import TicketTypeGroup from './ticketTypeGroup';
 
 /**
  * 作品スキーマ
