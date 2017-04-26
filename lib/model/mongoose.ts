@@ -6,6 +6,7 @@
 
 import Authentication from './mongoose/authentication';
 import CustomerCancelRequest from './mongoose/customerCancelRequest';
+import EmailQueue from './mongoose/emailQueue';
 import Film from './mongoose/film';
 import GMONotification from './mongoose/gmoNotification';
 import Member from './mongoose/member';
@@ -23,6 +24,7 @@ import Window from './mongoose/window';
 export {
     Authentication,
     CustomerCancelRequest,
+    EmailQueue,
     Film,
     GMONotification,
     Member,
