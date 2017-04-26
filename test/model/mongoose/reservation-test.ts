@@ -30,3 +30,38 @@ describe('予約スキーマ 初期値', () => {
         await reservationDoc.remove();
     });
 });
+
+describe('予約スキーマ virtual', () => {
+    before(async () => {
+        // 予約全削除
+        await Reservation.remove({}).exec();
+    });
+
+    it('入場済みかどうか', async () => {
+        // 入場履歴がある、なしなテストデータ作成
+        const reservation2 = {
+            performance: 'xxx1',
+            seat_code: 'xxx',
+            status: ReservationUtil.STATUS_RESERVED,
+            checkins: [{
+                when: new Date()
+            }]
+        };
+        const reservation = {
+            performance: 'xxx2',
+            seat_code: 'xxx',
+            status: ReservationUtil.STATUS_RESERVED
+        };
+
+        const reservationDoc = await Reservation.create(reservation);
+        const reservation2Doc = await Reservation.create(reservation2);
+
+        // 入場履歴が空配列かどうか確認
+        assert(!reservationDoc.get('checked_in'));
+        assert(reservation2Doc.get('checked_in'));
+
+        // テストデータ削除
+        await reservationDoc.remove();
+        await reservation2Doc.remove();
+    });
+});

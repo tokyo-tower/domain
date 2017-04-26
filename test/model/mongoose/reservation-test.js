@@ -34,3 +34,33 @@ describe('予約スキーマ 初期値', () => {
         yield reservationDoc.remove();
     }));
 });
+describe('予約スキーマ virtual', () => {
+    before(() => __awaiter(this, void 0, void 0, function* () {
+        // 予約全削除
+        yield reservation_1.default.remove({}).exec();
+    }));
+    it('入場済みかどうか', () => __awaiter(this, void 0, void 0, function* () {
+        // 入場履歴がある、なしなテストデータ作成
+        const reservation2 = {
+            performance: 'xxx1',
+            seat_code: 'xxx',
+            status: ReservationUtil.STATUS_RESERVED,
+            checkins: [{
+                    when: new Date()
+                }]
+        };
+        const reservation = {
+            performance: 'xxx2',
+            seat_code: 'xxx',
+            status: ReservationUtil.STATUS_RESERVED
+        };
+        const reservationDoc = yield reservation_1.default.create(reservation);
+        const reservation2Doc = yield reservation_1.default.create(reservation2);
+        // 入場履歴が空配列かどうか確認
+        assert(!reservationDoc.get('checked_in'));
+        assert(reservation2Doc.get('checked_in'));
+        // テストデータ削除
+        yield reservationDoc.remove();
+        yield reservation2Doc.remove();
+    }));
+});

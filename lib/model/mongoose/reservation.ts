@@ -173,6 +173,11 @@ const schema = new mongoose.Schema(
     }
 );
 
+// 入場済みかどうかは、履歴があるかどうかで判断
+schema.virtual('checked_in').get(function (this: any) {
+    return ((<any[]>this.checkins).length > 0);
+});
+
 // 開始文字列を表示形式で取得できるように
 schema.virtual('performance_start_str_ja').get(function (this: any) {
     if (this.performance_day === undefined || this.performance_open_time === undefined || this.performance_start_time === undefined) {
