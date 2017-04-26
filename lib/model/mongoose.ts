@@ -17,6 +17,7 @@ import SendGridEventNotification from './mongoose/sendGridEventNotification';
 import Sequence from './mongoose/sequence';
 import Staff from './mongoose/staff';
 import Theater from './mongoose/theater';
+import TicketType from './mongoose/ticketType';
 import TicketTypeGroup from './mongoose/ticketTypeGroup';
 import Window from './mongoose/window';
 
@@ -34,6 +35,7 @@ export {
     Sequence,
     Staff,
     Theater,
+    TicketType,
     TicketTypeGroup,
     Window
 };
