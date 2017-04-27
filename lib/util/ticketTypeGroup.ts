@@ -21,11 +21,11 @@ export const TICKET_TYPE_CODE_STUDENTS_ON_THE_DAY = '03';
 /**
  * 券種(無料)
  */
-export const TICKET_TYPE_CODE_FREE = '00';
+export const TICKET_TYPE_CODE_FREE = 'FREE';
 /**
  * 券種(Not for sale)
  */
-export const TICKET_TYPE_CODE_NOT_FOR_SALE = '99';
+export const TICKET_TYPE_CODE_NOT_FOR_SALE = 'NOTFORSALE';
 
 /**
  * 内部関係者用券種グループを取得する
@@ -33,7 +33,7 @@ export const TICKET_TYPE_CODE_NOT_FOR_SALE = '99';
 export function getOne4staff() {
     return [
         {
-            code: TicketTypeGroupUtil.TICKET_TYPE_CODE_NOT_FOR_SALE,
+            _id: TicketTypeGroupUtil.TICKET_TYPE_CODE_NOT_FOR_SALE,
             name: {
                 ja: 'Not for sale',
                 en: 'Not for Sale'
@@ -41,7 +41,7 @@ export function getOne4staff() {
             charge: 0 // 料金
         },
         {
-            code: TicketTypeGroupUtil.TICKET_TYPE_CODE_FREE,
+            _id: TicketTypeGroupUtil.TICKET_TYPE_CODE_FREE,
             name: {
                 ja: '無料',
                 en: 'Free'
