@@ -35,7 +35,6 @@ describe('パフォーマンススキーマ', () => {
             ticket_types: ['123']
         };
         const performance = {
-            _id: '123',
             ticket_type_group: '123',
             day: '20170426', // 上映日
             open_time: '0850', // 開演時刻
@@ -47,7 +46,7 @@ describe('パフォーマンススキーマ', () => {
         const ticketTypeDoc = await TicketType.create(ticketType);
         const ticketTypeGroupeDoc = await TicketTypeGroup.create(ticketTypeGroup);
 
-        const performanceDetail = await Performance.findById(performance._id)
+        const performanceDetail = await Performance.findById(performanceDoc.get('_id'))
             .populate({
                 path: 'ticket_type_group',
                 populate: {

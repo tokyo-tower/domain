@@ -15,7 +15,6 @@ const DEFAULT_RADIX = 10;
  */
 const schema = new mongoose.Schema(
     {
-        _id: String,
         theater: { // 劇場ID
             type: String,
             ref: Theater.modelName

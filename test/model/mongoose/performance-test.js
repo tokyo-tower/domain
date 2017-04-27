@@ -41,7 +41,6 @@ describe('パフォーマンススキーマ', () => {
             ticket_types: ['123']
         };
         const performance = {
-            _id: '123',
             ticket_type_group: '123',
             day: '20170426',
             open_time: '0850',
@@ -51,7 +50,7 @@ describe('パフォーマンススキーマ', () => {
         const performanceDoc = yield performance_1.default.create(performance);
         const ticketTypeDoc = yield ticketType_1.default.create(ticketType);
         const ticketTypeGroupeDoc = yield ticketTypeGroup_1.default.create(ticketTypeGroup);
-        const performanceDetail = yield performance_1.default.findById(performance._id)
+        const performanceDetail = yield performance_1.default.findById(performanceDoc.get('_id'))
             .populate({
             path: 'ticket_type_group',
             populate: {
