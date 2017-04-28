@@ -5,6 +5,7 @@
  */
 import Authentication from './mongoose/authentication';
 import CustomerCancelRequest from './mongoose/customerCancelRequest';
+import EmailQueue from './mongoose/emailQueue';
 import Film from './mongoose/film';
 import GMONotification from './mongoose/gmoNotification';
 import Member from './mongoose/member';
@@ -19,4 +20,4 @@ import Theater from './mongoose/theater';
 import TicketType from './mongoose/ticketType';
 import TicketTypeGroup from './mongoose/ticketTypeGroup';
 import Window from './mongoose/window';
-export { Authentication, CustomerCancelRequest, Film, GMONotification, Member, Performance, Reservation, ReservationEmailCue, Screen, SendGridEventNotification, Sequence, Staff, Theater, TicketType, TicketTypeGroup, Window };
+export { Authentication, CustomerCancelRequest, EmailQueue, Film, GMONotification, Member, Performance, Reservation, ReservationEmailCue, Screen, SendGridEventNotification, Sequence, Staff, Theater, TicketType, TicketTypeGroup, Window };
