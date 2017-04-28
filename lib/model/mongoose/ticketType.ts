@@ -1,24 +1,27 @@
 import * as mongoose from 'mongoose';
-import TicketType from './ticketType';
 
 /**
- * 券種グループスキーマ
+ * 券種スキーマ
  */
 const schema = new mongoose.Schema(
     {
         _id: String,
         name: {
-            ja: String, // 券種グループ名
-            en: String // 券種グループ名(英語)
+            ja: String, // 券種名
+            en: String // 券種名(英語)
         },
-        ticket_types: [{
-            type: String,
-            ref: TicketType.modelName,
-            required: true
-        }]
+        description: { // 説明
+            ja: String,
+            en: String
+        },
+        notes: { // 備考
+            ja: String,
+            en: String
+        },
+        charge: Number // 料金
     },
     {
-        collection: 'ticket_type_groups',
+        collection: 'ticket_types',
         id: true,
         read: 'primaryPreferred',
         safe: <any>{ j: 1, w: 'majority', wtimeout: 10000 },
@@ -31,4 +34,4 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('TicketTypeGroup', schema);
+export default mongoose.model('TicketType', schema);

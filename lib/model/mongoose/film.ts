@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import TicketTypeGroup from './ticketTypeGroup';
 
 /**
  * 作品スキーマ
@@ -32,11 +31,6 @@ const schema = new mongoose.Schema(
                 }
             }
         ],
-        ticket_type_group: {
-            type: String,
-            ref: TicketTypeGroup.modelName,
-            required: true
-        },
         minutes: Number, // 上映時間
         is_mx4d: Boolean, // MX4D上映かどうか
         copyright: String // コピーライト
