@@ -7,6 +7,7 @@
  */
 
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 
 import Sequence from '../model/mongoose/sequence';
 import * as ReservationUtil from './reservation';
@@ -215,4 +216,33 @@ export function decodePaymentNo(paymentNo: string): number {
     );
 
     return Number(source);
+}
+
+/**
+ * GMOオーダーIDを生成する
+ *
+ * @param performanceDay パフォーマンス上映日(8桁)
+ * @param paymentNo 購入番号(9桁)
+ * @param serialNumber 連番(2桁)
+ */
+export function createGMOOrderId(performanceDay: string, paymentNo: string, serialNumber: string) {
+    // todo 引数の文字数などチェック
+
+    return `${moment().format('YYYYMMDD')}${performanceDay}${paymentNo}${serialNumber}`;
+}
+
+/**
+ * GMOオーダーIDをパースする
+ *
+ * @param orderId オーダーID
+ */
+export function parseGMOOrderId(orderId: string) {
+    // todo 引数の文字数などチェック
+
+    return {
+        purchasedAt: orderId.substr(0, 8),
+        performanceDay: orderId.substr(8, 8),
+        paymentNo: orderId.substr(16, 9),
+        serialNumber: orderId.substr(25)
+    };
 }

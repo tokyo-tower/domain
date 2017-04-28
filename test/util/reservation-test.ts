@@ -41,3 +41,19 @@ describe('予約ユーティリティ 購入管理番号生成', () => {
         assert.equal(no2, sequenceDoc2.get('no'));
     });
 });
+
+describe('予約ユーティリティ GMOオーダーIDパース', () => {
+    it('ok', async () => {
+        const day = moment().format('YYYYMMDD');
+        const performanceDay = moment().format('YYYYMMDD');
+        const paymentNo = '012345678';
+        const serialNumber = '01';
+
+        const orderId = ReservationUtil.createGMOOrderId(performanceDay, paymentNo, serialNumber);
+        const parsed = ReservationUtil.parseGMOOrderId(orderId);
+        assert.equal(parsed.purchasedAt, day);
+        assert.equal(parsed.performanceDay, performanceDay);
+        assert.equal(parsed.paymentNo, paymentNo);
+        assert.equal(parsed.serialNumber, serialNumber);
+    });
+});

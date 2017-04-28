@@ -86,3 +86,22 @@ export declare function isValidPaymentNo(paymentNo: string): boolean;
  * @returns {number} 連番
  */
 export declare function decodePaymentNo(paymentNo: string): number;
+/**
+ * GMOオーダーIDを生成する
+ *
+ * @param performanceDay パフォーマンス上映日(8桁)
+ * @param paymentNo 購入番号(9桁)
+ * @param serialNumber 連番(2桁)
+ */
+export declare function createGMOOrderId(performanceDay: string, paymentNo: string, serialNumber: string): string;
+/**
+ * GMOオーダーIDをパースする
+ *
+ * @param orderId オーダーID
+ */
+export declare function parseGMOOrderId(orderId: string): {
+    purchasedAt: string;
+    performanceDay: string;
+    paymentNo: string;
+    serialNumber: string;
+};
