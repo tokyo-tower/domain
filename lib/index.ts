@@ -8,6 +8,7 @@ import * as Models from './model/mongoose';
 import * as PerformanceStatusesModel from './model/performanceStatuses';
 
 import * as CommonUtil from './../lib/util/common';
+import * as EmailQueueUtil from './../lib/util/emailQueue';
 import * as FilmUtil from './../lib/util/film';
 import * as GMONotificationUtil from './../lib/util/gmoNotification';
 import * as PerformanceUtil from './../lib/util/performance';
@@ -20,6 +21,7 @@ export {
     Models,
     PerformanceStatusesModel,
     CommonUtil,
+    EmailQueueUtil,
     FilmUtil,
     GMONotificationUtil,
     PerformanceUtil,
