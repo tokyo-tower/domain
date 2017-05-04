@@ -55,24 +55,32 @@ const schema = new mongoose.Schema(
 );
 
 /**
- * 開始文字列を表示形式で取得
+ * 開始文字列を多言語で取得
  */
-schema.virtual('start_str_ja').get(function (this: any) {
-    return `${this.day.substr(0, 4)}/${this.day.substr(4, 2)}/${this.day.substr(6)} ` +
-        `開場 ${this.open_time.substr(0, 2)}:${this.open_time.substr(2)} 開演 ${this.start_time.substr(0, 2)}:${this.start_time.substr(2)}`;
-});
-schema.virtual('start_str_en').get(function (this: any) {
+schema.virtual('start_str').get(function (this: any) {
     const date = `${moment(`${this.day.substr(0, 4)}-${this.day.substr(4, 2)}-` +
         `${this.day.substr(6)}T00:00:00+09:00`).format('MMMM DD, YYYY')}`;
-    return `Open: ${this.open_time.substr(0, 2)}:${this.open_time.substr(2)}/` +
+    const en = `Open: ${this.open_time.substr(0, 2)}:${this.open_time.substr(2)}/` +
         `Start: ${this.start_time.substr(0, 2)}:${this.start_time.substr(2)} ` +
         `on ${date}`;
+
+    const ja = `${this.day.substr(0, 4)}/${this.day.substr(4, 2)}/${this.day.substr(6)} ` +
+        `開場 ${this.open_time.substr(0, 2)}:${this.open_time.substr(2)} 開演 ${this.start_time.substr(0, 2)}:${this.start_time.substr(2)}`;
+
+    return {
+        en: en,
+        ja: ja
+    };
 });
-schema.virtual('location_str_ja').get(function (this: any) {
-    return `${this.get('theater_name').ja} ${this.get('screen_name').ja}`;
-});
-schema.virtual('location_str_en').get(function (this: any) {
-    return `at ${this.get('screen_name').en}, ${this.get('theater_name').en}`;
+
+/**
+ * 上映場所文字列を多言語で取得
+ */
+schema.virtual('location_str').get(function (this: any) {
+    return {
+        en: `at ${this.get('screen_name').en}, ${this.get('theater_name').en}`,
+        ja: `${this.get('theater_name').ja} ${this.get('screen_name').ja}`
+    };
 });
 
 /**
