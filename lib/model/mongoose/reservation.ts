@@ -6,6 +6,7 @@ import * as numeral from 'numeral';
 import Film from './film';
 import Member from './member';
 import Performance from './performance';
+import multilingualString from './schemaTypes/multilingualString';
 import Screen from './screen';
 import Staff from './staff';
 import Theater from './theater';
@@ -47,24 +48,20 @@ const schema = new mongoose.Schema(
             type: String,
             ref: Theater.modelName
         },
-        theater_name_ja: String,
-        theater_name_en: String,
-        theater_address_ja: String,
-        theater_address_en: String,
+        theater_name: multilingualString,
+        theater_address: multilingualString,
 
         screen: {
             type: String,
             ref: Screen.modelName
         },
-        screen_name_ja: String,
-        screen_name_en: String,
+        screen_name: multilingualString,
 
         film: {
             type: String,
             ref: Film.modelName
         },
-        film_name_ja: String,
-        film_name_en: String,
+        film_name: multilingualString,
         film_image: String,
         film_is_mx4d: Boolean,
         film_copyright: String,
@@ -83,13 +80,11 @@ const schema = new mongoose.Schema(
         purchased_at: Date, // 購入確定日時
         payment_method: String, // 決済方法
 
-        seat_grade_name_ja: String,
-        seat_grade_name_en: String,
+        seat_grade_name: multilingualString,
         seat_grade_additional_charge: Number,
 
         ticket_type: String, // 券種
-        ticket_type_name_ja: String,
-        ticket_type_name_en: String,
+        ticket_type_name: multilingualString,
         ticket_type_charge: Number,
 
         watcher_name: String, // 配布先
@@ -179,86 +174,85 @@ schema.virtual('checked_in').get(function (this: any) {
 });
 
 // 開始文字列を表示形式で取得できるように
-schema.virtual('performance_start_str_ja').get(function (this: any) {
+schema.virtual('performance_start_str').get(function (this: any) {
     if (this.performance_day === undefined || this.performance_open_time === undefined || this.performance_start_time === undefined) {
-        return '';
-    }
-
-    return `${this.performance_day.substr(0, 4)}/` +
-        `${this.performance_day.substr(4, 2)}/` +
-        `${this.performance_day.substr(6)} ` +
-        `開場 ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)} ` +
-        `開演 ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)}`;
-});
-schema.virtual('performance_start_str_en').get(function (this: any) {
-    if (this.performance_day === undefined || this.performance_open_time === undefined || this.performance_start_time === undefined) {
-        return '';
+        return {};
     }
 
     const date = `${moment(`${this.performance_day.substr(0, 4)}-` +
         `${this.performance_day.substr(4, 2)}-` +
         `${this.performance_day.substr(6)}T00:00:00+09:00`).format('MMMM DD, YYYY')}`;
-    return `Open: ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)}/` +
+    const en = `Open: ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)}/` +
         `Start: ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)} ` +
         `on ${date}`;
+
+    const ja = `${this.performance_day.substr(0, 4)}/` +
+        `${this.performance_day.substr(4, 2)}/` +
+        `${this.performance_day.substr(6)} ` +
+        `開場 ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)} ` +
+        `開演 ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)}`;
+
+    return {
+        en: en,
+        ja: ja
+    };
 });
-schema.virtual('location_str_ja').get(function (this: any) {
-    return `${this.get('theater_name_ja')} ${this.get('screen_name_ja')}`;
-});
-schema.virtual('location_str_en').get(function (this: any) {
-    return `at ${this.get('screen_name_en')}, ${this.get('theater_name_en')}`;
+
+schema.virtual('location_str').get(function (this: any) {
+    const en = `at ${this.get('screen_name').en}, ${this.get('theater_name').en}`;
+    const ja = `${this.get('theater_name').ja} ${this.get('screen_name').ja}`;
+
+    return {
+        en: en,
+        ja: ja
+    };
 });
 
 schema.virtual('baloon_content4staff').get(function (this: any) {
     let str = `${this.seat_code}`;
     str += (this.purchaser_group_str !== undefined) ? `<br>${this.purchaser_group_str}` : '';
-    str += (this.purchaser_name_ja !== undefined) ? `<br>${this.purchaser_name_ja}` : '';
+    str += (this.purchaser_name.ja !== undefined) ? `<br>${this.purchaser_name}.ja` : '';
     str += (this.watcher_name !== undefined) ? `<br>${this.watcher_name}` : '';
     str += (this.status_str !== undefined) ? `<br>${this.status_str}` : '';
 
     return str;
 });
 
-schema.virtual('purchaser_name_ja').get(function (this: any) {
-    let name = '';
+schema.virtual('purchaser_name').get(function (this: any) {
+    let en = '';
 
-    if (
-        this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
-        || this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT_PAY_DESIGN
+    if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
         || this.get('status') === ReservationUtil.STATUS_RESERVED
     ) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
-                name = `${this.get('staff_name')} ${this.get('staff_signature')}`;
+                en = `${this.get('staff_name')} ${this.get('staff_signature')}`;
                 break;
             default:
-                name = `${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
+                en = `${this.get('purchaser_first_name')} ${this.get('purchaser_last_name')}`;
                 break;
         }
     }
 
-    return name;
-});
+    let ja = '';
 
-schema.virtual('purchaser_name_en').get(function (this: any) {
-    let name = '';
-
-    if (
-        this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
-        || this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT_PAY_DESIGN
+    if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
         || this.get('status') === ReservationUtil.STATUS_RESERVED
     ) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
-                name = `${this.get('staff_name')} ${this.get('staff_signature')}`;
+                ja = `${this.get('staff_name')} ${this.get('staff_signature')}`;
                 break;
             default:
-                name = `${this.get('purchaser_first_name')} ${this.get('purchaser_last_name')}`;
+                ja = `${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
                 break;
         }
     }
 
-    return name;
+    return {
+        en: en,
+        ja: ja
+    };
 });
 
 schema.virtual('purchaser_group_str').get(function (this: any) {
@@ -329,54 +323,34 @@ schema.virtual('qr_str').get(function (this: any) {
 /**
  * 券種金額文字列
  */
-schema.virtual('ticket_type_detail_str_ja').get(function (this: any) {
+schema.virtual('ticket_type_detail_str').get(function (this: any) {
     let charge = 0;
-    let str = this.get('ticket_type_name_ja');
-
     switch (this.get('purchaser_group')) {
         case ReservationUtil.PURCHASER_GROUP_STAFF:
             charge += this.get('ticket_type_charge');
-            if (charge > 0) {
-                str += ` / \\${numeral(charge).format('0,0')}`;
-            }
 
             break;
         default:
             charge += <number>this.get('ticket_type_charge') +
                 <number>this.get('seat_grade_additional_charge') +
                 (<boolean>(this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
-            if (charge > 0) {
-                str += ` / \\${numeral(charge).format('0,0')}(税込)`;
-                if (this.get('seat_grade_additional_charge') > 0) {
-                    str += ` (内${this.get('seat_grade_name_ja')} \\${numeral(this.get('seat_grade_additional_charge')).format('0,0')})`;
-                }
-            }
 
             break;
     }
 
-    return str;
-});
-schema.virtual('ticket_type_detail_str_en').get(function (this: any) {
-    let charge = 0;
-    let str = this.get('ticket_type_name_en');
-
+    let en = this.get('ticket_type_name').en;
     switch (this.get('purchaser_group')) {
         case ReservationUtil.PURCHASER_GROUP_STAFF:
-            charge += this.get('ticket_type_charge');
             if (charge > 0) {
-                str += ` / \\${numeral(charge).format('0,0')}`;
+                en += ` / \\${numeral(charge).format('0,0')}`;
             }
 
             break;
         default:
-            charge += <number>this.get('ticket_type_charge') +
-                <number>this.get('seat_grade_additional_charge') +
-                (<boolean>(this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
             if (charge > 0) {
-                str += ` / \\${numeral(charge).format('0,0')}(including tax)`;
+                en += ` / \\${numeral(charge).format('0,0')}(including tax)`;
                 if (this.get('seat_grade_additional_charge') > 0) {
-                    str += ` (including ${this.get('seat_grade_name_en')} \\` +
+                    en += ` (including ${this.get('seat_grade_name').en} \\` +
                         `${numeral(this.get('seat_grade_additional_charge')).format('0,0')})`;
                 }
             }
@@ -384,7 +358,29 @@ schema.virtual('ticket_type_detail_str_en').get(function (this: any) {
             break;
     }
 
-    return str;
+    let ja = this.get('ticket_type_name').ja;
+    switch (this.get('purchaser_group')) {
+        case ReservationUtil.PURCHASER_GROUP_STAFF:
+            if (charge > 0) {
+                ja += ` / \\${numeral(charge).format('0,0')}`;
+            }
+
+            break;
+        default:
+            if (charge > 0) {
+                ja += ` / \\${numeral(charge).format('0,0')}(税込)`;
+                if (this.get('seat_grade_additional_charge') > 0) {
+                    ja += ` (内${this.get('seat_grade_name').ja} \\${numeral(this.get('seat_grade_additional_charge')).format('0,0')})`;
+                }
+            }
+
+            break;
+    }
+
+    return {
+        en: en,
+        ja: ja
+    };
 });
 
 /**
@@ -399,9 +395,9 @@ schema.post('findOneAndUpdate', function (this: any, err: any, doc: any, next: a
         const paths4set = [
             '_id', 'performance', 'seat_code', 'status', 'created_at', 'updated_at'
             , 'performance_day', 'performance_open_time', 'performance_start_time', 'performance_end_time', 'performance_canceled'
-            , 'theater', 'theater_name_ja', 'theater_name_en', 'theater_address_ja', 'theater_address_en'
-            , 'screen', 'screen_name_ja', 'screen_name_en'
-            , 'film', 'film_name_ja', 'film_name_en', 'film_image', 'film_is_mx4d', 'film_copyright'
+            , 'theater', 'theater_name', 'theater_address'
+            , 'screen', 'screen_name'
+            , 'film', 'film_name', 'film_image', 'film_is_mx4d', 'film_copyright'
         ];
         const unset: any = {};
         this.schema.eachPath((path: string) => {
