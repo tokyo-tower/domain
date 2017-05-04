@@ -1,23 +1,16 @@
 import * as mongoose from 'mongoose';
 
+import multilingualString from './schemaTypes/multilingualString';
+
 /**
  * 券種スキーマ
  */
 const schema = new mongoose.Schema(
     {
         _id: String,
-        name: {
-            ja: String, // 券種名
-            en: String // 券種名(英語)
-        },
-        description: { // 説明
-            ja: String,
-            en: String
-        },
-        notes: { // 備考
-            ja: String,
-            en: String
-        },
+        name: multilingualString,
+        description: multilingualString,
+        notes: multilingualString,
         charge: Number // 料金
     },
     {

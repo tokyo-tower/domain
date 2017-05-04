@@ -1,4 +1,6 @@
 import * as mongoose from 'mongoose';
+
+import multilingualString from './schemaTypes/multilingualString';
 import TicketType from './ticketType';
 
 /**
@@ -7,10 +9,7 @@ import TicketType from './ticketType';
 const schema = new mongoose.Schema(
     {
         _id: String,
-        name: {
-            ja: String, // 券種グループ名
-            en: String // 券種グループ名(英語)
-        },
+        name: multilingualString,
         ticket_types: [{
             type: String,
             ref: TicketType.modelName,

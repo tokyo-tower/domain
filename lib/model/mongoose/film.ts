@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 
+import multilingualString from './schemaTypes/multilingualString';
+
 /**
  * 作品スキーマ
  */
@@ -7,28 +9,16 @@ const schema = new mongoose.Schema(
     {
         _id: String,
         name: {
-            type: {
-                ja: String,
-                en: String
-            },
+            type: multilingualString,
             required: true
         },
-        description: { // 説明
-            ja: String,
-            en: String
-        },
-        notes: { // 備考
-            ja: String,
-            en: String
-        },
+        description: multilingualString,
+        notes: multilingualString,
         sections: [
             {
                 _id: false,
                 code: String,
-                name: {
-                    ja: String,
-                    en: String
-                }
+                name: multilingualString
             }
         ],
         minutes: Number, // 上映時間

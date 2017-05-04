@@ -4,6 +4,7 @@ import * as mongoose from 'mongoose';
 
 import * as PerformanceUtil from '../../util/performance';
 import Film from './film';
+import multilingualString from './schemaTypes/multilingualString';
 import Screen from './screen';
 import Theater from './theater';
 import TicketTypeGroup from './ticketTypeGroup';
@@ -19,18 +20,12 @@ const schema = new mongoose.Schema(
             type: String,
             ref: Theater.modelName
         },
-        theater_name: {
-            ja: String,
-            en: String
-        },
+        theater_name: multilingualString,
         screen: { // スクリーンID
             type: String,
             ref: Screen.modelName
         },
-        screen_name: {
-            ja: String,
-            en: String
-        },
+        screen_name: multilingualString,
         film: { // 作品ID
             type: String,
             ref: Film.modelName
