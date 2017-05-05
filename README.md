@@ -45,7 +45,7 @@ set CHEVRE_PERFORMANCE_STATUSES_REDIS_KEY=*****
 
 # Test
 
-`npm test`でテスト実行。パッケージをpublishする前にこれで確認。しかし、現状テストコードなし...
+`npm test`でテスト実行。パッケージをpublishする前にこれで確認。
 
 # JsDoc
 
