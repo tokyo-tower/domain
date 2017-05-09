@@ -97,6 +97,7 @@ const schema = new mongoose.Schema(
         owner_username: String,
         owner_name: multilingualString,
         owner_email: String,
+        owner_group: String,
         owner_signature: String,
 
         checkins: { // 入場履歴
