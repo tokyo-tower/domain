@@ -7,6 +7,7 @@ import multilingualString from './schemaTypes/multilingualString';
  */
 const schema = new mongoose.Schema(
     {
+        _id: String, // クライアントIDは適宜ユニークに命名する
         secret_salt: {
             type: String,
             required: true
