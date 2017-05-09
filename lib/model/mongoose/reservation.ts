@@ -98,7 +98,7 @@ const schema = new mongoose.Schema(
             ref: Owner.modelName
         },
         owner_username: String,
-        owner_name: String,
+        owner_name: multilingualString,
         owner_email: String,
         owner_signature: String,
 
