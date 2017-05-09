@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import Owner from './owner';
 import Staff from './staff';
 import Window from './window';
 
@@ -11,7 +12,10 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        mvtk_kiin_cd: String,
+        owner: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: Owner.modelName
+        },
         staff: {
             type: mongoose.Schema.Types.ObjectId,
             ref: Staff.modelName
