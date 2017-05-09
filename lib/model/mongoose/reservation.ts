@@ -4,14 +4,11 @@ import * as mongoose from 'mongoose';
 import * as numeral from 'numeral';
 
 import Film from './film';
-import Member from './member';
 import Owner from './owner';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import Screen from './screen';
-import Staff from './staff';
 import Theater from './theater';
-import Window from './window';
 
 import * as ReservationUtil from '../../util/reservation';
 
@@ -101,27 +98,6 @@ const schema = new mongoose.Schema(
         owner_name: multilingualString,
         owner_email: String,
         owner_signature: String,
-
-        staff: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: Staff.modelName
-        },
-        staff_user_id: String,
-        staff_name: String,
-        staff_email: String,
-        staff_signature: String,
-
-        member: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: Member.modelName
-        },
-        member_user_id: String,
-
-        window: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: Window.modelName
-        },
-        window_user_id: String,
 
         checkins: { // 入場履歴
             type: [{
@@ -236,7 +212,7 @@ schema.virtual('purchaser_name').get(function (this: any) {
     ) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
-                en = `${this.get('staff_name')} ${this.get('staff_signature')}`;
+                en = `${this.get('owner_name').en} ${this.get('owner_signature')}`;
                 break;
             default:
                 en = `${this.get('purchaser_first_name')} ${this.get('purchaser_last_name')}`;
@@ -251,7 +227,7 @@ schema.virtual('purchaser_name').get(function (this: any) {
     ) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
-                ja = `${this.get('staff_name')} ${this.get('staff_signature')}`;
+                ja = `${this.get('owner_name').ja} ${this.get('owner_signature')}`;
                 break;
             default:
                 ja = `${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
