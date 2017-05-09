@@ -4,11 +4,13 @@
  * @namespace
  */
 import Authentication from './mongoose/authentication';
+import Client from './mongoose/client';
 import CustomerCancelRequest from './mongoose/customerCancelRequest';
 import EmailQueue from './mongoose/emailQueue';
 import Film from './mongoose/film';
 import GMONotification from './mongoose/gmoNotification';
 import Member from './mongoose/member';
+import Owner from './mongoose/owner';
 import Performance from './mongoose/performance';
 import Reservation from './mongoose/reservation';
 import Screen from './mongoose/screen';
@@ -19,4 +21,4 @@ import Theater from './mongoose/theater';
 import TicketType from './mongoose/ticketType';
 import TicketTypeGroup from './mongoose/ticketTypeGroup';
 import Window from './mongoose/window';
-export { Authentication, CustomerCancelRequest, EmailQueue, Film, GMONotification, Member, Performance, Reservation, Screen, SendGridEventNotification, Sequence, Staff, Theater, TicketType, TicketTypeGroup, Window };
+export { Authentication, Client, CustomerCancelRequest, EmailQueue, Film, GMONotification, Member, Owner, Performance, Reservation, Screen, SendGridEventNotification, Sequence, Staff, Theater, TicketType, TicketTypeGroup, Window };

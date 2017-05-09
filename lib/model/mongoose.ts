@@ -5,11 +5,13 @@
  */
 
 import Authentication from './mongoose/authentication';
+import Client from './mongoose/client';
 import CustomerCancelRequest from './mongoose/customerCancelRequest';
 import EmailQueue from './mongoose/emailQueue';
 import Film from './mongoose/film';
 import GMONotification from './mongoose/gmoNotification';
 import Member from './mongoose/member';
+import Owner from './mongoose/owner';
 import Performance from './mongoose/performance';
 import Reservation from './mongoose/reservation';
 import Screen from './mongoose/screen';
@@ -23,11 +25,13 @@ import Window from './mongoose/window';
 
 export {
     Authentication,
+    Client,
     CustomerCancelRequest,
     EmailQueue,
     Film,
     GMONotification,
     Member,
+    Owner,
     Performance,
     Reservation,
     Screen,
