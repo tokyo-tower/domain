@@ -5,6 +5,7 @@ import * as numeral from 'numeral';
 
 import Film from './film';
 import Member from './member';
+import Owner from './owner';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import Screen from './screen';
@@ -91,6 +92,15 @@ const schema = new mongoose.Schema(
         watcher_name_updated_at: Date, // 配布先更新日時 default: Date.now
 
         charge: Number, // 座席単体の料金
+
+        owner: { // オーナー
+            type: mongoose.Schema.Types.ObjectId,
+            ref: Owner.modelName
+        },
+        owner_username: String,
+        owner_name: String,
+        owner_email: String,
+        owner_signature: String,
 
         staff: {
             type: mongoose.Schema.Types.ObjectId,
