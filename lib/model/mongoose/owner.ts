@@ -44,7 +44,7 @@ const schema = new mongoose.Schema(
 
 schema.index(
     {
-        user_id: 1
+        username: 1
     },
     {
         unique: true
