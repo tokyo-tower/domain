@@ -1,6 +1,6 @@
-# 元祖興行パッケージドメインモデル for Node.js
+# 東京タワードメインモデル for Node.js
 
-元祖興行パッケージオンラインチケットシステムのドメインモデルをnode.jsで使いやすいようにまとめたパッケージです。
+東京タワーオンラインチケットシステムのドメインモデルをnode.jsで使いやすいようにまとめたパッケージです。
 
 # Features
 
@@ -9,13 +9,13 @@
 ## Install
 
 ```shell
-npm install --save @motionpicture/chevre-domain
+npm install --save @motionpicture/ttts-domain
 ```
 
 ## Usage
 
 ```Javascript
-var CHEVRE = require("@motionpicture/chevre-domain");
+var TTTS = require("@motionpicture/ttts-domain");
 ```
 
 前提として、mongooseでdefault connectionを確保することと、redis情報をセットすることが必要。
@@ -27,9 +27,9 @@ mongoose.connect();
 
 * set environment variables
 ```shell
-set CHEVRE_PERFORMANCE_STATUSES_REDIS_PORT=*****
-set CHEVRE_PERFORMANCE_STATUSES_REDIS_HOST=*****
-set CHEVRE_PERFORMANCE_STATUSES_REDIS_KEY=*****
+set TTTS_PERFORMANCE_STATUSES_REDIS_PORT=*****
+set TTTS_PERFORMANCE_STATUSES_REDIS_HOST=*****
+set TTTS_PERFORMANCE_STATUSES_REDIS_KEY=*****
 ```
 
 ## Code Samples

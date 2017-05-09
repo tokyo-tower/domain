@@ -20,9 +20,9 @@ const DEFAULT_RADIX = 10;
  */
 export const STATUS_TEMPORARY = 'TEMPORARY';
 /**
- * CHEVRE確保上の仮予約
+ * TTTS確保上の仮予約
  */
-export const STATUS_TEMPORARY_ON_KEPT_BY_CHEVRE = 'TEMPORARY_ON_KEPT_BY_CHEVRE';
+export const STATUS_TEMPORARY_ON_KEPT_BY_TTTS = 'TEMPORARY_ON_KEPT_BY_TTTS';
 /**
  * 決済待ち
  */
@@ -32,9 +32,9 @@ export const STATUS_WAITING_SETTLEMENT = 'WAITING_SETTLEMENT';
  */
 export const STATUS_WAITING_SETTLEMENT_PAY_DESIGN = 'WAITING_SETTLEMENT_PAY_DESIGN';
 /**
- * CHEVRE確保
+ * TTTS確保
  */
-export const STATUS_KEPT_BY_CHEVRE = 'KEPT_BY_CHEVRE';
+export const STATUS_KEPT_BY_TTTS = 'KEPT_BY_TTTS';
 /**
  * メルマガ会員保留
  */

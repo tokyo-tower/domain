@@ -17,7 +17,7 @@
     "redis": "^2.7.1",
     "uniqid": "^4.1.1"
   },
-  "description": "This is a CHEVRE domain repository.",
+  "description": "This is a TTTS domain repository.",
   "devDependencies": {
     "@types/debug": "0.0.29",
     "@types/mocha": "^2.2.41",
@@ -40,7 +40,7 @@
   "keywords": [],
   "license": "UNLICENSED",
   "main": "./lib/index.js",
-  "name": "@motionpicture/chevre-domain",
+  "name": "@motionpicture/ttts-domain",
   "repository": {},
   "scripts": {
     "build": "tsc",
@@ -54,5 +54,5 @@
     "postversion": "git push origin --tags"
   },
   "types": "./types/lib/index.d.ts",
-  "version": "9.0.1"
+  "version": "3.0.0"
 }

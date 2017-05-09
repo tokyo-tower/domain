@@ -274,7 +274,7 @@ schema.virtual('status_str').get(function (this: any) {
             break;
 
         case ReservationUtil.STATUS_TEMPORARY:
-        case ReservationUtil.STATUS_TEMPORARY_ON_KEPT_BY_CHEVRE:
+        case ReservationUtil.STATUS_TEMPORARY_ON_KEPT_BY_TTTS:
             str = '仮予約中';
             break;
 
@@ -283,8 +283,8 @@ schema.virtual('status_str').get(function (this: any) {
             str = '決済中';
             break;
 
-        case ReservationUtil.STATUS_KEPT_BY_CHEVRE:
-            str = 'CHEVRE確保中';
+        case ReservationUtil.STATUS_KEPT_BY_TTTS:
+            str = 'TTTS確保中';
             break;
 
         case ReservationUtil.STATUS_KEPT_BY_MEMBER:
@@ -371,14 +371,14 @@ schema.virtual('ticket_type_detail_str').get(function (this: any) {
 });
 
 /**
- * CHEVRE確保への更新の場合、パフォーマンス情報だけ残して、購入者情報は削除する
+ * TTTS確保への更新の場合、パフォーマンス情報だけ残して、購入者情報は削除する
  */
 schema.post('findOneAndUpdate', function (this: any, err: any, doc: any, next: any) {
     if (err instanceof Error) {
         return next(err);
     }
 
-    if (doc.get('status') === ReservationUtil.STATUS_KEPT_BY_CHEVRE) {
+    if (doc.get('status') === ReservationUtil.STATUS_KEPT_BY_TTTS) {
         const paths4set = [
             '_id', 'performance', 'seat_code', 'status', 'created_at', 'updated_at'
             , 'performance_day', 'performance_open_time', 'performance_start_time', 'performance_end_time', 'performance_canceled'
