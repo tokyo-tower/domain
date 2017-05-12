@@ -17,7 +17,7 @@ const DEFAULT_RADIX = 10;
 
 
 /**
- * 仮予約
+ * 予約可能
  */
 export const STATUS_AVAILABLE = 'AVAILABLE';
 /**
