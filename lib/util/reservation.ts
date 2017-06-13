@@ -15,6 +15,11 @@ import * as ReservationUtil from './reservation';
 const debug = createDebug('chever-domain:util:reservation');
 const DEFAULT_RADIX = 10;
 
+
+/**
+ * 予約可能
+ */
+export const STATUS_AVAILABLE = 'AVAILABLE';
 /**
  * 仮予約
  */
