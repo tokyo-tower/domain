@@ -44,7 +44,7 @@ const schema = new mongoose.Schema(
     }
 );
 // tslint:disable-next-line:no-function-expression
-schema.statics.methods.getTickets = function (this: any, reservaions: any[]) {
+schema.static('getTickets', function(reservaions: any[]) {
     const tickets: any[] = [];
     // チケット情報キーセット
     const copyKeys: string[] = [
@@ -61,6 +61,6 @@ schema.statics.methods.getTickets = function (this: any, reservaions: any[]) {
         tickets.push(CommonUtil.parseFromKeys(reservaion, copyKeys));
     });
     return tickets;
-};
+});
 
 export default mongoose.model('CustomerCancelRequest', schema);
