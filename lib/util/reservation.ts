@@ -15,7 +15,6 @@ import * as ReservationUtil from './reservation';
 const debug = createDebug('chever-domain:util:reservation');
 const DEFAULT_RADIX = 10;
 
-
 /**
  * 予約可能
  */
@@ -24,6 +23,10 @@ export const STATUS_AVAILABLE = 'AVAILABLE';
  * 仮予約
  */
 export const STATUS_TEMPORARY = 'TEMPORARY';
+/**
+ * 主に車椅子などのための余分確保
+ */
+export const STATUS_ON_KEPT_FOR_SECURE_EXTRA = 'STATUS_ON_KEPT_FOR_SECURE_EXTRA';
 /**
  * TTTS確保上の仮予約
  */

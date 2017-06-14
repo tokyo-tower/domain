@@ -1,7 +1,15 @@
 /**
+ * 予約可能
+ */
+export declare const STATUS_AVAILABLE = "AVAILABLE";
+/**
  * 仮予約
  */
 export declare const STATUS_TEMPORARY = "TEMPORARY";
+/**
+ * 主に車椅子などのための余分確保
+ */
+export declare const STATUS_ON_KEPT_FOR_SECURE_EXTRA = "STATUS_ON_KEPT_FOR_SECURE_EXTRA";
 /**
  * TTTS確保上の仮予約
  */

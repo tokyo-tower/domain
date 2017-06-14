@@ -38,3 +38,25 @@ export declare function toFullWidth(str: string): string;
  * @memberOf CommonUtil
  */
 export declare function getPrefectrues(): IPrefecture[];
+/**
+ * 指定キーのみのオブジェクト取得
+ * 2017/06 add for TTTS
+ *
+ * @memberOf CommonUtil
+ *
+ * @param {any} model
+ * @param {string[]} keys
+ * @returns {any}
+ */
+export declare function parseFromKeys(model: any, keys: string[]): any;
+/**
+ * 指定キーを削除したオブジェクト取得
+ * 2017/06 add for TTTS
+ *
+ * @memberOf CommonUtil
+ *
+ * @param {any} model
+ * @param {string[]} keys
+ * @returns {any}
+ */
+export declare function deleteFromKeys(model: any, keys: string[]): any;

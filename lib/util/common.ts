@@ -125,3 +125,46 @@ export function getPrefectrues(): IPrefecture[] {
         { code: '47', name: { ja: '沖縄県', en: 'Okinawa Prefecture' } }
     ];
 }
+
+/**
+ * 指定キーのみのオブジェクト取得
+ * 2017/06 add for TTTS
+ *
+ * @memberOf CommonUtil
+ *
+ * @param {any} model
+ * @param {string[]} keys
+ * @returns {any}
+ */
+export function parseFromKeys(model: any, keys: string[]): any {
+    const copiedModel: any = {};
+    // 指定キーの項目のみコピー
+    Object.getOwnPropertyNames(model).forEach((propertyName) => {
+        if (keys.indexOf(propertyName) >= 0) {
+            copiedModel[propertyName] = model[propertyName];
+        }
+    });
+
+    return copiedModel;
+}
+/**
+ * 指定キーを削除したオブジェクト取得
+ * 2017/06 add for TTTS
+ *
+ * @memberOf CommonUtil
+ *
+ * @param {any} model
+ * @param {string[]} keys
+ * @returns {any}
+ */
+export function deleteFromKeys(model: any, keys: string[]): any {
+    const deletedModel: any = {};
+    // 削除指定キーの項目以外はコピー
+    Object.getOwnPropertyNames(model).forEach((propertyName) => {
+        if (keys.indexOf(propertyName) < 0) {
+            deletedModel[propertyName] = model[propertyName];
+        }
+    });
+
+    return deletedModel;
+}
