@@ -127,7 +127,7 @@ export async function publishPaymentNo(date: string): Promise<string> {
         }
     ).exec();
 
-    const no: number = sequence.get('no');
+    const no: number = (sequence !== null) ? sequence.get('no') : 0;
     debug('no:', no);
 
     // 9桁になるように0で埋める

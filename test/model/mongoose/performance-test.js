@@ -58,9 +58,11 @@ describe('パフォーマンススキーマ', () => {
             }
         }).exec();
         // 券種グループと券種へのリファレンスがはられていることを確認
-        assert.equal(performanceDetail.get('ticket_type_group')._id, ticketTypeGroup._id);
-        assert.equal(performanceDetail.get('ticket_type_group').ticket_types.length, 1);
-        assert.equal(performanceDetail.get('ticket_type_group').ticket_types[0].id, ticketType._id);
+        if (performanceDetail !== null) {
+            assert.equal(performanceDetail.get('ticket_type_group')._id, ticketTypeGroup._id);
+            assert.equal(performanceDetail.get('ticket_type_group').ticket_types.length, 1);
+            assert.equal(performanceDetail.get('ticket_type_group').ticket_types[0].id, ticketType._id);
+        }
         // テストデータ削除
         yield performanceDoc.remove();
         yield ticketTypeDoc.remove();

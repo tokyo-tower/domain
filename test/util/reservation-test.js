@@ -33,13 +33,17 @@ describe('予約ユーティリティ 購入管理番号生成', () => {
         // 番号をデコードして連番取得
         const no2 = ReservationUtil.decodePaymentNo(paymentNo2);
         // 連番が+1かどうか
-        assert.equal(no2, sequenceDoc1.get('no') + 1);
+        if (sequenceDoc1 !== null) {
+            assert.equal(no2, sequenceDoc1.get('no') + 1);
+        }
         // 連番のデータが確かにあるかどうか
         const sequenceDoc2 = yield sequence_1.default.findOne({
             target: ReservationUtil.SEQUENCE_TARGET,
             date: date
         }).exec();
-        assert.equal(no2, sequenceDoc2.get('no'));
+        if (sequenceDoc2 !== null) {
+            assert.equal(no2, sequenceDoc2.get('no'));
+        }
     }));
 });
 describe('予約ユーティリティ GMOオーダーIDパース', () => {
