@@ -35,6 +35,14 @@ export declare const STATUS_KEPT_BY_MEMBER = "KEPT_BY_MEMBER";
  */
 export declare const STATUS_RESERVED = "RESERVED";
 /**
+ * キャンセル
+ */
+export declare const STATUS_CANCELLED = "CANCELLED";
+/**
+ * キャンセル料
+ */
+export declare const STATUS_CANCELLATION_FEE = "CANCELLATION_FEE";
+/**
  * 一般
  */
 export declare const PURCHASER_GROUP_CUSTOMER = "01";

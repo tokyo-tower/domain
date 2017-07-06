@@ -25,10 +25,11 @@ const schema = new mongoose.Schema(
             }],
             default: []
         },
-        cancel_name: { // キャンセルユーザーID
+        cancel_name: {
             type: String,
             required: true
-        }
+        },
+        cancellation_fee: Number
     },
     {
         collection: 'customer_cancel_requests',

@@ -51,6 +51,14 @@ export const STATUS_KEPT_BY_MEMBER = 'KEPT_BY_MEMBER';
  * 予約確定
  */
 export const STATUS_RESERVED = 'RESERVED';
+/**
+ * キャンセル
+ */
+export const STATUS_CANCELLED = 'CANCELLED';
+/**
+ * キャンセル料
+ */
+export const STATUS_CANCELLATION_FEE = 'CANCELLATION_FEE';
 
 /**
  * 一般
