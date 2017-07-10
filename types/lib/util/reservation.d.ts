@@ -7,6 +7,10 @@ export declare const STATUS_AVAILABLE = "AVAILABLE";
  */
 export declare const STATUS_TEMPORARY = "TEMPORARY";
 /**
+ * 主に車椅子などのための仮予約
+ */
+export declare const STATUS_TEMPORARY_FOR_SECURE_EXTRA = "TEMPORARY_FOR_SECURE_EXTRA";
+/**
  * 主に車椅子などのための余分確保
  */
 export declare const STATUS_ON_KEPT_FOR_SECURE_EXTRA = "STATUS_ON_KEPT_FOR_SECURE_EXTRA";

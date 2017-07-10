@@ -61,6 +61,7 @@ schema.static('getTickets', function(reservaions: any[]) {
         // 指定キーのみチケット情報としてコピー
         tickets.push(CommonUtil.parseFromKeys(reservaion, copyKeys));
     });
+
     return tickets;
 });
 
