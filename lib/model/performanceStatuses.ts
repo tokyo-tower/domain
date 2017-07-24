@@ -8,8 +8,9 @@ import * as redis from 'redis';
 import * as PerformanceUtil from '../util/performance';
 
 const redisClient = redis.createClient(
-    process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT,
-    process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST,
+    // tslint:disable-next-line:no-magic-numbers
+    parseInt(<string>process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT, 10),
+    <string>process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST,
     {
         password: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY,
         tls: { servername: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST },

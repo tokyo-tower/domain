@@ -7,7 +7,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const mongoose = require("mongoose");
 const index_1 = require("../lib/index");
-mongoose.connect(process.env.MONGOLAB_URI, {});
+mongoose.connect(process.env.MONGOLAB_URI, {
+    useMongoClient: true
+});
 index_1.Models.Performance.find({}, 'day start_time screen')
     .populate('screen', 'seats_number')
     .exec((err, performances) => {
