@@ -12,7 +12,7 @@
     "@types/mongoose": "^4.7.18",
     "debug": "^2.6.7",
     "moment": "^2.18.1",
-    "mongoose": "^4.11.1",
+    "mongoose": "^4.11.4",
     "numeral": "^2.0.6",
     "redis": "^2.7.1",
     "uniqid": "^4.1.1"
@@ -24,14 +24,14 @@
     "@types/numeral": "0.0.20",
     "@types/redis": "^0.12.36",
     "ink-docstrap": "^1.3.0",
-    "jsdoc": "^3.4.3",
-    "mocha": "^3.4.1",
+    "jsdoc": "^3.5.3",
+    "mocha": "^3.4.2",
     "nsp": "^2.6.3",
     "rimraf": "^2.6.1",
-    "snyk": "^1.30.1",
+    "snyk": "^1.36.2",
     "tslint": "^5.5.0",
-    "tslint-microsoft-contrib": "^5.0.0",
-    "typescript": "^2.3.4"
+    "tslint-microsoft-contrib": "^5.0.1",
+    "typescript": "^2.4.2"
   },
   "engines": {
     "node": ">=6.9.1",
@@ -44,17 +44,17 @@
   "repository": {},
   "scripts": {
     "build": "tsc",
-    "check": "npm run tslint && nsp check",
+    "check": "npm run tslint && nsp check && npm run snyk",
     "clean": "rimraf examples/**/*.js lib/**/*.js test/**/*.js types/**/*.d.ts npm-debug.log* docs/*",
     "jsdoc": "node_modules/.bin/jsdoc -c jsdoc.json",
-    "mocha": "mocha --no-timeouts --recursive",
-    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "mocha": "mocha",
     "snyk": "snyk auth && snyk test --ignore-policy",
     "test": "npm run check && npm run mocha",
     "tslint": "tslint --type-check --project tsconfig.json -c tslint.json lib/**/*.ts test/**/*.ts",
     "preversion": "npm run clean && npm run build && npm test",
     "version": "git add -A",
-    "postversion": "git push origin --tags"
+    "postversion": "git push origin --tags",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
   },
   "types": "./types/lib/index.d.ts",
   "version": "11.1.0"
