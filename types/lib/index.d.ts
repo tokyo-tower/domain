@@ -16,13 +16,5 @@ import * as PerformanceUtil from './../lib/util/performance';
 import * as ReservationUtil from './../lib/util/reservation';
 import * as ScreenUtil from './../lib/util/screen';
 import * as TicketTypeGroupUtil from './../lib/util/ticketTypeGroup';
-/**
- * MongoDBクライアント`mongoose`
- *
- * @example
- * var promise = ttts.mongoose.connect('mongodb://localhost/myapp', {
- *     useMongoClient: true
- * });
- */
 export import mongoose = mongoose;
 export { Models, PerformanceStatusesModel, CommonUtil, EmailQueueUtil, FilmUtil, GMONotificationUtil, OwnerUtil, PerformanceUtil, ReservationUtil, ScreenUtil, TicketTypeGroupUtil };

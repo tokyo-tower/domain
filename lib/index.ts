@@ -27,6 +27,7 @@ import * as TicketTypeGroupUtil from './../lib/util/ticketTypeGroup';
  *     useMongoClient: true
  * });
  */
+(<any>mongoose).Promise = global.Promise;
 export import mongoose = mongoose;
 
 export {
