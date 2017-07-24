@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - クライアント作成サンプルを追加。
 
 ### Changed
+- クライアントスキーマから不要なsecret_saltフィールドを削除。
 
 ### Deprecated
 
