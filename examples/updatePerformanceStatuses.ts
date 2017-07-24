@@ -6,7 +6,9 @@
 import * as mongoose from 'mongoose';
 import { Models, PerformanceStatusesModel } from '../lib/index';
 
-mongoose.connect(process.env.MONGOLAB_URI, {});
+mongoose.connect(<string>process.env.MONGOLAB_URI, {
+    useMongoClient: true
+});
 
 Models.Performance.find(
     {},

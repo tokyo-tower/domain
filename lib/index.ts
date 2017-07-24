@@ -4,6 +4,8 @@
  * @global
  */
 
+import * as mongoose from 'mongoose';
+
 import * as Models from './model/mongoose';
 import * as PerformanceStatusesModel from './model/performanceStatuses';
 
@@ -16,6 +18,17 @@ import * as PerformanceUtil from './../lib/util/performance';
 import * as ReservationUtil from './../lib/util/reservation';
 import * as ScreenUtil from './../lib/util/screen';
 import * as TicketTypeGroupUtil from './../lib/util/ticketTypeGroup';
+
+/**
+ * MongoDBクライアント`mongoose`
+ *
+ * @example
+ * var promise = ttts.mongoose.connect('mongodb://localhost/myapp', {
+ *     useMongoClient: true
+ * });
+ */
+(<any>mongoose).Promise = global.Promise;
+export import mongoose = mongoose;
 
 export {
     Models,

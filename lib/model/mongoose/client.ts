@@ -10,10 +10,6 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 const schema = new mongoose.Schema(
     {
         _id: String, // クライアントIDは適宜ユニークに命名する
-        secret_salt: {
-            type: String,
-            required: true
-        },
         secret_hash: {
             type: String,
             required: true
