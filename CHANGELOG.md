@@ -5,17 +5,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
 ### Added
-- mongooseをindexモジュールからエクスポート。
-- クライアント作成サンプルを追加。
 
 ### Changed
-- クライアントスキーマから不要なsecret_saltフィールドを削除。
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+### Security
+
+## v11.2.0 - 2017-07-24
+### Added
+- mongooseをindexモジュールからエクスポート。
+- クライアント作成サンプルを追加。
+
+### Changed
+- クライアントスキーマから不要なsecret_saltフィールドを削除。
 
 ### Security
 - update package [tslint@5.5.0](https://www.npmjs.com/package/tslint)
