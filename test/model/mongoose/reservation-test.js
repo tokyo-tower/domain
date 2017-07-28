@@ -64,3 +64,22 @@ describe('予約スキーマ virtual', () => {
         yield reservation2Doc.remove();
     }));
 });
+describe('予約スキーマ static', () => {
+    it('QR文字列を正しく分割(any変換)できるかどうか', () => __awaiter(this, void 0, void 0, function* () {
+        const day = '20170728';
+        const paymentNo = '1234567';
+        const seatIndex = '0';
+        // 引数セット(QR文字列)
+        const qrStr = `${day}-${paymentNo}-${seatIndex}`;
+        // 期待される返り値セット
+        const qrSample = {
+            performance_day: day,
+            payment_no: paymentNo,
+            payment_seat_index: seatIndex
+        };
+        // テスト対象ファンクション実行
+        const qrResult = reservation_1.default.parse_from_qr_str(qrStr);
+        // 取得したQRクラスが正しいかどうか確認
+        assert.deepEqual(qrSample, qrResult);
+    }));
+});

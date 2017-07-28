@@ -303,6 +303,28 @@ schema.virtual('status_str').get(function (this: any) {
 schema.virtual('qr_str').get(function (this: any) {
     return `${this.performance_day}-${this.payment_no}-${this.payment_seat_index}`;
 });
+/**
+ * QRコード文字列分割
+ * 上映日-購入番号-購入座席インデックス
+ */
+// tslint:disable-next-line:no-function-expression
+schema.static('parse_from_qr_str', function(qrStr: string) {
+    const qr: string[] = qrStr.split('-');
+    const qrInfo: any = {};
+    if ( qr.length > 0) {
+        qrInfo.performance_day = qr[0];
+    }
+    if ( qr.length > 1) {
+        qrInfo.payment_no = qr[1];
+    }
+    // tslint:disable-next-line:no-magic-numbers
+    if ( qr.length > 2) {
+        // tslint:disable-next-line:no-magic-numbers
+        qrInfo.payment_seat_index = qr[2];
+    }
+
+    return qrInfo;
+});
 
 /**
  * 券種金額文字列
