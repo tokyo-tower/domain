@@ -26,6 +26,9 @@ export declare function getOne4staff(): {
     name: {
         ja: string;
         en: string;
+        kr: string;
+        tc: string;
+        sc: string;
     };
     charge: number;
 }[];

@@ -3,6 +3,9 @@ export interface IPrefecture {
     name: {
         ja: string;
         en: string;
+        kr: string;
+        tc: string;
+        sc: string;
     };
 }
 /**
