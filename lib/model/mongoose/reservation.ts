@@ -7,6 +7,8 @@ import Film from './film';
 import Owner from './owner';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
+import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
+import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
@@ -86,6 +88,11 @@ const schema = new mongoose.Schema(
         ticket_type: String, // 券種
         ticket_type_name: multilingualString,
         ticket_type_charge: Number,
+        ticket_cancel_charge: {
+            type: [ticketCancelCharge],
+            default: []
+        },
+        ticket_ttts_extension: tttsExtensionTicketType,
 
         watcher_name: String, // 配布先
         watcher_name_updated_at: Date, // 配布先更新日時 default: Date.now
