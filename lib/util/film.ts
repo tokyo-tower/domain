@@ -13,6 +13,14 @@
  */
 export function getSections() {
     return [
-        { code: '01', name: { ja: 'オープニング作品', en: 'Opening' } }
+        { code: '01',
+          name: {
+                ja: 'オープニング作品',
+                en: 'Opening',
+                kr: 'Opening',
+                tc: 'Opening',
+                sc: 'Opening'
+            }
+        }
     ];
 }

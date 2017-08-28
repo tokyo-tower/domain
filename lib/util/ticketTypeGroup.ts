@@ -36,7 +36,10 @@ export function getOne4staff() {
             _id: TicketTypeGroupUtil.TICKET_TYPE_CODE_NOT_FOR_SALE,
             name: {
                 ja: 'Not for sale',
-                en: 'Not for Sale'
+                en: 'Not for Sale',
+                kr: 'Not for Sale',
+                tc: 'Not for Sale',
+                sc: 'Not for Sale'
             },
             charge: 0 // 料金
         },
@@ -44,7 +47,10 @@ export function getOne4staff() {
             _id: TicketTypeGroupUtil.TICKET_TYPE_CODE_FREE,
             name: {
                 ja: '無料',
-                en: 'Free'
+                en: 'Free',
+                kr: 'Free',
+                tc: 'Free',
+                sc: 'Free'
             },
             charge: 0 // 料金
         }
