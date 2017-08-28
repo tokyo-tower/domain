@@ -3,9 +3,6 @@ export interface IPrefecture {
     name: {
         ja: string;
         en: string;
-        kr: string;
-        tc: string;
-        sc: string;
     };
 }
 /**
@@ -63,3 +60,12 @@ export declare function parseFromKeys(model: any, keys: string[]): any;
  * @returns {any}
  */
 export declare function deleteFromKeys(model: any, keys: string[]): any;
+/**
+ * token取得
+ * 2017/08 add for TTTS
+ * @memberOf CommonUtil
+ *
+ * @param {string} apiEndpoint
+ * @returns {any}
+ */
+export declare function getToken(apiEndpoint: string): Promise<any>;
