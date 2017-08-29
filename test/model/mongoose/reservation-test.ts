@@ -10,7 +10,7 @@ import * as ReservationUtil from '../../../lib/util/reservation';
 describe('予約スキーマ 初期値', () => {
     before(async () => {
         // 予約全削除
-        await Reservation.remove({}).exec();
+        //await Reservation.remove({}).exec();
     });
 
     it('入場履歴の初期値は空配列', async () => {

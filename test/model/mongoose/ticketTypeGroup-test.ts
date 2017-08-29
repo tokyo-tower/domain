@@ -10,8 +10,8 @@ import TicketTypeGroup from '../../../lib/model/mongoose/ticketTypeGroup';
 describe('券種グループスキーマ', () => {
     before(async () => {
         // 全削除
-        await TicketType.remove({}).exec();
-        await TicketTypeGroup.remove({}).exec();
+        //await TicketType.remove({}).exec();
+        //await TicketTypeGroup.remove({}).exec();
     });
 
     it('券種スキーマへのリファレンスok', async () => {

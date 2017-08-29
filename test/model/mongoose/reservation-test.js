@@ -17,7 +17,7 @@ const ReservationUtil = require("../../../lib/util/reservation");
 describe('予約スキーマ 初期値', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         // 予約全削除
-        yield reservation_1.default.remove({}).exec();
+        //await Reservation.remove({}).exec();
     }));
     it('入場履歴の初期値は空配列', () => __awaiter(this, void 0, void 0, function* () {
         // 入場履歴がundefinedなテストデータ作成

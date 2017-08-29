@@ -4,10 +4,15 @@
  * ttts独自の機能拡張用フィールド定義
  */
 export default {
-    // 種別 '0':通常 '1':車椅子
+    // 種別 ('0':通常 '1':車椅子)
     category: {
         type: String,
-        required: false
+        default: '0'
+    },
+    // 必要な座席数(通常:1 車椅子:4)
+    required_seat_num: {
+        type: Number,
+        default: 1
     },
     // csv出力用コード
     csv_code: {

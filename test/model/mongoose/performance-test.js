@@ -18,9 +18,9 @@ const ticketTypeGroup_1 = require("../../../lib/model/mongoose/ticketTypeGroup")
 describe('パフォーマンススキーマ', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         // 全削除
-        yield performance_1.default.remove({}).exec();
-        yield ticketType_1.default.remove({}).exec();
-        yield ticketTypeGroup_1.default.remove({}).exec();
+        // await Performance.remove({}).exec();
+        // await TicketType.remove({}).exec();
+        // await TicketTypeGroup.remove({}).exec();
     }));
     it('券種グループスキーマへのリファレンスok', () => __awaiter(this, void 0, void 0, function* () {
         // 入場履歴がundefinedなテストデータ作成

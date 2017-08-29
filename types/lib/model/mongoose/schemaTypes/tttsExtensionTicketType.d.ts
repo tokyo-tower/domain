@@ -1,7 +1,11 @@
 declare const _default: {
     category: {
         type: StringConstructor;
-        required: boolean;
+        default: string;
+    };
+    required_seat_num: {
+        type: NumberConstructor;
+        default: number;
     };
     csv_code: {
         type: StringConstructor;
