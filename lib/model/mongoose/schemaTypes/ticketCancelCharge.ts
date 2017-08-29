@@ -3,6 +3,7 @@
  * キャンセル料mongooseスキーマタイプ
  */
 export default {
+    _id: false,
     // 予約日までの日数
     days: {
         type: Number,

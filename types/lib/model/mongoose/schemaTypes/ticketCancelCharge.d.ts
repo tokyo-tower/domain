@@ -1,4 +1,5 @@
 declare const _default: {
+    _id: boolean;
     days: {
         type: NumberConstructor;
         required: boolean;
