@@ -37,7 +37,7 @@ describe('予約スキーマ 初期値', () => {
 describe('予約スキーマ virtual', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         // 予約全削除
-        yield reservation_1.default.remove({}).exec();
+        // await Reservation.remove({}).exec();
     }));
     it('入場済みかどうか', () => __awaiter(this, void 0, void 0, function* () {
         // 入場履歴がある、なしなテストデータ作成

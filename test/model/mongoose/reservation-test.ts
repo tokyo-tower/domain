@@ -34,7 +34,7 @@ describe('予約スキーマ 初期値', () => {
 describe('予約スキーマ virtual', () => {
     before(async () => {
         // 予約全削除
-        await Reservation.remove({}).exec();
+        // await Reservation.remove({}).exec();
     });
 
     it('入場済みかどうか', async () => {
