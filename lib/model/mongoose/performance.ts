@@ -5,6 +5,7 @@ import * as mongoose from 'mongoose';
 import * as PerformanceUtil from '../../util/performance';
 import Film from './film';
 import multilingualString from './schemaTypes/multilingualString';
+import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
 import Screen from './screen';
 import Theater from './theater';
 import TicketTypeGroup from './ticketTypeGroup';
@@ -40,7 +41,8 @@ const schema = new mongoose.Schema(
         open_time: String, // 開演時刻
         start_time: String, // 上映開始時刻
         end_time: String, // 上映終了時刻
-        canceled: Boolean // 上映中止フラグ
+        canceled: Boolean, // 上映中止フラグ
+        ttts_extension: tttsExtensionPerformance // 拡張情報
     },
     {
         collection: 'performances',
