@@ -28,6 +28,15 @@ export const TICKET_TYPE_CODE_FREE = 'FREE';
 export const TICKET_TYPE_CODE_NOT_FOR_SALE = 'NOTFORSALE';
 
 /**
+ * カテゴリ(通常)
+ */
+export const TICKET_TYPE_CATEGORY_NORMAL = '0';
+/**
+ * カテゴリ(車椅子)
+ */
+export const TICKET_TYPE_CATEGORY_WHEELCHAIR = '1';
+
+/**
  * 内部関係者用券種グループを取得する
  */
 export function getOne4staff() {

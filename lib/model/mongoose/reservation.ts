@@ -9,6 +9,7 @@ import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
 import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
+import tttsExtensionReservation from './schemaTypes/tttsExtensionReservation';
 import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
@@ -35,8 +36,8 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-
         expired_at: Date, // 仮予約期限
+        reservation_ttts_extension: tttsExtensionReservation,
 
         performance_day: String,
         performance_open_time: String,
