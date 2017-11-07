@@ -13,6 +13,7 @@ import GMONotification from './mongoose/gmoNotification';
 import Owner from './mongoose/owner';
 import Performance from './mongoose/performance';
 import Reservation from './mongoose/reservation';
+import ReservationPerHour from './mongoose/reservationPerHour';
 import Screen from './mongoose/screen';
 import SendGridEventNotification from './mongoose/sendGridEventNotification';
 import Sequence from './mongoose/sequence';
@@ -30,6 +31,7 @@ export {
     Owner,
     Performance,
     Reservation,
+    ReservationPerHour,
     Screen,
     SendGridEventNotification,
     Sequence,
