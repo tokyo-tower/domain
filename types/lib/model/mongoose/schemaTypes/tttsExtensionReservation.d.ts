@@ -7,5 +7,9 @@ declare const _default: {
         type: StringConstructor;
         required: boolean;
     };
+    refund_update_user: {
+        type: StringConstructor;
+        required: boolean;
+    };
 };
 export default _default;

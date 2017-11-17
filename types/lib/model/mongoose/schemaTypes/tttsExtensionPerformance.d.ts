@@ -7,7 +7,15 @@ declare const _default: {
         type: StringConstructor;
         required: boolean;
     };
+    ev_service_update_user: {
+        type: StringConstructor;
+        required: boolean;
+    };
     online_sales_status: {
+        type: StringConstructor;
+        required: boolean;
+    };
+    online_sales_update_user: {
         type: StringConstructor;
         required: boolean;
     };

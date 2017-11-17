@@ -13,5 +13,10 @@ export default {
     refund_status: {
         type: String,
         required: false
+    },
+    // 一括返金ステータス変更者
+    refund_update_user: {
+        type: String,
+        required: false
     }
 };
