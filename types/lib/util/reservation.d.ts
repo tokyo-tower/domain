@@ -47,6 +47,16 @@ export declare const STATUS_CANCELLED = "CANCELLED";
  */
 export declare const STATUS_CANCELLATION_FEE = "CANCELLATION_FEE";
 /**
+ * 返金ステータス
+ * @const REFUND_STATUS
+ */
+export declare namespace REFUND_STATUS {
+    const NONE = "0";
+    const NOT_INSTRUCTED = "1";
+    const INSTRUCTED = "2";
+    const COMPLETE = "3";
+}
+/**
  * 一般
  */
 export declare const PURCHASER_GROUP_CUSTOMER = "01";

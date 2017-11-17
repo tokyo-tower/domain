@@ -3,5 +3,9 @@ declare const _default: {
         type: StringConstructor;
         required: boolean;
     };
+    refund_status: {
+        type: StringConstructor;
+        required: boolean;
+    };
 };
 export default _default;

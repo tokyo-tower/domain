@@ -8,5 +8,10 @@ export default {
     seat_code_base: {
         type: String,
         required: true
+    },
+    // 一括返金ステータス
+    refund_status: {
+        type: String,
+        required: false
     }
 };

@@ -35,3 +35,26 @@ export const SEAT_STATUS_THRESHOLD_A = 30;
  * @const SEAT_STATUS_THRESHOLD_B
  */
 export const SEAT_STATUS_THRESHOLD_B = 0;
+
+/**
+ * エレベータ運行ステータス
+ * @const EV_SERVICE_STATUS
+ */
+export namespace EV_SERVICE_STATUS {
+    // 正常運行
+    export const NORMAL = '0';
+    // 減速
+    export const SLOWDOWN = '1';
+    // 停止
+    export const SUSPENDED = '2';
+}
+/**
+ * オンライン販売ステータス
+ * @const ONLINE_SALES_STATUS
+ */
+export namespace ONLINE_SALES_STATUS {
+    // 販売
+    export const NORMAL = '0';
+    // 停止
+    export const SUSPENDED = '1';
+}

@@ -5,8 +5,18 @@
  */
 export default {
     // ツアーナンバー
-    // 例）10:00の枠:「10-A」など
+    // 例）10:00の枠:「101」など
     tour_number: {
+        type: String,
+        required: false
+    },
+    // エレベータ運行ステータス
+    ev_service_status: {
+        type: String,
+        required: false
+    },
+    // オンライン販売ステータス
+    online_sales_status: {
         type: String,
         required: false
     }
