@@ -62,5 +62,5 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "types": "./types/lib/index.d.ts",
-  "version": "11.8.1"
+  "version": "11.8.2"
 }

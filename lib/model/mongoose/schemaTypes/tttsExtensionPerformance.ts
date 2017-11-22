@@ -20,6 +20,11 @@ export default {
         type: String,
         required: false
     },
+    // エレベータ運行ステータス更新日時
+    ev_service_update_at: {
+        type: String,
+        required: false
+    },
     // オンライン販売ステータス
     online_sales_status: {
         type: String,
@@ -27,6 +32,11 @@ export default {
     },
     // オンライン販売ステータス変更者
     online_sales_update_user: {
+        type: String,
+        required: false
+    },
+    // オンライン販売ステータス更新日時
+    online_sales_update_at: {
         type: String,
         required: false
     }
