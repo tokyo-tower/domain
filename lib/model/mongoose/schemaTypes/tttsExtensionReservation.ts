@@ -18,5 +18,10 @@ export default {
     refund_update_user: {
         type: String,
         required: false
+    },
+    // 一括返金ステータス更新日時
+    refund_update__at: {
+        type: String,
+        required: false
     }
 };

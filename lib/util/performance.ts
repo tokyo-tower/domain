@@ -58,3 +58,17 @@ export namespace ONLINE_SALES_STATUS {
     // 停止
     export const SUSPENDED = '1';
 }
+/**
+ * 返金ステータス
+ * @const REFUND_STATUS
+ */
+export namespace REFUND_STATUS {
+    // なし
+    export const NONE = '0';
+    // 未指示
+    export const NOT_INSTRUCTED = '1';
+    // 指示済
+    export const INSTRUCTED = '2';
+    // 返金完了
+    export const COMPLETE = '3';
+}

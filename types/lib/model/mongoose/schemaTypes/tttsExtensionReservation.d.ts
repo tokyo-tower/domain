@@ -11,5 +11,9 @@ declare const _default: {
         type: StringConstructor;
         required: boolean;
     };
+    refund_update__at: {
+        type: StringConstructor;
+        required: boolean;
+    };
 };
 export default _default;

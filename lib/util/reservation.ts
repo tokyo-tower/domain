@@ -65,21 +65,6 @@ export const STATUS_CANCELLED = 'CANCELLED';
 export const STATUS_CANCELLATION_FEE = 'CANCELLATION_FEE';
 
 /**
- * 返金ステータス
- * @const REFUND_STATUS
- */
-export namespace REFUND_STATUS {
-    // なし
-    export const NONE = '0';
-    // 未指示
-    export const NOT_INSTRUCTED = '1';
-    // 指示済
-    export const INSTRUCTED = '2';
-    // 返金完了
-    export const COMPLETE = '3';
-}
-
-/**
  * 一般
  */
 export const PURCHASER_GROUP_CUSTOMER = '01';

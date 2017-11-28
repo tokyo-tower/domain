@@ -50,3 +50,13 @@ export declare namespace ONLINE_SALES_STATUS {
     const NORMAL = "0";
     const SUSPENDED = "1";
 }
+/**
+ * 返金ステータス
+ * @const REFUND_STATUS
+ */
+export declare namespace REFUND_STATUS {
+    const NONE = "0";
+    const NOT_INSTRUCTED = "1";
+    const INSTRUCTED = "2";
+    const COMPLETE = "3";
+}
