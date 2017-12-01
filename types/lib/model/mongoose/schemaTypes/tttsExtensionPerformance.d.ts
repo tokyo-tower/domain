@@ -35,7 +35,7 @@ declare const _default: {
         type: StringConstructor;
         required: boolean;
     };
-    refund_update__at: {
+    refund_update_at: {
         type: StringConstructor;
         required: boolean;
     };

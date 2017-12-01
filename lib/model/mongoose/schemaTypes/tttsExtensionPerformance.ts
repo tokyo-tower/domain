@@ -51,7 +51,7 @@ export default {
         required: false
     },
     // 一括返金ステータス更新日時
-    refund_update__at: {
+    refund_update_at: {
         type: String,
         required: false
     },
