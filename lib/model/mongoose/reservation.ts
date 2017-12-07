@@ -218,7 +218,7 @@ schema.virtual('purchaser_name').get(function (this: any) {
 
     if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
         || this.get('status') === ReservationUtil.STATUS_RESERVED
-    ) {
+        || this.get('status') === ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 en = `${this.get('owner_name').en} ${this.get('owner_signature')}`;
@@ -233,7 +233,7 @@ schema.virtual('purchaser_name').get(function (this: any) {
 
     if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
         || this.get('status') === ReservationUtil.STATUS_RESERVED
-    ) {
+        || this.get('status') === ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 ja = `${this.get('owner_name').ja} ${this.get('owner_signature')}`;
