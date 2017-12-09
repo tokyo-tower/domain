@@ -17,7 +17,7 @@ const ReservationUtil = require("../../../lib/util/reservation");
 describe('予約スキーマ 初期値', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         // 予約全削除
-        yield reservation_1.default.remove({}).exec();
+        //await Reservation.remove({}).exec();
     }));
     it('入場履歴の初期値は空配列', () => __awaiter(this, void 0, void 0, function* () {
         // 入場履歴がundefinedなテストデータ作成
@@ -37,7 +37,7 @@ describe('予約スキーマ 初期値', () => {
 describe('予約スキーマ virtual', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         // 予約全削除
-        yield reservation_1.default.remove({}).exec();
+        // await Reservation.remove({}).exec();
     }));
     it('入場済みかどうか', () => __awaiter(this, void 0, void 0, function* () {
         // 入場履歴がある、なしなテストデータ作成
@@ -62,5 +62,24 @@ describe('予約スキーマ virtual', () => {
         // テストデータ削除
         yield reservationDoc.remove();
         yield reservation2Doc.remove();
+    }));
+});
+describe('予約スキーマ static', () => {
+    it('QR文字列を正しく分割(any変換)できるかどうか', () => __awaiter(this, void 0, void 0, function* () {
+        const day = '20170728';
+        const paymentNo = '1234567';
+        const seatIndex = '0';
+        // 引数セット(QR文字列)
+        const qrStr = `${day}-${paymentNo}-${seatIndex}`;
+        // 期待される返り値セット
+        const qrSample = {
+            performance_day: day,
+            payment_no: paymentNo,
+            payment_seat_index: seatIndex
+        };
+        // テスト対象ファンクション実行
+        const qrResult = reservation_1.default.parse_from_qr_str(qrStr);
+        // 取得したQRクラスが正しいかどうか確認
+        assert.deepEqual(qrSample, qrResult);
     }));
 });

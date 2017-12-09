@@ -10,11 +10,13 @@
   ],
   "dependencies": {
     "@types/mongoose": "^4.7.18",
-    "debug": "^2.6.7",
-    "moment": "^2.18.1",
-    "mongoose": "^4.11.4",
+    "@types/request": "^2.0.3",
+    "debug": "^2.6.9",
+    "moment": "^2.19.3",
+    "mongoose": "^4.11.14",
     "numeral": "^2.0.6",
     "redis": "^2.7.1",
+    "request": "^2.83.0",
     "uniqid": "^4.1.1"
   },
   "description": "This is a TTTS domain repository.",
@@ -48,6 +50,7 @@
     "build": "tsc",
     "check": "npm run tslint && nsp check && npm run snyk",
     "clean": "rimraf examples/**/*.js lib/**/*.js test/**/*.js types/**/*.d.ts npm-debug.log* docs/*",
+    "cleanMap": "rimraf examples/**/*.js.map lib/**/*.js.map test/**/*.js.map",
     "jsdoc": "node_modules/.bin/jsdoc -c jsdoc.json",
     "mocha": "mocha",
     "snyk": "snyk auth && snyk test --ignore-policy",
@@ -56,8 +59,8 @@
     "preversion": "npm run clean && npm run build && npm test",
     "version": "git add -A",
     "postversion": "git push origin --tags",
-    "prepublishOnly": "npm run clean && npm run build && npm test"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "types": "./types/lib/index.d.ts",
-  "version": "11.2.0"
+  "version": "11.9.2"
 }

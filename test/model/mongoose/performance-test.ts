@@ -11,9 +11,9 @@ import TicketTypeGroup from '../../../lib/model/mongoose/ticketTypeGroup';
 describe('パフォーマンススキーマ', () => {
     before(async () => {
         // 全削除
-        await Performance.remove({}).exec();
-        await TicketType.remove({}).exec();
-        await TicketTypeGroup.remove({}).exec();
+        // await Performance.remove({}).exec();
+        // await TicketType.remove({}).exec();
+        // await TicketTypeGroup.remove({}).exec();
     });
 
     it('券種グループスキーマへのリファレンスok', async () => {

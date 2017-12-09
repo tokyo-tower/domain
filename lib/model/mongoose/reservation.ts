@@ -7,6 +7,10 @@ import Film from './film';
 import Owner from './owner';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
+import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
+import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
+import tttsExtensionReservation from './schemaTypes/tttsExtensionReservation';
+import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
@@ -32,8 +36,8 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-
         expired_at: Date, // 仮予約期限
+        reservation_ttts_extension: tttsExtensionReservation,
 
         performance_day: String,
         performance_open_time: String,
@@ -43,6 +47,7 @@ const schema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
+        performance_ttts_extension: tttsExtensionPerformance,
 
         theater: {
             type: String,
@@ -71,6 +76,7 @@ const schema = new mongoose.Schema(
         purchaser_first_name: String,
         purchaser_email: String,
         purchaser_tel: String,
+        purchaser_international_tel: String,
         purchaser_age: String, // 生まれた年代
         purchaser_address: String, // 住所
         purchaser_gender: String, // 性別
@@ -86,6 +92,11 @@ const schema = new mongoose.Schema(
         ticket_type: String, // 券種
         ticket_type_name: multilingualString,
         ticket_type_charge: Number,
+        ticket_cancel_charge: {
+            type: [ticketCancelCharge],
+            default: []
+        },
+        ticket_ttts_extension: tttsExtensionTicketType,
 
         watcher_name: String, // 配布先
         watcher_name_updated_at: Date, // 配布先更新日時 default: Date.now
@@ -207,7 +218,7 @@ schema.virtual('purchaser_name').get(function (this: any) {
 
     if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
         || this.get('status') === ReservationUtil.STATUS_RESERVED
-    ) {
+        || this.get('status') === ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 en = `${this.get('owner_name').en} ${this.get('owner_signature')}`;
@@ -222,7 +233,7 @@ schema.virtual('purchaser_name').get(function (this: any) {
 
     if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
         || this.get('status') === ReservationUtil.STATUS_RESERVED
-    ) {
+        || this.get('status') === ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 ja = `${this.get('owner_name').ja} ${this.get('owner_signature')}`;
@@ -302,6 +313,28 @@ schema.virtual('status_str').get(function (this: any) {
  */
 schema.virtual('qr_str').get(function (this: any) {
     return `${this.performance_day}-${this.payment_no}-${this.payment_seat_index}`;
+});
+/**
+ * QRコード文字列分割
+ * 上映日-購入番号-購入座席インデックス
+ */
+// tslint:disable-next-line:no-function-expression
+schema.static('parse_from_qr_str', function(qrStr: string) {
+    const qr: string[] = qrStr.split('-');
+    const qrInfo: any = {};
+    if ( qr.length > 0) {
+        qrInfo.performance_day = qr[0];
+    }
+    if ( qr.length > 1) {
+        qrInfo.payment_no = qr[1];
+    }
+    // tslint:disable-next-line:no-magic-numbers
+    if ( qr.length > 2) {
+        // tslint:disable-next-line:no-magic-numbers
+        qrInfo.payment_seat_index = qr[2];
+    }
+
+    return qrInfo;
 });
 
 /**

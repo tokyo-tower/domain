@@ -5,6 +5,7 @@
  */
 
 import * as crypto from 'crypto';
+import * as request from 'request'; // for token
 
 export interface IPrefecture {
     code: string;
@@ -167,4 +168,35 @@ export function deleteFromKeys(model: any, keys: string[]): any {
     });
 
     return deletedModel;
+}
+/**
+ * token取得
+ * 2017/08 add for TTTS
+ * @memberOf CommonUtil
+ *
+ * @param {string} apiEndpoint
+ * @returns {any}
+ */
+export async function getToken(apiEndpoint: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+        request.post(`${apiEndpoint}oauth/token`, {
+            body: {
+                grant_type: 'client_credentials',
+                client_id: 'motionpicture',
+                client_secret: 'motionpicture',
+                state: 'state123456789',
+                scopes: [
+                    'performances.read-only'
+                ]
+            },
+            json: true
+            },       (error: any, response: request.RequestResponse, body: any) => {
+            // tslint:disable-next-line:no-magic-numbers
+            if (response !== undefined && response.statusCode === 200) {
+                resolve(body);
+            } else {
+                reject(error);
+            }
+        });
+    });
 }

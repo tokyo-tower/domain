@@ -14,5 +14,8 @@ export declare function getSections(): {
     name: {
         ja: string;
         en: string;
+        kr: string;
+        tc: string;
+        sc: string;
     };
 }[];

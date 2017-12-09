@@ -17,8 +17,8 @@ const ticketTypeGroup_1 = require("../../../lib/model/mongoose/ticketTypeGroup")
 describe('券種グループスキーマ', () => {
     before(() => __awaiter(this, void 0, void 0, function* () {
         // 全削除
-        yield ticketType_1.default.remove({}).exec();
-        yield ticketTypeGroup_1.default.remove({}).exec();
+        //await TicketType.remove({}).exec();
+        //await TicketTypeGroup.remove({}).exec();
     }));
     it('券種スキーマへのリファレンスok', () => __awaiter(this, void 0, void 0, function* () {
         // 入場履歴がundefinedなテストデータ作成

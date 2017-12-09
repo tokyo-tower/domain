@@ -14,5 +14,13 @@ export default {
     kr: {
         type: String,
         required: false
+    },
+    tc: {
+        type: String,
+        required: false
+    },
+    sc: {
+        type: String,
+        required: false
     }
 };

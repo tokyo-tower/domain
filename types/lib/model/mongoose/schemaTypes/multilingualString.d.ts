@@ -11,5 +11,13 @@ declare const _default: {
         type: StringConstructor;
         required: boolean;
     };
+    tc: {
+        type: StringConstructor;
+        required: boolean;
+    };
+    sc: {
+        type: StringConstructor;
+        required: boolean;
+    };
 };
 export default _default;

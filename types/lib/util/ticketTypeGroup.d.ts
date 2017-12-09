@@ -19,6 +19,14 @@ export declare const TICKET_TYPE_CODE_FREE = "FREE";
  */
 export declare const TICKET_TYPE_CODE_NOT_FOR_SALE = "NOTFORSALE";
 /**
+ * カテゴリ(通常)
+ */
+export declare const TICKET_TYPE_CATEGORY_NORMAL = "0";
+/**
+ * カテゴリ(車椅子)
+ */
+export declare const TICKET_TYPE_CATEGORY_WHEELCHAIR = "1";
+/**
  * 内部関係者用券種グループを取得する
  */
 export declare function getOne4staff(): {
@@ -26,6 +34,9 @@ export declare function getOne4staff(): {
     name: {
         ja: string;
         en: string;
+        kr: string;
+        tc: string;
+        sc: string;
     };
     charge: number;
 }[];
