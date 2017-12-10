@@ -14,7 +14,7 @@ import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
-import * as ReservationUtil from '../../util/reservation';
+import * as ReservationUtil from '../../../util/reservation';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -23,6 +23,10 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        qr_str: {
+            type: String,
+            required: true
+        },
         performance: {
             type: String,
             ref: Performance.modelName,
@@ -149,13 +153,10 @@ const schema = new mongoose.Schema(
         gmo_cvs_conf_no: String,
         gmo_cvs_receipt_no: String,
         gmo_cvs_receipt_url: String,
-        gmo_payment_term: String,
-
-        created_user: String, // todo 不要なので削除
-        updated_user: String // todo 不要なので削除
+        gmo_payment_term: String
     },
     {
-        collection: 'reservations',
+        collection: 'reservations_new',
         id: true,
         read: 'primaryPreferred',
         safe: safe,
@@ -307,14 +308,6 @@ schema.virtual('status_str').get(function (this: any) {
 });
 
 /**
- * QRコード文字列
- * 上映日-購入番号-購入座席インデックス
- * 購入は上映日+購入番号で一意となるので注意すること
- */
-schema.virtual('qr_str').get(function (this: any) {
-    return `${this.performance_day}-${this.payment_no}-${this.payment_seat_index}`;
-});
-/**
  * QRコード文字列分割
  * 上映日-購入番号-購入座席インデックス
  */
@@ -433,14 +426,4 @@ schema.post('findOneAndUpdate', function (this: any, err: any, doc: any, next: a
     }
 });
 
-schema.index(
-    {
-        performance: 1,
-        seat_code: 1
-    },
-    {
-        unique: true
-    }
-);
-
-export default mongoose.model('Reservation', schema);
+export default mongoose.model('ReservationNew', schema);

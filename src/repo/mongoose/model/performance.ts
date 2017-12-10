@@ -2,7 +2,7 @@
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
-import * as PerformanceUtil from '../../util/performance';
+import * as PerformanceUtil from '../../../util/performance';
 import Film from './film';
 import multilingualString from './schemaTypes/multilingualString';
 import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';

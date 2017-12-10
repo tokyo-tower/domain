@@ -9,7 +9,7 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import Sequence from '../model/mongoose/sequence';
+import Sequence from '../repo/mongoose/model/sequence';
 import * as ReservationUtil from './reservation';
 
 const debug = createDebug('chever-domain:util:reservation');

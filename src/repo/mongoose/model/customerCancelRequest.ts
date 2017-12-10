@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import * as CommonUtil from '../../util/common';
+import * as CommonUtil from '../../../util/common';
 import multilingualString from './schemaTypes/multilingualString';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
@@ -45,7 +45,7 @@ const schema = new mongoose.Schema(
     }
 );
 // tslint:disable-next-line:no-function-expression
-schema.static('getTickets', function(reservaions: any[]) {
+schema.static('getTickets', function (reservaions: any[]) {
     const tickets: any[] = [];
     // チケット情報キーセット
     const copyKeys: string[] = [
