@@ -43,7 +43,40 @@ export async function cancelSeatReservationAuth(transactionId: string) {
                 { availability: tmpReservation.stock_availability_before }
             ).exec();
         }));
+
+        // tslint:disable-next-line:no-suspicious-comment
+        // TODO 車椅子の流入制限についても対処
+        await resetTmps();
     }));
+}
+
+/**
+ * 仮予約ステータスで、一定時間過ぎた予約を空席にする
+ */
+export async function resetTmps(): Promise<void> {
+    // const BUFFER_PERIOD_SECONDS = -60;
+    // debug('resetting temporary reservationPerHour...');
+    // await ttts.Models.ReservationPerHour.update(
+    //     {
+    //         status: ttts.factory.itemAvailability.SoldOut,
+    //         expired_at: {
+    //             // 念のため、仮予約有効期間より1分長めにしておく
+    //             $lt: moment().add(BUFFER_PERIOD_SECONDS, 'seconds').toISOString()
+    //         }
+    //     },
+    //     {
+    //         $set: {
+    //             status: ttts.factory.itemAvailability.InStock
+    //         },
+    //         $unset: {
+    //             expired_at: 1,
+    //             reservation_id: 1
+    //         }
+    //     },
+    //     {
+    //         multi: true
+    //     }
+    // ).exec();
 }
 
 /**

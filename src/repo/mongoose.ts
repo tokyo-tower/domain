@@ -9,8 +9,6 @@ import CustomerCancelRequest from './mongoose/model/customerCancelRequest';
 import EmailQueue from './mongoose/model/emailQueue';
 import Film from './mongoose/model/film';
 import GMONotification from './mongoose/model/gmoNotification';
-import Owner from './mongoose/model/owner';
-import Performance from './mongoose/model/performance';
 import ReservationPerHour from './mongoose/model/reservationPerHour';
 import Screen from './mongoose/model/screen';
 import SendGridEventNotification from './mongoose/model/sendGridEventNotification';
@@ -26,8 +24,6 @@ export {
     EmailQueue,
     Film,
     GMONotification,
-    Owner,
-    Performance,
     ReservationPerHour,
     Screen,
     SendGridEventNotification,

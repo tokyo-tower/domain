@@ -1,32 +1,30 @@
 /**
- * スクリーンユーティリティ
- *
- * @namespace ScreenUtil
+ * スクリーンファクトリー
+ * @namespace factory.place.screen
  */
 
-const DEFAULT_RADIX = 10;
-
-/**
- * ノーマルシート
- */
-export const SEAT_GRADE_CODE_NORMAL = '00';
-/**
- * プレミアボックスシート
- */
-export const SEAT_GRADE_CODE_PREMIERE_BOX = '01';
-/**
- * プレミアラグジュアリーシート
- */
-export const SEAT_GRADE_CODE_PREMIERE_LUXURY = '02';
-/**
- * フロントリクライニングシート
- */
-export const SEAT_GRADE_CODE_FRONT_RECLINING = '03';
+export enum SeatGrade {
+    /**
+     * ノーマルシート
+     */
+    Normal = '00',
+    /**
+     * プレミアボックスシート
+     */
+    PremiereBox = '01',
+    /**
+     * プレミアラグジュアリーシート
+     */
+    PremiereLuxury = '02',
+    /**
+     * フロントリクライニングシート
+     */
+    FrontReclining = '03'
+}
 
 /**
  * 座席コードのソート関数
- *
- * @method
+ * @function
  * @param {string} a 座席コード
  * @param {string} b 座席コード
  */
@@ -42,7 +40,8 @@ export function sortBySeatCode(a: string, b: string): number {
         return -1; // 行は文字列比較
     } else if (rowA > rowB) {
         return 1; // 行は文字列比較
-    } else if (parseInt(columnA, DEFAULT_RADIX) < parseInt(columnB, DEFAULT_RADIX)) {
+        // tslint:disable-next-line:no-magic-numbers
+    } else if (parseInt(columnA, 10) < parseInt(columnB, 10)) {
         return -1; // 列は数値比較
     }
 

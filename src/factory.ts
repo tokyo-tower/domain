@@ -19,8 +19,10 @@ import OrganizationType from './factory/organizationType';
 import * as CreditCardFactory from './factory/paymentMethod/paymentCard/creditCard';
 import PaymentMethodType from './factory/paymentMethodType';
 import * as PerformanceFactory from './factory/performance';
+import * as PerformanceStatusesFactory from './factory/performanceStatuses';
 import * as PersonFactory from './factory/person';
 import PersonType from './factory/personType';
+import * as ScreenFactory from './factory/place/screen';
 import PriceCurrency from './factory/priceCurrency';
 import * as ReservationFactory from './factory/reservation';
 import * as EventReservationFactory from './factory/reservation/event';
@@ -88,12 +90,15 @@ export import organizationType = OrganizationType;
 export import priceCurrency = PriceCurrency;
 export import paymentMethodType = PaymentMethodType;
 export import performance = PerformanceFactory;
+export import performanceStatuses = PerformanceStatusesFactory;
 export import person = PersonFactory;
 export import personType = PersonType;
 export namespace reservation {
     export import reservationType = ReservationFactory.ReservationType;
-    // tslint:disable-next-line:no-shadowed-variable
     export import event = EventReservationFactory;
+}
+export namespace place {
+    export import screen = ScreenFactory;
 }
 export import reservationStatusType = ReservationStatusType;
 export namespace task {

@@ -1,107 +1,75 @@
-/**
- * パフォーマンス情報モデル
- *
- * @namespace PerformanceStatusesModel
- */
-
 import * as redis from 'redis';
-import * as PerformanceUtil from '../util/performance';
-
-const redisClient = redis.createClient(
-    // tslint:disable-next-line:no-magic-numbers
-    parseInt(<string>process.env.TTTS_PERFORMANCE_STATUSES_REDIS_PORT, 10),
-    <string>process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST,
-    {
-        password: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_KEY,
-        tls: { servername: process.env.TTTS_PERFORMANCE_STATUSES_REDIS_HOST },
-        return_buffers: true
-    }
-);
-
-const REDIS_KEY = 'TTTSSeatStatusesByPerformanceId';
-const EXPIRATION_SECONDS = 3600;
+import { PerformanceStatuses } from '../factory/performanceStatuses';
 
 /**
- * パフォーマンス情報
- *
- * @class
+ * パフォーマンス在庫状況レポジトリー
+ * @class repository.performanceStatuses
  */
-export class PerformanceStatuses {
-    /**
-     * パフォーマンスIDから空席ステータスを取得する
-     */
-    public getStatus(this: any, id: string): string {
-        return (this.id !== undefined) ? this[id] : PerformanceUtil.SEAT_STATUS_A;
+export class RedisRepository {
+    public static REDIS_KEY: string = 'TTTSSeatStatusesByPerformanceId';
+    public static EXPIRES_IN_SECONDS: number = 3600;
+
+    public readonly redisClient: redis.RedisClient;
+
+    constructor(redisClient: redis.RedisClient) {
+        this.redisClient = redisClient;
     }
 
     /**
-     * パフォーマンスIDの空席ステータスをセットする
+     * ストレージに保管する
+     * @memberof RedisRepository
      */
-    public setStatus(this: any, id: string, status: string): void {
-        this[id] = status;
+    public async store(performanceStatuses: PerformanceStatuses): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            this.redisClient.setex(
+                RedisRepository.REDIS_KEY,
+                RedisRepository.EXPIRES_IN_SECONDS,
+                JSON.stringify(performanceStatuses),
+                (err: any) => {
+                    if (err instanceof Error) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                }
+            );
+        });
     }
-}
 
-/**
- * パフォーマンス情報を新規作成する
- *
- * @memberOf PerformanceStatusesModel
- */
-export function create() {
-    return new PerformanceStatuses();
-}
+    /**
+     * ストレージから検索する
+     * @memberof PerformanceStatusesModel
+     */
+    public async find(): Promise<PerformanceStatuses> {
+        return new Promise<PerformanceStatuses>((resolve, reject) => {
+            this.redisClient.get(RedisRepository.REDIS_KEY, (err, reply) => {
+                if (err instanceof Error) {
+                    reject(err);
 
-/**
- * ストレージに保管する
- *
- * @memberOf PerformanceStatusesModel
- */
-export async function store(performanceStatuses: PerformanceStatuses): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        redisClient.setex(REDIS_KEY, EXPIRATION_SECONDS, JSON.stringify(performanceStatuses), (err: any) => {
-            if (err instanceof Error) {
-                reject(err);
-            } else {
-                resolve();
-            }
+                    return;
+                }
+
+                if (reply === null) {
+                    reject(new Error('not found'));
+
+                    return;
+                }
+
+                const performanceStatuses = new PerformanceStatuses();
+
+                try {
+                    const performanceStatusesModelInRedis = JSON.parse(reply.toString());
+                    Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
+                        performanceStatuses.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
+                    });
+                } catch (error) {
+                    reject(error);
+
+                    return;
+                }
+
+                resolve(performanceStatuses);
+            });
         });
-    });
-}
-
-/**
- * ストレージから検索する
- *
- * @memberOf PerformanceStatusesModel
- */
-export async function find(): Promise<PerformanceStatuses> {
-    return new Promise<PerformanceStatuses>((resolve, reject) => {
-        redisClient.get(REDIS_KEY, (err, reply) => {
-            if (err instanceof Error) {
-                reject(err);
-
-                return;
-            }
-
-            if (reply === null) {
-                reject(new Error('not found'));
-
-                return;
-            }
-
-            const performanceStatuses = new PerformanceStatuses();
-
-            try {
-                const performanceStatusesModelInRedis = JSON.parse(reply.toString());
-                Object.keys(performanceStatusesModelInRedis).forEach((propertyName) => {
-                    performanceStatuses.setStatus(propertyName, performanceStatusesModelInRedis[propertyName]);
-                });
-            } catch (error) {
-                reject(error);
-
-                return;
-            }
-
-            resolve(performanceStatuses);
-        });
-    });
+    }
 }
