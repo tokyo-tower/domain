@@ -24,6 +24,7 @@ const debug = createDebug('ttts-domain:service:stock');
  */
 export async function cancelSeatReservationAuth(transactionId: string) {
     const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(mongoose.connection);
+    const stockRepo = new StockRepo(mongoose.connection);
 
     // 座席仮予約アクションを取得
     const authorizeActions: factory.action.authorize.seatReservation.IAction[] =
@@ -32,19 +33,16 @@ export async function cancelSeatReservationAuth(transactionId: string) {
 
     await Promise.all(authorizeActions.map(async (action) => {
         debug('calling deleteTmpReserve...', action);
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO 在庫を空きに
+        // 在庫を元の状態に戻す
+        // TTTS確保も、仮予約も、status_beforeに戻せばよいはず
+        const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
-        // const updTmpReserveSeatArgs = (<factory.action.authorize.seatReservation.IResult>action.result).updTmpReserveSeatArgs;
-        // const updTmpReserveSeatResult = (<factory.action.authorize.seatReservation.IResult>action.result).updTmpReserveSeatResult;
-        // await COA.services.reserve.delTmpReserve({
-        //     theaterCode: updTmpReserveSeatArgs.theaterCode,
-        //     dateJouei: updTmpReserveSeatArgs.dateJouei,
-        //     titleCode: updTmpReserveSeatArgs.titleCode,
-        //     titleBranchNum: updTmpReserveSeatArgs.titleBranchNum,
-        //     timeBegin: updTmpReserveSeatArgs.timeBegin,
-        //     tmpReserveNum: updTmpReserveSeatResult.tmpReserveNum
-        // });
+        await Promise.all(tmpReservations.map(async (tmpReservation) => {
+            await stockRepo.stockModel.findByIdAndUpdate(
+                tmpReservation._id,
+                { status: tmpReservation.status_before }
+            ).exec();
+        }));
     }));
 }
 

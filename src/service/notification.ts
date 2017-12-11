@@ -46,8 +46,7 @@ export function sendEmail(emailMessage: factory.creativeWork.message.email.ICrea
             text: emailMessage.text,
             // html: '<strong>and easy to do anywhere, even with Node.js</strong>',
             // categories: ['Transactional', 'My category'],
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO 送信予定を追加することもできるが、タスクの実行予定日時でコントロールするかもしれないのでいったん保留
+            // 送信予定を追加することもできるが、タスクの実行予定日時でコントロールするかもしれないのでいったん保留
             // sendAt: moment(email.send_at).unix(),
             // 追跡用に通知IDをカスタムフィールドとしてセットする
             customArgs: {

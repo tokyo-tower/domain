@@ -86,13 +86,13 @@ export interface IObject {
     // tslint:disable-next-line:no-suspicious-comment
     /**
      * WAITER許可証トークン
-     * TODO v3.0.0で必須プロパティに変更
+     * TODO 必須プロパティに変更
      */
     passportToken?: waiter.factory.passport.IEncodedPassport;
     // tslint:disable-next-line:no-suspicious-comment
     /**
      * WAITER許可証
-     * TODO v3.0.0で必須プロパティに変更
+     * TODO 必須プロパティに変更
      */
     passport?: waiter.factory.passport.IPassport;
     /**

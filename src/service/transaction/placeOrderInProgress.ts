@@ -19,8 +19,6 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
-import * as ReservationUtil from '../../util/reservation';
-
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
 
 /**
@@ -186,70 +184,6 @@ export namespace action {
 }
 
 /**
- * メール追加
- *
- * @param {string} transactionId
- * @param {EmailNotification} notification
- * @returns {TransactionOperation<void>}
- *
- * @memberof service.transaction.placeOrderInProgress
- */
-// export function addEmail(transactionId: string, notification: EmailNotificationFactory.INotification) {
-//     return async (transactionRepo: TransactionRepo) => {
-//         // イベント作成
-//         const event = AddNotificationTransactionEventFactory.create({
-//             occurredAt: new Date(),
-//             notification: notification
-//         });
-
-//         // 永続化
-//         debug('adding an event...', event);
-//         await pushEvent(transactionId, event)(transactionRepo);
-//     };
-// }
-
-/**
- * メール削除
- *
- * @param {string} transactionId
- * @param {string} notificationId
- * @returns {TransactionOperation<void>}
- *
- * @memberof service.transaction.placeOrderInProgress
- */
-// export function removeEmail(transactionId: string, notificationId: string) {
-//     return async (transactionRepo: TransactionRepo) => {
-//         const transaction = await findInProgressById(transactionId)(transactionRepo)
-//             .then((option) => {
-//                 if (option.isEmpty) {
-//                     throw new factory.errors.Argument('transactionId', `transaction[${transactionId}] not found.`);
-//                 }
-
-//                 return option.get();
-//             });
-
-//         type ITransactionEvent = AddNotificationTransactionEventFactory.ITransactionEvent<EmailNotificationFactory.INotification>;
-//         const addNotificationTransactionEvent = <ITransactionEvent>transaction.object.actionEvents.find(
-//             (actionEvent) =>
-//                 actionEvent.actionEventType === TransactionEventGroup.AddNotification &&
-//                 (<ITransactionEvent>actionEvent).notification.id === notificationId
-//         );
-//         if (addNotificationTransactionEvent === undefined) {
-//             throw new factory.errors.Argument('notificationId', `notification [${notificationId}] not found in the transaction.`);
-//         }
-
-//         // イベント作成
-//         const event = RemoveNotificationTransactionEventFactory.create({
-//             occurredAt: new Date(),
-//             notification: addNotificationTransactionEvent.notification
-//         });
-
-//         // 永続化
-//         await pushEvent(transactionId, event)(transactionRepo);
-//     };
-// }
-
-/**
  * 取引中の購入者情報を変更する
  */
 export async function setCustomerContact(
@@ -329,33 +263,6 @@ export async function confirm(
     }
 
     // 結果作成
-    // const order = factory.order.createFromPlaceOrderTransaction({
-    //     transaction: transaction,
-    //     orderDate: now,
-    //     orderStatus: factory.orderStatus.OrderDelivered,
-    //     isGift: false
-    // });
-    // const ownershipInfos = order.acceptedOffers.map((acceptedOffer) => {
-    //     // ownershipInfoのidentifierはコレクション内でuniqueである必要があるので、この仕様には要注意
-    //     // saveする際に、identifierでfindOneAndUpdateしている
-    //     const identifier = `${acceptedOffer.itemOffered.typeOf}-${acceptedOffer.itemOffered.reservedTicket.ticketToken}`;
-
-    //     return factory.ownershipInfo.create({
-    //         identifier: identifier,
-    //         ownedBy: {
-    //             id: transaction.agent.id,
-    //             typeOf: transaction.agent.typeOf,
-    //             name: order.customer.name
-    //         },
-    //         acquiredFrom: transaction.seller,
-    //         ownedFrom: now,
-    //         // イベント予約に対する所有権の有効期限はイベント終了日時までで十分だろう
-    //         // 現時点では所有権対象がイベント予約のみなので、これで問題ないが、
-    //         // 対象が他に広がれば、有効期間のコントロールは別でしっかり行う必要があるだろう
-    //         ownedThrough: acceptedOffer.itemOffered.reservationFor.endDate,
-    //         typeOfGood: acceptedOffer.itemOffered
-    //     });
-    // });
     transaction.result = {
         eventReservations: createReservations(transaction)
     };
@@ -418,23 +325,14 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const now = new Date();
 
-    // 2017/07/08 特殊チケット対応
-    // const seatCodesAll: string[] = Array.prototype.concat(reservationModel.seatCodes, reservationModel.seatCodesExtra);
-
     // tslint:disable-next-line:max-func-body-length
     return tmpReservations.map((tmpReservation, index) => {
-        let status = ReservationUtil.STATUS_RESERVED;
-        // 特殊チケット一時予約を特殊チケット予約完了ステータスへ変更
-        if (tmpReservation.status === ReservationUtil.STATUS_TEMPORARY_FOR_SECURE_EXTRA) {
-            status = ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA;
-        }
-
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
             reservationStatus: factory.reservationStatusType.ReservationConfirmed,
             qr_str: `${performance.day}-${tmpReservation.payment_no}-${index}`,
 
-            status: status,
+            status: tmpReservation.status_after,
 
             seat_code: tmpReservation.seat_code,
             seat_grade_name: tmpReservation.seat_grade_name,

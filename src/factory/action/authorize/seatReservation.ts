@@ -16,7 +16,14 @@ export type IRecipient = IParticipant;
 
 export interface ITmpReservation {
     _id: string;
-    status: string;
+    /**
+     * 予約前の在庫ステータス
+     */
+    status_before: string;
+    /**
+     * 予約後の在庫ステータス
+     */
+    status_after: string;
     seat_code: string;
     seat_grade_name: {
         ja: string;
@@ -49,8 +56,6 @@ export interface IResult {
      * 仮予約リスト
      */
     tmpReservations: ITmpReservation[];
-    // updTmpReserveSeatArgs: COA.services.reserve.IUpdTmpReserveSeatArgs;
-    // updTmpReserveSeatResult: COA.services.reserve.IUpdTmpReserveSeatResult;
 }
 
 /**
