@@ -92,6 +92,7 @@ export class MongoRepository {
     public async confirmPlaceOrder(
         transactionId: string,
         endDate: Date,
+        paymentMethod: factory.paymentMethodType,
         authorizeActions: factory.action.authorize.IAction[],
         result: factory.transaction.placeOrder.IResult
     ): Promise<factory.transaction.placeOrder.ITransaction> {
@@ -105,6 +106,7 @@ export class MongoRepository {
                 status: factory.transactionStatusType.Confirmed, // ステータス変更
                 endDate: endDate,
                 'object.authorizeActions': authorizeActions, // 認可アクションリストを更新
+                'object.paymentMethod': paymentMethod, // 決済方法を更新
                 result: result // resultを更新
             },
             { new: true }

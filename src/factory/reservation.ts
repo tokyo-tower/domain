@@ -31,22 +31,5 @@ export interface IReservation {
     /**
      * Current status of the reservation.
      */
-    reservationStatus: ReservationStatusType;
-}
-
-/**
- * create reservation object
- * @export
- * @function
- * @memberof reservation
- */
-export function create(params: {
-    reservationStatus: ReservationStatusType;
-}): IReservation {
-    return {
-        ...params,
-        ...{
-            typeOf: 'Reservation'
-        }
-    };
+    status: ReservationStatusType;
 }

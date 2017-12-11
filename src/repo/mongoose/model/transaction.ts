@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 
-import ReservationModel from './reservationNew';
+import ReservationModel from './reservation';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 

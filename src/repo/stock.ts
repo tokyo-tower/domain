@@ -1,15 +1,15 @@
 import { Connection } from 'mongoose';
 
-import ReservationModel from '../repo/mongoose/model/reservation';
+import StockModel from '../repo/mongoose/model/stock';
 
 /**
  * 在庫レポジトリー
  * @class repository.Stock
  */
 export class MongoRepository {
-    public readonly stockModel: typeof ReservationModel;
+    public readonly stockModel: typeof StockModel;
 
     constructor(connection: Connection) {
-        this.stockModel = connection.model(ReservationModel.modelName);
+        this.stockModel = connection.model(StockModel.modelName);
     }
 }

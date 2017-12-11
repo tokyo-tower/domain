@@ -8,12 +8,14 @@ import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
 import * as factory from '../../../../../factory';
-import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
-import * as Models from '../../../../../repo/mongoose';
-import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
-import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
+// import * as Models from '../../../../../repo/mongoose';
 import * as ReservationUtil from '../../../../../util/reservation';
 import * as TicketTypeGroupUtil from '../../../../../util/ticketTypeGroup';
+
+import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
+import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
+import { MongoRepository as StockRepo } from '../../../../../repo/stock';
+import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:seatReservation');
 
@@ -148,6 +150,7 @@ async function reserveTemporarilyByOffer(
     performance: factory.performance.IPerformanceWithDetails,
     offer: factory.offer.seatReservation.IOffer
 ): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> {
+    const stockRepo = new StockRepo(mongoose.connection);
     // チケット情報
     // tslint:disable-next-line:max-line-length
     // const ticketType = reservationModel.ticketTypes.find((ticketTypeInArray) => (ticketTypeInArray._id === choiceInfo.ticket_type));
@@ -159,125 +162,113 @@ async function reserveTemporarilyByOffer(
     const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
     try {
-        // 本体分の予約更新('予約可能'を'仮予約'に変更)
-        // '予約可能'を'仮予約'に変更(在庫のステータスだけ変更すればよい？)
-        let reservation = await Models.Reservation.findOneAndUpdate(
+        // 在庫ステータス変更
+        const stock = await stockRepo.stockModel.findOneAndUpdate(
             {
                 performance: performance._id,
-                status: ReservationUtil.STATUS_AVAILABLE
+                availability: factory.itemAvailability.InStock
             },
             {
-                status: ReservationUtil.STATUS_TEMPORARY
+                availability: factory.itemAvailability.SoldOut
                 // expired_at: expiredAt,
                 // ticket_ttts_extension: offer.ticket_ttts_extension,
                 // reservation_ttts_extension: getReservationExtension(seatCodeBase)
             },
             { new: true }
         ).exec();
-        debug('stock found.', reservation);
+        debug('stock found.', stock);
 
         // 在庫がばなければ失敗
-        let seatCodeBase: string;
-        if (reservation !== null) {
-            // ベース座席コードを更新
-            seatCodeBase = reservation.get('seat_code');
-            reservation = await Models.Reservation.findByIdAndUpdate(
-                reservation._id,
-                {
-                    reservation_ttts_extension: {
-                        seat_code_base: seatCodeBase
-                    }
-                },
-                { new: true }
-            ).exec();
-
-            if (reservation !== null) {
-                const seatCode = reservation.get('seat_code');
-                const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
-                if (seatInfo === undefined) {
-                    throw new Error('Invalid Seat Code.');
-                }
-
-                tmpReservations.push({
-                    _id: reservation.get('_id'),
-                    status_before: ReservationUtil.STATUS_AVAILABLE,
-                    status_after: ReservationUtil.STATUS_RESERVED,
-                    seat_code: reservation.get('seat_code'),
-                    seat_grade_name: seatInfo.grade.name,
-                    seat_grade_additional_charge: seatInfo.grade.additional_charge,
-                    ticket_type: offer.ticket_type,
-                    ticket_type_name: offer.ticket_type_name,
-                    ticket_type_charge: offer.ticket_type_charge,
-                    charge: getCharge(performance, offer.ticket_type_charge, seatInfo.grade.additional_charge),
-                    watcher_name: offer.watcher_name,
-                    ticket_cancel_charge: offer.ticket_cancel_charge,
-                    ticket_ttts_extension: offer.ticket_ttts_extension,
-                    performance_ttts_extension: offer.performance_ttts_extension,
-                    reservation_ttts_extension: reservation.get('reservation_ttts_extension'),
-                    payment_no: paymentNo,
-                    purchaser_group: purchaserGroup
-                });
-
-                // 時間ごとの予約情報更新
-                // tslint:disable-next-line:no-suspicious-comment
-                if (offer.ticket_ttts_extension.category !== TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_NORMAL) {
-                    const isUpdatedReservationPerHour = await updateReservationPerHour(
-                        reservation._id.toString(),
-                        // tslint:disable-next-line:no-magic-numbers no-suspicious-comment
-                        moment().add(30, 'minutes').toDate(), // TODO 実装
-                        offer.ticket_ttts_extension.category,
-                        performance
-                    );
-
-                    if (!isUpdatedReservationPerHour) {
-                        throw new Error('Reservations per hour unavailable.');
-                    }
-                }
-
-                // 余分確保分の予約更新
-                const promises = offer.extra.map(async () => {
-                    // '予約可能'を'仮予約'に変更
-                    const extraReservation = await Models.Reservation.findOneAndUpdate(
-                        {
-                            performance: performance._id,
-                            status: ReservationUtil.STATUS_AVAILABLE
-                        },
-                        {
-                            status: ReservationUtil.STATUS_TEMPORARY_FOR_SECURE_EXTRA, // 余分確保ステータス
-                            reservation_ttts_extension: {
-                                seat_code_base: seatCodeBase
-                            }
-                        },
-                        { new: true }
-                    ).exec();
-                    debug('stock found.', extraReservation);
-
-                    // 更新エラー(対象データなし):次のseatへ
-                    if (extraReservation !== null) {
-                        tmpReservations.push({
-                            _id: extraReservation.get('_id'),
-                            status_before: ReservationUtil.STATUS_AVAILABLE,
-                            status_after: ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA,
-                            seat_code: extraReservation.get('seat_code'),
-                            seat_grade_name: seatInfo.grade.name,
-                            seat_grade_additional_charge: seatInfo.grade.additional_charge,
-                            ticket_type: offer.ticket_type,
-                            ticket_type_name: offer.ticket_type_name,
-                            ticket_type_charge: offer.ticket_type_charge,
-                            charge: getCharge(performance, offer.ticket_type_charge, seatInfo.grade.additional_charge),
-                            watcher_name: offer.watcher_name,
-                            ticket_cancel_charge: offer.ticket_cancel_charge,
-                            ticket_ttts_extension: offer.ticket_ttts_extension,
-                            performance_ttts_extension: offer.performance_ttts_extension,
-                            reservation_ttts_extension: extraReservation.get('reservation_ttts_extension'),
-                            payment_no: paymentNo,
-                            purchaser_group: purchaserGroup
-                        });
-                    }
-                });
-
-                await Promise.all(promises);
+        if (stock !== null) {
+            const seatCode = stock.get('seat_code');
+            const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
+            if (seatInfo === undefined) {
+                throw new Error('Invalid Seat Code.');
             }
+
+            tmpReservations.push({
+                stock: stock.get('id'),
+                stock_availability_before: factory.itemAvailability.InStock,
+                status_after: factory.reservationStatusType.ReservationConfirmed,
+                seat_code: seatCode,
+                seat_grade_name: seatInfo.grade.name,
+                seat_grade_additional_charge: seatInfo.grade.additional_charge,
+                ticket_type: offer.ticket_type,
+                ticket_type_name: offer.ticket_type_name,
+                ticket_type_charge: offer.ticket_type_charge,
+                charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
+                watcher_name: offer.watcher_name,
+                ticket_cancel_charge: offer.ticket_cancel_charge,
+                ticket_ttts_extension: offer.ticket_ttts_extension,
+                performance_ttts_extension: offer.performance_ttts_extension,
+                reservation_ttts_extension: {
+                    seat_code_base: seatCode
+                },
+                payment_no: paymentNo,
+                purchaser_group: purchaserGroup
+            });
+
+            // 時間ごとの予約情報更新
+            // tslint:disable-next-line:no-suspicious-comment
+            if (offer.ticket_ttts_extension.category !== TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_NORMAL) {
+                const isUpdatedReservationPerHour = await updateReservationPerHour(
+                    stock._id.toString(),
+                    // tslint:disable-next-line:no-magic-numbers no-suspicious-comment
+                    moment().add(30, 'minutes').toDate(), // TODO 実装
+                    offer.ticket_ttts_extension.category,
+                    performance
+                );
+
+                if (!isUpdatedReservationPerHour) {
+                    throw new Error('Reservations per hour unavailable.');
+                }
+            }
+
+            // 余分確保分の予約更新
+            const promises = offer.extra.map(async () => {
+                // '予約可能'を'仮予約'に変更
+                const extraReservation = await stockRepo.stockModel.findOneAndUpdate(
+                    {
+                        performance: performance._id,
+                        availability: factory.itemAvailability.InStock
+                    },
+                    {
+                        availability: factory.itemAvailability.SoldOut,
+                        reservation_ttts_extension: {
+                            seat_code_base: seatCode
+                        }
+                    },
+                    { new: true }
+                ).exec();
+                debug('stock found.', extraReservation);
+
+                // 更新エラー(対象データなし):次のseatへ
+                if (extraReservation !== null) {
+                    tmpReservations.push({
+                        stock: stock.get('id'),
+                        stock_availability_before: factory.itemAvailability.InStock,
+                        status_after: factory.reservationStatusType.ReservationSecuredExtra,
+                        seat_code: extraReservation.get('seat_code'),
+                        seat_grade_name: seatInfo.grade.name,
+                        seat_grade_additional_charge: seatInfo.grade.additional_charge,
+                        ticket_type: offer.ticket_type,
+                        ticket_type_name: offer.ticket_type_name,
+                        ticket_type_charge: offer.ticket_type_charge,
+                        charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
+                        watcher_name: offer.watcher_name,
+                        ticket_cancel_charge: offer.ticket_cancel_charge,
+                        ticket_ttts_extension: offer.ticket_ttts_extension,
+                        performance_ttts_extension: offer.performance_ttts_extension,
+                        reservation_ttts_extension: {
+                            seat_code_base: seatCode
+                        },
+                        payment_no: paymentNo,
+                        purchaser_group: purchaserGroup
+                    });
+                }
+            });
+
+            await Promise.all(promises);
         }
     } catch (error) {
         // no op
@@ -290,7 +281,6 @@ async function reserveTemporarilyByOffer(
  * 座席単体の料金を算出する
  */
 function getCharge(
-    performance: factory.performance.IPerformanceWithDetails,
     ticketTypeCharge: number,
     seatGradeAdditionalCharge: number
 ): number {
@@ -303,17 +293,12 @@ function getCharge(
         if (seatGradeAdditionalCharge > 0) {
             charge += seatGradeAdditionalCharge;
         }
-
-        // MX4D分加算
-        if (performance.film.is_mx4d) {
-            charge += ReservationUtil.CHARGE_MX4D;
-        }
     }
 
     return charge;
 }
 
-const LENGTH_HOUR: number = 2;
+// const LENGTH_HOUR: number = 2;
 /**
  * 座席・券種FIXプロセス/予約情報をDBにsave(仮予約)
  *
@@ -324,34 +309,33 @@ const LENGTH_HOUR: number = 2;
  * @returns {Promise<boolean>}
  */
 async function updateReservationPerHour(
-    reservationId: string,
-    expiredAt: any,
-    ticketTypeCategory: string,
-    performance: any
+    __1: string,
+    __2: any,
+    __3: string,
+    __4: any
 ): Promise<boolean> {
-    // 更新キー(入塔日＋時間帯)
-    const updateKey = {
-        performance_day: performance.day,
-        performance_hour: performance.start_time.slice(0, LENGTH_HOUR),
-        ticket_category: ticketTypeCategory,
-        status: ReservationUtil.STATUS_AVAILABLE
-    };
+    return true;
 
-    // 更新内容セット
-    const updateData: any = {
-        status: ReservationUtil.STATUS_TEMPORARY,
-        expired_at: expiredAt,
-        reservation_id: reservationId
-    };
-
+    // tslint:disable-next-line:no-suspicious-comment
+    // TODO 実装
     // '予約可能'を'仮予約'に変更
-    const reservation = await Models.ReservationPerHour.findOneAndUpdate(
-        updateKey,
-        updateData,
-        { new: true }
-    ).exec();
+    // const reservation = await Models.ReservationPerHour.findOneAndUpdate(
+    //     // 更新キー(入塔日＋時間帯)
+    //     {
+    //         performance_day: performance.day,
+    //         performance_hour: performance.start_time.slice(0, LENGTH_HOUR),
+    //         ticket_category: ticketTypeCategory,
+    //         status: ReservationUtil.STATUS_AVAILABLE
+    //     },
+    //     {
+    //         status: ReservationUtil.STATUS_RESERVED,
+    //         expired_at: expiredAt,
+    //         reservation_id: reservationId
+    //     },
+    //     { new: true }
+    // ).exec();
 
-    return reservation !== null;
+    // return reservation !== null;
 }
 
 /**
@@ -392,35 +376,34 @@ export async function cancel(
 }
 
 async function removeTmpReservations(tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[]) {
+    const stockRepo = new StockRepo(mongoose.connection);
+
     await Promise.all(tmpReservations.map(async (tmpReservation) => {
         try {
-            await Models.Reservation.findByIdAndUpdate(
-                tmpReservation._id,
-                {
-                    $set: { status: ReservationUtil.STATUS_AVAILABLE },
-                    $unset: { reservation_ttts_extension: 1 }
-                }
+            await stockRepo.stockModel.findByIdAndUpdate(
+                tmpReservation.stock,
+                { availability: factory.itemAvailability.InStock }
             ).exec();
         } catch (error) {
             // no op
         }
     }));
 
-    // 2017/11 時間ごとの予約レコードのSTATUS初期化
-    await Promise.all(tmpReservations.filter((r) => r.status_after === ReservationUtil.STATUS_RESERVED)
-        .map(async (tmpReservation) => {
+    // 2017/11 時間ごとの予約レコードのSTATUS初期化(車椅子の場合)
+    await Promise.all(tmpReservations.filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
+        .map(async (__) => {
             // tslint:disable-next-line:no-suspicious-comment
             // TODO このロジックの意味を確認
-            try {
-                await Models.ReservationPerHour.findOneAndUpdate(
-                    { reservation_id: tmpReservation._id },
-                    {
-                        $set: { status: ReservationUtil.STATUS_AVAILABLE },
-                        $unset: { expired_at: 1, reservation_id: 1 }
-                    }
-                ).exec();
-            } catch (error) {
-                // no op
-            }
+            // try {
+            //     await Models.ReservationPerHour.findOneAndUpdate(
+            //         { reservation_id: tmpReservation._id },
+            //         {
+            //             $set: { status: ReservationUtil.STATUS_AVAILABLE },
+            //             $unset: { expired_at: 1, reservation_id: 1 }
+            //         }
+            //     ).exec();
+            // } catch (error) {
+            //     // no op
+            // }
         }));
 }

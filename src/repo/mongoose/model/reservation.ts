@@ -14,6 +14,7 @@ import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
+import ReservationStatusType from '../../../factory/reservationStatusType';
 import * as ReservationUtil from '../../../util/reservation';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
@@ -23,6 +24,10 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        qr_str: {
+            type: String,
+            required: true
+        },
         performance: {
             type: String,
             ref: Performance.modelName,
@@ -213,9 +218,8 @@ schema.virtual('baloon_content4staff').get(function (this: any) {
 schema.virtual('purchaser_name').get(function (this: any) {
     let en = '';
 
-    if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
-        || this.get('status') === ReservationUtil.STATUS_RESERVED
-        || this.get('status') === ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA) {
+    if (this.get('status') === ReservationStatusType.ReservationConfirmed
+        || this.get('status') === ReservationStatusType.ReservationSecuredExtra) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 en = `${this.get('owner_name').en} ${this.get('owner_signature')}`;
@@ -228,9 +232,8 @@ schema.virtual('purchaser_name').get(function (this: any) {
 
     let ja = '';
 
-    if (this.get('status') === ReservationUtil.STATUS_WAITING_SETTLEMENT
-        || this.get('status') === ReservationUtil.STATUS_RESERVED
-        || this.get('status') === ReservationUtil.STATUS_ON_KEPT_FOR_SECURE_EXTRA) {
+    if (this.get('status') === ReservationStatusType.ReservationConfirmed
+        || this.get('status') === ReservationStatusType.ReservationSecuredExtra) {
         switch (this.purchaser_group) {
             case ReservationUtil.PURCHASER_GROUP_STAFF:
                 ja = `${this.get('owner_name').ja} ${this.get('owner_signature')}`;
@@ -254,14 +257,8 @@ schema.virtual('purchaser_group_str').get(function (this: any) {
         case ReservationUtil.PURCHASER_GROUP_CUSTOMER:
             str = '一般';
             break;
-        case ReservationUtil.PURCHASER_GROUP_MEMBER:
-            str = 'メルマガ先行会員';
-            break;
         case ReservationUtil.PURCHASER_GROUP_STAFF:
             str = '内部関係者';
-            break;
-        case ReservationUtil.PURCHASER_GROUP_WINDOW:
-            str = '当日窓口';
             break;
         default:
             break;
@@ -274,26 +271,9 @@ schema.virtual('status_str').get(function (this: any) {
     let str = '';
 
     switch (this.get('status')) {
-        case ReservationUtil.STATUS_RESERVED:
+        case ReservationStatusType.ReservationConfirmed:
+        case ReservationStatusType.ReservationSecuredExtra:
             str = '予約済';
-            break;
-
-        case ReservationUtil.STATUS_TEMPORARY:
-        case ReservationUtil.STATUS_TEMPORARY_ON_KEPT_BY_TTTS:
-            str = '仮予約中';
-            break;
-
-        case ReservationUtil.STATUS_WAITING_SETTLEMENT:
-        case ReservationUtil.STATUS_WAITING_SETTLEMENT_PAY_DESIGN:
-            str = '決済中';
-            break;
-
-        case ReservationUtil.STATUS_KEPT_BY_TTTS:
-            str = 'TTTS確保中';
-            break;
-
-        case ReservationUtil.STATUS_KEPT_BY_MEMBER:
-            str = 'メルマガ保留中';
             break;
 
         default:
@@ -303,14 +283,6 @@ schema.virtual('status_str').get(function (this: any) {
     return str;
 });
 
-/**
- * QRコード文字列
- * 上映日-購入番号-購入座席インデックス
- * 購入は上映日+購入番号で一意となるので注意すること
- */
-schema.virtual('qr_str').get(function (this: any) {
-    return `${this.performance_day}-${this.payment_no}-${this.payment_seat_index}`;
-});
 /**
  * QRコード文字列分割
  * 上映日-購入番号-購入座席インデックス
@@ -346,8 +318,7 @@ schema.virtual('ticket_type_detail_str').get(function (this: any) {
             break;
         default:
             charge += <number>this.get('ticket_type_charge') +
-                <number>this.get('seat_grade_additional_charge') +
-                (<boolean>(this.get('film_is_mx4d')) ? ReservationUtil.CHARGE_MX4D : 0);
+                <number>this.get('seat_grade_additional_charge');
 
             break;
     }
@@ -396,48 +367,5 @@ schema.virtual('ticket_type_detail_str').get(function (this: any) {
         ja: ja
     };
 });
-
-/**
- * TTTS確保への更新の場合、パフォーマンス情報だけ残して、購入者情報は削除する
- */
-schema.post('findOneAndUpdate', function (this: any, err: any, doc: any, next: any) {
-    if (err instanceof Error) {
-        return next(err);
-    }
-
-    if (doc.get('status') === ReservationUtil.STATUS_KEPT_BY_TTTS) {
-        const paths4set = [
-            '_id', 'performance', 'seat_code', 'status', 'created_at', 'updated_at'
-            , 'performance_day', 'performance_open_time', 'performance_start_time', 'performance_end_time', 'performance_canceled'
-            , 'theater', 'theater_name', 'theater_address'
-            , 'screen', 'screen_name'
-            , 'film', 'film_name', 'film_image', 'film_is_mx4d', 'film_copyright'
-        ];
-        const unset: any = {};
-        this.schema.eachPath((path: string) => {
-            if (paths4set.indexOf(path) < 0) {
-                unset[path] = '';
-            }
-        });
-
-        doc.update(
-            { $unset: unset },
-            // (err, raw) => {
-            () => {
-                // 仮に失敗したとしても気にしない
-            }
-        );
-    }
-});
-
-schema.index(
-    {
-        performance: 1,
-        seat_code: 1
-    },
-    {
-        unique: true
-    }
-);
 
 export default mongoose.model('Reservation', schema);

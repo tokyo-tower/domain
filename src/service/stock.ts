@@ -16,7 +16,7 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 const debug = createDebug('ttts-domain:service:stock');
 
 /**
- * 資産承認解除(COA座席予約)
+ * 資産承認解除(在庫ステータス変更)
  * @export
  * @function
  * @memberof service.stock
@@ -39,15 +39,15 @@ export async function cancelSeatReservationAuth(transactionId: string) {
 
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
             await stockRepo.stockModel.findByIdAndUpdate(
-                tmpReservation._id,
-                { status: tmpReservation.status_before }
+                tmpReservation.stock,
+                { availability: tmpReservation.stock_availability_before }
             ).exec();
         }));
     }));
 }
 
 /**
- * 資産移動(COA座席予約)
+ * 資産移動(予約データ作成)
  * @export
  * @function
  * @memberof service.stock
@@ -55,22 +55,12 @@ export async function cancelSeatReservationAuth(transactionId: string) {
  */
 export async function transferSeatReservation(transactionId: string) {
     const transactionRepository = new TransactionRepo(mongoose.connection);
-    const stockRepo = new StockRepo(mongoose.connection);
     const reservationRepo = new ReservationRepo(mongoose.connection);
 
     const transaction = await transactionRepository.findPlaceOrderById(transactionId);
     const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
 
     await Promise.all(eventReservations.map(async (eventReservation) => {
-        // 在庫のステータスを変更
-        await stockRepo.stockModel.findOneAndUpdate(
-            {
-                performance: eventReservation.performance,
-                seat_code: eventReservation.seat_code
-            },
-            { status: eventReservation.status }
-        ).exec();
-
         /// 予約データを作成する
         await reservationRepo.saveEventReservation(eventReservation);
     }));

@@ -1,6 +1,5 @@
 /**
  * オーナーユーティリティ
- *
  * @namespace util/owner
  */
 
@@ -11,4 +10,4 @@ export const GROUP_STAFF = 'STAFF';
 /**
  * 窓口スタッフ
  */
-export const GROUP_WINDOW_STAFF = 'WINDOW_STAFF';
+// export const GROUP_WINDOW_STAFF = 'WINDOW_STAFF';

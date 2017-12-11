@@ -11,7 +11,6 @@ import * as PerformanceStatusesModel from './repo/performanceStatuses';
 
 import * as CommonUtil from './util/common';
 import * as EmailQueueUtil from './util/emailQueue';
-import * as FilmUtil from './util/film';
 import * as GMONotificationUtil from './util/gmoNotification';
 import * as OwnerUtil from './util/owner';
 import * as PerformanceUtil from './util/performance';
@@ -20,6 +19,8 @@ import * as ScreenUtil from './util/screen';
 import * as TicketTypeGroupUtil from './util/ticketTypeGroup';
 
 import { MongoRepository as PerformanceRepo } from './repo/performance';
+import { MongoRepository as ReservationRepo } from './repo/reservation';
+import { MongoRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
@@ -50,7 +51,6 @@ export {
     PerformanceStatusesModel,
     CommonUtil,
     EmailQueueUtil,
-    FilmUtil,
     GMONotificationUtil,
     OwnerUtil,
     PerformanceUtil,
@@ -59,11 +59,20 @@ export {
     TicketTypeGroupUtil
 };
 
+// tslint:disable:max-classes-per-file
 export namespace repository {
     /**
      * パフォーマンスレポジトリー
      */
     export class Performance extends PerformanceRepo { }
+    /**
+     * 予約レポジトリー
+     */
+    export class Reservation extends ReservationRepo { }
+    /**
+     * 在庫レポジトリー
+     */
+    export class Stock extends StockRepo { }
     /**
      * タスクレポジトリー
      */

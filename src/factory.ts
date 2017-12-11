@@ -11,6 +11,7 @@ import * as PrintActionFactory from './factory/action/transfer/print';
 import * as PrintTicketActionFactory from './factory/action/transfer/print/ticket';
 import * as EmailMessageFactory from './factory/creativeWork/message/email';
 import CreativeWorkType from './factory/creativeWorkType';
+import ItemAvailability from './factory/itemAvailability';
 import IMultilingualString from './factory/multilingualString';
 import * as SeatReservationOfferFactory from './factory/offer/seatReservation';
 import OrderStatus from './factory/orderStatus';
@@ -77,6 +78,7 @@ export namespace creativeWork {
     }
 }
 export import creativeWorkType = CreativeWorkType;
+export import itemAvailability = ItemAvailability;
 export type multilingualString = IMultilingualString;
 export namespace offer {
     export import seatReservation = SeatReservationOfferFactory;

@@ -1,7 +1,7 @@
 import { Connection } from 'mongoose';
 
 import * as factory from '../factory';
-import ReservationModel from '../repo/mongoose/model/reservationNew';
+import ReservationModel from '../repo/mongoose/model/reservation';
 
 /**
  * 予約レポジトリー

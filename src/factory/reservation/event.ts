@@ -3,6 +3,7 @@
  * @namespace reservation.event
  */
 
+import PaymentMethodType from '../paymentMethodType';
 import * as PerformanceFactory from '../performance';
 import * as ReservationFactory from '../reservation';
 
@@ -68,7 +69,6 @@ export interface IReservation extends ReservationFactory.IReservation {
     qr_str: string;
     performance: string;
     seat_code: string;
-    status: string;
     // expired_at: Date; // 仮予約期限 // 仮予約データは取引の期限で管理されるので、ここには不要
     reservation_ttts_extension: IExtensionReservation;
 
@@ -105,7 +105,7 @@ export interface IReservation extends ReservationFactory.IReservation {
     payment_no: string; // 購入番号
     payment_seat_index: number; // 購入座席インデックス
     purchased_at: Date; // 購入確定日時
-    payment_method: string; // 決済方法
+    payment_method: PaymentMethodType; // 決済方法
 
     seat_grade_name: {
         ja: string;

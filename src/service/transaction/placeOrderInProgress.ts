@@ -231,24 +231,25 @@ export async function setCustomerContact(
 /**
  * 取引確定
  */
-export async function confirm(
+export async function confirm(params: {
     agentId: string,
-    transactionId: string
-): Promise<factory.transaction.placeOrder.ITransaction> {
+    transactionId: string,
+    paymentMethod: factory.paymentMethodType
+}): Promise<factory.transaction.placeOrder.ITransaction> {
     const transactionRepo = new TransactionRepo(mongoose.connection);
     const creditCardAuthorizeActionRepo = new CreditCardAuthorizeActionRepo(mongoose.connection);
     const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(mongoose.connection);
 
     const now = new Date();
-    const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
-    if (transaction.agent.id !== agentId) {
+    const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
+    if (transaction.agent.id !== params.agentId) {
         throw new factory.errors.Forbidden('A specified transaction is not yours.');
     }
 
     // 取引に対する全ての承認アクションをマージ
     let authorizeActions = [
-        ... await creditCardAuthorizeActionRepo.findByTransactionId(transactionId),
-        ... await seatReservationAuthorizeActionRepo.findByTransactionId(transactionId)
+        ... await creditCardAuthorizeActionRepo.findByTransactionId(params.transactionId),
+        ... await seatReservationAuthorizeActionRepo.findByTransactionId(params.transactionId)
     ];
 
     // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
@@ -256,6 +257,7 @@ export async function confirm(
         (authorizeAction) => (authorizeAction.endDate !== undefined && authorizeAction.endDate < now)
     );
     transaction.object.authorizeActions = authorizeActions;
+    transaction.object.paymentMethod = params.paymentMethod;
 
     // 照会可能になっているかどうか
     if (!canBeClosed(transaction)) {
@@ -270,8 +272,9 @@ export async function confirm(
     // ステータス変更
     debug('updating transaction...');
     await transactionRepo.confirmPlaceOrder(
-        transactionId,
+        params.transactionId,
         now,
+        params.paymentMethod,
         authorizeActions,
         transaction.result
     );
@@ -286,6 +289,8 @@ export async function confirm(
  */
 function canBeClosed(__: factory.transaction.placeOrder.ITransaction) {
     return true;
+
+    // 決済方法がクレジットカードであれば、承認アクションが必須
 
     // tslint:disable-next-line:no-suspicious-comment
     // TODO validation
@@ -316,7 +321,7 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
-    const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>transaction.object.authorizeActions
+    const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction | undefined>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
 
@@ -324,6 +329,10 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
     const performance = (<factory.action.authorize.seatReservation.IObject>seatReservationAuthorizeAction.object).performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const now = new Date();
+
+    if (transaction.object.paymentMethod === undefined) {
+        throw new Error('PaymentMethod undefined.');
+    }
 
     // tslint:disable-next-line:max-func-body-length
     return tmpReservations.map((tmpReservation, index) => {
@@ -369,24 +378,24 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
             film_is_mx4d: performance.film.is_mx4d,
             film_copyright: performance.film.copyright,
 
-            purchaser_last_name: customerContact.last_name,
-            purchaser_first_name: customerContact.first_name,
-            purchaser_email: customerContact.email,
+            purchaser_last_name: (customerContact !== undefined) ? customerContact.last_name : '',
+            purchaser_first_name: (customerContact !== undefined) ? customerContact.first_name : '',
+            purchaser_email: (customerContact !== undefined) ? customerContact.email : '',
             purchaser_international_tel: '',
-            purchaser_tel: customerContact.tel,
-            purchaser_age: customerContact.age,
-            purchaser_address: customerContact.address,
-            purchaser_gender: customerContact.gender,
+            purchaser_tel: (customerContact !== undefined) ? customerContact.tel : '',
+            purchaser_age: (customerContact !== undefined) ? customerContact.age : '',
+            purchaser_address: (customerContact !== undefined) ? customerContact.address : '',
+            purchaser_gender: (customerContact !== undefined) ? customerContact.gender : '',
 
             // 会員の場合は値を入れる
-            owner: (transaction.agent.id !== '') ? '' : undefined,
+            owner: (transaction.agent.id !== '') ? transaction.agent.id : undefined,
             owner_username: (transaction.agent.id !== '') ? transaction.agent.username : undefined,
             owner_name: (transaction.agent.id !== '') ? transaction.agent.name : undefined,
             owner_email: (transaction.agent.id !== '') ? transaction.agent.email : undefined,
             owner_group: (transaction.agent.id !== '') ? transaction.agent.group : undefined,
             owner_signature: (transaction.agent.id !== '') ? transaction.agent.signature : undefined,
 
-            payment_method: GMO.utils.util.PayType.Credit, // TOOD 実装
+            payment_method: <factory.paymentMethodType>transaction.object.paymentMethod,
 
             watcher_name: tmpReservation.watcher_name,
             watcher_name_updated_at: now,
@@ -398,10 +407,14 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
             // クレジット決済
             gmo_shop_id: <string>process.env.GMO_SHOP_ID,
             gmo_shop_pass: <string>process.env.GMO_SHOP_PASS,
-            gmo_order_id: creditCardAuthorizeAction.object.orderId,
-            gmo_amount: creditCardAuthorizeAction.object.amount.toString(),
-            gmo_access_id: (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs.accessId,
-            gmo_access_pass: (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs.accessPass,
+            gmo_order_id: (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '',
+            gmo_amount: (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.amount.toString() : '',
+            gmo_access_id: (creditCardAuthorizeAction !== undefined)
+                ? (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs.accessId
+                : '',
+            gmo_access_pass: (creditCardAuthorizeAction !== undefined)
+                ? (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs.accessPass
+                : '',
             gmo_status: GMO.utils.util.Status.Auth,
             gmo_shop_pass_string: '',
             gmo_tax: '',
