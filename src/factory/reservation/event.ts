@@ -145,31 +145,6 @@ export interface IReservation extends ReservationFactory.IReservation {
     }[];
 
     gmo_order_id: string; // GMOオーダーID
-
-    // GMO実売上に必要な情報
-    gmo_shop_id: string;
-    gmo_shop_pass: string;
-    gmo_amount: string;
-    gmo_access_id: string;
-    gmo_access_pass: string;
-    gmo_status: string;
-
-    // GMO決済開始(リンク決済)時に送信するチェック文字列
-    gmo_shop_pass_string: string;
-
-    // 以下、GMO結果通知受信時に情報追加される
-    gmo_tax: string;
-    gmo_forward: string;
-    gmo_method: string;
-    gmo_approve: string;
-    gmo_tran_id: string;
-    gmo_tran_date: string;
-    gmo_pay_type: string;
-    gmo_cvs_code: string;
-    gmo_cvs_conf_no: string;
-    gmo_cvs_receipt_no: string;
-    gmo_cvs_receipt_url: string;
-    gmo_payment_term: string;
 }
 
 /**

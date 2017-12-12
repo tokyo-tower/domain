@@ -136,32 +136,7 @@ const schema = new mongoose.Schema(
             default: []
         },
 
-        gmo_order_id: String, // GMOオーダーID
-
-        // GMO実売上に必要な情報
-        gmo_shop_id: String,
-        gmo_shop_pass: String,
-        gmo_amount: String,
-        gmo_access_id: String,
-        gmo_access_pass: String,
-        gmo_status: String,
-
-        // GMO決済開始(リンク決済)時に送信するチェック文字列
-        gmo_shop_pass_string: String,
-
-        // 以下、GMO結果通知受信時に情報追加される
-        gmo_tax: String,
-        gmo_forward: String,
-        gmo_method: String,
-        gmo_approve: String,
-        gmo_tran_id: String,
-        gmo_tran_date: String,
-        gmo_pay_type: String,
-        gmo_cvs_code: String,
-        gmo_cvs_conf_no: String,
-        gmo_cvs_receipt_no: String,
-        gmo_cvs_receipt_url: String,
-        gmo_payment_term: String
+        gmo_order_id: String // GMOオーダーID
     },
     {
         collection: 'reservations',

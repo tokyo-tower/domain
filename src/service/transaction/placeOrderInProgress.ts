@@ -4,7 +4,6 @@
  * @namespace service.transaction.placeOrderInProgress
  */
 
-import * as GMO from '@motionpicture/gmo-service';
 import * as waiter from '@motionpicture/waiter-domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
@@ -406,30 +405,7 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
             purchased_at: now,
 
             // クレジット決済
-            gmo_shop_id: <string>process.env.GMO_SHOP_ID,
-            gmo_shop_pass: <string>process.env.GMO_SHOP_PASS,
             gmo_order_id: (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '',
-            gmo_amount: (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.amount.toString() : '',
-            gmo_access_id: (creditCardAuthorizeAction !== undefined)
-                ? (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs.accessId
-                : '',
-            gmo_access_pass: (creditCardAuthorizeAction !== undefined)
-                ? (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs.accessPass
-                : '',
-            gmo_status: GMO.utils.util.Status.Auth,
-            gmo_shop_pass_string: '',
-            gmo_tax: '',
-            gmo_forward: '',
-            gmo_method: '',
-            gmo_approve: '',
-            gmo_tran_id: '',
-            gmo_tran_date: '',
-            gmo_pay_type: '',
-            gmo_cvs_code: '',
-            gmo_cvs_conf_no: '',
-            gmo_cvs_receipt_no: '',
-            gmo_cvs_receipt_url: '',
-            gmo_payment_term: '',
 
             payment_seat_index: index,
 
