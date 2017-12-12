@@ -7,11 +7,7 @@ import PaymentMethodType from '../paymentMethodType';
 import * as PerformanceFactory from '../performance';
 import * as ReservationFactory from '../reservation';
 
-// import ArgumentError from '../error/argument';
-
-// import { IOfferWithDetails as ISeatReservationOffer } from '../offer/seatReservation';
-// import PersonType from '../personType';
-// import ReservationStatusType from '../reservationStatusType';
+import ItemAvailability from '../itemAvailability';
 import IMultilingualString from '../multilingualString';
 
 /**
@@ -66,10 +62,17 @@ export interface IExtensionTicketType {
 
 export interface IReservation extends ReservationFactory.IReservation {
     id?: string;
+    /**
+     * おさえた在庫ID
+     */
+    stock: string;
+    /**
+     * 仮予約前の在庫ステータス
+     */
+    stock_availability_before: ItemAvailability;
     qr_str: string;
     performance: string;
     seat_code: string;
-    // expired_at: Date; // 仮予約期限 // 仮予約データは取引の期限で管理されるので、ここには不要
     reservation_ttts_extension: IExtensionReservation;
 
     performance_day: string;

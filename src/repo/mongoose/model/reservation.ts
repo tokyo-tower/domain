@@ -24,6 +24,14 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        stock: {
+            type: String,
+            required: true
+        },
+        stock_availability_before: {
+            type: String,
+            required: true
+        },
         qr_str: {
             type: String,
             required: true
@@ -41,7 +49,6 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        expired_at: Date, // 仮予約期限
         reservation_ttts_extension: tttsExtensionReservation,
 
         performance_day: String,

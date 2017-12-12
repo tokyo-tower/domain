@@ -338,7 +338,8 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
     return tmpReservations.map((tmpReservation, index) => {
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
-            reservationStatus: factory.reservationStatusType.ReservationConfirmed,
+            stock: tmpReservation.stock,
+            stock_availability_before: tmpReservation.stock_availability_before,
             qr_str: `${performance.day}-${tmpReservation.payment_no}-${index}`,
 
             status: tmpReservation.status_after,

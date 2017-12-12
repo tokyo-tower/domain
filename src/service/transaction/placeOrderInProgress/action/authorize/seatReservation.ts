@@ -170,9 +170,6 @@ async function reserveTemporarilyByOffer(
             },
             {
                 availability: factory.itemAvailability.SoldOut
-                // expired_at: expiredAt,
-                // ticket_ttts_extension: offer.ticket_ttts_extension,
-                // reservation_ttts_extension: getReservationExtension(seatCodeBase)
             },
             { new: true }
         ).exec();
