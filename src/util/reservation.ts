@@ -9,86 +9,20 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import Sequence from '../model/mongoose/sequence';
+import Sequence from '../repo/mongoose/model/sequence';
 import * as ReservationUtil from './reservation';
 
 const debug = createDebug('chever-domain:util:reservation');
 const DEFAULT_RADIX = 10;
 
 /**
- * 予約可能
- */
-export const STATUS_AVAILABLE = 'AVAILABLE';
-/**
- * 仮予約
- */
-export const STATUS_TEMPORARY = 'TEMPORARY';
-/**
- * 主に車椅子などのための仮予約
- */
-export const STATUS_TEMPORARY_FOR_SECURE_EXTRA = 'TEMPORARY_FOR_SECURE_EXTRA';
-/**
- * 主に車椅子などのための余分確保
- */
-export const STATUS_ON_KEPT_FOR_SECURE_EXTRA = 'STATUS_ON_KEPT_FOR_SECURE_EXTRA';
-/**
- * TTTS確保上の仮予約
- */
-export const STATUS_TEMPORARY_ON_KEPT_BY_TTTS = 'TEMPORARY_ON_KEPT_BY_TTTS';
-/**
- * 決済待ち
- */
-export const STATUS_WAITING_SETTLEMENT = 'WAITING_SETTLEMENT';
-/**
- * ペイデザイン決済待ち
- */
-export const STATUS_WAITING_SETTLEMENT_PAY_DESIGN = 'WAITING_SETTLEMENT_PAY_DESIGN';
-/**
- * TTTS確保
- */
-export const STATUS_KEPT_BY_TTTS = 'KEPT_BY_TTTS';
-/**
- * メルマガ会員保留
- */
-export const STATUS_KEPT_BY_MEMBER = 'KEPT_BY_MEMBER';
-/**
- * 予約確定
- */
-export const STATUS_RESERVED = 'RESERVED';
-/**
- * キャンセル
- */
-export const STATUS_CANCELLED = 'CANCELLED';
-/**
- * キャンセル料
- */
-export const STATUS_CANCELLATION_FEE = 'CANCELLATION_FEE';
-
-/**
  * 一般
  */
 export const PURCHASER_GROUP_CUSTOMER = '01';
 /**
- * メルマガ会員先行
- */
-export const PURCHASER_GROUP_MEMBER = '02';
-/**
  * 内部関係者
  */
 export const PURCHASER_GROUP_STAFF = '04';
-/**
- * 窓口
- */
-export const PURCHASER_GROUP_WINDOW = '06';
-
-/**
- * MX4D追加料金
- */
-export const CHARGE_MX4D = 1200;
-/**
- * コンビニ決済手数料
- */
-export const CHARGE_CVS = 150;
 
 export const CHECK_DIGIT_WEIGHTS = [2, 6, 3, 7, 5, 4, 2];
 
