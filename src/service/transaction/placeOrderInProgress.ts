@@ -333,7 +333,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     }
 
     // 注文番号を作成
-    const orderNumber = `TT-${performance.day}-${tmpReservations[0].payment_no}`;
+    // tslint:disable-next-line:no-magic-numbers
+    const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].payment_no}`;
 
     // 予約データを作成
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
