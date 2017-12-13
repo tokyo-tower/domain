@@ -24,6 +24,14 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        transaction: {
+            type: String,
+            required: true
+        },
+        order_number: {
+            type: String,
+            required: true
+        },
         stock: {
             type: String,
             required: true
@@ -79,7 +87,6 @@ const schema = new mongoose.Schema(
             ref: Film.modelName
         },
         film_name: multilingualString,
-        film_image: String,
         film_is_mx4d: Boolean,
         film_copyright: String,
 
