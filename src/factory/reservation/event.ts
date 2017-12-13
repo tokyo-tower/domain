@@ -11,6 +11,17 @@ import ItemAvailability from '../itemAvailability';
 import IMultilingualString from '../multilingualString';
 
 /**
+ * 入場履歴インターフェース
+ * @memberof reservation.event
+ */
+export interface ICheckin {
+    when: Date; // いつ
+    where: string; // どこで
+    why: string; // 何のために
+    how: string; // どうやって
+}
+
+/**
  * tttsExtensionReservation.ts
  * ttts拡張予予約情報mongooseスキーマタイプ
  * ttts独自の機能拡張用フィールド定義
@@ -63,6 +74,14 @@ export interface IExtensionTicketType {
 export interface IReservation extends ReservationFactory.IReservation {
     id?: string;
     /**
+     * 注文取引ID
+     */
+    transaction: string;
+    /**
+     * 注文番号
+     */
+    order_number: string;
+    /**
      * おさえた在庫ID
      */
     stock: string;
@@ -83,15 +102,14 @@ export interface IReservation extends ReservationFactory.IReservation {
     performance_ttts_extension: PerformanceFactory.IExtension;
 
     theater: string;
-    theater_name: IMultilingualString;
-    theater_address: IMultilingualString;
+    theater_name: { en: string; ja: string; };
+    theater_address: { en: string; ja: string; };
 
     screen: string;
-    screen_name: IMultilingualString;
+    screen_name: { en: string; ja: string; };
 
     film: string;
-    film_name: IMultilingualString;
-    film_image: string;
+    film_name: { en: string; ja: string; };
     film_is_mx4d: boolean;
     film_copyright: string;
 
@@ -110,10 +128,7 @@ export interface IReservation extends ReservationFactory.IReservation {
     purchased_at: Date; // 購入確定日時
     payment_method: PaymentMethodType; // 決済方法
 
-    seat_grade_name: {
-        ja: string;
-        en: string;
-    };
+    seat_grade_name: { en: string; ja: string; };
     seat_grade_additional_charge: number;
 
     ticket_type: string; // 券種
@@ -137,12 +152,7 @@ export interface IReservation extends ReservationFactory.IReservation {
     owner_group?: string;
     owner_signature?: string;
 
-    checkins: {  // 入場履歴
-        when: Date, // いつ
-        where: string; // どこで
-        why: string; // 何のために
-        how: string; // どうやって
-    }[];
+    checkins: ICheckin[];
 
     gmo_order_id: string; // GMOオーダーID
 }

@@ -7,6 +7,7 @@
 import * as waiter from '@motionpicture/waiter-domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
+import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
 import * as factory from '../../factory';
@@ -264,9 +265,7 @@ export async function confirm(params: {
     }
 
     // 結果作成
-    transaction.result = {
-        eventReservations: createReservations(transaction)
-    };
+    transaction.result = createResult(transaction);
 
     // ステータス変更
     debug('updating transaction...');
@@ -316,7 +315,7 @@ function canBeClosed(__: factory.transaction.placeOrder.ITransaction) {
  * 確定以外の全情報を確定するプロセスprocessAllExceptConfirm
  */
 // tslint:disable-next-line:max-func-body-length
-export function createReservations(transaction: factory.transaction.placeOrder.ITransaction): factory.reservation.event.IReservation[] {
+export function createResult(transaction: factory.transaction.placeOrder.ITransaction): factory.transaction.placeOrder.IResult {
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
@@ -327,19 +326,24 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
     const performance = (<factory.action.authorize.seatReservation.IObject>seatReservationAuthorizeAction.object).performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
-    const now = new Date();
+    const now = moment();
 
     if (transaction.object.paymentMethod === undefined) {
         throw new Error('PaymentMethod undefined.');
     }
 
-    // tslint:disable-next-line:max-func-body-length
-    return tmpReservations.map((tmpReservation, index) => {
+    // 注文番号を作成
+    const orderNumber = `TT-${performance.day}-${tmpReservations[0].payment_no}`;
+
+    // 予約データを作成
+    const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
+            transaction: transaction.id,
+            order_number: orderNumber,
             stock: tmpReservation.stock,
             stock_availability_before: tmpReservation.stock_availability_before,
-            qr_str: `${performance.day}-${tmpReservation.payment_no}-${index}`,
+            qr_str: `${orderNumber}-${index}`,
 
             status: tmpReservation.status_after,
 
@@ -363,7 +367,7 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
             performance_start_time: performance.start_time,
             performance_end_time: performance.end_time,
             performance_ttts_extension: performance.ttts_extension,
-            performance_canceled: performance.caceled,
+            performance_canceled: performance.canceled,
 
             theater: performance.theater._id,
             theater_name: performance.theater.name,
@@ -374,7 +378,6 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
 
             film: performance.film._id,
             film_name: performance.film.name,
-            film_image: performance.film.image,
             film_is_mx4d: performance.film.is_mx4d,
             film_copyright: performance.film.copyright,
 
@@ -398,11 +401,11 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
             payment_method: <factory.paymentMethodType>transaction.object.paymentMethod,
 
             watcher_name: tmpReservation.watcher_name,
-            watcher_name_updated_at: now,
+            watcher_name_updated_at: now.toDate(),
 
             reservation_ttts_extension: tmpReservation.reservation_ttts_extension,
 
-            purchased_at: now,
+            purchased_at: now.toDate(),
 
             // クレジット決済
             gmo_order_id: (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '',
@@ -412,4 +415,9 @@ export function createReservations(transaction: factory.transaction.placeOrder.I
             checkins: []
         };
     });
+
+    return {
+        orderNumber,
+        eventReservations
+    };
 }

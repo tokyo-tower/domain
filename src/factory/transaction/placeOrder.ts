@@ -60,6 +60,10 @@ export type IAgent = IPerson;
 // tslint:disable-next-line:no-empty-interface
 export interface IResult {
     /**
+     * 注文番号
+     */
+    orderNumber: string;
+    /**
      * 座席予約リスト
      */
     eventReservations: EventReservationFactory.IReservation[];
