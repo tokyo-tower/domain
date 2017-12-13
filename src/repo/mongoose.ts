@@ -4,7 +4,6 @@
  */
 
 import Authentication from './mongoose/model/authentication';
-import Client from './mongoose/model/client';
 import CustomerCancelRequest from './mongoose/model/customerCancelRequest';
 import EmailQueue from './mongoose/model/emailQueue';
 import Film from './mongoose/model/film';
@@ -19,7 +18,6 @@ import TicketTypeGroup from './mongoose/model/ticketTypeGroup';
 
 export {
     Authentication,
-    Client,
     CustomerCancelRequest,
     EmailQueue,
     Film,

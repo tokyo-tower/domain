@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Deprecated
 
 ### Removed
+- MongoDBからclientsコレクションを削除。
 
 ### Fixed
 
