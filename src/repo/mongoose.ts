@@ -4,7 +4,6 @@
  */
 
 import Authentication from './mongoose/model/authentication';
-import CustomerCancelRequest from './mongoose/model/customerCancelRequest';
 import EmailQueue from './mongoose/model/emailQueue';
 import Film from './mongoose/model/film';
 import GMONotification from './mongoose/model/gmoNotification';
@@ -18,7 +17,6 @@ import TicketTypeGroup from './mongoose/model/ticketTypeGroup';
 
 export {
     Authentication,
-    CustomerCancelRequest,
     EmailQueue,
     Film,
     GMONotification,

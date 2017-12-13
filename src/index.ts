@@ -32,6 +32,7 @@ import * as StockService from './service/stock';
 import * as TaskService from './service/task';
 import * as PlaceOrderTransactionService from './service/transaction/placeOrder';
 import * as PlaceOrderInProgressTransactionService from './service/transaction/placeOrderInProgress';
+import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
 
 import * as factory from './factory';
 
@@ -111,6 +112,7 @@ export namespace service {
     export namespace transaction {
         export import placeOrder = PlaceOrderTransactionService;
         export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
+        export import returnOrder = ReturnOrderTransactionService;
     }
 }
 

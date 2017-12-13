@@ -37,6 +37,7 @@ import * as TaskExecutionResultFactory from './factory/taskExecutionResult';
 import TaskName from './factory/taskName';
 import TaskStatus from './factory/taskStatus';
 import * as PlaceOrderTransactionFactory from './factory/transaction/placeOrder';
+import * as ReturnOrderTransactionFactory from './factory/transaction/returnOrder';
 import TransactionStatusType from './factory/transactionStatusType';
 import TransactionTasksExportationStatus from './factory/transactionTasksExportationStatus';
 import TransactionType from './factory/transactionType';
@@ -115,6 +116,7 @@ export import taskName = TaskName;
 export import taskStatus = TaskStatus;
 export namespace transaction {
     export import placeOrder = PlaceOrderTransactionFactory;
+    export import returnOrder = ReturnOrderTransactionFactory;
 }
 export import transactionStatusType = TransactionStatusType;
 export import transactionTasksExportationStatus = TransactionTasksExportationStatus;

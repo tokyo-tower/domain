@@ -10,11 +10,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 - 取引と在庫スキーマを追加。予約を在庫を明確に分離。
 - APIの認証情報をCognitoから取得するように変更。
+- 注文返品取引スキーマを追加。
 
 ### Deprecated
 
 ### Removed
 - MongoDBからclientsコレクションを削除。
+- MongoDBからcustomer_cancel_requestsコレクションを削除。
 
 ### Fixed
 
