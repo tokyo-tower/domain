@@ -1,11 +1,10 @@
 /**
  * 共通ユーティリティ
- *
  * @namespace CommonUtil
  */
 
 import * as crypto from 'crypto';
-import * as request from 'request'; // for token
+import * as request from 'request-promise-native';
 
 export interface IPrefecture {
     code: string;
@@ -169,34 +168,57 @@ export function deleteFromKeys(model: any, keys: string[]): any {
 
     return deletedModel;
 }
+
+export interface ICredentials {
+    access_token: string;
+    expires_in: number;
+    token_type: string;
+}
+
 /**
  * token取得
- * 2017/08 add for TTTS
- * @memberOf CommonUtil
- *
+ * @memberof CommonUtil
  * @param {string} apiEndpoint
  * @returns {any}
  */
-export async function getToken(apiEndpoint: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-        request.post(`${apiEndpoint}oauth/token`, {
-            body: {
-                grant_type: 'client_credentials',
-                client_id: 'motionpicture',
-                client_secret: 'motionpicture',
-                state: 'state123456789',
-                scopes: [
-                    'performances.read-only'
-                ]
+export async function getToken(options: {
+    /**
+     * 認可サーバードメイン
+     */
+    authorizeServerDomain: string;
+    /**
+     * クライアントID
+     */
+    clientId: string;
+    /**
+     * クライアントシークレット
+     */
+    clientSecret: string;
+    /**
+     * スコープリスト
+     */
+    scopes: string[];
+    /**
+     * 状態
+     */
+    state: string;
+}): Promise<ICredentials> {
+    return request.post(
+        `https://${options.authorizeServerDomain}/token`,
+        {
+            auth: {
+                user: options.clientId,
+                password: options.clientSecret
+            },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            form: {
+                scope: options.scopes.join(' '),
+                state: options.state,
+                grant_type: 'client_credentials'
             },
             json: true
-            },       (error: any, response: request.RequestResponse, body: any) => {
-            // tslint:disable-next-line:no-magic-numbers
-            if (response !== undefined && response.statusCode === 200) {
-                resolve(body);
-            } else {
-                reject(error);
-            }
-        });
-    });
+        }
+    );
 }
