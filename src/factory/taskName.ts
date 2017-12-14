@@ -5,11 +5,30 @@
  */
 
 enum TaskName {
+    /**
+     * 座席の仮予約削除
+     */
     CancelSeatReservation = 'cancelSeatReservation',
+    /**
+     * クレジットカードのオーソリ取消
+     */
     CancelCreditCard = 'cancelCreditCard',
+    /**
+     * メール通知送信
+     */
     SendEmailNotification = 'sendEmailNotification',
+    /**
+     * 座席予約の資産移動
+     */
     SettleSeatReservation = 'settleSeatReservation',
-    SettleCreditCard = 'settleCreditCard'
+    /**
+     * クレジットカード実売上
+     */
+    SettleCreditCard = 'settleCreditCard',
+    /**
+     * 返品タスク
+     */
+    ReturnOrder = 'returnOrder'
 }
 
 export default TaskName;

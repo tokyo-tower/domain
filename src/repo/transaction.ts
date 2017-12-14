@@ -120,6 +120,23 @@ export class MongoRepository {
     }
 
     /**
+     * IDから返品取引を取得する
+     * @param {string} transactionId transaction id
+     */
+    public async findReturnOrderById(transactionId: string): Promise<factory.transaction.returnOrder.ITransaction> {
+        const doc = await this.transactionModel.findOne({
+            _id: transactionId,
+            typeOf: factory.transactionType.ReturnOrder
+        }).exec();
+
+        if (doc === null) {
+            throw new factory.errors.NotFound('transaction');
+        }
+
+        return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+    }
+
+    /**
      * タスクエクスポートリトライ
      * todo updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
      * @param {number} intervalInMinutes

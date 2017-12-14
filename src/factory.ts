@@ -30,6 +30,7 @@ import ReservationStatusType from './factory/reservationStatusType';
 import * as TaskFactory from './factory/task';
 import * as CancelCreditCardTaskFactory from './factory/task/cancelCreditCard';
 import * as CancelSeatReservationTaskFactory from './factory/task/cancelSeatReservation';
+import * as ReturnOrderTaskFactory from './factory/task/returnOrder';
 import * as SendEmailNotificationTaskFactory from './factory/task/sendEmailNotification';
 import * as SettleCreditCardTaskFactory from './factory/task/settleCreditCard';
 import * as SettleSeatReservationTaskFactory from './factory/task/settleSeatReservation';
@@ -107,6 +108,7 @@ export namespace task {
     export import ITask = TaskFactory.ITask;
     export import cancelCreditCard = CancelCreditCardTaskFactory;
     export import cancelSeatReservation = CancelSeatReservationTaskFactory;
+    export import returnOrder = ReturnOrderTaskFactory;
     export import sendEmailNotification = SendEmailNotificationTaskFactory;
     export import settleCreditCard = SettleCreditCardTaskFactory;
     export import settleSeatReservation = SettleSeatReservationTaskFactory;

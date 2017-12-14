@@ -8,7 +8,12 @@ import * as mongoose from 'mongoose';
 
 import * as factory from '../factory';
 
+import { MongoRepository as ReservationRepo } from '../repo/reservation';
+import { MongoRepository as StockRepo } from '../repo/stock';
+import { MongoRepository as TransactionRepo } from '../repo/transaction';
+
 import * as NotificationService from '../service/notification';
+import * as OrderService from '../service/order';
 import * as SalesService from '../service/sales';
 import * as StockService from '../service/stock';
 
@@ -51,5 +56,19 @@ export function settleCreditCard(
 ): IOperation<void> {
     return async () => {
         await SalesService.settleCreditCardAuth(data.transactionId);
+    };
+}
+
+export function returnOrder(
+    data: factory.task.returnOrder.IData
+): IOperation<void> {
+    return async (connection: mongoose.Connection) => {
+        const reservationRepo = new ReservationRepo(connection);
+        const stockRepo = new StockRepo(connection);
+        const transactionRepo = new TransactionRepo(connection);
+
+        await OrderService.processReturn(data.transactionId)(
+            reservationRepo, stockRepo, transactionRepo
+        );
     };
 }

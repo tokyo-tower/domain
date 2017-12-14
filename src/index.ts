@@ -27,6 +27,7 @@ import { MongoRepository as TransactionRepo } from './repo/transaction';
 
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
+import * as OrderService from './service/order';
 import * as SalesService from './service/sales';
 import * as StockService from './service/stock';
 import * as TaskService from './service/task';
@@ -106,6 +107,7 @@ export namespace repository {
 export namespace service {
     export import itemAvailability = ItemAvailabilityService;
     export import notification = NotificationService;
+    export import order = OrderService;
     export import sales = SalesService;
     export import stock = StockService;
     export import task = TaskService;
