@@ -40,6 +40,10 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
+        stock_availability_after: {
+            type: String,
+            required: true
+        },
         qr_str: {
             type: String,
             required: true

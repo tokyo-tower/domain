@@ -89,6 +89,10 @@ export interface IReservation extends ReservationFactory.IReservation {
      * 仮予約前の在庫ステータス
      */
     stock_availability_before: ItemAvailability;
+    /**
+     * 仮予約後の在庫ステータス
+     */
+    stock_availability_after: ItemAvailability;
     qr_str: string;
     performance: string;
     seat_code: string;

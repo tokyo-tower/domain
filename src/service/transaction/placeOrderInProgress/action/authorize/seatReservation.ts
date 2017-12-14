@@ -98,7 +98,7 @@ export async function create(
         // 予約情報更新(「仮予約:TEMPORARY」にアップデートする処理を枚数分実行)
         await Promise.all(offers.map(async (offer) => {
             const tmpReservationsByOffer = await reserveTemporarilyByOffer(
-                paymentNo, transaction.object.purchaser_group, performance, offer
+                transaction.id, paymentNo, transaction.object.purchaser_group, performance, offer
             );
             tmpReservations.push(...tmpReservationsByOffer);
         }));
@@ -145,6 +145,7 @@ export async function create(
  */
 // tslint:disable-next-line:max-func-body-length
 async function reserveTemporarilyByOffer(
+    transactionId: string,
     paymentNo: string,
     purchaserGroup: string,
     performance: factory.performance.IPerformanceWithDetails,
@@ -169,7 +170,8 @@ async function reserveTemporarilyByOffer(
                 availability: factory.itemAvailability.InStock
             },
             {
-                availability: factory.itemAvailability.SoldOut
+                availability: factory.itemAvailability.OutOfStock,
+                holder: transactionId
             },
             { new: true }
         ).exec();
@@ -186,6 +188,8 @@ async function reserveTemporarilyByOffer(
             tmpReservations.push({
                 stock: stock.get('id'),
                 stock_availability_before: factory.itemAvailability.InStock,
+                stock_availability_after: stock.get('availability'),
+                stock_holder: stock.get('holder'),
                 status_after: factory.reservationStatusType.ReservationConfirmed,
                 seat_code: seatCode,
                 seat_grade_name: seatInfo.grade.name,
@@ -224,28 +228,31 @@ async function reserveTemporarilyByOffer(
             // 余分確保分の予約更新
             const promises = offer.extra.map(async () => {
                 // '予約可能'を'仮予約'に変更
-                const extraReservation = await stockRepo.stockModel.findOneAndUpdate(
+                const extraStock = await stockRepo.stockModel.findOneAndUpdate(
                     {
                         performance: performance._id,
                         availability: factory.itemAvailability.InStock
                     },
                     {
-                        availability: factory.itemAvailability.SoldOut,
+                        availability: factory.itemAvailability.OutOfStock,
+                        holder: transactionId,
                         reservation_ttts_extension: {
                             seat_code_base: seatCode
                         }
                     },
                     { new: true }
                 ).exec();
-                debug('stock found.', extraReservation);
+                debug('stock found.', extraStock);
 
                 // 更新エラー(対象データなし):次のseatへ
-                if (extraReservation !== null) {
+                if (extraStock !== null) {
                     tmpReservations.push({
                         stock: stock.get('id'),
                         stock_availability_before: factory.itemAvailability.InStock,
+                        stock_availability_after: extraStock.get('availability'),
+                        stock_holder: extraStock.get('holder'),
                         status_after: factory.reservationStatusType.ReservationSecuredExtra,
-                        seat_code: extraReservation.get('seat_code'),
+                        seat_code: extraStock.get('seat_code'),
                         seat_grade_name: seatInfo.grade.name,
                         seat_grade_additional_charge: seatInfo.grade.additional_charge,
                         ticket_type: offer.ticket_type,
@@ -379,7 +386,10 @@ async function removeTmpReservations(tmpReservations: factory.action.authorize.s
         try {
             await stockRepo.stockModel.findByIdAndUpdate(
                 tmpReservation.stock,
-                { availability: factory.itemAvailability.InStock }
+                {
+                    $set: { availability: factory.itemAvailability.InStock },
+                    $unset: { holder: 1 }
+                }
             ).exec();
         } catch (error) {
             // no op

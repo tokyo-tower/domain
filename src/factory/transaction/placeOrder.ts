@@ -64,6 +64,10 @@ export interface IResult {
      */
     orderNumber: string;
     /**
+     * GMOオーダーID
+     */
+    gmoOrderId: string;
+    /**
      * 座席予約リスト
      */
     eventReservations: EventReservationFactory.IReservation[];

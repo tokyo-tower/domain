@@ -21,6 +21,9 @@ const schema = new mongoose.Schema(
         availability: {
             type: String,
             required: true
+        },
+        holder: {
+            type: String
         }
     },
     {

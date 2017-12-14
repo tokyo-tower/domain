@@ -22,9 +22,17 @@ export interface ITmpReservation {
      */
     stock: string;
     /**
-     * 仮予約の在庫ステータス
+     * 仮予約前の在庫ステータス
      */
     stock_availability_before: ItemAvailability;
+    /**
+     * 仮予約後の在庫ステータス
+     */
+    stock_availability_after: ItemAvailability;
+    /**
+     * 仮予約後の在庫保持者
+     */
+    stock_holder: string;
     /**
      * 完了後の予約ステータス
      */

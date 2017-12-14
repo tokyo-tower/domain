@@ -336,6 +336,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     // tslint:disable-next-line:no-magic-numbers
     const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].payment_no}`;
 
+    const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
+
     // 予約データを作成
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
         return {
@@ -344,6 +346,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             order_number: orderNumber,
             stock: tmpReservation.stock,
             stock_availability_before: tmpReservation.stock_availability_before,
+            stock_availability_after: tmpReservation.stock_availability_after,
             qr_str: `${orderNumber}-${index}`,
 
             status: tmpReservation.status_after,
@@ -409,7 +412,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             purchased_at: now.toDate(),
 
             // クレジット決済
-            gmo_order_id: (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '',
+            gmo_order_id: gmoOrderId,
 
             payment_seat_index: index,
 
@@ -419,6 +422,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
     return {
         orderNumber,
+        gmoOrderId,
         eventReservations
     };
 }

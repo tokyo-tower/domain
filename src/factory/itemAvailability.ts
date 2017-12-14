@@ -9,10 +9,10 @@ enum ItemAvailability {
     // InStoreOnly = 'InStoreOnly',
     // LimitedAvailability = 'LimitedAvailability',
     // OnlineOnly = 'OnlineOnly',
-    // OutOfStock = 'OutOfStock',
+    OutOfStock = 'OutOfStock'
     // PreOrder = 'PreOrder',
     // PreSale = 'PreSale',
-    SoldOut = 'SoldOut'
+    // SoldOut = 'SoldOut'
 }
 
 export default ItemAvailability;

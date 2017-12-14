@@ -38,14 +38,22 @@ export async function cancelSeatReservationAuth(transactionId: string) {
         const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
-            await stockRepo.stockModel.findByIdAndUpdate(
-                tmpReservation.stock,
-                { availability: tmpReservation.stock_availability_before }
+            await stockRepo.stockModel.findOneAndUpdate(
+                {
+                    _id: tmpReservation.stock,
+                    availability: tmpReservation.stock_availability_after,
+                    holder: transactionId // 対象取引に保持されている
+                },
+                {
+                    $set: { availability: tmpReservation.stock_availability_before },
+                    $unset: { holder: 1 }
+                }
             ).exec();
         }));
 
         // tslint:disable-next-line:no-suspicious-comment
         // TODO 車椅子の流入制限についても対処
+
         await resetTmps();
     }));
 }
