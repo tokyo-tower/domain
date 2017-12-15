@@ -4,6 +4,17 @@
  * @namespace person
  */
 
+export enum Group {
+    /**
+     * 一般
+     */
+    Customer = '01',
+    /**
+     * 内部関係者
+     */
+    Staff = '04'
+}
+
 /**
  * contact interface
  * 連絡先インターフェース
@@ -30,7 +41,7 @@ export interface IContact {
  */
 export interface IPerson {
     /**
-     * person id (Amazon Cognito User Identifier)
+     * id
      */
     id: string;
     /**
@@ -44,6 +55,6 @@ export interface IPerson {
     };
     notes?: string;
     email?: string;
-    group?: string;
+    group?: Group;
     signature?: string;
 }

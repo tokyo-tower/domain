@@ -72,3 +72,16 @@ export function returnOrder(
         );
     };
 }
+
+export function returnOrdersByPerformance(
+    data: factory.task.returnOrdersByPerformance.IData
+): IOperation<void> {
+    return async (connection: mongoose.Connection) => {
+        const reservationRepo = new ReservationRepo(connection);
+        const transactionRepo = new TransactionRepo(connection);
+
+        await OrderService.processReturnAllByPerformance(data.performanceId)(
+            reservationRepo, transactionRepo
+        );
+    };
+}

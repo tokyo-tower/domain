@@ -28,7 +28,11 @@ enum TaskName {
     /**
      * 返品タスク
      */
-    ReturnOrder = 'returnOrder'
+    ReturnOrder = 'returnOrder',
+    /**
+     * パフォーマンスに対する注文返品タスク
+     */
+    ReturnOrdersByPerformance = 'returnOrdersByPerformance'
 }
 
 export default TaskName;

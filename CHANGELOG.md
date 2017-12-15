@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ## Unreleased
 ### Added
 - 注文取引サービス、在庫状況サービス、在庫サービス、売上サービス、通知サービス、タスクサービスを追加。
+- パフォーマンスに対する返品タスクを追加。
 
 ### Changed
 - 取引と在庫スキーマを追加。予約を在庫を明確に分離。

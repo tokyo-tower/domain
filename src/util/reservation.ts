@@ -9,6 +9,7 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
+import { Group } from '../factory/person';
 import Sequence from '../repo/mongoose/model/sequence';
 import * as ReservationUtil from './reservation';
 
@@ -18,11 +19,11 @@ const DEFAULT_RADIX = 10;
 /**
  * 一般
  */
-export const PURCHASER_GROUP_CUSTOMER = '01';
+export const PURCHASER_GROUP_CUSTOMER = Group.Customer;
 /**
  * 内部関係者
  */
-export const PURCHASER_GROUP_STAFF = '04';
+export const PURCHASER_GROUP_STAFF = Group.Staff;
 
 export const CHECK_DIGIT_WEIGHTS = [2, 6, 3, 7, 5, 4, 2];
 

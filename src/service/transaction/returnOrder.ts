@@ -3,7 +3,6 @@
  * @namespace service.transaction.returnOrder
  */
 
-import * as GMO from '@motionpicture/gmo-service';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
@@ -33,9 +32,21 @@ export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Pro
  * @returns {Promise<void>}
  */
 export function confirm(params: {
-    performanceDay: string;
-    paymentNo: string;
+    // performanceDay: string;
+    // paymentNo: string;
+    /**
+     * 取引ID
+     */
+    transactionId: string;
+    /**
+     * キャンセル手数料
+     */
     cancellationFee: number;
+    /**
+     * 強制的に返品するかどうか
+     * 管理者の判断で返品する場合、バリデーションをかけない
+     */
+    forcibly: boolean;
 }): ITransactionOperation<ReturnOrderTransactionFactory.ITransaction> {
     return async (transactionRepo: TransactionRepo) => {
         const now = new Date();
@@ -45,8 +56,9 @@ export function confirm(params: {
             {
                 typeOf: TransactionType.PlaceOrder,
                 status: TransactionStatusType.Confirmed,
-                'result.eventReservations.performance_day': params.performanceDay,
-                'result.eventReservations.payment_no': params.paymentNo
+                _id: params.transactionId
+                // 'result.eventReservations.performance_day': params.performanceDay,
+                // 'result.eventReservations.payment_no': params.paymentNo
             }
         ).exec().then((doc) => {
             if (doc === null) {
@@ -59,19 +71,23 @@ export function confirm(params: {
         const transactionResult = <PlaceOrderTransactionFactory.IResult>transaction.result;
 
         // GMO取引状態確認
-        const searchTradeResult = await GMO.services.credit.searchTrade({
-            shopId: <string>process.env.GMO_SHOP_ID,
-            shopPass: <string>process.env.GMO_SHOP_PASS,
-            orderId: transactionResult.gmoOrderId
-        });
+        // tslint:disable-next-line:no-suspicious-comment
+        // TODO GMOを参照するとレート制限にひっかかるので、DBにGMO取引状態を持つように変更する
+        // const searchTradeResult = await GMO.services.credit.searchTrade({
+        //     shopId: <string>process.env.GMO_SHOP_ID,
+        //     shopPass: <string>process.env.GMO_SHOP_PASS,
+        //     orderId: transactionResult.gmoOrderId
+        // });
 
         // 取引状態が実売上でなければまだ返品できない
-        if (searchTradeResult.status !== GMO.utils.util.Status.Sales) {
-            throw new errors.Argument('transaction', 'Status not Sales.');
-        }
+        // if (searchTradeResult.status !== GMO.utils.util.Status.Sales) {
+        //     throw new errors.Argument('transaction', 'Status not Sales.');
+        // }
 
         // 検証
-        validateRequest(now, params.performanceDay);
+        if (!params.forcibly) {
+            validateRequest(now, transactionResult.eventReservations[0].performance_day);
+        }
 
         const endDate = new Date();
         const eventReservations = transactionResult.eventReservations;
@@ -85,7 +101,7 @@ export function confirm(params: {
                 transaction: transaction,
                 cancelName: cancelName,
                 cancellationFee: params.cancellationFee,
-                gmoTradeBefore: searchTradeResult
+                gmoTradeBefore: <any>null
             },
             expires: endDate,
             startDate: now,
@@ -95,14 +111,6 @@ export function confirm(params: {
 
         return transactionRepo.transactionModel.create(returnOrderAttributes)
             .then((doc) => <ReturnOrderTransactionFactory.ITransaction>doc.toObject());
-
-        // キャンセルリクエスト保管
-        // await ttts.Models.CustomerCancelRequest.create({
-        //     reservation: reservations[0],
-        //     tickets: (<any>ttts.Models.CustomerCancelRequest).getTickets(reservations),
-        //     cancel_name: `${reservations[0].purchaser_last_name} ${reservations[0].purchaser_first_name}`,
-        //     cancellation_fee: cancellationFee
-        // });
     };
 }
 
