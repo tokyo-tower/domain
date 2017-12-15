@@ -57,8 +57,6 @@ export function confirm(params: {
                 typeOf: TransactionType.PlaceOrder,
                 status: TransactionStatusType.Confirmed,
                 _id: params.transactionId
-                // 'result.eventReservations.performance_day': params.performanceDay,
-                // 'result.eventReservations.payment_no': params.paymentNo
             }
         ).exec().then((doc) => {
             if (doc === null) {
@@ -69,20 +67,12 @@ export function confirm(params: {
         });
 
         const transactionResult = <PlaceOrderTransactionFactory.IResult>transaction.result;
-
-        // GMO取引状態確認
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO GMOを参照するとレート制限にひっかかるので、DBにGMO取引状態を持つように変更する
-        // const searchTradeResult = await GMO.services.credit.searchTrade({
-        //     shopId: <string>process.env.GMO_SHOP_ID,
-        //     shopPass: <string>process.env.GMO_SHOP_PASS,
-        //     orderId: transactionResult.gmoOrderId
-        // });
+        const creditCardSales = transactionResult.creditCardSales;
 
         // 取引状態が実売上でなければまだ返品できない
-        // if (searchTradeResult.status !== GMO.utils.util.Status.Sales) {
-        //     throw new errors.Argument('transaction', 'Status not Sales.');
-        // }
+        if (creditCardSales === undefined) {
+            throw new errors.Argument('transaction', 'Status not Sales.');
+        }
 
         // 検証
         if (!params.forcibly) {
@@ -100,8 +90,7 @@ export function confirm(params: {
             object: {
                 transaction: transaction,
                 cancelName: cancelName,
-                cancellationFee: params.cancellationFee,
-                gmoTradeBefore: <any>null
+                cancellationFee: params.cancellationFee
             },
             expires: endDate,
             startDate: now,

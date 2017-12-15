@@ -59,5 +59,10 @@ export default {
     refunded_count: {
         type: Number,
         required: false
+    },
+    // 一括返金対象数
+    refund_count: {
+        type: Number,
+        required: false
     }
 };

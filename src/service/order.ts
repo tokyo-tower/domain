@@ -5,6 +5,10 @@
 
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
+// @ts-ignore
+import * as difference from 'lodash.difference';
+// @ts-ignore
+import * as uniq from 'lodash.uniq';
 import * as moment from 'moment';
 
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
@@ -19,7 +23,7 @@ import ReservationStatusType from '../factory/reservationStatusType';
 import * as ReturnOrdersByPerformanceTaskFactory from '../factory/task/returnOrdersByPerformance';
 import TaskStatus from '../factory/taskStatus';
 import * as PlaceOrderTransactionFactory from '../factory/transaction/placeOrder';
-import { ITransaction as IReturnOrderTransaction } from '../factory/transaction/returnOrder';
+import * as ReturnOrderTransactionFactory from '../factory/transaction/returnOrder';
 
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
@@ -33,7 +37,13 @@ export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo,
  * @param {IReturnOrderTransaction} returnOrderTransaction
  */
 export function processReturn(returnOrderTransactionId: string) {
-    return async (reservationRepo: ReservationRepo, stockRepo: StockRepo, transactionRepo: TransactionRepo) => {
+    // tslint:disable-next-line:max-func-body-length
+    return async (
+        performanceRepo: PerformanceRepo,
+        reservationRepo: ReservationRepo,
+        stockRepo: StockRepo,
+        transactionRepo: TransactionRepo
+    ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
             .then((doc) => {
@@ -41,13 +51,12 @@ export function processReturn(returnOrderTransactionId: string) {
                     throw new errors.NotFound('transaction');
                 }
 
-                return <IReturnOrderTransaction>doc.toObject();
+                return <ReturnOrderTransactionFactory.ITransaction>doc.toObject();
             });
         debug('processing return order...', returnOrderTransaction);
-        const transactionResult = <PlaceOrderTransactionFactory.IResult>returnOrderTransaction.object.transaction.result;
-
-        // 取引に対するクレジットカード承認アクションを取得
-        const orderId = transactionResult.gmoOrderId;
+        const placeOrderTransactionResult = <PlaceOrderTransactionFactory.IResult>returnOrderTransaction.object.transaction.result;
+        const creditCardSalesBefore = <PlaceOrderTransactionFactory.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
+        const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
 
         // 取引状態参照
         const searchTradeResult = await GMO.services.credit.searchTrade({
@@ -57,36 +66,58 @@ export function processReturn(returnOrderTransactionId: string) {
         });
         debug('searchTradeResult:', searchTradeResult);
 
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO リトライ可能にする
-        // GMO鳥義気状態に変更がなければ金額変更
-        // debug('trade already changed?', (searchTradeResult.tranId !== returnOrderTransaction.object.gmoTradeBefore.tranId));
-        // if (searchTradeResult.tranId === returnOrderTransaction.object.gmoTradeBefore.tranId) {
+        // GMO取引状態に変更がなければ金額変更
+        debug('trade already changed?', (searchTradeResult.tranId !== creditCardSalesBefore.tranId));
+        if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
+            // 手数料0円であれば、決済取り消し(返品)処理
+            if (returnOrderTransaction.object.cancellationFee === 0) {
+                debug(`altering tran. ${GMO.utils.util.JobCd.Return}..`, orderId);
+                const alterTranResult = await GMO.services.credit.alterTran({
+                    shopId: <string>process.env.GMO_SHOP_ID,
+                    shopPass: <string>process.env.GMO_SHOP_PASS,
+                    accessId: searchTradeResult.accessId,
+                    accessPass: searchTradeResult.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Return
+                });
+                // クレジットカード取引結果を返品取引結果に連携
+                await transactionRepo.transactionModel.findByIdAndUpdate(
+                    returnOrderTransaction.id,
+                    {
+                        'result.returnCreditCardResult': alterTranResult
+                    }
+                ).exec();
 
-        // 手数料0円であれば、決済取り消し(返品)処理
-        if (returnOrderTransaction.object.cancellationFee === 0) {
-            debug(`altering tran. ${GMO.utils.util.JobCd.Return}..`, orderId);
-            await GMO.services.credit.alterTran({
-                shopId: <string>process.env.GMO_SHOP_ID,
-                shopPass: <string>process.env.GMO_SHOP_PASS,
-                accessId: searchTradeResult.accessId,
-                accessPass: searchTradeResult.accessPass,
-                jobCd: GMO.utils.util.JobCd.Return
-            });
-        } else {
-            debug('changing amount...', orderId);
-            await GMO.services.credit.changeTran({
-                shopId: <string>process.env.GMO_SHOP_ID,
-                shopPass: <string>process.env.GMO_SHOP_PASS,
-                accessId: searchTradeResult.accessId,
-                accessPass: searchTradeResult.accessPass,
-                jobCd: GMO.utils.util.JobCd.Capture,
-                amount: returnOrderTransaction.object.cancellationFee
-            });
+                // パフォーマンスに返品済数を連携
+                await performanceRepo.performanceModel.findByIdAndUpdate(
+                    placeOrderTransactionResult.eventReservations[0].performance,
+                    {
+                        $inc: {
+                            'ttts_extension.refunded_count': 1
+                        },
+                        'ttts_extension.refund_update_at': new Date()
+                    }
+                ).exec();
+            } else {
+                debug('changing amount...', orderId);
+                const changeTranResult = await GMO.services.credit.changeTran({
+                    shopId: <string>process.env.GMO_SHOP_ID,
+                    shopPass: <string>process.env.GMO_SHOP_PASS,
+                    accessId: searchTradeResult.accessId,
+                    accessPass: searchTradeResult.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Capture,
+                    amount: returnOrderTransaction.object.cancellationFee
+                });
+                // クレジットカード取引結果を返品取引結果に連携
+                await transactionRepo.transactionModel.findByIdAndUpdate(
+                    returnOrderTransaction.id,
+                    {
+                        'result.changeCreditCardAmountResult': changeTranResult
+                    }
+                ).exec();
+            }
         }
-        // }
 
-        await Promise.all(transactionResult.eventReservations.map(async (reservation) => {
+        await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
             // 2017/11 本体チケットかつ特殊チケットの時、時間ごとの予約データ解放(AVAILABLEに変更)
             // tslint:disable-next-line:no-suspicious-comment
             // TODO
@@ -138,6 +169,7 @@ export function returnAllByPerformance(performanceId: string): IPerformanceAndTa
         // 終了済かどうか
         const now = moment();
         const endDate = moment(`${performance.day} ${performance.end_time}00+09:00`, 'YYYYMMDD HHmmssZ');
+        debug(now, endDate);
         if (endDate >= now) {
             throw new Error('上映が終了していないので返品処理を実行できません。');
         }
@@ -159,28 +191,37 @@ export function returnAllByPerformance(performanceId: string): IPerformanceAndTa
 }
 
 export function processReturnAllByPerformance(performanceId: string) {
-    return async (reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
+    return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
-        const transactionIds: string[] = await reservationRepo.reservationModel.distinct(
-            'transaction',
+        const reservations = await reservationRepo.reservationModel.find(
             {
                 status: ReservationStatusType.ReservationConfirmed,
                 performance: performanceId,
-                purchaser_group: PersonGroup.Customer,
-                checkins: { $size: 0 } // 全て未入場の予約だけ
+                purchaser_group: PersonGroup.Customer
+            },
+            'transaction checkins'
+        ).exec();
+
+        // 入場履歴なしの取引IDを取り出す
+        let transactionIds = reservations.map((r) => r.get('transaction'));
+        const transactionsIdsWithCheckins = reservations.filter((r) => (r.get('checkins').length > 0)).map((r) => r.get('transaction'));
+        debug(transactionIds, transactionsIdsWithCheckins);
+        transactionIds = uniq(difference(transactionIds, transactionsIdsWithCheckins));
+        debug('confirming returnOrderTransactions...', transactionIds);
+
+        // パフォーマンスに返金対対象数を追加する
+        await performanceRepo.performanceModel.findByIdAndUpdate(
+            performanceId,
+            {
+                'ttts_extension.refunded_count': 0,
+                'ttts_extension.refund_count': transactionIds.length,
+                // 'ttts_extension.refund_status': ttts.PerformanceUtil.REFUND_STATUS.COMPLETE,
+                'ttts_extension.refund_update_at': new Date()
             }
         ).exec();
-        debug('confirming returnOrderTransactions...', transactionIds);
 
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {
-            // const transactions = transactionRepo.transactionModel.find(
-            //     {
-            //         typeOf: TransactionType.PlaceOrder,
-            //         _id: { $in: transactionIds }
-            //     }
-            // ).exec().then((docs) => docs.map((doc) => <PlaceOrderTransactionFactory.ITransaction>doc.toObject()));
-
             await ReturnOrderTransactionService.confirm({
                 transactionId: transactionId,
                 cancellationFee: 0,

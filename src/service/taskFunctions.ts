@@ -8,6 +8,7 @@ import * as mongoose from 'mongoose';
 
 import * as factory from '../factory';
 
+import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
@@ -63,12 +64,13 @@ export function returnOrder(
     data: factory.task.returnOrder.IData
 ): IOperation<void> {
     return async (connection: mongoose.Connection) => {
+        const performanceRepo = new PerformanceRepo(connection);
         const reservationRepo = new ReservationRepo(connection);
         const stockRepo = new StockRepo(connection);
         const transactionRepo = new TransactionRepo(connection);
 
         await OrderService.processReturn(data.transactionId)(
-            reservationRepo, stockRepo, transactionRepo
+            performanceRepo, reservationRepo, stockRepo, transactionRepo
         );
     };
 }
@@ -77,11 +79,12 @@ export function returnOrdersByPerformance(
     data: factory.task.returnOrdersByPerformance.IData
 ): IOperation<void> {
     return async (connection: mongoose.Connection) => {
+        const performanceRepo = new PerformanceRepo(connection);
         const reservationRepo = new ReservationRepo(connection);
         const transactionRepo = new TransactionRepo(connection);
 
         await OrderService.processReturnAllByPerformance(data.performanceId)(
-            reservationRepo, transactionRepo
+            performanceRepo, reservationRepo, transactionRepo
         );
     };
 }

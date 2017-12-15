@@ -420,9 +420,32 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         };
     });
 
+    const paymentMethods = [{
+        name: transaction.object.paymentMethod.toString(),
+        paymentMethod: transaction.object.paymentMethod.toString(),
+        paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : ''
+    }];
+
     return {
-        orderNumber,
-        gmoOrderId,
+        order: {
+            typeOf: 'Order',
+            confirmationNumber: tmpReservations[0].payment_no,
+            orderNumber: orderNumber,
+            price: tmpReservations.reduce((a, b) => a + b.charge, 0),
+            priceCurrency: factory.priceCurrency.JPY,
+            paymentMethods: paymentMethods,
+            discounts: [],
+            url: '',
+            orderStatus: factory.orderStatus.OrderDelivered,
+            orderDate: now.toDate(),
+            isGift: false,
+            orderInquiryKey: {
+                performanceDay: performance.day,
+                paymentNo: tmpReservations[0].payment_no,
+                // tslint:disable-next-line:no-magic-numbers
+                telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '' // 下4桁
+            }
+        },
         eventReservations
     };
 }

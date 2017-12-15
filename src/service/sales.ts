@@ -83,7 +83,7 @@ export async function settleCreditCardAuth(transactionId: string) {
         }
 
         debug('calling alterTran...');
-        await GMO.services.credit.alterTran({
+        const alterTranResult = await GMO.services.credit.alterTran({
             shopId: entryTranArgs.shopId,
             shopPass: entryTranArgs.shopPass,
             accessId: execTranArgs.accessId,
@@ -91,6 +91,14 @@ export async function settleCreditCardAuth(transactionId: string) {
             jobCd: GMO.utils.util.JobCd.Sales,
             amount: entryTranArgs.amount
         });
+
+        // 取引結果に売上結果連携
+        await transactionRepo.transactionModel.findByIdAndUpdate(
+            transactionId,
+            {
+                'result.creditCardSales': alterTranResult
+            }
+        ).exec();
 
         // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
         // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
