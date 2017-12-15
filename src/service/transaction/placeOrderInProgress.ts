@@ -425,13 +425,16 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         paymentMethod: transaction.object.paymentMethod.toString(),
         paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : ''
     }];
+    const price = eventReservations
+        .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
+        .reduce((a, b) => a + b.charge, 0);
 
     return {
         order: {
             typeOf: 'Order',
-            confirmationNumber: tmpReservations[0].payment_no,
+            confirmationNumber: eventReservations[0].payment_no,
             orderNumber: orderNumber,
-            price: tmpReservations.reduce((a, b) => a + b.charge, 0),
+            price: price,
             priceCurrency: factory.priceCurrency.JPY,
             paymentMethods: paymentMethods,
             discounts: [],
@@ -441,7 +444,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             isGift: false,
             orderInquiryKey: {
                 performanceDay: performance.day,
-                paymentNo: tmpReservations[0].payment_no,
+                paymentNo: eventReservations[0].payment_no,
                 // tslint:disable-next-line:no-magic-numbers
                 telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '' // 下4桁
             }
