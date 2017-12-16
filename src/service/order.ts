@@ -93,8 +93,21 @@ export function processReturn(returnOrderTransactionId: string) {
                     placeOrderTransactionResult.eventReservations[0].performance,
                     {
                         $inc: {
-                            'ttts_extension.refunded_count': 1
+                            'ttts_extension.refunded_count': 1,
+                            'ttts_extension.unrefunded_count': -1
                         },
+                        'ttts_extension.refund_update_at': new Date()
+                    }
+                ).exec();
+
+                // すべて返金完了したら、返金ステータス変更
+                await performanceRepo.performanceModel.findOneAndUpdate(
+                    {
+                        _id: placeOrderTransactionResult.eventReservations[0].performance,
+                        'ttts_extension.unrefunded_count': 0
+                    },
+                    {
+                        'ttts_extension.refund_status': RefundStatus.Compeleted,
                         'ttts_extension.refund_update_at': new Date()
                     }
                 ).exec();
@@ -214,8 +227,8 @@ export function processReturnAllByPerformance(performanceId: string) {
         await performanceRepo.performanceModel.findByIdAndUpdate(
             performanceId,
             {
-                'ttts_extension.refunded_count': 0,
-                'ttts_extension.refund_count': transactionIds.length,
+                'ttts_extension.refunded_count': 0, // 返金済数は最初0
+                'ttts_extension.unrefunded_count': transactionIds.length, // 未返金数をセット
                 'ttts_extension.refund_status': RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }

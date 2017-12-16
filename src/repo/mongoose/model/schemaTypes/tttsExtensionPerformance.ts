@@ -60,8 +60,8 @@ export default {
         type: Number,
         required: false
     },
-    // 一括返金対象数
-    refund_count: {
+    // 未返金数
+    unrefunded_count: {
         type: Number,
         required: false
     }

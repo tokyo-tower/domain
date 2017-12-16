@@ -69,8 +69,10 @@ export interface IExtension {
     refund_update_user?: string;
     // 一括返金ステータス更新日時
     refund_update_at?: Date;
-    // 一括返金済数
+    // 返金済数
     refunded_count?: number;
+    // 未返金数
+    unrefunded_count?: number;
 }
 
 export interface ISeat {
