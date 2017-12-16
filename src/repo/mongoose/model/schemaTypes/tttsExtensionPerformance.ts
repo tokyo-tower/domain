@@ -22,7 +22,7 @@ export default {
     },
     // エレベータ運行ステータス更新日時
     ev_service_update_at: {
-        type: String,
+        type: Date,
         required: false
     },
     // オンライン販売ステータス
@@ -37,7 +37,7 @@ export default {
     },
     // オンライン販売ステータス更新日時
     online_sales_update_at: {
-        type: String,
+        type: Date,
         required: false
     },
     // 返金ステータス
@@ -52,7 +52,7 @@ export default {
     },
     // 一括返金ステータス更新日時
     refund_update_at: {
-        type: String,
+        type: Date,
         required: false
     },
     // 一括返金済数

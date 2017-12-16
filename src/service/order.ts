@@ -18,6 +18,7 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as errors from '../factory/errors';
+import { RefundStatus } from '../factory/performance';
 import { Group as PersonGroup } from '../factory/person';
 import ReservationStatusType from '../factory/reservationStatusType';
 import * as ReturnOrdersByPerformanceTaskFactory from '../factory/task/returnOrdersByPerformance';
@@ -215,7 +216,7 @@ export function processReturnAllByPerformance(performanceId: string) {
             {
                 'ttts_extension.refunded_count': 0,
                 'ttts_extension.refund_count': transactionIds.length,
-                // 'ttts_extension.refund_status': ttts.PerformanceUtil.REFUND_STATUS.COMPLETE,
+                'ttts_extension.refund_status': RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }
         ).exec();

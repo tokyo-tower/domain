@@ -2,15 +2,12 @@
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
-import * as PerformanceUtil from '../../../util/performance';
 import Film from './film';
 import multilingualString from './schemaTypes/multilingualString';
 import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
 import Screen from './screen';
 import Theater from './theater';
 import TicketTypeGroup from './ticketTypeGroup';
-
-const DEFAULT_RADIX = 10;
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -84,35 +81,6 @@ schema.virtual('location_str').get(function (this: any) {
         ja: `${this.get('theater_name').ja} ${this.get('screen_name').ja}`
     };
 });
-
-/**
- * 空席ステータスを算出する
- *
- * @param {string} reservationNumber 予約数
- */
-schema.methods.getSeatStatus = function (this: any, reservationNumber: number) {
-    // 上映日当日過ぎていればG
-    if (parseInt(this.day, DEFAULT_RADIX) < parseInt(moment().format('YYYYMMDD'), DEFAULT_RADIX)) {
-        return PerformanceUtil.SEAT_STATUS_G;
-    }
-
-    // 残席0以下なら問答無用に×
-    const availableSeatNum = this.screen.seats_number - reservationNumber;
-    if (availableSeatNum <= 0) {
-        return PerformanceUtil.SEAT_STATUS_C;
-    }
-
-    // 残席数よりステータスを算出
-    const seatNum = 100 * availableSeatNum;
-    if (PerformanceUtil.SEAT_STATUS_THRESHOLD_A * this.screen.seats_number < seatNum) {
-        return PerformanceUtil.SEAT_STATUS_A;
-    }
-    if (PerformanceUtil.SEAT_STATUS_THRESHOLD_B * this.screen.seats_number < seatNum) {
-        return PerformanceUtil.SEAT_STATUS_B;
-    }
-
-    return PerformanceUtil.SEAT_STATUS_C;
-};
 
 schema.index(
     {

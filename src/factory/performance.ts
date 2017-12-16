@@ -4,6 +4,45 @@
  */
 
 /**
+ * エレベータ運行ステータス
+ * @enum
+ */
+export enum EvServiceStatus {
+    // 正常運行
+    Normal = 'Normal',
+    // 減速
+    Slowdown = 'Slowdown',
+    // 停止
+    Suspended = 'Suspended'
+}
+
+/**
+ * オンライン販売ステータス
+ * @enum
+ */
+export enum OnlineSalesStatus {
+    // 販売
+    Normal = 'Normal',
+    // 停止
+    Suspended = 'Suspended'
+}
+
+/**
+ * 返金ステータス
+ * @enum
+ */
+export enum RefundStatus {
+    // なし
+    None = 'None',
+    // 未指示
+    NotInstructed = 'NotInstructed',
+    // 指示済
+    Instructed = 'Instructed',
+    // 返金完了
+    Compeleted = 'Compeleted'
+}
+
+/**
  * tttsExtensionPerformance.ts
  * ttts拡張・パフォーマンス情報mongooseスキーマタイプ
  * ttts独自の機能拡張用フィールド定義
@@ -13,23 +52,23 @@ export interface IExtension {
     // 例）10:00の枠:「101」など
     tour_number?: string;
     // エレベータ運行ステータス
-    ev_service_status?: string;
+    ev_service_status?: EvServiceStatus;
     // エレベータ運行ステータス変更者
     ev_service_update_user?: string;
     // エレベータ運行ステータス更新日時
-    ev_service_update_at?: string;
+    ev_service_update_at?: Date;
     // オンライン販売ステータス
-    online_sales_status?: string;
+    online_sales_status?: OnlineSalesStatus;
     // オンライン販売ステータス変更者
     online_sales_update_user?: string;
     // オンライン販売ステータス更新日時
-    online_sales_update_at?: string;
+    online_sales_update_at?: Date;
     // 返金ステータス
-    refund_status?: string;
+    refund_status?: RefundStatus;
     // 一括返金ステータス変更者
     refund_update_user?: string;
     // 一括返金ステータス更新日時
-    refund_update_at?: string;
+    refund_update_at?: Date;
     // 一括返金済数
     refunded_count?: number;
 }
