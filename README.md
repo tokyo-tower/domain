@@ -25,12 +25,18 @@ var TTTS = require("@motionpicture/ttts-domain");
 mongoose.connect();
 ```
 
-* set environment variables
-```shell
-set TTTS_PERFORMANCE_STATUSES_REDIS_PORT=*****
-set TTTS_PERFORMANCE_STATUSES_REDIS_HOST=*****
-set TTTS_PERFORMANCE_STATUSES_REDIS_KEY=*****
-```
+### Environment variables
+
+| Name                                    | Required | Value         | Purpose                |
+| --------------------------------------- | -------- | ------------- | ---------------------- |
+| `DEBUG`                                 | false    | ttts-domain:* | Debug                  |
+| `NPM_TOKEN`                             | true     |               | NPM auth token         |
+| `GMO_ENDPOINT`                          | true     |               | GMO API endpoint       |
+| `GMO_SITE_ID`                           | true     |               | GMO SiteID             |
+| `GMO_SITE_PASS`                         | true     |               | GMO SitePass           |
+| `WHEELCHAIR_RATE_LIMIT_THRESHOLD`       | true     |               | 車椅子流入制限閾値     |
+| `WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS` | true     |               | 車椅子流入制限単位(秒) |
+
 
 ## Code Samples
 

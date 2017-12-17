@@ -15,8 +15,34 @@ import { MongoRepository as PaymentNoRepo } from '../../../../../repo/paymentNo'
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { MongoRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
+import { RedisRepository as WheelchairReservationCountRepo } from '../../../../../repo/wheelchairReservationCount';
+import { WheelchairReservationCount } from '../../../../../repository';
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:seatReservation');
+if (process.env.WHEELCHAIR_RATE_LIMIT_THRESHOLD === undefined) {
+    throw new Error('You must set an environment variable \'WHEELCHAIR_RATE_LIMIT_THRESHOLD\'.');
+}
+if (process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS === undefined) {
+    throw new Error('You must set an environment variable \'WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS\'.');
+}
+// tslint:disable-next-line:no-magic-numbers
+const WHEELCHAIR_RATE_LIMIT_THRESHOLD = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_THRESHOLD, 10);
+// tslint:disable-next-line:no-magic-numbers
+const WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS, 10);
+
+export type ICreateOpetaiton<T> = (
+    transactionRepo: TransactionRepo,
+    performanceRepo: PerformanceRepo,
+    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+    paymentNoRepo: PaymentNoRepo,
+    wheelchairReservationCountRepo: WheelchairReservationCount
+) => Promise<T>;
+
+export type ICancelOpetaiton<T> = (
+    transactionRepo: TransactionRepo,
+    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+    wheelchairReservationCountRepo: WheelchairReservationCount
+) => Promise<T>;
 
 /**
  * 座席予約に対する承認アクションを開始する前の処理
@@ -25,11 +51,14 @@ const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:
  * バグ、不足等あれば、随時更新することが望ましい。
  * @function
  */
-// function validateOffers(
-//     performance: factory.performance.IPerformanceWithDetails,
-//     offers: factory.offer.seatReservation.IOffer[]
-// ): factory.offer.seatReservation.IOfferWithDetails[] {
-// }
+function validateOffers(
+    __1: factory.performance.IPerformanceWithDetails,
+    __2: factory.offer.seatReservation.IOffer[]
+) {
+    return async (__3: WheelchairReservationCountRepo) => {
+        // no op
+    };
+}
 
 /**
  * 座席を仮予約する
@@ -43,101 +72,128 @@ const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:
  * @param {factory.offer.ISeatReservationOffer[]} offers 供給情報
  */
 // tslint:disable-next-line:max-func-body-length
-export async function create(
+export function create(
     agentId: string,
     transactionId: string,
     perfomanceId: string,
     offers: factory.offer.seatReservation.IOffer[]
-): Promise<factory.action.authorize.seatReservation.IAction> {
-    debug('creating seatReservation authorizeACtion...', offers);
-    const transactionRepo = new TransactionRepo(mongoose.connection);
-    const performanceRepo = new PerformanceRepo(mongoose.connection);
-    const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(mongoose.connection);
-    const paymentNoRepo = new PaymentNoRepo(mongoose.connection);
+): ICreateOpetaiton<factory.action.authorize.seatReservation.IAction> {
+    // tslint:disable-next-line:max-func-body-length
+    return async (
+        transactionRepo: TransactionRepo,
+        performanceRepo: PerformanceRepo,
+        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+        paymentNoRepo: PaymentNoRepo,
+        wheelchairReservationCountRepo: WheelchairReservationCount
+    ): Promise<factory.action.authorize.seatReservation.IAction> => {
+        debug('creating seatReservation authorizeAction...offers:', offers.length);
 
-    const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
-    if (transaction.agent.id !== agentId) {
-        throw new factory.errors.Forbidden('A specified transaction is not yours.');
-    }
-
-    // パフォーマンスを取得
-    const performance = await performanceRepo.findById(perfomanceId);
-
-    // 供給情報の有効性を確認
-    // tslint:disable-next-line:no-suspicious-comment
-    // TODO バリデーション
-
-    // const offersWithDetails = await validateOffers(performance, offers);
-
-    // 承認アクションを開始
-    const action = await seatReservationAuthorizeActionRepo.start(
-        transaction.seller,
-        {
-            id: transaction.agent.id,
-            typeOf: factory.personType.Person
-        },
-        {
-            transactionId: transactionId,
-            offers: offers,
-            performance: performance
+        if (transaction.agent.id !== agentId) {
+            throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
-    );
 
-    // 在庫から仮予約
-    let paymentNo: string;
-    const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+        // パフォーマンスを取得
+        const performance = await performanceRepo.findById(perfomanceId);
 
-    try {
-        // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-        paymentNo = await paymentNoRepo.publish(performance.day);
+        // 供給情報の有効性を確認
+        await validateOffers(performance, offers)(wheelchairReservationCountRepo);
 
-        // 在庫をおさえると、座席コードが決定する
-        debug('findding available seats...');
+        // 承認アクションを開始
+        const action = await seatReservationAuthorizeActionRepo.start(
+            transaction.seller,
+            {
+                id: transaction.agent.id,
+                typeOf: factory.personType.Person
+            },
+            {
+                transactionId: transactionId,
+                offers: offers,
+                performance: performance
+            }
+        );
 
-        // 予約情報更新(「仮予約:TEMPORARY」にアップデートする処理を枚数分実行)
-        await Promise.all(offers.map(async (offer) => {
-            const tmpReservationsByOffer = await reserveTemporarilyByOffer(
-                transaction.id, paymentNo, transaction.object.purchaser_group, performance, offer
-            );
-            tmpReservations.push(...tmpReservationsByOffer);
-        }));
-        debug('tmp reservations created.', tmpReservations);
+        // 在庫から仮予約
+        let paymentNo: string;
+        const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+        const wheelChairOffers = offers.filter(
+            (offer) => offer.ticket_ttts_extension.category === TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_WHEELCHAIR
+        );
+        const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+        let incrementedWheelChairReservationCount = 0;
 
-        // 予約枚数が指定枚数に達しなかった時,予約可能に戻す
-        if (tmpReservations.length < offers.length + offers.reduce((a, b) => a + b.extra.length, 0)) {
-            await removeTmpReservations(tmpReservations);
-
-            // "予約可能な席がございません"
-            throw new Error('No available seats.');
-        }
-    } catch (error) {
-        // actionにエラー結果を追加
         try {
-            const actionError = (error instanceof Error) ? { ...error, ...{ message: error.message } } : error;
-            await seatReservationAuthorizeActionRepo.giveUp(action.id, actionError);
-        } catch (__) {
-            // 失敗したら仕方ない
+            // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
+            paymentNo = await paymentNoRepo.publish(performance.day);
+
+            // 在庫をおさえると、座席コードが決定する
+            debug('findding available seats...');
+
+            // 車椅子予約がある場合、レート制限
+            await Promise.all(wheelChairOffers.map(async () => {
+                // 車椅子レート制限枠確保
+                incrementedWheelChairReservationCount = await wheelchairReservationCountRepo.incr(
+                    performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+                );
+                debug('wheelchair rate limit checked. count:', incrementedWheelChairReservationCount);
+                // 枠につき車椅子1台のみ受け付ける
+                if (incrementedWheelChairReservationCount > WHEELCHAIR_RATE_LIMIT_THRESHOLD) {
+                    throw new factory.errors.RateLimitExceeded('Wheelchair resevation unavailable on the specified performance.');
+                }
+            }));
+
+            // 仮予約作成
+            await Promise.all(offers.map(async (offer) => {
+                const tmpReservationsByOffer = await reserveTemporarilyByOffer(
+                    transaction.id, paymentNo, transaction.object.purchaser_group, performance, offer
+                );
+                tmpReservations.push(...tmpReservationsByOffer);
+            }));
+            debug(tmpReservations.length, 'tmp reservation(s) created.');
+
+            // 予約枚数が指定枚数に達しなかった場合エラー
+            if (tmpReservations.length < offers.length + offers.reduce((a, b) => a + b.extra.length, 0)) {
+                throw new factory.errors.AlreadyInUse('action.object', ['offers'], 'No available seats.');
+            }
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = (error instanceof Error) ? { ...error, ...{ message: error.message } } : error;
+                await seatReservationAuthorizeActionRepo.giveUp(action.id, actionError);
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            try {
+                // 仮予約があれば削除
+                await removeTmpReservations(tmpReservations);
+
+                // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
+                if (incrementedWheelChairReservationCount > 0 && incrementedWheelChairReservationCount <= wheelChairOffers.length) {
+                    debug('resetting wheelchair rate limit...');
+                    await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
+                    debug('wheelchair rate limit reset.');
+                }
+            } catch (error) {
+                // no op
+                // 失敗したら仕方ない
+            }
+
+            throw error;
         }
 
-        // メッセージ「座席取得失敗」の場合は、座席の重複とみなす
-        if (error.message === 'No available seats.') {
-            throw new factory.errors.AlreadyInUse('action.object', ['offers'], error.message);
-        }
+        // アクションを完了
+        debug('ending authorize action...');
 
-        throw new factory.errors.ServiceUnavailable('Unexepected error occurred.');
-    }
-
-    // アクションを完了
-    debug('ending authorize action...');
-
-    return seatReservationAuthorizeActionRepo.complete(
-        action.id,
-        {
-            price: tmpReservations.reduce((a, b) => a + b.charge, 0),
-            tmpReservations: tmpReservations
-        }
-    );
+        return seatReservationAuthorizeActionRepo.complete(
+            action.id,
+            {
+                price: tmpReservations.reduce((a, b) => a + b.charge, 0),
+                tmpReservations: tmpReservations
+            }
+        );
+    };
 }
 
 /**
@@ -175,10 +231,10 @@ async function reserveTemporarilyByOffer(
             },
             { new: true }
         ).exec();
-        debug('stock found.', stock);
 
         // 在庫がばなければ失敗
         if (stock !== null) {
+            debug('1 stock found.', stock.get('id'));
             const seatCode = stock.get('seat_code');
             const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
             if (seatInfo === undefined) {
@@ -209,24 +265,8 @@ async function reserveTemporarilyByOffer(
                 purchaser_group: purchaserGroup
             });
 
-            // 時間ごとの予約情報更新
-            // tslint:disable-next-line:no-suspicious-comment
-            if (offer.ticket_ttts_extension.category !== TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_NORMAL) {
-                const isUpdatedReservationPerHour = await updateReservationPerHour(
-                    stock._id.toString(),
-                    // tslint:disable-next-line:no-magic-numbers no-suspicious-comment
-                    moment().add(30, 'minutes').toDate(), // TODO 実装
-                    offer.ticket_ttts_extension.category,
-                    performance
-                );
-
-                if (!isUpdatedReservationPerHour) {
-                    throw new Error('Reservations per hour unavailable.');
-                }
-            }
-
             // 余分確保分の予約更新
-            const promises = offer.extra.map(async () => {
+            await Promise.all(offer.extra.map(async () => {
                 // '予約可能'を'仮予約'に変更
                 const extraStock = await stockRepo.stockModel.findOneAndUpdate(
                     {
@@ -242,10 +282,10 @@ async function reserveTemporarilyByOffer(
                     },
                     { new: true }
                 ).exec();
-                debug('stock found.', extraStock);
 
                 // 更新エラー(対象データなし):次のseatへ
                 if (extraStock !== null) {
+                    debug('1 stock found.', extraStock.get('id'));
                     tmpReservations.push({
                         stock: stock.get('id'),
                         stock_availability_before: factory.itemAvailability.InStock,
@@ -270,9 +310,7 @@ async function reserveTemporarilyByOffer(
                         purchaser_group: purchaserGroup
                     });
                 }
-            });
-
-            await Promise.all(promises);
+            }));
         }
     } catch (error) {
         // no op
@@ -302,46 +340,6 @@ function getCharge(
     return charge;
 }
 
-// const LENGTH_HOUR: number = 2;
-/**
- * 座席・券種FIXプロセス/予約情報をDBにsave(仮予約)
- *
- * @param {string} reservationId
- * @param {any} expiredAt
- * @param {string} ticketType
- * @param {string} performance
- * @returns {Promise<boolean>}
- */
-async function updateReservationPerHour(
-    __1: string,
-    __2: any,
-    __3: string,
-    __4: any
-): Promise<boolean> {
-    return true;
-
-    // tslint:disable-next-line:no-suspicious-comment
-    // TODO 実装
-    // '予約可能'を'仮予約'に変更
-    // const reservation = await Models.ReservationPerHour.findOneAndUpdate(
-    //     // 更新キー(入塔日＋時間帯)
-    //     {
-    //         performance_day: performance.day,
-    //         performance_hour: performance.start_time.slice(0, LENGTH_HOUR),
-    //         ticket_category: ticketTypeCategory,
-    //         status: ReservationUtil.STATUS_AVAILABLE
-    //     },
-    //     {
-    //         status: ReservationUtil.STATUS_RESERVED,
-    //         expired_at: expiredAt,
-    //         reservation_id: reservationId
-    //     },
-    //     { new: true }
-    // ).exec();
-
-    // return reservation !== null;
-}
-
 /**
  * 座席予約承認アクションをキャンセルする
  * @export
@@ -351,32 +349,47 @@ async function updateReservationPerHour(
  * @param transactionId 取引ID
  * @param actionId アクションID
  */
-export async function cancel(
+export function cancel(
     agentId: string,
     transactionId: string,
     actionId: string
-) {
-    try {
-        const transactionRepo = new TransactionRepo(mongoose.connection);
-        const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(mongoose.connection);
+): ICancelOpetaiton<void> {
+    return async (
+        transactionRepo: TransactionRepo,
+        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+        wheelchairReservationCountRepo: WheelchairReservationCount
+    ) => {
+        try {
+            const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+            if (transaction.agent.id !== agentId) {
+                throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            }
 
-        if (transaction.agent.id !== agentId) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+            // アクションではcompleteステータスであるにも関わらず、在庫は有になっている、というのが最悪の状況
+            // それだけは回避するためにアクションを先に変更
+            const action = await seatReservationAuthorizeActionRepo.cancel(actionId, transactionId);
+            const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
+
+            // 在庫から仮予約削除
+            debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
+            await removeTmpReservations(actionResult.tmpReservations);
+
+            // 車椅子予約がある場合、レート制限解除
+            const wheelChairTmpReservation = actionResult.tmpReservations
+                .filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
+                .find((r) => r.ticket_ttts_extension.category === TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_WHEELCHAIR);
+            if (wheelChairTmpReservation !== undefined) {
+                debug('resetting wheelchair rate limit...');
+                const performance = action.object.performance;
+                const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+                await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
+                debug('wheelchair rate limit reset.');
+            }
+        } catch (error) {
+            // no op
         }
-
-        // MongoDBでcompleteステータスであるにも関わらず、COAでは削除されている、というのが最悪の状況
-        // それだけは回避するためにMongoDBを先に変更
-        const action = await seatReservationAuthorizeActionRepo.cancel(actionId, transactionId);
-        const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
-
-        // 在庫から仮予約削除
-        debug('removing tmp reservations...', action);
-        await removeTmpReservations(actionResult.tmpReservations);
-    } catch (error) {
-        // no op
-    }
+    };
 }
 
 async function removeTmpReservations(tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[]) {
@@ -395,22 +408,4 @@ async function removeTmpReservations(tmpReservations: factory.action.authorize.s
             // no op
         }
     }));
-
-    // 2017/11 時間ごとの予約レコードのSTATUS初期化(車椅子の場合)
-    await Promise.all(tmpReservations.filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
-        .map(async (__) => {
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO このロジックの意味を確認
-            // try {
-            //     await Models.ReservationPerHour.findOneAndUpdate(
-            //         { reservation_id: tmpReservation._id },
-            //         {
-            //             $set: { status: ReservationUtil.STATUS_AVAILABLE },
-            //             $unset: { expired_at: 1, reservation_id: 1 }
-            //         }
-            //     ).exec();
-            // } catch (error) {
-            //     // no op
-            // }
-        }));
 }

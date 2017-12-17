@@ -16,15 +16,6 @@ import * as OwnerUtil from './util/owner';
 import * as ReservationUtil from './util/reservation';
 import * as TicketTypeGroupUtil from './util/ticketTypeGroup';
 
-import { MongoRepository as OwnerRepo } from './repo/owner';
-import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
-import { MongoRepository as PerformanceRepo } from './repo/performance';
-import { RedisRepository as PerformanceStatusesRepo } from './repo/performanceStatuses';
-import { MongoRepository as ReservationRepo } from './repo/reservation';
-import { MongoRepository as StockRepo } from './repo/stock';
-import { MongoRepository as TaskRepo } from './repo/task';
-import { MongoRepository as TransactionRepo } from './repo/transaction';
-
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
 import * as OrderService from './service/order';
@@ -36,6 +27,7 @@ import * as PlaceOrderInProgressTransactionService from './service/transaction/p
 import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
 
 import * as factory from './factory';
+import * as repository from './repository';
 
 /**
  * MongoDBクライアント`mongoose`
@@ -71,42 +63,6 @@ export {
     TicketTypeGroupUtil
 };
 
-// tslint:disable:max-classes-per-file
-export namespace repository {
-    /**
-     * 所有者レポジトリー
-     */
-    export class Owner extends OwnerRepo { }
-    /**
-     * 購入番号レポジトリー
-     */
-    export class PaymentNo extends PaymentNoRepo { }
-    /**
-     * パフォーマンスレポジトリー
-     */
-    export class Performance extends PerformanceRepo { }
-    /**
-     * パフォーマンス在庫状況レポジトリー
-     */
-    export class PerformanceStatuses extends PerformanceStatusesRepo { }
-    /**
-     * 予約レポジトリー
-     */
-    export class Reservation extends ReservationRepo { }
-    /**
-     * 在庫レポジトリー
-     */
-    export class Stock extends StockRepo { }
-    /**
-     * タスクレポジトリー
-     */
-    export class Task extends TaskRepo { }
-    /**
-     * 取引レポジトリー
-     */
-    export class Transaction extends TransactionRepo { }
-}
-
 export namespace service {
     export import itemAvailability = ItemAvailabilityService;
     export import notification = NotificationService;
@@ -122,3 +78,4 @@ export namespace service {
 }
 
 export import factory = factory;
+export import repository = repository;
