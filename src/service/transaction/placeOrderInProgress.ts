@@ -365,7 +365,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             payment_no: tmpReservation.payment_no,
             purchaser_group: tmpReservation.purchaser_group,
 
-            performance: performance._id,
+            performance: performance.id,
             performance_day: performance.day,
             performance_open_time: performance.open_time,
             performance_start_time: performance.start_time,
