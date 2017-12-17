@@ -16,19 +16,15 @@ import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
+import { RedisRepository as WheelchairReservationCountRepo } from '../repo/wheelchairReservationCount';
 
-import * as errors from '../factory/errors';
-import { RefundStatus } from '../factory/performance';
-import { Group as PersonGroup } from '../factory/person';
-import ReservationStatusType from '../factory/reservationStatusType';
-import * as ReturnOrdersByPerformanceTaskFactory from '../factory/task/returnOrdersByPerformance';
-import TaskStatus from '../factory/taskStatus';
-import * as PlaceOrderTransactionFactory from '../factory/transaction/placeOrder';
-import * as ReturnOrderTransactionFactory from '../factory/transaction/returnOrder';
+import * as factory from '../factory';
 
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service:order');
+// tslint:disable-next-line:no-magic-numbers
+const WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS, 10);
 
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => Promise<T>;
 
@@ -43,20 +39,21 @@ export function processReturn(returnOrderTransactionId: string) {
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
         stockRepo: StockRepo,
-        transactionRepo: TransactionRepo
+        transactionRepo: TransactionRepo,
+        wheelchairReservationCountRepo: WheelchairReservationCountRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
             .then((doc) => {
                 if (doc === null) {
-                    throw new errors.NotFound('transaction');
+                    throw new factory.errors.NotFound('transaction');
                 }
 
-                return <ReturnOrderTransactionFactory.ITransaction>doc.toObject();
+                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
             });
         debug('processing return order...', returnOrderTransaction);
-        const placeOrderTransactionResult = <PlaceOrderTransactionFactory.IResult>returnOrderTransaction.object.transaction.result;
-        const creditCardSalesBefore = <PlaceOrderTransactionFactory.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
+        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
+        const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
         const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
 
         // 取引状態参照
@@ -107,7 +104,7 @@ export function processReturn(returnOrderTransactionId: string) {
                         'ttts_extension.unrefunded_count': 0
                     },
                     {
-                        'ttts_extension.refund_status': RefundStatus.Compeleted,
+                        'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
                         'ttts_extension.refund_update_at': new Date()
                     }
                 ).exec();
@@ -132,26 +129,23 @@ export function processReturn(returnOrderTransactionId: string) {
         }
 
         await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
-            // 2017/11 本体チケットかつ特殊チケットの時、時間ごとの予約データ解放(AVAILABLEに変更)
-            // tslint:disable-next-line:no-suspicious-comment
-            // TODO
-            // if (reservation.ticket_ttts_extension.category !== ttts.TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_NORMAL &&
-            //     reservation.seat_code === reservation.reservation_ttts_extension.seat_code_base) {
-            //     await ttts.Models.ReservationPerHour.findOneAndUpdate(
-            //         { reservation_id: reservation._id.toString() },
-            //         {
-            //             $set: { status: ttts.factory.itemAvailability.InStock },
-            //             $unset: { expired_at: 1, reservation_id: 1 }
-            //         },
-            //         { new: true }
-            //     ).exec();
-            // }
+            // 車椅子の流入制限解放
+            if (reservation.status === factory.reservationStatusType.ReservationConfirmed
+                && reservation.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair
+            ) {
+                debug('resetting wheelchair rate limit...');
+                const performanceStartDate = moment(
+                    `${reservation.performance_day} ${reservation.performance_start_time}00+09:00`, 'YYYYMMDD HHmmssZ'
+                ).toDate();
+                await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
+                debug('wheelchair rate limit reset.');
+            }
 
-            // 予約データ解放(AVAILABLEに変更)
+            // 予約をキャンセル
             debug('canceling a reservation...', reservation.qr_str);
             await reservationRepo.reservationModel.findOneAndUpdate(
                 { qr_str: reservation.qr_str },
-                { status: ReservationStatusType.ReservationCancelled }
+                { status: factory.reservationStatusType.ReservationCancelled }
             ).exec();
 
             // 在庫を空きに(在庫IDに対して、元の状態に戻す)
@@ -174,7 +168,7 @@ export function processReturn(returnOrderTransactionId: string) {
 /**
  * パフォーマンス指定で全注文を返品する
  */
-export function returnAllByPerformance(performanceId: string): IPerformanceAndTaskOperation<ReturnOrdersByPerformanceTaskFactory.ITask> {
+export function returnAllByPerformance(performanceId: string): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
     return async (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => {
         // パフォーマンス情報取得
         const performance = await performanceRepo.findById(performanceId);
@@ -188,8 +182,8 @@ export function returnAllByPerformance(performanceId: string): IPerformanceAndTa
             throw new Error('上映が終了していないので返品処理を実行できません。');
         }
 
-        const taskAttribute = ReturnOrdersByPerformanceTaskFactory.createAttributes({
-            status: TaskStatus.Ready,
+        const taskAttribute = factory.task.returnOrdersByPerformance.createAttributes({
+            status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
             lastTriedAt: null,
@@ -209,9 +203,9 @@ export function processReturnAllByPerformance(performanceId: string) {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = await reservationRepo.reservationModel.find(
             {
-                status: ReservationStatusType.ReservationConfirmed,
+                status: factory.reservationStatusType.ReservationConfirmed,
                 performance: performanceId,
-                purchaser_group: PersonGroup.Customer
+                purchaser_group: factory.person.Group.Customer
             },
             'transaction checkins'
         ).exec();
@@ -229,7 +223,7 @@ export function processReturnAllByPerformance(performanceId: string) {
             {
                 'ttts_extension.refunded_count': 0, // 返金済数は最初0
                 'ttts_extension.unrefunded_count': transactionIds.length, // 未返金数をセット
-                'ttts_extension.refund_status': RefundStatus.Instructed,
+                'ttts_extension.refund_status': factory.performance.RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }
         ).exec();

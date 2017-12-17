@@ -8,7 +8,6 @@ import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
 import * as factory from '../../../../../factory';
-import * as TicketTypeGroupUtil from '../../../../../util/ticketTypeGroup';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
 import { MongoRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
@@ -118,7 +117,7 @@ export function create(
         let paymentNo: string;
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
         const wheelChairOffers = offers.filter(
-            (offer) => offer.ticket_ttts_extension.category === TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_WHEELCHAIR
+            (offer) => offer.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair
         );
         const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
         let incrementedWheelChairReservationCount = 0;
@@ -378,7 +377,7 @@ export function cancel(
             // 車椅子予約がある場合、レート制限解除
             const wheelChairTmpReservation = actionResult.tmpReservations
                 .filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
-                .find((r) => r.ticket_ttts_extension.category === TicketTypeGroupUtil.TICKET_TYPE_CATEGORY_WHEELCHAIR);
+                .find((r) => r.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair);
             if (wheelChairTmpReservation !== undefined) {
                 debug('resetting wheelchair rate limit...');
                 const performance = action.object.performance;

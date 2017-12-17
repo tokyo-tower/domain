@@ -39,6 +39,7 @@ import * as SettleSeatReservationTaskFactory from './factory/task/settleSeatRese
 import * as TaskExecutionResultFactory from './factory/taskExecutionResult';
 import TaskName from './factory/taskName';
 import TaskStatus from './factory/taskStatus';
+import TicketTypeCategory from './factory/ticketTypeCategory';
 import * as PlaceOrderTransactionFactory from './factory/transaction/placeOrder';
 import * as ReturnOrderTransactionFactory from './factory/transaction/returnOrder';
 import TransactionStatusType from './factory/transactionStatusType';
@@ -120,6 +121,7 @@ export namespace task {
 export import taskExecutionResult = TaskExecutionResultFactory;
 export import taskName = TaskName;
 export import taskStatus = TaskStatus;
+export import ticketTypeCategory = TicketTypeCategory;
 export namespace transaction {
     export import placeOrder = PlaceOrderTransactionFactory;
     export import returnOrder = ReturnOrderTransactionFactory;
