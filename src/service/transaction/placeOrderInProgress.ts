@@ -363,7 +363,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             charge: tmpReservation.charge,
             payment_no: tmpReservation.payment_no,
-            purchaser_group: tmpReservation.purchaser_group,
+            purchaser_group: transaction.object.purchaser_group,
 
             performance: performance.id,
             performance_day: performance.day,
@@ -373,14 +373,14 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             performance_ttts_extension: performance.ttts_extension,
             performance_canceled: performance.canceled,
 
-            theater: performance.theater._id,
+            theater: performance.theater.id,
             theater_name: performance.theater.name,
             theater_address: performance.theater.address,
 
-            screen: performance.screen._id,
+            screen: performance.screen.id,
             screen_name: performance.screen.name,
 
-            film: performance.film._id,
+            film: performance.film.id,
             film_name: performance.film.name,
             film_is_mx4d: performance.film.is_mx4d,
             film_copyright: performance.film.copyright,

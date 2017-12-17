@@ -14,7 +14,7 @@ import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/a
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
-import { RedisRepository as WheelchairReservationCountRepo } from '../repo/wheelChairReservationCount';
+import { RedisRepository as WheelchairReservationCountRepo } from '../repo/wheelchairReservationCount';
 
 const debug = createDebug('ttts-domain:service:stock');
 // tslint:disable-next-line:no-magic-numbers

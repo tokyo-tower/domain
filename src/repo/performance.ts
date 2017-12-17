@@ -16,9 +16,8 @@ export class MongoRepository {
 
     public async findById(id: string): Promise<factory.performance.IPerformanceWithDetails> {
         const doc = await this.performanceModel.findById(id)
-            .populate('film')
-            .populate('screen')
-            .populate('theater')
+            .populate('film screen theater')
+            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .exec();
 
         if (doc === null) {

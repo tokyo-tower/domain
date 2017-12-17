@@ -3,6 +3,8 @@
  * @namespace factory.performance
  */
 
+import IMultilingualString from './multilingualString';
+
 /**
  * エレベータ運行ステータス
  * @enum
@@ -96,6 +98,25 @@ export interface IScreen {
     seats: ISeat[];
 }
 
+export interface ITicketType {
+    ttts_extension: { csv_code: string; required_seat_num: number; category: string; };
+    cancel_charge: { charge: number; days: number; }[];
+    charge: number;
+    notes: string;
+    description: string;
+    name: IMultilingualString;
+    id: string;
+}
+
+export interface ITicketTypeGroup {
+    id: string;
+    ticket_types: ITicketType[];
+    name: {
+        en: string;
+        ja: string;
+    };
+}
+
 /**
  * 詳細情報つきのパフォーマンスインターフェース
  * @interface
@@ -116,9 +137,9 @@ export interface IPerformanceWithDetails {
         ja: string;
     };
     canceled: boolean;
-    ticket_type_group: string;
+    ticket_type_group: ITicketTypeGroup;
     theater: {
-        _id: string;
+        id: string;
         name: {
             en: string;
             ja: string;
@@ -129,7 +150,7 @@ export interface IPerformanceWithDetails {
         };
     };
     screen: {
-        _id: string;
+        id: string;
         name: {
             en: string;
             ja: string;
@@ -137,7 +158,7 @@ export interface IPerformanceWithDetails {
         sections: IScreen[]
     };
     film: {
-        _id: string;
+        id: string;
         name: {
             en: string;
             ja: string;

@@ -12,7 +12,6 @@ import * as Models from './repo/mongoose';
 import * as CommonUtil from './util/common';
 import * as EmailQueueUtil from './util/emailQueue';
 import * as GMONotificationUtil from './util/gmoNotification';
-import * as OwnerUtil from './util/owner';
 import * as ReservationUtil from './util/reservation';
 import * as TicketTypeGroupUtil from './util/ticketTypeGroup';
 
@@ -58,7 +57,6 @@ export {
     CommonUtil,
     EmailQueueUtil,
     GMONotificationUtil,
-    OwnerUtil,
     ReservationUtil,
     TicketTypeGroupUtil
 };

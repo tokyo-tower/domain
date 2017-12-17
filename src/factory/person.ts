@@ -8,11 +8,11 @@ export enum Group {
     /**
      * 一般
      */
-    Customer = '01',
+    Customer = 'Customer',
     /**
      * 内部関係者
      */
-    Staff = '04'
+    Staff = 'Staff'
 }
 
 /**

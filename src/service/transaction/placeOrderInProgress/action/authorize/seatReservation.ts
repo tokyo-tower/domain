@@ -43,6 +43,10 @@ export type ICancelOpetaiton<T> = (
     wheelchairReservationCountRepo: WheelchairReservationCount
 ) => Promise<T>;
 
+export type IValidateOperation<T> = (
+    wheelchairReservationCountRepo: WheelchairReservationCount
+) => Promise<T>;
+
 /**
  * 座席予約に対する承認アクションを開始する前の処理
  * 供給情報の有効性の確認などを行う。
@@ -51,11 +55,30 @@ export type ICancelOpetaiton<T> = (
  * @function
  */
 function validateOffers(
-    __1: factory.performance.IPerformanceWithDetails,
-    __2: factory.offer.seatReservation.IOffer[]
-) {
+    performance: factory.performance.IPerformanceWithDetails,
+    offers: factory.offer.seatReservation.IOffer[]
+): IValidateOperation<factory.offer.seatReservation.IOfferWithDetails[]> {
     return async (__3: WheelchairReservationCountRepo) => {
-        // no op
+        // 券種情報を取得
+        return offers.map((offer) => {
+            const ticketType = performance.ticket_type_group.ticket_types.find((t) => t.id === offer.ticket_type);
+            if (ticketType === undefined) {
+                throw new factory.errors.NotFound('offers', 'Ticket type not found.');
+            }
+
+            return {
+                ...offer,
+                ...{
+                    price: ticketType.charge,
+                    priceCurrency: factory.priceCurrency.JPY,
+                    ticket_type: ticketType.id,
+                    ticket_type_name: ticketType.name,
+                    ticket_type_charge: ticketType.charge,
+                    ticket_cancel_charge: ticketType.cancel_charge,
+                    ticket_ttts_extension: ticketType.ttts_extension
+                }
+            };
+        });
     };
 }
 
@@ -97,7 +120,7 @@ export function create(
         const performance = await performanceRepo.findById(perfomanceId);
 
         // 供給情報の有効性を確認
-        await validateOffers(performance, offers)(wheelchairReservationCountRepo);
+        const offersWithDetails = await validateOffers(performance, offers)(wheelchairReservationCountRepo);
 
         // 承認アクションを開始
         const action = await seatReservationAuthorizeActionRepo.start(
@@ -116,7 +139,7 @@ export function create(
         // 在庫から仮予約
         let paymentNo: string;
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
-        const wheelChairOffers = offers.filter(
+        const wheelChairOffers = offersWithDetails.filter(
             (offer) => offer.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair
         );
         const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
@@ -143,16 +166,16 @@ export function create(
             }));
 
             // 仮予約作成
-            await Promise.all(offers.map(async (offer) => {
+            await Promise.all(offersWithDetails.map(async (offer) => {
                 const tmpReservationsByOffer = await reserveTemporarilyByOffer(
-                    transaction.id, paymentNo, transaction.object.purchaser_group, performance, offer
+                    transaction.id, paymentNo, performance, offer
                 );
                 tmpReservations.push(...tmpReservationsByOffer);
             }));
             debug(tmpReservations.length, 'tmp reservation(s) created.');
 
             // 予約枚数が指定枚数に達しなかった場合エラー
-            if (tmpReservations.length < offers.length + offers.reduce((a, b) => a + b.extra.length, 0)) {
+            if (tmpReservations.length < offersWithDetails.reduce((a, b) => a + b.ticket_ttts_extension.required_seat_num, 0)) {
                 throw new factory.errors.AlreadyInUse('action.object', ['offers'], 'No available seats.');
             }
         } catch (error) {
@@ -188,7 +211,9 @@ export function create(
         return seatReservationAuthorizeActionRepo.complete(
             action.id,
             {
-                price: tmpReservations.reduce((a, b) => a + b.charge, 0),
+                price: tmpReservations
+                    .filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
+                    .reduce((a, b) => a + b.charge, 0),
                 tmpReservations: tmpReservations
             }
         );
@@ -202,17 +227,10 @@ export function create(
 async function reserveTemporarilyByOffer(
     transactionId: string,
     paymentNo: string,
-    purchaserGroup: string,
     performance: factory.performance.IPerformanceWithDetails,
-    offer: factory.offer.seatReservation.IOffer
+    offer: factory.offer.seatReservation.IOfferWithDetails
 ): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> {
     const stockRepo = new StockRepo(mongoose.connection);
-    // チケット情報
-    // tslint:disable-next-line:max-line-length
-    // const ticketType = reservationModel.ticketTypes.find((ticketTypeInArray) => (ticketTypeInArray._id === choiceInfo.ticket_type));
-    // if (ticketType === undefined) {
-    //     throw new Error(req.__('Message.UnexpectedError'));
-    // }
 
     // 予約情報更新キーセット(パフォーマンス,'予約可能')
     const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
@@ -256,17 +274,15 @@ async function reserveTemporarilyByOffer(
                 watcher_name: offer.watcher_name,
                 ticket_cancel_charge: offer.ticket_cancel_charge,
                 ticket_ttts_extension: offer.ticket_ttts_extension,
-                performance_ttts_extension: offer.performance_ttts_extension,
                 reservation_ttts_extension: {
                     seat_code_base: seatCode
                 },
-                payment_no: paymentNo,
-                purchaser_group: purchaserGroup
+                payment_no: paymentNo
             });
 
             // 余分確保分の予約更新
-            await Promise.all(offer.extra.map(async () => {
-                // '予約可能'を'仮予約'に変更
+            const numberOdfRequiredExtraReservations = offer.ticket_ttts_extension.required_seat_num - 1;
+            await Promise.all(Array.from(Array(numberOdfRequiredExtraReservations)).map(async () => {
                 const extraStock = await stockRepo.stockModel.findOneAndUpdate(
                     {
                         performance: performance.id,
@@ -301,12 +317,10 @@ async function reserveTemporarilyByOffer(
                         watcher_name: offer.watcher_name,
                         ticket_cancel_charge: offer.ticket_cancel_charge,
                         ticket_ttts_extension: offer.ticket_ttts_extension,
-                        performance_ttts_extension: offer.performance_ttts_extension,
                         reservation_ttts_extension: {
                             seat_code_base: seatCode
                         },
-                        payment_no: paymentNo,
-                        purchaser_group: purchaserGroup
+                        payment_no: paymentNo
                     });
                 }
             }));
