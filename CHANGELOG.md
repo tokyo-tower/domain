@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - APIの認証情報をCognitoから取得するように変更。
 - 注文返品取引スキーマを追加。
 - パフォーマンスIDと在庫IDを文字列に変更。
+- 購入番号を6桁に短縮。
 
 ### Deprecated
 

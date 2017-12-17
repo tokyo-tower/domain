@@ -17,6 +17,7 @@ import * as ReservationUtil from './util/reservation';
 import * as TicketTypeGroupUtil from './util/ticketTypeGroup';
 
 import { MongoRepository as OwnerRepo } from './repo/owner';
+import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { RedisRepository as PerformanceStatusesRepo } from './repo/performanceStatuses';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
@@ -76,6 +77,10 @@ export namespace repository {
      * 所有者レポジトリー
      */
     export class Owner extends OwnerRepo { }
+    /**
+     * 購入番号レポジトリー
+     */
+    export class PaymentNo extends PaymentNoRepo { }
     /**
      * パフォーマンスレポジトリー
      */

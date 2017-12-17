@@ -8,11 +8,10 @@ import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
 import * as factory from '../../../../../factory';
-// import * as Models from '../../../../../repo/mongoose';
-import * as ReservationUtil from '../../../../../util/reservation';
 import * as TicketTypeGroupUtil from '../../../../../util/ticketTypeGroup';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
+import { MongoRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { MongoRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
@@ -54,6 +53,7 @@ export async function create(
     const transactionRepo = new TransactionRepo(mongoose.connection);
     const performanceRepo = new PerformanceRepo(mongoose.connection);
     const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(mongoose.connection);
+    const paymentNoRepo = new PaymentNoRepo(mongoose.connection);
 
     const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
@@ -90,7 +90,7 @@ export async function create(
 
     try {
         // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-        paymentNo = await ReservationUtil.publishPaymentNo(performance.day);
+        paymentNo = await paymentNoRepo.publish(performance.day);
 
         // 在庫をおさえると、座席コードが決定する
         debug('findding available seats...');
