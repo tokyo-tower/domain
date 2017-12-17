@@ -445,8 +445,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             orderInquiryKey: {
                 performanceDay: performance.day,
                 paymentNo: eventReservations[0].payment_no,
+                // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
                 // tslint:disable-next-line:no-magic-numbers
-                telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '' // 下4桁
+                telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
             }
         },
         eventReservations
