@@ -27,6 +27,7 @@ import PriceCurrency from './factory/priceCurrency';
 import * as ReservationFactory from './factory/reservation';
 import * as EventReservationFactory from './factory/reservation/event';
 import ReservationStatusType from './factory/reservationStatusType';
+import * as StockFactory from './factory/stock';
 import * as TaskFactory from './factory/task';
 import * as CancelCreditCardTaskFactory from './factory/task/cancelCreditCard';
 import * as CancelSeatReservationTaskFactory from './factory/task/cancelSeatReservation';
@@ -100,6 +101,7 @@ export namespace reservation {
     export import reservationType = ReservationFactory.ReservationType;
     export import event = EventReservationFactory;
 }
+export import stock = StockFactory;
 export namespace place {
     export import screen = ScreenFactory;
 }

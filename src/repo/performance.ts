@@ -1,7 +1,6 @@
 import { Connection } from 'mongoose';
 
-import * as errors from '../factory/errors';
-import { IPerformanceWithDetails } from '../factory/performance';
+import * as factory from '../factory';
 import PerformanceModel from './mongoose/model/performance';
 
 /**
@@ -15,7 +14,7 @@ export class MongoRepository {
         this.performanceModel = connection.model(PerformanceModel.modelName);
     }
 
-    public async findById(id: string): Promise<IPerformanceWithDetails> {
+    public async findById(id: string): Promise<factory.performance.IPerformanceWithDetails> {
         const doc = await this.performanceModel.findById(id)
             .populate('film')
             .populate('screen')
@@ -23,9 +22,26 @@ export class MongoRepository {
             .exec();
 
         if (doc === null) {
-            throw new errors.NotFound('performance');
+            throw new factory.errors.NotFound('performance');
         }
 
-        return <IPerformanceWithDetails>doc.toObject();
+        return <factory.performance.IPerformanceWithDetails>doc.toObject();
+    }
+
+    /**
+     * まだなければ保管する
+     * @param {factory.performance.IPerformance} performance
+     */
+    public async saveIfNotExists(performance: factory.performance.IPerformance) {
+        await this.performanceModel.findByIdAndUpdate(
+            performance.id,
+            {
+                $setOnInsert: performance
+            },
+            {
+                upsert: true,
+                new: true
+            }
+        ).exec();
     }
 }

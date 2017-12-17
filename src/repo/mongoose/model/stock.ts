@@ -9,6 +9,7 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        _id: String,
         performance: {
             type: String,
             ref: Performance.modelName,

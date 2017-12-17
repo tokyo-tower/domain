@@ -16,23 +16,28 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        _id: String,
         theater: { // 劇場ID
             type: String,
-            ref: Theater.modelName
+            ref: Theater.modelName,
+            required: true
         },
         theater_name: multilingualString,
         screen: { // スクリーンID
             type: String,
-            ref: Screen.modelName
+            ref: Screen.modelName,
+            required: true
         },
         screen_name: multilingualString,
         film: { // 作品ID
             type: String,
-            ref: Film.modelName
+            ref: Film.modelName,
+            required: true
         },
         ticket_type_group: { // 券種グループID
             type: String,
-            ref: TicketTypeGroup.modelName
+            ref: TicketTypeGroup.modelName,
+            required: true
         },
         day: String, // 上映日
         open_time: String, // 開演時刻

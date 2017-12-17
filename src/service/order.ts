@@ -178,7 +178,7 @@ export function returnAllByPerformance(performanceId: string): IPerformanceAndTa
     return async (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => {
         // パフォーマンス情報取得
         const performance = await performanceRepo.findById(performanceId);
-        debug('starting returnOrders by performance...', performance._id);
+        debug('starting returnOrders by performance...', performance.id);
 
         // 終了済かどうか
         const now = moment();

@@ -166,7 +166,7 @@ async function reserveTemporarilyByOffer(
         // 在庫ステータス変更
         const stock = await stockRepo.stockModel.findOneAndUpdate(
             {
-                performance: performance._id,
+                performance: performance.id,
                 availability: factory.itemAvailability.InStock
             },
             {
@@ -230,7 +230,7 @@ async function reserveTemporarilyByOffer(
                 // '予約可能'を'仮予約'に変更
                 const extraStock = await stockRepo.stockModel.findOneAndUpdate(
                     {
-                        performance: performance._id,
+                        performance: performance.id,
                         availability: factory.itemAvailability.InStock
                     },
                     {

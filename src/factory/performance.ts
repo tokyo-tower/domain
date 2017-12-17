@@ -96,8 +96,13 @@ export interface IScreen {
     seats: ISeat[];
 }
 
+/**
+ * 詳細情報つきのパフォーマンスインターフェース
+ * @interface
+ * @memberof factory.performance
+ */
 export interface IPerformanceWithDetails {
-    _id: string;
+    id: string;
     day: string;
     open_time: string;
     start_time: string;
@@ -141,5 +146,32 @@ export interface IPerformanceWithDetails {
         is_mx4d: boolean;
         copyright: string;
     };
+    ttts_extension: IExtension;
+}
+
+/**
+ * パフォーマンスインターフェース
+ * @interface
+ * @memberof factory.performance
+ */
+export interface IPerformance {
+    id: string;
+    theater: string;
+    theater_name: {
+        en: string;
+        ja: string;
+    };
+    screen: string;
+    screen_name: {
+        en: string;
+        ja: string;
+    };
+    film: string;
+    ticket_type_group: string;
+    day: string;
+    open_time: string;
+    start_time: string;
+    end_time: string;
+    canceled: boolean;
     ttts_extension: IExtension;
 }

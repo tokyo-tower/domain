@@ -1,5 +1,6 @@
 import { Connection } from 'mongoose';
 
+import * as factory from '../factory';
 import StockModel from '../repo/mongoose/model/stock';
 
 /**
@@ -11,5 +12,27 @@ export class MongoRepository {
 
     constructor(connection: Connection) {
         this.stockModel = connection.model(StockModel.modelName);
+    }
+
+    /**
+     * まだなければ保管する
+     * @param {factory.stock.IStock} stock
+     */
+    public async saveIfNotExists(stock: factory.stock.IStock) {
+        await this.stockModel.findOneAndUpdate(
+            {
+                _id: stock.id,
+                performance: stock.performance,
+                seat_code: stock.seat_code
+            },
+            {
+                // なければ作成
+                $setOnInsert: stock
+            },
+            {
+                upsert: true,
+                new: true
+            }
+        ).exec();
     }
 }
