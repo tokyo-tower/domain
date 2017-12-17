@@ -14,8 +14,7 @@ import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
-import ReservationStatusType from '../../../factory/reservationStatusType';
-import * as ReservationUtil from '../../../util/reservation';
+import * as factory from '../../../factory';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -211,10 +210,10 @@ schema.virtual('baloon_content4staff').get(function (this: any) {
 schema.virtual('purchaser_name').get(function (this: any) {
     let en = '';
 
-    if (this.get('status') === ReservationStatusType.ReservationConfirmed
-        || this.get('status') === ReservationStatusType.ReservationSecuredExtra) {
+    if (this.get('status') === factory.reservationStatusType.ReservationConfirmed
+        || this.get('status') === factory.reservationStatusType.ReservationSecuredExtra) {
         switch (this.purchaser_group) {
-            case ReservationUtil.PURCHASER_GROUP_STAFF:
+            case factory.person.Group.Staff:
                 en = `${this.get('owner_name').en} ${this.get('owner_signature')}`;
                 break;
             default:
@@ -225,10 +224,10 @@ schema.virtual('purchaser_name').get(function (this: any) {
 
     let ja = '';
 
-    if (this.get('status') === ReservationStatusType.ReservationConfirmed
-        || this.get('status') === ReservationStatusType.ReservationSecuredExtra) {
+    if (this.get('status') === factory.reservationStatusType.ReservationConfirmed
+        || this.get('status') === factory.reservationStatusType.ReservationSecuredExtra) {
         switch (this.purchaser_group) {
-            case ReservationUtil.PURCHASER_GROUP_STAFF:
+            case factory.person.Group.Staff:
                 ja = `${this.get('owner_name').ja} ${this.get('owner_signature')}`;
                 break;
             default:
@@ -247,10 +246,10 @@ schema.virtual('purchaser_group_str').get(function (this: any) {
     let str = '';
 
     switch (this.get('purchaser_group')) {
-        case ReservationUtil.PURCHASER_GROUP_CUSTOMER:
+        case factory.person.Group.Customer:
             str = '一般';
             break;
-        case ReservationUtil.PURCHASER_GROUP_STAFF:
+        case factory.person.Group.Staff:
             str = '内部関係者';
             break;
         default:
@@ -264,8 +263,8 @@ schema.virtual('status_str').get(function (this: any) {
     let str = '';
 
     switch (this.get('status')) {
-        case ReservationStatusType.ReservationConfirmed:
-        case ReservationStatusType.ReservationSecuredExtra:
+        case factory.reservationStatusType.ReservationConfirmed:
+        case factory.reservationStatusType.ReservationSecuredExtra:
             str = '予約済';
             break;
 
@@ -305,7 +304,7 @@ schema.static('parse_from_qr_str', function (qrStr: string) {
 schema.virtual('ticket_type_detail_str').get(function (this: any) {
     let charge = 0;
     switch (this.get('purchaser_group')) {
-        case ReservationUtil.PURCHASER_GROUP_STAFF:
+        case factory.person.Group.Staff:
             charge += this.get('ticket_type_charge');
 
             break;
@@ -318,7 +317,7 @@ schema.virtual('ticket_type_detail_str').get(function (this: any) {
 
     let en = this.get('ticket_type_name').en;
     switch (this.get('purchaser_group')) {
-        case ReservationUtil.PURCHASER_GROUP_STAFF:
+        case factory.person.Group.Staff:
             if (charge > 0) {
                 en += ` / \\${numeral(charge).format('0,0')}`;
             }
@@ -338,7 +337,7 @@ schema.virtual('ticket_type_detail_str').get(function (this: any) {
 
     let ja = this.get('ticket_type_name').ja;
     switch (this.get('purchaser_group')) {
-        case ReservationUtil.PURCHASER_GROUP_STAFF:
+        case factory.person.Group.Staff:
             if (charge > 0) {
                 ja += ` / \\${numeral(charge).format('0,0')}`;
             }

@@ -12,8 +12,6 @@ import * as Models from './repo/mongoose';
 import * as CommonUtil from './util/common';
 import * as EmailQueueUtil from './util/emailQueue';
 import * as GMONotificationUtil from './util/gmoNotification';
-import * as ReservationUtil from './util/reservation';
-import * as TicketTypeGroupUtil from './util/ticketTypeGroup';
 
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
@@ -56,9 +54,7 @@ export {
     Models,
     CommonUtil,
     EmailQueueUtil,
-    GMONotificationUtil,
-    ReservationUtil,
-    TicketTypeGroupUtil
+    GMONotificationUtil
 };
 
 export namespace service {
