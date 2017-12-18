@@ -18,14 +18,11 @@ import { RedisRepository as WheelchairReservationCountRepo } from '../../../../.
 import { WheelchairReservationCount } from '../../../../../repository';
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:seatReservation');
-if (process.env.WHEELCHAIR_RATE_LIMIT_THRESHOLD === undefined) {
-    throw new Error('You must set an environment variable \'WHEELCHAIR_RATE_LIMIT_THRESHOLD\'.');
-}
+
+const WHEELCHAIR_RATE_LIMIT_THRESHOLD = 1;
 if (process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS === undefined) {
     throw new Error('You must set an environment variable \'WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS\'.');
 }
-// tslint:disable-next-line:no-magic-numbers
-const WHEELCHAIR_RATE_LIMIT_THRESHOLD = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_THRESHOLD, 10);
 // tslint:disable-next-line:no-magic-numbers
 const WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS, 10);
 

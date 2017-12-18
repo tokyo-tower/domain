@@ -34,7 +34,6 @@ mongoose.connect();
 | `GMO_ENDPOINT`                          | true     |               | GMO API endpoint       |
 | `GMO_SITE_ID`                           | true     |               | GMO SiteID             |
 | `GMO_SITE_PASS`                         | true     |               | GMO SitePass           |
-| `WHEELCHAIR_RATE_LIMIT_THRESHOLD`       | true     |               | 車椅子流入制限閾値     |
 | `WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS` | true     |               | 車椅子流入制限単位(秒) |
 
 
