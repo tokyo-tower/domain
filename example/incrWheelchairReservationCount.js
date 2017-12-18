@@ -18,19 +18,34 @@ const countRepo = new ttts.repository.WheelchairReservationCount(redisClient);
 const now = new Date();
 const AGGREGATION_UNIT_IN_SECONDS = 60;
 
-countRepo.incr(now, AGGREGATION_UNIT_IN_SECONDS)
+countRepo.findByDate(now, AGGREGATION_UNIT_IN_SECONDS)
     .then((count) => {
-        console.log('incremented.', count);
+        console.log('count is', count);
 
-        countRepo.reset(now, AGGREGATION_UNIT_IN_SECONDS)
-            .then(() => {
-                console.log('reset.');
+        countRepo.incr(now, AGGREGATION_UNIT_IN_SECONDS)
+            .then((count) => {
+                console.log('incremented.', count);
 
-                countRepo.incr(now, AGGREGATION_UNIT_IN_SECONDS)
+                countRepo.decr(now, AGGREGATION_UNIT_IN_SECONDS)
                     .then((count) => {
-                        console.log('incremented.', count);
+                        console.log('decremented.', count);
 
-                        redisClient.quit();
+                        countRepo.findByDate(now, AGGREGATION_UNIT_IN_SECONDS)
+                            .then((count) => {
+                                console.log('count is', count);
+
+                                countRepo.reset(now, AGGREGATION_UNIT_IN_SECONDS)
+                                    .then(() => {
+                                        console.log('reset.');
+
+                                        countRepo.findByDate(now, AGGREGATION_UNIT_IN_SECONDS)
+                                            .then((count) => {
+                                                console.log('count is', count);
+
+                                                redisClient.quit();
+                                            });
+                                    });
+                            });
                     });
             });
     });

@@ -61,6 +61,36 @@ export class RedisRepository {
     }
 
     /**
+     * カウントダウンする
+     * @param {Date} now 現在日時
+     * @param {number} aggregationUnitInSeconds 集計単位(秒)
+     */
+    public async decr(now: Date, aggregationUnitInSeconds: number): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            const issueUnitParams = RedisRepository.CREATE_COUNTER_UNIT_PARAMS(now, aggregationUnitInSeconds);
+            const ttl = moment(now).diff(moment(issueUnitParams.validThrough), 'seconds');
+            debug('incrementing...', issueUnitParams, ttl);
+
+            this.redisClient.multi()
+                .decr(issueUnitParams.identifier, debug)
+                .expire(issueUnitParams.identifier, ttl, debug)
+                .exec((err, results) => {
+                    debug('results:', results);
+                    if (err !== null) {
+                        reject(err);
+                    } else {
+                        if (typeof results[0] !== 'number') {
+                            throw new Error('Unexpected count type.');
+                        }
+
+                        // tslint:disable-next-line:no-magic-numbers
+                        resolve(results[0]);
+                    }
+                });
+        });
+    }
+
+    /**
      * カウントをリセットするカウントアップする
      * @param {Date} now 現在日時
      * @param {number} aggregationUnitInSeconds 集計単位(秒)
@@ -75,6 +105,26 @@ export class RedisRepository {
                     reject(err);
                 } else {
                     resolve();
+                }
+            });
+        });
+    }
+
+    /**
+     * 現在の許可証発行単位を取得する
+     * @param {Date} now 現在日時
+     * @param {number} aggregationUnitInSeconds 集計単位(秒)
+     */
+    public async findByDate(now: Date, aggregationUnitInSeconds: number): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            const issueUnitParams = RedisRepository.CREATE_COUNTER_UNIT_PARAMS(now, aggregationUnitInSeconds);
+            this.redisClient.get(issueUnitParams.identifier, (err, result) => {
+                debug('result:', result);
+                if (err !== null) {
+                    reject(err);
+                } else {
+                    // tslint:disable-next-line:no-magic-numbers
+                    resolve((result !== null) ? parseInt(result, 10) : 0);
                 }
             });
         });
