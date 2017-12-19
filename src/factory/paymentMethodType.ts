@@ -5,6 +5,10 @@
 
 enum PaymentMethodType {
     /**
+     * 現金
+     */
+    Cash = 'Cash',
+    /**
      * クレジットカード
      */
     CreditCard = 'CreditCard',
