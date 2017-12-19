@@ -8,7 +8,6 @@ import * as waiter from '@motionpicture/waiter-domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
-import * as mongoose from 'mongoose';
 
 import * as factory from '../../factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
@@ -20,6 +19,14 @@ import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
+
+export type IStartOperation<T> = (transactionRepo: TransactionRepo, ownerRepo: OwnerRepo) => Promise<T>;
+export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
+export type IConfirmOperation<T> = (
+    transactionRepo: TransactionRepo,
+    creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
+    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo
+) => Promise<T>;
 
 /**
  * 取引開始パラメーターインターフェース
@@ -54,87 +61,91 @@ export interface IStartParams {
  * @function
  * @memberof service.transaction.placeOrderInProgress
  */
-export async function start(params: IStartParams): Promise<factory.transaction.placeOrder.ITransaction> {
-    const transactionRepo = new TransactionRepo(mongoose.connection);
-    const ownerRepo = new OwnerRepo(mongoose.connection);
+export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
+    return async (transactionRepo: TransactionRepo, ownerRepo: OwnerRepo) => {
+        // 売り手を取得
+        // const seller = await organizationRepo.findMovieTheaterById(params.sellerId);
+        const seller = {
+            id: params.sellerId,
+            identifier: '',
+            url: '',
+            name: { ja: '', en: '' }
+        };
 
-    // 売り手を取得
-    // const seller = await organizationRepo.findMovieTheaterById(params.sellerId);
-    const seller = {
-        id: params.sellerId,
-        identifier: '',
-        url: '',
-        name: { ja: '', en: '' }
-    };
+        let passport: waiter.factory.passport.IPassport | undefined;
 
-    let passport: waiter.factory.passport.IPassport | undefined;
+        // WAITER許可証トークンがあれば検証する
+        if (params.passportToken !== undefined) {
+            try {
+                passport = await waiter.service.passport.verify(params.passportToken, <string>process.env.WAITER_SECRET);
+            } catch (error) {
+                throw new factory.errors.Argument('passportToken', `Invalid token. ${error.message}`);
+            }
 
-    // WAITER許可証トークンがあれば検証する
-    if (params.passportToken !== undefined) {
-        try {
-            passport = await waiter.service.passport.verify(params.passportToken, <string>process.env.WAITER_SECRET);
-        } catch (error) {
-            throw new factory.errors.Argument('passportToken', `Invalid token. ${error.message}`);
-        }
-
-        // スコープを判別
-        if (!validatePassport(passport, seller.identifier)) {
-            throw new factory.errors.Argument('passportToken', 'Invalid passport.');
-        }
-    }
-
-    let agent: factory.transaction.placeOrder.IAgent = {
-        id: params.agentId,
-        url: ''
-    };
-    if (params.agentId !== '') {
-        // 会員情報取得
-        agent = await ownerRepo.findById(params.agentId);
-    }
-
-    // 取引ファクトリーで新しい進行中取引オブジェクトを作成
-    const transactionAttributes = factory.transaction.placeOrder.createAttributes({
-        status: factory.transactionStatusType.InProgress,
-        agent: agent,
-        seller: {
-            typeOf: factory.organizationType.Corporation,
-            id: seller.id,
-            name: seller.name.ja,
-            url: seller.url
-        },
-        object: {
-            passportToken: params.passportToken,
-            passport: passport,
-            purchaser_group: params.purchaserGroup,
-            authorizeActions: []
-        },
-        expires: params.expires,
-        startDate: new Date(),
-        tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
-    });
-
-    let transaction: factory.transaction.placeOrder.ITransaction;
-    try {
-        transaction = await transactionRepo.startPlaceOrder(transactionAttributes);
-    } catch (error) {
-        if (error.name === 'MongoError') {
-            // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
-            // name: 'MongoError',
-            // message: 'E11000 duplicate key error collection: ttts-development-v2.transactions...',
-            // code: 11000,
-
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            // tslint:disable-next-line:no-magic-numbers
-            if (error.code === 11000) {
-                throw new factory.errors.AlreadyInUse('transaction', ['passportToken'], 'Passport already used.');
+            // スコープを判別
+            if (!validatePassport(passport, seller.identifier)) {
+                throw new factory.errors.Argument('passportToken', 'Invalid passport.');
             }
         }
 
-        throw error;
-    }
+        let agent: factory.transaction.placeOrder.IAgent = {
+            id: params.agentId,
+            url: ''
+        };
+        if (params.agentId !== '' && params.purchaserGroup === factory.person.Group.Staff) {
+            // 会員情報取得
+            agent = await ownerRepo.findById(params.agentId);
+        } else if (params.agentId !== '') {
+            // 会員情報取得
+            agent = {
+                id: params.agentId
+            };
+        }
 
-    return transaction;
+        // 取引ファクトリーで新しい進行中取引オブジェクトを作成
+        const transactionAttributes = factory.transaction.placeOrder.createAttributes({
+            status: factory.transactionStatusType.InProgress,
+            agent: agent,
+            seller: {
+                typeOf: factory.organizationType.Corporation,
+                id: seller.id,
+                name: seller.name.ja,
+                url: seller.url
+            },
+            object: {
+                passportToken: params.passportToken,
+                passport: passport,
+                purchaser_group: params.purchaserGroup,
+                authorizeActions: []
+            },
+            expires: params.expires,
+            startDate: new Date(),
+            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
+        });
+
+        let transaction: factory.transaction.placeOrder.ITransaction;
+        try {
+            transaction = await transactionRepo.startPlaceOrder(transactionAttributes);
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
+                // name: 'MongoError',
+                // message: 'E11000 duplicate key error collection: ttts-development-v2.transactions...',
+                // code: 11000,
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                // tslint:disable-next-line:no-magic-numbers
+                if (error.code === 11000) {
+                    throw new factory.errors.AlreadyInUse('transaction', ['passportToken'], 'Passport already used.');
+                }
+            }
+
+            throw error;
+        }
+
+        return transaction;
+    };
 }
 
 /**
@@ -186,98 +197,100 @@ export namespace action {
 /**
  * 取引中の購入者情報を変更する
  */
-export async function setCustomerContact(
+export function setCustomerContact(
     agentId: string,
     transactionId: string,
     contact: factory.transaction.placeOrder.ICustomerContact
-): Promise<factory.transaction.placeOrder.ICustomerContact> {
-    const transactionRepo = new TransactionRepo(mongoose.connection);
+): ITransactionOperation<factory.transaction.placeOrder.ICustomerContact> {
+    return async (transactionRepo: TransactionRepo) => {
+        let formattedTelephone: string;
+        try {
+            const phoneUtil = PhoneNumberUtil.getInstance();
+            const phoneNumber = phoneUtil.parse(contact.tel, 'JP'); // 日本の電話番号前提仕様
+            if (!phoneUtil.isValidNumber(phoneNumber)) {
+                throw new Error('invalid phone number format.');
+            }
 
-    let formattedTelephone: string;
-    try {
-        const phoneUtil = PhoneNumberUtil.getInstance();
-        const phoneNumber = phoneUtil.parse(contact.tel, 'JP'); // 日本の電話番号前提仕様
-        if (!phoneUtil.isValidNumber(phoneNumber)) {
-            throw new Error('invalid phone number format.');
+            formattedTelephone = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
+        } catch (error) {
+            throw new factory.errors.Argument('contact.telephone', error.message);
         }
 
-        formattedTelephone = phoneUtil.format(phoneNumber, PhoneNumberFormat.E164);
-    } catch (error) {
-        throw new factory.errors.Argument('contact.telephone', error.message);
-    }
+        // 連絡先を再生成(validationの意味も含めて)
+        contact = {
+            last_name: contact.last_name,
+            first_name: contact.first_name,
+            email: contact.email,
+            tel: formattedTelephone,
+            age: contact.age,
+            address: contact.address,
+            gender: contact.gender
+        };
 
-    // 連絡先を再生成(validationの意味も含めて)
-    contact = {
-        last_name: contact.last_name,
-        first_name: contact.first_name,
-        email: contact.email,
-        tel: formattedTelephone,
-        age: contact.age,
-        address: contact.address,
-        gender: contact.gender
+        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+
+        if (transaction.agent.id !== agentId) {
+            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+        }
+
+        await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, contact);
+
+        return contact;
     };
-
-    const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
-
-    if (transaction.agent.id !== agentId) {
-        throw new factory.errors.Forbidden('A specified transaction is not yours.');
-    }
-
-    await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, contact);
-
-    return contact;
 }
 
 /**
  * 取引確定
  */
-export async function confirm(params: {
+export function confirm(params: {
     agentId: string,
     transactionId: string,
     paymentMethod: factory.paymentMethodType
-}): Promise<factory.transaction.placeOrder.ITransaction> {
-    const transactionRepo = new TransactionRepo(mongoose.connection);
-    const creditCardAuthorizeActionRepo = new CreditCardAuthorizeActionRepo(mongoose.connection);
-    const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(mongoose.connection);
+}): IConfirmOperation<factory.transaction.placeOrder.IResult> {
+    return async (
+        transactionRepo: TransactionRepo,
+        creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
+        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo
+    ) => {
+        const now = new Date();
+        const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
+        if (transaction.agent.id !== params.agentId) {
+            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+        }
 
-    const now = new Date();
-    const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
-    if (transaction.agent.id !== params.agentId) {
-        throw new factory.errors.Forbidden('A specified transaction is not yours.');
-    }
+        // 取引に対する全ての承認アクションをマージ
+        let authorizeActions = [
+            ... await creditCardAuthorizeActionRepo.findByTransactionId(params.transactionId),
+            ... await seatReservationAuthorizeActionRepo.findByTransactionId(params.transactionId)
+        ];
 
-    // 取引に対する全ての承認アクションをマージ
-    let authorizeActions = [
-        ... await creditCardAuthorizeActionRepo.findByTransactionId(params.transactionId),
-        ... await seatReservationAuthorizeActionRepo.findByTransactionId(params.transactionId)
-    ];
+        // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
+        authorizeActions = authorizeActions.filter(
+            (authorizeAction) => (authorizeAction.endDate !== undefined && authorizeAction.endDate < now)
+        );
+        transaction.object.authorizeActions = authorizeActions;
+        transaction.object.paymentMethod = params.paymentMethod;
 
-    // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-    authorizeActions = authorizeActions.filter(
-        (authorizeAction) => (authorizeAction.endDate !== undefined && authorizeAction.endDate < now)
-    );
-    transaction.object.authorizeActions = authorizeActions;
-    transaction.object.paymentMethod = params.paymentMethod;
+        // 照会可能になっているかどうか
+        if (!canBeClosed(transaction)) {
+            throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
+        }
 
-    // 照会可能になっているかどうか
-    if (!canBeClosed(transaction)) {
-        throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
-    }
+        // 結果作成
+        transaction.result = createResult(transaction);
 
-    // 結果作成
-    transaction.result = createResult(transaction);
+        // ステータス変更
+        debug('updating transaction...');
+        await transactionRepo.confirmPlaceOrder(
+            params.transactionId,
+            now,
+            params.paymentMethod,
+            authorizeActions,
+            transaction.result
+        );
 
-    // ステータス変更
-    debug('updating transaction...');
-    await transactionRepo.confirmPlaceOrder(
-        params.transactionId,
-        now,
-        params.paymentMethod,
-        authorizeActions,
-        transaction.result
-    );
-
-    return transaction;
+        return (<factory.transaction.placeOrder.IResult>transaction.result);
+    };
 }
 
 /**
@@ -340,6 +353,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
     // 予約データを作成
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
+        const purchaserGroup = transaction.object.purchaser_group;
+
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
             transaction: transaction.id,
@@ -364,7 +379,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             charge: tmpReservation.charge,
             payment_no: tmpReservation.payment_no,
-            purchaser_group: transaction.object.purchaser_group,
+            purchaser_group: purchaserGroup,
 
             performance: performance.id,
             performance_day: performance.day,
@@ -396,12 +411,12 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             purchaser_gender: (customerContact !== undefined) ? customerContact.gender : '',
 
             // 会員の場合は値を入れる
-            owner: (transaction.agent.id !== '') ? transaction.agent.id : undefined,
-            owner_username: (transaction.agent.id !== '') ? transaction.agent.username : undefined,
-            owner_name: (transaction.agent.id !== '') ? transaction.agent.name : undefined,
-            owner_email: (transaction.agent.id !== '') ? transaction.agent.email : undefined,
-            owner_group: (transaction.agent.id !== '') ? transaction.agent.group : undefined,
-            owner_signature: (transaction.agent.id !== '') ? transaction.agent.signature : undefined,
+            owner: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.id : undefined,
+            owner_username: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.username : undefined,
+            owner_name: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.name : undefined,
+            owner_email: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.email : undefined,
+            owner_group: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.group : undefined,
+            owner_signature: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.signature : undefined,
 
             payment_method: <factory.paymentMethodType>transaction.object.paymentMethod,
 
