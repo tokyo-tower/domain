@@ -8,8 +8,8 @@
  * @enum
  */
 enum TicketTypeCategory {
-    Normal = '0',
-    Wheelchair = '1'
+    Normal = 'Normal',
+    Wheelchair = 'Wheelchair'
 }
 
 export default TicketTypeCategory;
