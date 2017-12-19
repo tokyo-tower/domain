@@ -9,6 +9,7 @@ import * as ReservationFactory from '../reservation';
 
 import ItemAvailability from '../itemAvailability';
 import IMultilingualString from '../multilingualString';
+import TicketTypeCategory from '../ticketTypeCategory';
 
 /**
  * 入場履歴インターフェース
@@ -64,7 +65,7 @@ export interface ITicketCancelCharge {
  */
 export interface IExtensionTicketType {
     // 種別 ('0':通常 '1':車椅子)
-    category: string;
+    category: TicketTypeCategory;
     // 必要な座席数(通常:1 車椅子:4)
     required_seat_num: number;
     // csv出力用コード
@@ -140,6 +141,7 @@ export interface IReservation extends ReservationFactory.IReservation {
     ticket_type_charge: number;
     ticket_cancel_charge: ITicketCancelCharge[];
     ticket_ttts_extension: IExtensionTicketType;
+    rate_limit_unit_in_seconds: number;
 
     watcher_name: string; // 配布先
     watcher_name_updated_at: Date; // 配布先更新日時 default: Date.now

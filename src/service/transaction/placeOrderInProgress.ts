@@ -360,6 +360,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             ticket_type_charge: tmpReservation.ticket_type_charge,
             ticket_cancel_charge: tmpReservation.ticket_cancel_charge,
             ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
+            rate_limit_unit_in_seconds: tmpReservation.rate_limit_unit_in_seconds,
 
             charge: tmpReservation.charge,
             payment_no: tmpReservation.payment_no,

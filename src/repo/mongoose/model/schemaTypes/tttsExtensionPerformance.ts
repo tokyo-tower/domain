@@ -8,12 +8,12 @@ export default {
     // 例）10:00の枠:「101」など
     tour_number: {
         type: String,
-        required: false
+        required: true
     },
     // エレベータ運行ステータス
     ev_service_status: {
         type: String,
-        required: false
+        required: true
     },
     // エレベータ運行ステータス変更者
     ev_service_update_user: {
@@ -28,7 +28,7 @@ export default {
     // オンライン販売ステータス
     online_sales_status: {
         type: String,
-        required: false
+        required: true
     },
     // オンライン販売ステータス変更者
     online_sales_update_user: {

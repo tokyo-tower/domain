@@ -13,7 +13,7 @@ import { IExtensionTicketType, ITicketCancelCharge } from '../reservation/event'
  * @interface
  * @memberof offer.seatReservation
  */
-export interface IOffer {
+export interface IAcceptedOffer {
     ticket_type: string;
     watcher_name: string;
 }
@@ -24,11 +24,14 @@ export interface IOffer {
  * @interface
  * @memberof offer.seatReservation
  */
-export interface IOfferWithDetails extends OfferFactory.IOffer {
+export interface IOffer extends OfferFactory.IOffer {
     ticket_type: string;
     ticket_type_name: IMultilingualString;
     ticket_type_charge: number;
     watcher_name: string;
     ticket_cancel_charge: ITicketCancelCharge[];
     ticket_ttts_extension: IExtensionTicketType;
+    rate_limit_unit_in_seconds: number;
+    // availability: any;
+    // available_num: number;
 }

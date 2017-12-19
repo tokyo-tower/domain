@@ -12,36 +12,28 @@ import * as factory from '../../../../../factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
 import { MongoRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
+import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
-import { RedisRepository as WheelchairReservationCountRepo } from '../../../../../repo/wheelchairReservationCount';
-import { WheelchairReservationCount } from '../../../../../repository';
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:seatReservation');
-
-const WHEELCHAIR_RATE_LIMIT_THRESHOLD = 1;
-if (process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS === undefined) {
-    throw new Error('You must set an environment variable \'WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS\'.');
-}
-// tslint:disable-next-line:no-magic-numbers
-const WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS, 10);
 
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     paymentNoRepo: PaymentNoRepo,
-    wheelchairReservationCountRepo: WheelchairReservationCount
+    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-    wheelchairReservationCountRepo: WheelchairReservationCount
+    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (
-    wheelchairReservationCountRepo: WheelchairReservationCount
+    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
 ) => Promise<T>;
 
 /**
@@ -53,11 +45,11 @@ export type IValidateOperation<T> = (
  */
 function validateOffers(
     performance: factory.performance.IPerformanceWithDetails,
-    offers: factory.offer.seatReservation.IOffer[]
-): IValidateOperation<factory.offer.seatReservation.IOfferWithDetails[]> {
-    return async (__3: WheelchairReservationCountRepo) => {
+    acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[]
+): IValidateOperation<factory.offer.seatReservation.IOffer[]> {
+    return async (__3: TicketTypeCategoryRateLimitRepo) => {
         // 券種情報を取得
-        return offers.map((offer) => {
+        return acceptedOffers.map((offer) => {
             const ticketType = performance.ticket_type_group.ticket_types.find((t) => t.id === offer.ticket_type);
             if (ticketType === undefined) {
                 throw new factory.errors.NotFound('offers', 'Ticket type not found.');
@@ -72,7 +64,8 @@ function validateOffers(
                     ticket_type_name: ticketType.name,
                     ticket_type_charge: ticketType.charge,
                     ticket_cancel_charge: ticketType.cancel_charge,
-                    ticket_ttts_extension: ticketType.ttts_extension
+                    ticket_ttts_extension: ticketType.ttts_extension,
+                    rate_limit_unit_in_seconds: ticketType.rate_limit_unit_in_seconds
                 }
             };
         });
@@ -95,7 +88,7 @@ export function create(
     agentId: string,
     transactionId: string,
     perfomanceId: string,
-    offers: factory.offer.seatReservation.IOffer[]
+    acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[]
 ): ICreateOpetaiton<factory.action.authorize.seatReservation.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (
@@ -103,9 +96,9 @@ export function create(
         performanceRepo: PerformanceRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         paymentNoRepo: PaymentNoRepo,
-        wheelchairReservationCountRepo: WheelchairReservationCount
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
-        debug('creating seatReservation authorizeAction...offers:', offers.length);
+        debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
 
         const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
@@ -117,7 +110,7 @@ export function create(
         const performance = await performanceRepo.findById(perfomanceId);
 
         // 供給情報の有効性を確認
-        const offersWithDetails = await validateOffers(performance, offers)(wheelchairReservationCountRepo);
+        const offers = await validateOffers(performance, acceptedOffers)(ticketTypeCategoryRateLimitRepo);
 
         // 承認アクションを開始
         const action = await seatReservationAuthorizeActionRepo.start(
@@ -128,7 +121,7 @@ export function create(
             },
             {
                 transactionId: transactionId,
-                offers: offers,
+                offers: acceptedOffers,
                 performance: performance
             }
         );
@@ -136,11 +129,7 @@ export function create(
         // 在庫から仮予約
         let paymentNo: string;
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
-        const wheelChairOffers = offersWithDetails.filter(
-            (offer) => offer.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair
-        );
         const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
-        let incrementedWheelChairReservationCount = 0;
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
@@ -150,20 +139,23 @@ export function create(
             debug('findding available seats...');
 
             // 車椅子予約がある場合、レート制限
-            await Promise.all(wheelChairOffers.map(async () => {
-                // 車椅子レート制限枠確保
-                incrementedWheelChairReservationCount = await wheelchairReservationCountRepo.incr(
-                    performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                );
-                debug('wheelchair rate limit checked. count:', incrementedWheelChairReservationCount);
-                // 枠につき車椅子1台のみ受け付ける
-                if (incrementedWheelChairReservationCount > WHEELCHAIR_RATE_LIMIT_THRESHOLD) {
-                    throw new factory.errors.RateLimitExceeded('Wheelchair resevation unavailable on the specified performance.');
+            await Promise.all(offers.map(async (offer) => {
+                if (offer.rate_limit_unit_in_seconds > 0) {
+                    // 車椅子レート制限枠確保(取引IDを保持者に指定)
+                    await ticketTypeCategoryRateLimitRepo.lock(
+                        {
+                            performanceStartDate: performanceStartDate,
+                            ticketTypeCategory: offer.ticket_ttts_extension.category,
+                            unitInSeconds: offer.rate_limit_unit_in_seconds
+                        },
+                        transaction.id
+                    );
+                    debug('wheelchair rate limit checked.');
                 }
             }));
 
             // 仮予約作成
-            await Promise.all(offersWithDetails.map(async (offer) => {
+            await Promise.all(offers.map(async (offer) => {
                 const tmpReservationsByOffer = await reserveTemporarilyByOffer(
                     transaction.id, paymentNo, performance, offer
                 );
@@ -172,7 +164,7 @@ export function create(
             debug(tmpReservations.length, 'tmp reservation(s) created.');
 
             // 予約枚数が指定枚数に達しなかった場合エラー
-            if (tmpReservations.length < offersWithDetails.reduce((a, b) => a + b.ticket_ttts_extension.required_seat_num, 0)) {
+            if (tmpReservations.length < offers.reduce((a, b) => a + b.ticket_ttts_extension.required_seat_num, 0)) {
                 throw new factory.errors.AlreadyInUse('action.object', ['offers'], 'No available seats.');
             }
         } catch (error) {
@@ -189,11 +181,21 @@ export function create(
                 await removeTmpReservations(tmpReservations);
 
                 // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
-                if (incrementedWheelChairReservationCount > 0 && incrementedWheelChairReservationCount <= wheelChairOffers.length) {
-                    debug('resetting wheelchair rate limit...');
-                    await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
-                    debug('wheelchair rate limit reset.');
-                }
+                await Promise.all(offers.map(async (offer) => {
+                    if (offer.rate_limit_unit_in_seconds > 0) {
+                        const rateLimitKey = {
+                            performanceStartDate: performanceStartDate,
+                            ticketTypeCategory: offer.ticket_ttts_extension.category,
+                            unitInSeconds: offer.rate_limit_unit_in_seconds
+                        };
+                        const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
+                        if (holder === transaction.id) {
+                            debug('resetting wheelchair rate limit...');
+                            await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
+                            debug('wheelchair rate limit reset.');
+                        }
+                    }
+                }));
             } catch (error) {
                 // no op
                 // 失敗したら仕方ない
@@ -225,7 +227,7 @@ async function reserveTemporarilyByOffer(
     transactionId: string,
     paymentNo: string,
     performance: factory.performance.IPerformanceWithDetails,
-    offer: factory.offer.seatReservation.IOfferWithDetails
+    offer: factory.offer.seatReservation.IOffer
 ): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> {
     const stockRepo = new StockRepo(mongoose.connection);
 
@@ -271,6 +273,7 @@ async function reserveTemporarilyByOffer(
                 watcher_name: offer.watcher_name,
                 ticket_cancel_charge: offer.ticket_cancel_charge,
                 ticket_ttts_extension: offer.ticket_ttts_extension,
+                rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
                 reservation_ttts_extension: {
                     seat_code_base: seatCode
                 },
@@ -314,6 +317,7 @@ async function reserveTemporarilyByOffer(
                         watcher_name: offer.watcher_name,
                         ticket_cancel_charge: offer.ticket_cancel_charge,
                         ticket_ttts_extension: offer.ticket_ttts_extension,
+                        rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
                         reservation_ttts_extension: {
                             seat_code_base: seatCode
                         },
@@ -367,7 +371,7 @@ export function cancel(
     return async (
         transactionRepo: TransactionRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-        wheelchairReservationCountRepo: WheelchairReservationCount
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
     ) => {
         try {
             const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
@@ -385,17 +389,24 @@ export function cancel(
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
             await removeTmpReservations(actionResult.tmpReservations);
 
-            // 車椅子予約がある場合、レート制限解除
-            const wheelChairTmpReservation = actionResult.tmpReservations
-                .filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
-                .find((r) => r.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair);
-            if (wheelChairTmpReservation !== undefined) {
-                debug('resetting wheelchair rate limit...');
-                const performance = action.object.performance;
-                const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
-                await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
-                debug('wheelchair rate limit reset.');
-            }
+            // レート制限があれば解除
+            const performance = action.object.performance;
+            const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+            await Promise.all(actionResult.tmpReservations.map(async (tmpReservation) => {
+                if (tmpReservation.rate_limit_unit_in_seconds > 0) {
+                    const rateLimitKey = {
+                        performanceStartDate: performanceStartDate,
+                        ticketTypeCategory: tmpReservation.ticket_ttts_extension.category,
+                        unitInSeconds: tmpReservation.rate_limit_unit_in_seconds
+                    };
+                    const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
+                    if (holder === transaction.id) {
+                        debug('resetting wheelchair rate limit...');
+                        await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
+                        debug('wheelchair rate limit reset.');
+                    }
+                }
+            }));
         } catch (error) {
             // no op
         }

@@ -11,14 +11,12 @@ import * as mongoose from 'mongoose';
 import * as factory from '../factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
+import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
-import { RedisRepository as WheelchairReservationCountRepo } from '../repo/wheelchairReservationCount';
 
 const debug = createDebug('ttts-domain:service:stock');
-// tslint:disable-next-line:no-magic-numbers
-const WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS, 10);
 
 /**
  * 資産承認解除(在庫ステータス変更)
@@ -31,7 +29,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
     return async (
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         stockRepo: StockRepo,
-        wheelchairReservationCountRepo: WheelchairReservationCountRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
     ) => {
         // 座席仮予約アクションを取得
         const authorizeActions: factory.action.authorize.seatReservation.IAction[] =
@@ -56,19 +54,22 @@ export function cancelSeatReservationAuth(transactionId: string) {
                         $unset: { holder: 1 }
                     }
                 ).exec();
+
+                if (tmpReservation.rate_limit_unit_in_seconds > 0) {
+                    debug('resetting wheelchair rate limit...');
+                    const performance = action.object.performance;
+                    const performanceStartDate =
+                        moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+                    const rateLimitKey = {
+                        performanceStartDate: performanceStartDate,
+                        ticketTypeCategory: tmpReservation.ticket_ttts_extension.category,
+                        unitInSeconds: tmpReservation.rate_limit_unit_in_seconds
+                    };
+                    await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
+                    debug('wheelchair rate limit reset.');
+                }
             }));
 
-            // 車椅子の流入制限解放
-            const wheelChairTmpReservation = tmpReservations
-                .filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
-                .find((r) => r.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair);
-            if (wheelChairTmpReservation !== undefined) {
-                debug('resetting wheelchair rate limit...');
-                const performance = action.object.performance;
-                const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
-                await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
-                debug('wheelchair rate limit reset.');
-            }
         }));
     };
 }

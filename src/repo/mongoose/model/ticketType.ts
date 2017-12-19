@@ -19,7 +19,8 @@ const schema = new mongoose.Schema(
             type: [ticketCancelCharge],
             default: []
         },
-        ttts_extension: tttsExtensionTicketType
+        ttts_extension: tttsExtensionTicketType,
+        rate_limit_unit_in_seconds: Number
     },
     {
         collection: 'ticket_types',

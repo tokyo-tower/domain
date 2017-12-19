@@ -4,12 +4,14 @@
  */
 
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 
-import ItemAvailability from '../factory/itemAvailability';
-import { PerformanceStatuses } from '../factory/performanceStatuses';
+import * as factory from '../factory';
 
+import { RedisRepository as SeatReservationOfferAvailabilityRepo } from '../repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as PerformanceStatusesRepo } from '../repo/performanceStatuses';
+import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as StockRepo } from '../repo/stock';
 
 const debug = createDebug('ttts-domain:service:itemAvailability');
@@ -32,12 +34,19 @@ export function updatePerformanceStatuses(): IStockAndPerformanceAndPerformanceS
     ) => {
         debug('finding performances...');
         const performances = await performanceRepo.performanceModel.find(
-            {},
+            {
+                day: {
+                    // tslint:disable-next-line:no-magic-numbers
+                    $gt: moment().format('YYYYMMDD'),
+                    // tslint:disable-next-line:no-magic-numbers
+                    $lt: moment().add(3, 'months').format('YYYYMMDD')
+                }
+            },
             'day start_time screen'
         ).populate('screen', 'seats_number').exec();
         debug('performances found.');
 
-        const performanceStatuses = new PerformanceStatuses();
+        const performanceStatuses = new factory.performanceStatuses.PerformanceStatuses();
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
@@ -45,7 +54,7 @@ export function updatePerformanceStatuses(): IStockAndPerformanceAndPerformanceS
             [
                 {
                     $match: {
-                        availability: ItemAvailability.InStock
+                        availability: factory.itemAvailability.InStock
                     }
                 },
                 {
@@ -80,5 +89,104 @@ export function updatePerformanceStatuses(): IStockAndPerformanceAndPerformanceS
         debug('saving performanceStatusesModel...', performanceStatuses);
         await performanceStatusesRepo.store(performanceStatuses);
         debug('performanceStatusesModel saved.');
+    };
+}
+
+/**
+ * パフォーマンスの券種ごとに在庫状況を更新する
+ */
+export function updatePerformanceOffersAvailability() {
+    return async (
+        stockRepo: StockRepo,
+        performanceRepo: PerformanceRepo,
+        seatReservationOfferAvailabilityRepo: SeatReservationOfferAvailabilityRepo,
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+    ) => {
+        // 本日以降
+        debug('finding performances...');
+        const performances = await performanceRepo.performanceModel.find(
+            {
+                day: {
+                    // tslint:disable-next-line:no-magic-numbers
+                    $gt: moment().format('YYYYMMDD'),
+                    // tslint:disable-next-line:no-magic-numbers
+                    $lt: moment().add(3, 'months').format('YYYYMMDD')
+                }
+            }
+        )
+            .populate('film screen theater')
+            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
+            .exec()
+            .then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
+        debug('performances found.', performances.length);
+
+        // パフォーマンスごとに在庫数を集計
+        debug('aggregating...');
+        const results: {
+            _id: string;
+            count: number;
+        }[] = await stockRepo.stockModel.aggregate(
+            [
+                {
+                    $match: {
+                        availability: factory.itemAvailability.InStock,
+                        performance: { $in: performances.map((p) => p.id) }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$performance',
+                        count: { $sum: 1 }
+                    }
+                }
+            ]
+        ).exec();
+        debug('stock aggregated.', results.length);
+
+        // パフォーマンスIDごとに
+        const availableStockNums: {
+            [key: string]: number
+        } = {};
+        results.forEach((result) => {
+            // tslint:disable-next-line:no-magic-numbers
+            availableStockNums[result._id] = result.count;
+        });
+
+        // パフォーマンスごとにその券種のavailabilityを作成する
+        await Promise.all(performances.map(async (performance) => {
+            // 券種ごとにavailabilityを作成する
+            const ticketTypes = performance.ticket_type_group.ticket_types;
+            debug('ticketTypes:', ticketTypes);
+
+            const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+
+            await Promise.all(ticketTypes.map(async (ticketType) => {
+                const availableStockNum = availableStockNums[performance.id];
+                const requiredNum = ticketType.ttts_extension.required_seat_num;
+
+                let availableNum: number;
+
+                // 流入制限ありの場合は、そちらも考慮
+                if (ticketType.rate_limit_unit_in_seconds > 0) {
+                    const rateLimitKey = {
+                        performanceStartDate: performanceStartDate,
+                        ticketTypeCategory: ticketType.ttts_extension.category,
+                        unitInSeconds: ticketType.rate_limit_unit_in_seconds
+                    };
+                    const rateLimitHolder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
+                    debug('rate limtit holder exists?', rateLimitHolder);
+
+                    availableNum = (rateLimitHolder === null) ? 1 : 0;
+                } else {
+                    // レート制限保持者がいる、あるいは、在庫なしであれば、0
+                    availableNum = (availableStockNum !== undefined) ? Math.floor(availableStockNum / requiredNum) : 0;
+                }
+
+                // 券種ごとの在庫数をDBに保管
+                await seatReservationOfferAvailabilityRepo.save(
+                    performance.id, ticketType.id, availableNum
+                );
+            }));
+        }));
     };
 }

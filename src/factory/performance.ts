@@ -4,6 +4,7 @@
  */
 
 import IMultilingualString from './multilingualString';
+import TicketTypeCategory from './ticketTypeCategory';
 
 /**
  * エレベータ運行ステータス
@@ -52,15 +53,15 @@ export enum RefundStatus {
 export interface IExtension {
     // ツアーナンバー
     // 例）10:00の枠:「101」など
-    tour_number?: string;
+    tour_number: string;
     // エレベータ運行ステータス
-    ev_service_status?: EvServiceStatus;
+    ev_service_status: EvServiceStatus;
     // エレベータ運行ステータス変更者
     ev_service_update_user?: string;
     // エレベータ運行ステータス更新日時
     ev_service_update_at?: Date;
     // オンライン販売ステータス
-    online_sales_status?: OnlineSalesStatus;
+    online_sales_status: OnlineSalesStatus;
     // オンライン販売ステータス変更者
     online_sales_update_user?: string;
     // オンライン販売ステータス更新日時
@@ -99,7 +100,11 @@ export interface IScreen {
 }
 
 export interface ITicketType {
-    ttts_extension: { csv_code: string; required_seat_num: number; category: string; };
+    /**
+     * 券種カテゴリーごとのレート制限単位(何秒に1予約という設定)
+     */
+    rate_limit_unit_in_seconds: number;
+    ttts_extension: { csv_code: string; required_seat_num: number; category: TicketTypeCategory; };
     cancel_charge: { charge: number; days: number; }[];
     charge: number;
     notes: string;

@@ -12,19 +12,17 @@ import * as uniq from 'lodash.uniq';
 import * as moment from 'moment';
 
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
+import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
-import { RedisRepository as WheelchairReservationCountRepo } from '../repo/wheelchairReservationCount';
 
 import * as factory from '../factory';
 
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service:order');
-// tslint:disable-next-line:no-magic-numbers
-const WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS = parseInt(<string>process.env.WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS, 10);
 
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => Promise<T>;
 
@@ -40,7 +38,7 @@ export function processReturn(returnOrderTransactionId: string) {
         reservationRepo: ReservationRepo,
         stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
-        wheelchairReservationCountRepo: WheelchairReservationCountRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -130,14 +128,20 @@ export function processReturn(returnOrderTransactionId: string) {
 
         await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
             // 車椅子の流入制限解放
-            if (reservation.status === factory.reservationStatusType.ReservationConfirmed
-                && reservation.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair
+            if (
+                reservation.status === factory.reservationStatusType.ReservationConfirmed
+                && reservation.rate_limit_unit_in_seconds > 0
             ) {
                 debug('resetting wheelchair rate limit...');
                 const performanceStartDate = moment(
                     `${reservation.performance_day} ${reservation.performance_start_time}00+09:00`, 'YYYYMMDD HHmmssZ'
                 ).toDate();
-                await wheelchairReservationCountRepo.reset(performanceStartDate, WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS);
+                const rateLimitKey = {
+                    performanceStartDate: performanceStartDate,
+                    ticketTypeCategory: reservation.ticket_ttts_extension.category,
+                    unitInSeconds: reservation.rate_limit_unit_in_seconds
+                };
+                await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
                 debug('wheelchair rate limit reset.');
             }
 

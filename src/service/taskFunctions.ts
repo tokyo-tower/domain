@@ -11,10 +11,10 @@ import * as factory from '../factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
+import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
-import { RedisRepository as WheelchairReservationCountRepo } from '../repo/wheelchairReservationCount';
 
 import * as NotificationService from '../service/notification';
 import * as OrderService from '../service/order';
@@ -37,9 +37,9 @@ export function cancelSeatReservation(
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
         const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(connection);
         const stockRepo = new StockRepo(connection);
-        const wheelchairReservationCountRepo = new WheelchairReservationCountRepo(redisClient);
+        const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
         await StockService.cancelSeatReservationAuth(data.transactionId)(
-            seatReservationAuthorizeActionRepo, stockRepo, wheelchairReservationCountRepo
+            seatReservationAuthorizeActionRepo, stockRepo, ticketTypeCategoryRateLimitRepo
         );
     };
 }
@@ -76,10 +76,9 @@ export function returnOrder(
         const reservationRepo = new ReservationRepo(connection);
         const stockRepo = new StockRepo(connection);
         const transactionRepo = new TransactionRepo(connection);
-        const wheelchairReservationCountRepo = new WheelchairReservationCountRepo(redisClient);
-
+        const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
         await OrderService.processReturn(data.transactionId)(
-            performanceRepo, reservationRepo, stockRepo, transactionRepo, wheelchairReservationCountRepo
+            performanceRepo, reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo
         );
     };
 }

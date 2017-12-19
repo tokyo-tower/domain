@@ -119,6 +119,7 @@ const schema = new mongoose.Schema(
             default: []
         },
         ticket_ttts_extension: tttsExtensionTicketType,
+        rate_limit_unit_in_seconds: Number,
 
         watcher_name: String, // 配布先
         watcher_name_updated_at: Date, // 配布先更新日時 default: Date.now
