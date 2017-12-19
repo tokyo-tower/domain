@@ -92,14 +92,9 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             id: params.agentId,
             url: ''
         };
-        if (params.agentId !== '' && params.purchaserGroup === factory.person.Group.Staff) {
+        if (params.purchaserGroup === factory.person.Group.Staff) {
             // 会員情報取得
             agent = await ownerRepo.findById(params.agentId);
-        } else if (params.agentId !== '') {
-            // 会員情報取得
-            agent = {
-                id: params.agentId
-            };
         }
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
@@ -271,7 +266,7 @@ export function confirm(params: {
         transaction.object.authorizeActions = authorizeActions;
         transaction.object.paymentMethod = params.paymentMethod;
 
-        // 照会可能になっているかどうか
+        // 注文取引成立条件を満たしているかどうか
         if (!canBeClosed(transaction)) {
             throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
         }
@@ -298,30 +293,66 @@ export function confirm(params: {
  * @function
  * @returns {boolean}
  */
-function canBeClosed(__: factory.transaction.placeOrder.ITransaction) {
+function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
+    const paymentMethod = transaction.object.paymentMethod;
+    const purchaserGroup = transaction.object.purchaser_group;
+    const agent = transaction.agent;
+    const creditCardAuthorizeActions = transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+
+    switch (paymentMethod) {
+        case factory.paymentMethodType.Cash:
+            break;
+
+        case factory.paymentMethodType.CreditCard:
+            // 決済方法がクレジットカードであれば、承認アクションが必須
+            if (creditCardAuthorizeActions.length === 0) {
+                throw new factory.errors.Argument('paymentMethod', 'Credit card authorization required.');
+            }
+
+            break;
+
+        case factory.paymentMethodType.Charter:
+        case factory.paymentMethodType.CP:
+        case factory.paymentMethodType.GroupReservation:
+        case factory.paymentMethodType.Invitation:
+        case factory.paymentMethodType.Invoice:
+            // 認められるのはスタッフだけ
+            if (purchaserGroup !== factory.person.Group.Staff || agent.username === undefined) {
+                throw new factory.errors.Argument('paymentMethod', `Invalid payment method for ${purchaserGroup}.`);
+            }
+
+            break;
+
+        default:
+            // それ以外の決済方法は認められない
+            throw new factory.errors.Argument('paymentMethod', 'Invalid payment method.');
+    }
+
+    type IAuthorizeActionResult =
+        factory.action.authorize.creditCard.IResult |
+        factory.action.authorize.seatReservation.IResult;
+
+    if (purchaserGroup === factory.person.Group.Customer && paymentMethod === factory.paymentMethodType.CreditCard) {
+        // agentとsellerで、承認アクションの金額が合うかどうか
+        const priceByAgent = transaction.object.authorizeActions
+            .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((authorizeAction) => authorizeAction.agent.id === transaction.agent.id)
+            .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
+        const priceBySeller = transaction.object.authorizeActions
+            .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
+            .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
+        debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
+
+        // 決済金額なし
+        if (priceByAgent !== priceBySeller) {
+            throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
+        }
+    }
+
     return true;
-
-    // 決済方法がクレジットカードであれば、承認アクションが必須
-
-    // tslint:disable-next-line:no-suspicious-comment
-    // TODO validation
-    // type IAuthorizeActionResult =
-    //     factory.action.authorize.creditCard.IResult |
-    //     factory.action.authorize.mvtk.IResult |
-    //     factory.action.authorize.seatReservation.IResult;
-
-    // // agentとsellerで、承認アクションの金額が合うかどうか
-    // const priceByAgent = transaction.object.authorizeActions
-    //     .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((authorizeAction) => authorizeAction.agent.id === transaction.agent.id)
-    //     .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
-    // const priceBySeller = transaction.object.authorizeActions
-    //     .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-    //     .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
-    //     .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
-    // debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
-
-    // return (priceByAgent > 0 && priceByAgent === priceBySeller);
 }
 
 /**

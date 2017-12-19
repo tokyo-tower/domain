@@ -27,14 +27,13 @@ mongoose.connect();
 
 ### Environment variables
 
-| Name                                    | Required | Value         | Purpose                |
-| --------------------------------------- | -------- | ------------- | ---------------------- |
-| `DEBUG`                                 | false    | ttts-domain:* | Debug                  |
-| `NPM_TOKEN`                             | true     |               | NPM auth token         |
-| `GMO_ENDPOINT`                          | true     |               | GMO API endpoint       |
-| `GMO_SITE_ID`                           | true     |               | GMO SiteID             |
-| `GMO_SITE_PASS`                         | true     |               | GMO SitePass           |
-| `WHEELCHAIR_RATE_LIMIT_UNIT_IN_SECONDS` | true     |               | 車椅子流入制限単位(秒) |
+| Name            | Required | Value         | Purpose          |
+| --------------- | -------- | ------------- | ---------------- |
+| `DEBUG`         | false    | ttts-domain:* | Debug            |
+| `NPM_TOKEN`     | true     |               | NPM auth token   |
+| `GMO_ENDPOINT`  | true     |               | GMO API endpoint |
+| `GMO_SITE_ID`   | true     |               | GMO SiteID       |
+| `GMO_SITE_PASS` | true     |               | GMO SitePass     |
 
 
 ## Code Samples

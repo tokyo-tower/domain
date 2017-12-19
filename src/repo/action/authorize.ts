@@ -3,11 +3,6 @@ import { Connection } from 'mongoose';
 import * as factory from '../../factory';
 import ActionModel from '../mongoose/model/action';
 
-// export type IObject =
-//     factory.action.authorize.creditCard.IObject |
-//     factory.action.authorize.mvtk.IObject |
-//     factory.action.authorize.seatReservation.IObject;
-
 /**
  * 承認アクションMongoレポジトリー
  * @export
