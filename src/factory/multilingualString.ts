@@ -2,7 +2,7 @@
  * 多言語文字列
  * @interface multilingualString
  */
-interface IMultilingualString {
+export interface IMultilingualString {
     ja: string;
     en: string;
     kr: string;
@@ -10,4 +10,11 @@ interface IMultilingualString {
     sc: string;
 }
 
-export default IMultilingualString;
+/**
+ * 英語と日本語対応文字列
+ * @interface
+ */
+export interface IBilingualString {
+    ja: string;
+    en: string;
+}

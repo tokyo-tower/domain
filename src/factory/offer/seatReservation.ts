@@ -3,7 +3,7 @@
  * @namespace offer.seatReservation
  */
 
-import IMultilingualString from '../multilingualString';
+import { IMultilingualString } from '../multilingualString';
 import * as OfferFactory from '../offer';
 import { IExtensionTicketType, ITicketCancelCharge } from '../reservation/event';
 

@@ -3,7 +3,7 @@
  * @namespace factory.performance
  */
 
-import IMultilingualString from './multilingualString';
+import { IBilingualString, IMultilingualString } from './multilingualString';
 import TicketTypeCategory from './ticketTypeCategory';
 
 /**
@@ -82,20 +82,14 @@ export interface ISeat {
     code: string; // 座席コード
     grade: {
         code: string;
-        name: {
-            en: string;
-            ja: string;
-        };
+        name: IBilingualString;
         additional_charge: number; // 追加料金
     };
 }
 
 export interface IScreen {
     code: string;
-    name: {
-        en: string;
-        ja: string;
-    };
+    name: IBilingualString;
     seats: ISeat[];
 }
 
@@ -116,10 +110,7 @@ export interface ITicketType {
 export interface ITicketTypeGroup {
     id: string;
     ticket_types: ITicketType[];
-    name: {
-        en: string;
-        ja: string;
-    };
+    name: IBilingualString;
 }
 
 /**
@@ -133,46 +124,36 @@ export interface IPerformanceWithDetails {
     open_time: string;
     start_time: string;
     end_time: string;
-    start_str: {
-        en: string;
-        ja: string;
-    };
-    location_str: {
-        en: string;
-        ja: string;
-    };
+    start_str: IBilingualString;
+    location_str: IBilingualString;
     canceled: boolean;
     ticket_type_group: ITicketTypeGroup;
     theater: {
         id: string;
-        name: {
-            en: string;
-            ja: string;
-        };
-        address: {
-            en: string;
-            ja: string;
-        };
+        name: IBilingualString;
+        address: IBilingualString;
     };
     screen: {
         id: string;
-        name: {
-            en: string;
-            ja: string;
-        };
+        name: IBilingualString;
         sections: IScreen[]
     };
     film: {
         id: string;
-        name: {
-            en: string;
-            ja: string;
-        };
+        name: IBilingualString;
         // image: `${req.protocol}://${req.hostname}/images/film/${performance.get('film').get('_id')}.jpg`,
         is_mx4d: boolean;
         copyright: string;
     };
     ttts_extension: IExtension;
+    door_time?: Date;
+    start_date: Date;
+    end_date: Date;
+    duration: string;
+    /**
+     * ツアー情報
+     */
+    tour: ITour;
 }
 
 /**
@@ -183,15 +164,9 @@ export interface IPerformanceWithDetails {
 export interface IPerformance {
     id: string;
     theater: string;
-    theater_name: {
-        en: string;
-        ja: string;
-    };
+    theater_name: IBilingualString;
     screen: string;
-    screen_name: {
-        en: string;
-        ja: string;
-    };
+    screen_name: IBilingualString;
     film: string;
     ticket_type_group: string;
     day: string;
@@ -200,4 +175,30 @@ export interface IPerformance {
     end_time: string;
     canceled: boolean;
     ttts_extension: IExtension;
+    door_time?: Date;
+    start_date: Date;
+    end_date: Date;
+    duration: string;
+    /**
+     * ツアー情報
+     */
+    tour: ITour;
+}
+
+/**
+ * ツアーインターフェース
+ * @interface
+ * @memberof performance
+ */
+export interface ITour {
+    name: IBilingualString;
+    /**
+     * ツアーナンバー
+     * 例）10:00の枠:「101」など
+     */
+    code: string;
+    door_time?: Date;
+    start_date: Date;
+    end_date: Date;
+    duration: string;
 }

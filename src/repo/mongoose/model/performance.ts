@@ -11,6 +11,15 @@ import TicketTypeGroup from './ticketTypeGroup';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
+const tourSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 /**
  * パフォーマンススキーマ
  */
@@ -44,13 +53,32 @@ const schema = new mongoose.Schema(
         start_time: String, // 上映開始時刻
         end_time: String, // 上映終了時刻
         canceled: Boolean, // 上映中止フラグ
-        ttts_extension: tttsExtensionPerformance // 拡張情報
+        ttts_extension: tttsExtensionPerformance, // 拡張情報
+        door_time: Date,
+        start_date: {
+            type: Date,
+            required: true
+        },
+        end_date: {
+            type: Date,
+            required: true
+        },
+        duration: String,
+        /**
+         * ツアー情報
+         */
+        tour: {
+            type: tourSchema,
+            required: true
+        }
     },
     {
         collection: 'performances',
         id: true,
         read: 'primaryPreferred',
         safe: safe,
+        strict: true,
+        useNestedStrict: true,
         timestamps: {
             createdAt: 'created_at',
             updatedAt: 'updated_at'

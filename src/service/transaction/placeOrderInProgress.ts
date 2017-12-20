@@ -12,6 +12,7 @@ import * as moment from 'moment';
 import * as factory from '../../factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
+// import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as OwnerRepo } from '../../repo/owner';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -43,9 +44,9 @@ export interface IStartParams {
      */
     agentId: string;
     /**
-     * 販売者ID
+     * 販売者識別子
      */
-    sellerId: string;
+    sellerIdentifier: string;
     /**
      * WAITER許可証トークン
      */
@@ -63,13 +64,17 @@ export interface IStartParams {
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (transactionRepo: TransactionRepo, ownerRepo: OwnerRepo) => {
-        // 売り手を取得
-        // const seller = await organizationRepo.findMovieTheaterById(params.sellerId);
+        // tslint:disable-next-line:no-suspicious-comment
+        // TODO 販売者を取得
+        // const seller = await organizationRepo.findCorporationByIdentifier(params.sellerIdentifier);
         const seller = {
-            id: params.sellerId,
-            identifier: '',
-            url: '',
-            name: { ja: '', en: '' }
+            id: params.sellerIdentifier,
+            identifier: params.sellerIdentifier,
+            name: {
+                en: 'Tokyo Tower',
+                ja: '東京タワー'
+            },
+            url: ''
         };
 
         let passport: waiter.factory.passport.IPassport | undefined;

@@ -8,7 +8,7 @@ import * as PerformanceFactory from '../performance';
 import * as ReservationFactory from '../reservation';
 
 import ItemAvailability from '../itemAvailability';
-import IMultilingualString from '../multilingualString';
+import { IMultilingualString } from '../multilingualString';
 import TicketTypeCategory from '../ticketTypeCategory';
 
 /**

@@ -12,7 +12,7 @@ import * as PrintTicketActionFactory from './factory/action/transfer/print/ticke
 import * as EmailMessageFactory from './factory/creativeWork/message/email';
 import CreativeWorkType from './factory/creativeWorkType';
 import ItemAvailability from './factory/itemAvailability';
-import IMultilingualString from './factory/multilingualString';
+import * as MultilingualStringFactory from './factory/multilingualString';
 import * as SeatReservationOfferFactory from './factory/offer/seatReservation';
 import OrderStatus from './factory/orderStatus';
 import OrganizationType from './factory/organizationType';
@@ -86,7 +86,7 @@ export namespace creativeWork {
 }
 export import creativeWorkType = CreativeWorkType;
 export import itemAvailability = ItemAvailability;
-export type multilingualString = IMultilingualString;
+export import multilingualString = MultilingualStringFactory;
 export namespace offer {
     export import seatReservation = SeatReservationOfferFactory;
 }
