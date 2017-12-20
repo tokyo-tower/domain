@@ -12,7 +12,7 @@ import * as moment from 'moment';
 import * as factory from '../../factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
-// import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as OrganizationRepo } from '../../repo/organization';
 import { MongoRepository as OwnerRepo } from '../../repo/owner';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -21,7 +21,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
 
-export type IStartOperation<T> = (transactionRepo: TransactionRepo, ownerRepo: OwnerRepo) => Promise<T>;
+export type IStartOperation<T> = (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo, ownerRepo: OwnerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
@@ -63,19 +63,9 @@ export interface IStartParams {
  * @memberof service.transaction.placeOrderInProgress
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, ownerRepo: OwnerRepo) => {
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO 販売者を取得
-        // const seller = await organizationRepo.findCorporationByIdentifier(params.sellerIdentifier);
-        const seller = {
-            id: params.sellerIdentifier,
-            identifier: params.sellerIdentifier,
-            name: {
-                en: 'Tokyo Tower',
-                ja: '東京タワー'
-            },
-            url: ''
-        };
+    return async (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo, ownerRepo: OwnerRepo) => {
+        // 販売者を取得
+        const seller = await organizationRepo.findCorporationByIdentifier(params.sellerIdentifier);
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
@@ -94,6 +84,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         }
 
         let agent: factory.transaction.placeOrder.IAgent = {
+            typeOf: factory.personType.Person,
             id: params.agentId,
             url: ''
         };
@@ -390,15 +381,17 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     // 予約データを作成
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
         const purchaserGroup = transaction.object.purchaser_group;
+        const qrStr = `${orderNumber}-${index}`;
 
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
+            id: qrStr,
+            qr_str: qrStr,
             transaction: transaction.id,
             order_number: orderNumber,
             stock: tmpReservation.stock,
             stock_availability_before: tmpReservation.stock_availability_before,
             stock_availability_after: tmpReservation.stock_availability_after,
-            qr_str: `${orderNumber}-${index}`,
 
             status: tmpReservation.status_after,
 

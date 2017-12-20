@@ -45,7 +45,7 @@ export interface ISeller {
     typeOf: OrganizationType | PersonType;
     id: string;
     name: string;
-    url: string;
+    url?: string;
 }
 
 /**

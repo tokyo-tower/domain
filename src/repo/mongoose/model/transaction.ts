@@ -1,7 +1,5 @@
 import * as mongoose from 'mongoose';
 
-import ReservationModel from './reservation';
-
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 const objectSchema = new mongoose.Schema(
@@ -14,9 +12,7 @@ const objectSchema = new mongoose.Schema(
 );
 
 const resultSchema = new mongoose.Schema(
-    {
-        eventReservations: [ReservationModel.schema]
-    },
+    {},
     {
         id: false,
         _id: false,

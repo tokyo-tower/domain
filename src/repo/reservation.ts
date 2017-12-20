@@ -19,9 +19,11 @@ export class MongoRepository {
      * @param {factory.reservation.event.IReservation} reservation
      */
     public async saveEventReservation(reservation: factory.reservation.event.IReservation) {
-        await this.reservationModel.findOneAndUpdate(
-            { qr_str: reservation.qr_str },
-            reservation,
+        await this.reservationModel.findByIdAndUpdate(
+            reservation.id,
+            {
+                $setOnInsert: reservation
+            },
             { upsert: true }
         ).exec();
     }

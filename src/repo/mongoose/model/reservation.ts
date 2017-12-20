@@ -1,5 +1,3 @@
-// tslint:disable:no-invalid-this no-magic-numbers space-before-function-paren
-import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as numeral from 'numeral';
 
@@ -23,6 +21,11 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        _id: String, // qr_strに等しい
+        qr_str: {
+            type: String,
+            required: true
+        },
         transaction: {
             type: String,
             required: true
@@ -40,10 +43,6 @@ const schema = new mongoose.Schema(
             required: true
         },
         stock_availability_after: {
-            type: String,
-            required: true
-        },
-        qr_str: {
             type: String,
             required: true
         },
@@ -163,51 +162,6 @@ const schema = new mongoose.Schema(
     }
 );
 
-// 入場済みかどうかは、履歴があるかどうかで判断
-schema.virtual('checked_in').get(function (this: any) {
-    return ((<any[]>this.checkins).length > 0);
-});
-
-// 開始文字列を表示形式で取得できるように
-schema.virtual('performance_start_str').get(function (this: any) {
-    if (this.performance_day === undefined || this.performance_open_time === undefined || this.performance_start_time === undefined) {
-        return {};
-    }
-
-    const date = `${moment(`${this.performance_day.substr(0, 4)}-${this.performance_day.substr(4, 2)}-` +
-        `${this.performance_day.substr(6)}T00:00:00+09:00`).format('MMMM DD, YYYY')}`;
-    const en = `Open: ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)}/` +
-        `Start: ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)} on ${date}`;
-    const ja = `${this.performance_day.substr(0, 4)}/${this.performance_day.substr(4, 2)}/${this.performance_day.substr(6)} ` +
-        // tslint:disable-next-line:max-line-length
-        `開場 ${this.performance_open_time.substr(0, 2)}:${this.performance_open_time.substr(2)} 開演 ${this.performance_start_time.substr(0, 2)}:${this.performance_start_time.substr(2)}`;
-
-    return {
-        en: en,
-        ja: ja
-    };
-});
-
-schema.virtual('location_str').get(function (this: any) {
-    const en = `at ${this.get('screen_name').en}, ${this.get('theater_name').en}`;
-    const ja = `${this.get('theater_name').ja} ${this.get('screen_name').ja}`;
-
-    return {
-        en: en,
-        ja: ja
-    };
-});
-
-schema.virtual('baloon_content4staff').get(function (this: any) {
-    let str = `${this.seat_code}`;
-    str += (this.purchaser_group_str !== undefined) ? `<br>${this.purchaser_group_str}` : '';
-    str += (this.purchaser_name.ja !== undefined) ? `<br>${this.purchaser_name.ja}` : '';
-    str += (this.watcher_name !== undefined) ? `<br>${this.watcher_name}` : '';
-    str += (this.status_str !== undefined) ? `<br>${this.status_str}` : '';
-
-    return str;
-});
-
 schema.virtual('purchaser_name').get(function (this: any) {
     let en = '';
 
@@ -241,62 +195,6 @@ schema.virtual('purchaser_name').get(function (this: any) {
         en: en,
         ja: ja
     };
-});
-
-schema.virtual('purchaser_group_str').get(function (this: any) {
-    let str = '';
-
-    switch (this.get('purchaser_group')) {
-        case factory.person.Group.Customer:
-            str = '一般';
-            break;
-        case factory.person.Group.Staff:
-            str = '内部関係者';
-            break;
-        default:
-            break;
-    }
-
-    return str;
-});
-
-schema.virtual('status_str').get(function (this: any) {
-    let str = '';
-
-    switch (this.get('status')) {
-        case factory.reservationStatusType.ReservationConfirmed:
-        case factory.reservationStatusType.ReservationSecuredExtra:
-            str = '予約済';
-            break;
-
-        default:
-            break;
-    }
-
-    return str;
-});
-
-/**
- * QRコード文字列分割
- * 上映日-購入番号-購入座席インデックス
- */
-// tslint:disable-next-line:no-function-expression
-schema.static('parse_from_qr_str', function (qrStr: string) {
-    const qr: string[] = qrStr.split('-');
-    const qrInfo: any = {};
-    if (qr.length > 0) {
-        qrInfo.performance_day = qr[0];
-    }
-    if (qr.length > 1) {
-        qrInfo.payment_no = qr[1];
-    }
-    // tslint:disable-next-line:no-magic-numbers
-    if (qr.length > 2) {
-        // tslint:disable-next-line:no-magic-numbers
-        qrInfo.payment_seat_index = qr[2];
-    }
-
-    return qrInfo;
 });
 
 /**

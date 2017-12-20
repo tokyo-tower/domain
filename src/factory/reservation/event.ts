@@ -73,7 +73,7 @@ export interface IExtensionTicketType {
 }
 
 export interface IReservation extends ReservationFactory.IReservation {
-    id?: string;
+    id: string;
     /**
      * 注文取引ID
      */

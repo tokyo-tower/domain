@@ -4,6 +4,8 @@
  * @namespace person
  */
 
+import PersonType from './personType';
+
 export enum Group {
     /**
      * 一般
@@ -40,6 +42,7 @@ export interface IContact {
  * @memberof person
  */
 export interface IPerson {
+    typeOf: PersonType;
     /**
      * id
      */

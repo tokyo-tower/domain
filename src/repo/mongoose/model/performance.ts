@@ -55,7 +55,10 @@ const schema = new mongoose.Schema(
             required: true
         },
         duration: String,
-        tour_number: String
+        tour_number: {
+            type: String,
+            required: true
+        }
     },
     {
         collection: 'performances',

@@ -9,6 +9,7 @@ import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize'
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
+import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnerRepo } from './repo/owner';
 import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
@@ -50,6 +51,11 @@ export namespace rateLimit {
      */
     export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
 }
+
+/**
+ * 組織リポジトリー
+ */
+export class Organization extends OrganizationRepo { }
 
 /**
  * 所有者レポジトリー

@@ -15,6 +15,7 @@ import ItemAvailability from './factory/itemAvailability';
 import * as MultilingualStringFactory from './factory/multilingualString';
 import * as SeatReservationOfferFactory from './factory/offer/seatReservation';
 import OrderStatus from './factory/orderStatus';
+import * as CorporationOrganizationFactory from './factory/organization/corporation';
 import OrganizationType from './factory/organizationType';
 import * as CreditCardFactory from './factory/paymentMethod/paymentCard/creditCard';
 import PaymentMethodType from './factory/paymentMethodType';
@@ -91,6 +92,9 @@ export namespace offer {
     export import seatReservation = SeatReservationOfferFactory;
 }
 export import orderStatus = OrderStatus;
+export namespace organization {
+    export import corporation = CorporationOrganizationFactory;
+}
 export import organizationType = OrganizationType;
 export import priceCurrency = PriceCurrency;
 export import paymentMethodType = PaymentMethodType;
