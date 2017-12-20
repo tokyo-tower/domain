@@ -150,10 +150,7 @@ export interface IPerformanceWithDetails {
     start_date: Date;
     end_date: Date;
     duration: string;
-    /**
-     * ツアー情報
-     */
-    tour: ITour;
+    tour_number: string;
 }
 
 /**
@@ -179,26 +176,5 @@ export interface IPerformance {
     start_date: Date;
     end_date: Date;
     duration: string;
-    /**
-     * ツアー情報
-     */
-    tour: ITour;
-}
-
-/**
- * ツアーインターフェース
- * @interface
- * @memberof performance
- */
-export interface ITour {
-    name: IBilingualString;
-    /**
-     * ツアーナンバー
-     * 例）10:00の枠:「101」など
-     */
-    code: string;
-    door_time?: Date;
-    start_date: Date;
-    end_date: Date;
-    duration: string;
+    tour_number: string;
 }
