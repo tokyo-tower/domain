@@ -11,15 +11,6 @@ import TicketTypeGroup from './ticketTypeGroup';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
-const tourSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * パフォーマンススキーマ
  */
@@ -64,13 +55,7 @@ const schema = new mongoose.Schema(
             required: true
         },
         duration: String,
-        /**
-         * ツアー情報
-         */
-        tour: {
-            type: tourSchema,
-            required: true
-        }
+        tour_number: String
     },
     {
         collection: 'performances',
