@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import * as factory from '../../../factory';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -202,6 +203,20 @@ schema.index(
     {
         typeOf: 1,
         _id: 1
+    }
+);
+
+// ひとつの注文取引に対する返品取引はユニークなはず
+schema.index(
+    {
+        'object.transaction.id': 1
+    },
+    {
+        unique: true,
+        partialFilterExpression: {
+            typeOf: factory.transactionType.ReturnOrder,
+            'object.transaction.id': { $exists: true }
+        }
     }
 );
 

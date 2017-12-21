@@ -91,7 +91,7 @@ export function returnOrdersByPerformance(
         const reservationRepo = new ReservationRepo(connection);
         const transactionRepo = new TransactionRepo(connection);
 
-        await OrderService.processReturnAllByPerformance(data.performanceId)(
+        await OrderService.processReturnAllByPerformance(data.agentId, data.performanceId)(
             performanceRepo, reservationRepo, transactionRepo
         );
     };

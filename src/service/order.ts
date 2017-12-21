@@ -180,7 +180,9 @@ export function processReturn(returnOrderTransactionId: string) {
 /**
  * パフォーマンス指定で全注文を返品する
  */
-export function returnAllByPerformance(performanceId: string): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
+export function returnAllByPerformance(
+    agentId: string, performanceId: string
+): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
     return async (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => {
         // パフォーマンス情報取得
         const performance = await performanceRepo.findById(performanceId);
@@ -202,6 +204,7 @@ export function returnAllByPerformance(performanceId: string): IPerformanceAndTa
             numberOfTried: 0,
             executionResults: [],
             data: {
+                agentId: agentId,
                 performanceId: performanceId
             }
         });
@@ -210,7 +213,7 @@ export function returnAllByPerformance(performanceId: string): IPerformanceAndTa
     };
 }
 
-export function processReturnAllByPerformance(performanceId: string) {
+export function processReturnAllByPerformance(agentId: string, performanceId: string) {
     return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = await reservationRepo.reservationModel.find(
@@ -243,6 +246,7 @@ export function processReturnAllByPerformance(performanceId: string) {
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {
             await ReturnOrderTransactionService.confirm({
+                agentId: agentId,
                 transactionId: transactionId,
                 cancellationFee: 0,
                 forcibly: true

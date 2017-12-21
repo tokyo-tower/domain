@@ -11,6 +11,10 @@ import TaskStatus from '../taskStatus';
 
 export interface IData {
     /**
+     * 返品アクションを起こした主体ID
+     */
+    agentId: string;
+    /**
      * 返品対象のパフォーマンスID
      */
     performanceId: string;
