@@ -4,13 +4,36 @@
  */
 
 import * as OrganizationFactory from '../organization';
+import { IURL } from '../url';
+
+/**
+ * GMOショップ情報インターフェース
+ */
+export interface IGMOInfo {
+    /**
+     * サイトID
+     */
+    siteId: string;
+    /**
+     * ショップID
+     */
+    shopId: string;
+    /**
+     * ショップパス
+     */
+    shopPass: string;
+}
+
+export interface IOrganizationWithoutGMOInfo extends OrganizationFactory.IOrganization {
+    url: IURL;
+}
 
 /**
  * 企業組織インターフェース
  */
-export interface IOrganization extends OrganizationFactory.IOrganization {
+export type IOrganization = IOrganizationWithoutGMOInfo & {
     /**
-     * 組織識別子
+     * GMO情報
      */
-    identifier: string;
-}
+    gmoInfo: IGMOInfo;
+};

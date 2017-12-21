@@ -50,14 +50,22 @@ export function processReturn(returnOrderTransactionId: string) {
                 return <factory.transaction.returnOrder.ITransaction>doc.toObject();
             });
         debug('processing return order...', returnOrderTransaction);
+
+        const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>
+            returnOrderTransaction.object.transaction.object.authorizeActions
+                .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .find((action) => action.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+        const entryTranArgs = (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).entryTranArgs;
+        const execTranArgs = (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs;
+
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
         const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
         const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
 
         // 取引状態参照
         const searchTradeResult = await GMO.services.credit.searchTrade({
-            shopId: <string>process.env.GMO_SHOP_ID,
-            shopPass: <string>process.env.GMO_SHOP_PASS,
+            shopId: entryTranArgs.shopId,
+            shopPass: entryTranArgs.shopPass,
             orderId: orderId
         });
         debug('searchTradeResult:', searchTradeResult);
@@ -69,10 +77,10 @@ export function processReturn(returnOrderTransactionId: string) {
             if (returnOrderTransaction.object.cancellationFee === 0) {
                 debug(`altering tran. ${GMO.utils.util.JobCd.Return}..`, orderId);
                 const alterTranResult = await GMO.services.credit.alterTran({
-                    shopId: <string>process.env.GMO_SHOP_ID,
-                    shopPass: <string>process.env.GMO_SHOP_PASS,
-                    accessId: searchTradeResult.accessId,
-                    accessPass: searchTradeResult.accessPass,
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    accessId: execTranArgs.accessId,
+                    accessPass: execTranArgs.accessPass,
                     jobCd: GMO.utils.util.JobCd.Return
                 });
                 // クレジットカード取引結果を返品取引結果に連携
@@ -109,10 +117,10 @@ export function processReturn(returnOrderTransactionId: string) {
             } else {
                 debug('changing amount...', orderId);
                 const changeTranResult = await GMO.services.credit.changeTran({
-                    shopId: <string>process.env.GMO_SHOP_ID,
-                    shopPass: <string>process.env.GMO_SHOP_PASS,
-                    accessId: searchTradeResult.accessId,
-                    accessPass: searchTradeResult.accessPass,
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    accessId: execTranArgs.accessId,
+                    accessPass: execTranArgs.accessPass,
                     jobCd: GMO.utils.util.JobCd.Capture,
                     amount: returnOrderTransaction.object.cancellationFee
                 });

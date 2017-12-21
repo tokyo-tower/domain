@@ -27,4 +27,18 @@ export class MongoRepository {
         return <factory.organization.corporation.IOrganization>doc.toObject();
 
     }
+
+    public async findCorporationById(id: string): Promise<factory.organization.corporation.IOrganization> {
+        const doc = await this.organizationModel.findOne({
+            _id: id,
+            typeOf: factory.organizationType.Corporation
+        }).exec();
+
+        if (doc === null) {
+            throw new factory.errors.NotFound('Organization');
+        }
+
+        return <factory.organization.corporation.IOrganization>doc.toObject();
+
+    }
 }
