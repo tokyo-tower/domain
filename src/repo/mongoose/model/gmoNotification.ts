@@ -3,47 +3,55 @@ import * as mongoose from 'mongoose';
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 /**
- * GMO結果通知スキーマ
+ * GMO通知スキーマ
+ * @ignore
  */
 const schema = new mongoose.Schema(
     {
-        shop_id: String, // ショップID
-        order_id: String, // オーダーID
-        status: String, // 結果ステータス
-        job_cd: String, // 処理区分
-        amount: String, // 利用金額
-        pay_type: String, // 決済方法
-
-        tax: String,
-        access_id: String,
-        forward: String,
-        method: String,
-        approve: String,
-        tran_id: String,
-        tran_date: String,
-
-        cvs_code: String,
-        cvs_conf_no: String,
-        cvs_receipt_no: String,
-        payment_term: String,
-
-        process_status: { // 処理ステータス(UNPROCESSED|PROCESSING|PROCESSED)
-            type: String,
-            required: true
-        }
+        shopId: String, // ショップID
+        shopPass: String, // ショップパスワード
+        accessId: String, // 取引ID
+        accessPass: String, // 取引パスワード
+        orderId: String, // オーダーID
+        status: String, // 現状態
+        jobCd: String, // 処理区分
+        amount: Number, // 利用金額
+        tax: Number, // 税送料
+        currency: String, // 通貨コード
+        forward: String, // 仕向先会社コード
+        method: String, // 支払方法
+        payTimes: String, // 支払回数
+        tranId: String, // トランザクションID
+        approve: String, // 承認番号
+        tranDate: String, // 処理日付
+        errCode: String, // エラーコード
+        errInfo: String, // エラー詳細コード
+        payType: String // 決済方法
     },
     {
-        collection: 'gmo_notifications',
+        collection: 'gmoNotifications',
         id: true,
         read: 'primaryPreferred',
         safe: safe,
+        strict: true,
+        useNestedStrict: true,
         timestamps: {
-            createdAt: 'created_at',
-            updatedAt: 'updated_at'
+            createdAt: 'createdAt',
+            updatedAt: 'updatedAt'
         },
         toJSON: { getters: true },
         toObject: { getters: true }
     }
 );
 
-export default mongoose.model('GMONotification', schema);
+// GMO売上健康診断時に使用
+schema.index({ jobCd: 1, tranDate: 1 });
+
+export default mongoose.model('GMONotification', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });

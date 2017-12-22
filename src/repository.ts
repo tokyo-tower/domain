@@ -8,6 +8,7 @@
 import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
+import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnerRepo } from './repo/owner';
@@ -46,6 +47,11 @@ export namespace itemAvailability {
      */
     export class SeatReservationOffer extends SeatReservationOfferAvailabilityRepo { }
 }
+
+/**
+ * GMO通知リポジトリー
+ */
+export class GMONotification extends GMONotificationRepo { }
 
 export namespace rateLimit {
     /**
