@@ -18,6 +18,7 @@ import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateL
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
+import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 // import { RedisRepository as WheelchairReservationCountRepo } from './repo/wheelchairReservationCount';
@@ -86,6 +87,10 @@ export class Stock extends StockRepo { }
  * タスクレポジトリー
  */
 export class Task extends TaskRepo { }
+/**
+ * 測定データリポジトリー
+ */
+export class Telemetry extends TelemetryRepo { }
 /**
  * トークンリポジトリー
  */

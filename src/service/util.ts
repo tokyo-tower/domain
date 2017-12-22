@@ -29,7 +29,7 @@ export function uploadFile(
         return new Promise<string>((resolve, reject) => {
             // save to blob
             const blobService = azureStorage.createBlobService();
-            const CONTAINER = 'files-from-sskts-domain-util-service';
+            const CONTAINER = 'files-from-ttts-domain-util-service';
             blobService.createContainerIfNotExists(
                 CONTAINER,
                 {
