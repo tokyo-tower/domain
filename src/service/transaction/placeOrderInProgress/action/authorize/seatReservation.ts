@@ -302,7 +302,7 @@ async function reserveTemporarilyByOffer(
                 if (extraStock !== null) {
                     debug('1 stock found.', extraStock.get('id'));
                     tmpReservations.push({
-                        stock: stock.get('id'),
+                        stock: extraStock.get('id'),
                         stock_availability_before: factory.itemAvailability.InStock,
                         stock_availability_after: extraStock.get('availability'),
                         stock_holder: extraStock.get('holder'),
