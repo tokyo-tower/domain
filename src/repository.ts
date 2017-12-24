@@ -15,6 +15,7 @@ import { MongoRepository as OwnerRepo } from './repo/owner';
 import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { RedisRepository as PerformanceStatusesRepo } from './repo/performanceStatuses';
+import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as StockRepo } from './repo/stock';
@@ -22,7 +23,6 @@ import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
-// import { RedisRepository as WheelchairReservationCountRepo } from './repo/wheelchairReservationCount';
 
 export namespace action {
     /**
@@ -64,6 +64,13 @@ export namespace rateLimit {
  * 組織リポジトリー
  */
 export class Organization extends OrganizationRepo { }
+
+export namespace place {
+    /**
+     * 入場場所リポジトリー
+     */
+    export class CheckinGate extends CheckinGateRepo { }
+}
 
 /**
  * 所有者リポジトリー

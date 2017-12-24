@@ -22,8 +22,8 @@ const schema = new mongoose.Schema(
             required: true
         },
         name: multilingualString,
-        description: multilingualString,
-        notes: multilingualString,
+        description: String,
+        notes: String,
         email: String,
         group: { // オーナー区分
             type: String,

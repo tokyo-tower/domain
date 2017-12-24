@@ -23,6 +23,7 @@ import * as PerformanceFactory from './factory/performance';
 import * as PerformanceStatusesFactory from './factory/performanceStatuses';
 import * as PersonFactory from './factory/person';
 import PersonType from './factory/personType';
+import * as CheckinGateFactory from './factory/place/checkinGate';
 import * as ScreenFactory from './factory/place/screen';
 import PriceCurrency from './factory/priceCurrency';
 import * as ReservationFactory from './factory/reservation';
@@ -108,6 +109,7 @@ export namespace reservation {
 }
 export import stock = StockFactory;
 export namespace place {
+    export import checkinGate = CheckinGateFactory;
     export import screen = ScreenFactory;
 }
 export import reservationStatusType = ReservationStatusType;
