@@ -35,11 +35,11 @@ export function updatePerformanceStatuses(): IStockAndPerformanceAndPerformanceS
         debug('finding performances...');
         const performances = await performanceRepo.performanceModel.find(
             {
-                day: {
+                start_date: {
                     // tslint:disable-next-line:no-magic-numbers
-                    $gt: moment().format('YYYYMMDD'),
+                    $gt: moment().toDate(),
                     // tslint:disable-next-line:no-magic-numbers
-                    $lt: moment().add(3, 'months').format('YYYYMMDD')
+                    $lt: moment().add(3, 'months').toDate()
                 }
             },
             'day start_time screen'
