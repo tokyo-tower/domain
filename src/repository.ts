@@ -13,8 +13,9 @@ import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnerRepo } from './repo/owner';
 import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
-import { MongoRepository as PerformanceRepo } from './repo/performance';
+import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { RedisRepository as PerformanceStatusesRepo } from './repo/performanceStatuses';
+import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as StockRepo } from './repo/stock';
@@ -22,20 +23,19 @@ import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
-// import { RedisRepository as WheelchairReservationCountRepo } from './repo/wheelchairReservationCount';
 
 export namespace action {
     /**
-     * 承認アクションレポジトリー
+     * 承認アクションリポジトリー
      */
     export class Authorize extends AuthorizeActionRepo { }
     export namespace authorize {
         /**
-         * クレジットカード承認アクションレポジトリー
+         * クレジットカード承認アクションリポジトリー
          */
         export class CreditCard extends CreditCardAuthorizeActionRepo { }
         /**
-         * 座席予約承認アクションレポジトリー
+         * 座席予約承認アクションリポジトリー
          */
         export class SeatReservation extends SeatReservationAuthorizeActionRepo { }
     }
@@ -65,32 +65,43 @@ export namespace rateLimit {
  */
 export class Organization extends OrganizationRepo { }
 
+export namespace place {
+    /**
+     * 入場場所リポジトリー
+     */
+    export class CheckinGate extends CheckinGateRepo { }
+}
+
 /**
- * 所有者レポジトリー
+ * 所有者リポジトリー
  */
 export class Owner extends OwnerRepo { }
 /**
- * 購入番号レポジトリー
+ * 購入番号リポジトリー
  */
 export class PaymentNo extends PaymentNoRepo { }
 /**
- * パフォーマンスレポジトリー
+ * パフォーマンスリポジトリー
  */
 export class Performance extends PerformanceRepo { }
 /**
- * パフォーマンス在庫状況レポジトリー
+ * 集計データ付きパフォーマンスリポジトリー
+ */
+export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
+/**
+ * パフォーマンス在庫状況リポジトリー
  */
 export class PerformanceStatuses extends PerformanceStatusesRepo { }
 /**
- * 予約レポジトリー
+ * 予約リポジトリー
  */
 export class Reservation extends ReservationRepo { }
 /**
- * 在庫レポジトリー
+ * 在庫リポジトリー
  */
 export class Stock extends StockRepo { }
 /**
- * タスクレポジトリー
+ * タスクリポジトリー
  */
 export class Task extends TaskRepo { }
 /**
@@ -102,7 +113,7 @@ export class Telemetry extends TelemetryRepo { }
  */
 export class Token extends TokenRepo { }
 /**
- * 取引レポジトリー
+ * 取引リポジトリー
  */
 export class Transaction extends TransactionRepo { }
 /**

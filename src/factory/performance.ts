@@ -4,6 +4,7 @@
  */
 
 import { IBilingualString, IMultilingualString } from './multilingualString';
+import { ICheckin, IReservation } from './reservation/event';
 import TicketTypeCategory from './ticketTypeCategory';
 
 /**
@@ -177,4 +178,127 @@ export interface IPerformance {
     end_date: Date;
     duration: string;
     tour_number: string;
+}
+
+export type ICheckinWithTicketType = ICheckin & {
+    ticketType: string;
+    ticketCategory: TicketTypeCategory;
+};
+
+export interface ICheckinCountsByTicketType {
+    ticketType: string;
+    ticketCategory: TicketTypeCategory;
+    count: number;
+}
+
+export interface ICheckinCountByWhere {
+    /**
+     * 入場場所
+     */
+    where: string;
+    /**
+     * 券種ごとの入場数
+     */
+    checkinCountsByTicketType: ICheckinCountsByTicketType[];
+}
+
+/**
+ * 集計データつきのパフォーマンスインターフェース
+ * @interface
+ */
+export interface IPerformanceWithAggregation {
+    id: string;
+    startDate: Date;
+    endDate: Date;
+    duration: string;
+    tourNumber: string;
+    // エレベータ運行ステータス
+    evServiceStatus: EvServiceStatus;
+    // オンライン販売ステータス
+    onlineSalesStatus: OnlineSalesStatus;
+    /**
+     * 全予約数
+     */
+    reservationCount: number;
+    /**
+     * 全入場数
+     */
+    checkinCount: number;
+    /**
+     * 券種ごとの予約数
+     */
+    reservationCountsByTicketType: IReservationCountByTicketType[];
+    /**
+     * 場所ごとの入場数
+     */
+    checkinCountsByWhere: ICheckinCountByWhere[];
+}
+
+export interface ICheckpoint {
+    where: string;
+    description: string;
+}
+
+export interface IReservedExtra {
+    ticketType: string;
+    reservedNum: number;
+}
+export interface IReservationCountByTicketType {
+    ticketType: string;
+    count: number;
+}
+export interface IReservationAggregation {
+    /**
+     * パフォーマンス情報
+     */
+    performance: IPerformanceWithDetails;
+    /**
+     * 予約リスト
+     */
+    reservations: IReservation[];
+    /**
+     * 券種ごとの予約数
+     */
+    reservationCountsByTicketType: IReservationCountByTicketType[];
+}
+
+export type IReservationAggregations = IReservationAggregation[];
+
+/**
+ * 券種ごとの入場数インターフェース
+ * @interface
+ */
+export interface IArrivedCountByTicketType {
+    ticketType: string;
+    ticketCategory: TicketTypeCategory;
+    count: number;
+}
+/**
+ * 入場場所ごとの入場履歴情報
+ */
+export interface ICheckinInfoByWhere {
+    /**
+     * 入場場所
+     */
+    where: string;
+    /**
+     * 入場履歴
+     */
+    checkins: ICheckinWithTicketType[];
+    /**
+     * 券種ごとの入場数
+     */
+    arrivedCountsByTicketType: IArrivedCountByTicketType[];
+}
+export type ICheckinInfosByWhere = ICheckinInfoByWhere[];
+/**
+ * パフォーマンスごとの入場情報インターフェース
+ * @interface
+ */
+export interface ICheckinInfoByPerformance {
+    performanceId: string;
+    /**
+     * 場所ごとの入場情報
+     */
+    checkinInfosByWhere: ICheckinInfosByWhere;
 }

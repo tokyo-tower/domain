@@ -270,3 +270,167 @@ async function addFilmConditions(andConditions: any[], section: string | null, w
         andConditions.push({ film: { $in: filmIds } });
     }
 }
+
+export function aggregateCounts(searchConditions: ISearchConditions) {
+    return async (
+        performanceRepo: repository.Performance,
+        reservationRepo: repository.Reservation,
+        ownerRepo: repository.Owner,
+        performanceWithAggregationRepo: repository.PerformanceWithAggregation
+    ) => {
+
+        // MongoDB検索条件を作成
+        const andConditions: any[] = [
+            { canceled: false }
+        ];
+
+        // 開始日時条件
+        if (searchConditions.startFrom !== undefined) {
+            andConditions.push({
+                start_date: { $gte: searchConditions.startFrom }
+            });
+        }
+        if (searchConditions.startThrough !== undefined) {
+            andConditions.push({
+                start_date: { $lt: searchConditions.startThrough }
+            });
+        }
+
+        const performances = await performanceRepo.performanceModel.find({ $and: andConditions })
+            .populate('film screen theater')
+            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
+            .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
+        debug('performances found,', performances.length);
+
+        // 予約情報取得
+        const reservations = await reservationRepo.reservationModel.find(
+            {
+                performance: { $in: performances.map((p) => p.id) },
+                status: factory.reservationStatusType.ReservationConfirmed
+            }
+        ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
+        debug('reservations found,', reservations.length);
+
+        // チェックポイント名称取得
+        const owners = await ownerRepo.ownerModel.find({ notes: '1' }).exec();
+
+        const checkpoints: factory.performance.ICheckpoint[] = owners.map((owner) => {
+            return {
+                where: owner.get('group'),
+                description: owner.get('description')
+            };
+        });
+
+        // パフォーマンスごとに集計
+        // tslint:disable-next-line:max-func-body-length
+        const aggregations = performances.map((performance) => {
+            const reservations4performance = reservations.filter((r) => r.performance === performance.id);
+            debug('creating schedule...');
+
+            // 全予約数
+            const totalReservationCount = reservations4performance.filter(
+                (r) => (r.status === factory.reservationStatusType.ReservationConfirmed)
+            ).length;
+
+            // 場所ごとの入場情報を集計
+            const checkinInfosByWhere: factory.performance.ICheckinInfosByWhere = checkpoints.map((checkpoint) => {
+                return {
+                    where: checkpoint.where,
+                    checkins: [],
+                    arrivedCountsByTicketType: performance.ticket_type_group.ticket_types.map((t) => {
+                        return { ticketType: t.id, ticketCategory: t.ttts_extension.category, count: 0 };
+                    })
+                };
+            });
+
+            reservations4performance.forEach((reservation) => {
+                const tempCheckinWhereArray: string[] = [];
+
+                reservation.checkins.forEach((checkin) => {
+                    // 同一ポイントでの重複チェックインを除外
+                    // ※チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複はここでは問題にしない
+                    if (tempCheckinWhereArray.indexOf(checkin.where) >= 0) {
+                        return;
+                    }
+
+                    tempCheckinWhereArray.push(checkin.where);
+
+                    const checkinInfoByWhere = <factory.performance.ICheckinInfoByWhere>checkinInfosByWhere.find(
+                        (info) => info.where === checkin.where
+                    );
+
+                    // チェックイン数セット
+                    (<factory.performance.IArrivedCountByTicketType>checkinInfoByWhere.arrivedCountsByTicketType.find(
+                        (c) => c.ticketType === reservation.ticket_type
+                    )).count += 1;
+
+                    // チェックイン数セット
+                    checkinInfoByWhere.checkins.push({
+                        ...checkin,
+                        ...{
+                            ticketType: reservation.ticket_type,
+                            ticketCategory: reservation.ticket_ttts_extension.category
+                        }
+                    });
+                });
+            });
+
+            // 券種ごとの予約数を集計
+            const reservationCountsByTicketType = performance.ticket_type_group.ticket_types.map((t) => {
+                return { ticketType: t.id, count: 0 };
+            });
+            reservations4performance.map((reservation) => {
+                // 券種ごとの予約数をセット
+                (<factory.performance.IReservationCountByTicketType>reservationCountsByTicketType.find(
+                    (c) => c.ticketType === reservation.ticket_type
+                )).count += 1;
+            });
+
+            const aggregation: factory.performance.IPerformanceWithAggregation = {
+                id: performance.id,
+                startDate: performance.start_date,
+                endDate: performance.end_date,
+                duration: performance.duration,
+                tourNumber: performance.tour_number,
+                evServiceStatus: performance.ttts_extension.ev_service_status,
+                onlineSalesStatus: performance.ttts_extension.online_sales_status,
+                reservationCount: totalReservationCount,
+                checkinCount: checkinInfosByWhere.reduce((a, b) => a + b.checkins.length, 0),
+                reservationCountsByTicketType: reservationCountsByTicketType,
+                // 場所ごとに、券種ごとの入場者数初期値をセット
+                checkinCountsByWhere: checkpoints.map((checkpoint) => {
+                    return {
+                        where: checkpoint.where,
+                        checkinCountsByTicketType: performance.ticket_type_group.ticket_types.map((t) => {
+                            return {
+                                ticketType: t.id,
+                                ticketCategory: t.ttts_extension.category,
+                                count: 0
+                            };
+                        })
+                    };
+                })
+            };
+
+            // 場所ごとに、券種ごとの未入場者数を算出する
+            checkinInfosByWhere.forEach((checkinInfoByWhere) => {
+                const checkinCountsByTicketType = <factory.performance.ICheckinCountByWhere>aggregation.checkinCountsByWhere.find(
+                    (c) => c.where === checkinInfoByWhere.where
+                );
+
+                checkinInfoByWhere.checkins.forEach((checkin) => {
+                    (<factory.performance.ICheckinCountsByTicketType>checkinCountsByTicketType.checkinCountsByTicketType.find(
+                        (c) => c.ticketType === checkin.ticketType
+                    )).count += 1;
+                });
+            });
+
+            return aggregation;
+        });
+
+        await Promise.all(aggregations.map(async (aggregation) => {
+            debug('storing aggregation...', aggregation.id);
+            await performanceWithAggregationRepo.store(aggregation);
+        }));
+    };
+}
