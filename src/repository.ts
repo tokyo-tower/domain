@@ -13,7 +13,7 @@ import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnerRepo } from './repo/owner';
 import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
-import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceRedisRepo } from './repo/performance';
+import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { RedisRepository as PerformanceStatusesRepo } from './repo/performanceStatuses';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
@@ -78,9 +78,9 @@ export class PaymentNo extends PaymentNoRepo { }
  */
 export class Performance extends PerformanceRepo { }
 /**
- * パフォーマンスRedisリポジトリー
+ * 集計データ付きパフォーマンスリポジトリー
  */
-export class PerformanceRedis extends PerformanceRedisRepo { }
+export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
 /**
  * パフォーマンス在庫状況リポジトリー
  */

@@ -276,7 +276,7 @@ export function aggregateCounts(searchConditions: ISearchConditions) {
         performanceRepo: repository.Performance,
         reservationRepo: repository.Reservation,
         ownerRepo: repository.Owner,
-        performanceRedisRepo: repository.PerformanceRedis
+        performanceWithAggregationRepo: repository.PerformanceWithAggregation
     ) => {
 
         // MongoDB検索条件を作成
@@ -426,7 +426,7 @@ export function aggregateCounts(searchConditions: ISearchConditions) {
 
         await Promise.all(aggregations.map(async (aggregation) => {
             debug('storing aggregation...', aggregation.id);
-            await performanceRedisRepo.store(aggregation);
+            await performanceWithAggregationRepo.store(aggregation);
         }));
     };
 }
