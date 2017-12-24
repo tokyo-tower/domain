@@ -390,8 +390,12 @@ export function aggregateCounts(searchConditions: ISearchConditions) {
                 id: performance.id,
                 startDate: performance.start_date,
                 endDate: performance.end_date,
-                totalReservationCount: totalReservationCount,
-                totalCheckinCount: checkinInfosByWhere.reduce((a, b) => a + b.checkins.length, 0),
+                duration: performance.duration,
+                tourNumber: performance.tour_number,
+                evServiceStatus: performance.ttts_extension.ev_service_status,
+                onlineSalesStatus: performance.ttts_extension.online_sales_status,
+                reservationCount: totalReservationCount,
+                checkinCount: checkinInfosByWhere.reduce((a, b) => a + b.checkins.length, 0),
                 reservationCountsByTicketType: reservationCountsByTicketType,
                 // 場所ごとに、券種ごとの入場者数初期値をセット
                 checkinCountsByWhere: checkpoints.map((checkpoint) => {

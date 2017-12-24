@@ -90,8 +90,8 @@ export class RedisRepository {
      * idで集計データつきパフォーマンス情報を取得する
      * @param {string} id
      */
-    public async findById(id: string): Promise<factory.performance.IPerformance> {
-        return new Promise<factory.performance.IPerformance>((resolve, reject) => {
+    public async findById(id: string): Promise<factory.performance.IPerformanceWithAggregation> {
+        return new Promise<factory.performance.IPerformanceWithAggregation>((resolve, reject) => {
             const key = RedisRepository.KEY_PREFIX;
 
             this.redisClient.hget(key, id, (err, result) => {

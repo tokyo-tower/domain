@@ -210,14 +210,20 @@ export interface IPerformanceWithAggregation {
     id: string;
     startDate: Date;
     endDate: Date;
+    duration: string;
+    tourNumber: string;
+    // エレベータ運行ステータス
+    evServiceStatus: EvServiceStatus;
+    // オンライン販売ステータス
+    onlineSalesStatus: OnlineSalesStatus;
     /**
      * 全予約数
      */
-    totalReservationCount: number;
+    reservationCount: number;
     /**
      * 全入場数
      */
-    totalCheckinCount: number;
+    checkinCount: number;
     /**
      * 券種ごとの予約数
      */
