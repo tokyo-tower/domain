@@ -377,11 +377,21 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].payment_no}`;
 
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
+    const purchaserGroup = transaction.object.purchaser_group;
 
     // 予約データを作成
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
-        const purchaserGroup = transaction.object.purchaser_group;
         const qrStr = `${orderNumber}-${index}`;
+
+        let purchaserName = '';
+        switch (purchaserGroup) {
+            case factory.person.Group.Staff:
+                purchaserName = `${transaction.agent.name} ${transaction.agent.signature}`;
+                break;
+            default:
+                purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
+                break;
+        }
 
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
@@ -433,6 +443,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             film_is_mx4d: performance.film.is_mx4d,
             film_copyright: performance.film.copyright,
 
+            purchaser_name: purchaserName,
             purchaser_last_name: (customerContact !== undefined) ? customerContact.last_name : '',
             purchaser_first_name: (customerContact !== undefined) ? customerContact.first_name : '',
             purchaser_email: (customerContact !== undefined) ? customerContact.email : '',

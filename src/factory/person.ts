@@ -52,10 +52,7 @@ export interface IPerson {
      */
     url?: string;
     username?: string;
-    name?: {
-        en: string;
-        ja: string;
-    };
+    name?: string;
     notes?: string;
     email?: string;
     group?: Group;

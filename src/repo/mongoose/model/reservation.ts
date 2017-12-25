@@ -11,8 +11,6 @@ import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
-import * as factory from '../../../factory';
-
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 /**
@@ -95,6 +93,7 @@ const schema = new mongoose.Schema(
         film_copyright: String,
 
         purchaser_group: String, // 購入者区分
+        purchaser_name: String,
         purchaser_last_name: String,
         purchaser_first_name: String,
         purchaser_email: String,
@@ -132,7 +131,7 @@ const schema = new mongoose.Schema(
             ref: Owner.modelName
         },
         owner_username: String,
-        owner_name: multilingualString,
+        owner_name: String,
         owner_email: String,
         owner_group: String,
         owner_signature: String,
@@ -163,41 +162,6 @@ const schema = new mongoose.Schema(
         toObject: { getters: true }
     }
 );
-
-schema.virtual('purchaser_name').get(function (this: any) {
-    let en = '';
-
-    if (this.get('status') === factory.reservationStatusType.ReservationConfirmed
-        || this.get('status') === factory.reservationStatusType.ReservationSecuredExtra) {
-        switch (this.purchaser_group) {
-            case factory.person.Group.Staff:
-                en = `${this.get('owner_name').en} ${this.get('owner_signature')}`;
-                break;
-            default:
-                en = `${this.get('purchaser_first_name')} ${this.get('purchaser_last_name')}`;
-                break;
-        }
-    }
-
-    let ja = '';
-
-    if (this.get('status') === factory.reservationStatusType.ReservationConfirmed
-        || this.get('status') === factory.reservationStatusType.ReservationSecuredExtra) {
-        switch (this.purchaser_group) {
-            case factory.person.Group.Staff:
-                ja = `${this.get('owner_name').ja} ${this.get('owner_signature')}`;
-                break;
-            default:
-                ja = `${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
-                break;
-        }
-    }
-
-    return {
-        en: en,
-        ja: ja
-    };
-});
 
 schema.index(
     { performance_day: 1, status: 1 }

@@ -122,6 +122,7 @@ export interface IReservation extends ReservationFactory.IReservation {
     film_copyright: string;
 
     purchaser_group: string; // 購入者区分
+    purchaser_name: string;
     purchaser_last_name: string;
     purchaser_first_name: string;
     purchaser_email: string;
@@ -153,10 +154,7 @@ export interface IReservation extends ReservationFactory.IReservation {
 
     owner?: string; // オーナー
     owner_username?: string;
-    owner_name?: {
-        ja: string;
-        en: string;
-    };
+    owner_name?: string;
     owner_email?: string;
     owner_group?: string;
     owner_signature?: string;
