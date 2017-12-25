@@ -29,32 +29,31 @@ export type IUpdatePerformanceAvailabilitiesOperation<T> = (
 export function updatePerformanceAvailabilities(ttl: number): IUpdatePerformanceAvailabilitiesOperation<void> {
     return async (
         stockRepo: StockRepo,
-        __: PerformanceRepo,
+        performanceRepo: PerformanceRepo,
         performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
-        // debug('finding performances...');
-        // const performances = await performanceRepo.performanceModel.find(
-        //     {
-        //         start_date: {
-        //             // tslint:disable-next-line:no-magic-numbers
-        //             $gt: moment().toDate(),
-        //             // tslint:disable-next-line:no-magic-numbers
-        //             $lt: moment().add(3, 'months').toDate()
-        //         }
-        //     },
-        //     'day start_time screen'
-        // ).populate('screen', 'seats_number').exec();
-        // debug('performances found.');
+        debug('finding performances...');
+        const ids = await performanceRepo.performanceModel.distinct(
+            '_id',
+            {
+                start_date: {
+                    // tslint:disable-next-line:no-magic-numbers
+                    $gt: moment().toDate(),
+                    // tslint:disable-next-line:no-magic-numbers
+                    $lt: moment().add(3, 'months').toDate()
+                }
+            }
+        ).exec();
+        debug('performances found.', ids);
 
         // パフォーマンスごとに在庫数を集計
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO 期間でフィルタリング
         debug('aggregating...');
         const results: any[] = await stockRepo.stockModel.aggregate(
             [
                 {
                     $match: {
-                        availability: factory.itemAvailability.InStock
+                        availability: factory.itemAvailability.InStock,
+                        performance: { $in: ids }
                     }
                 },
                 {
@@ -90,11 +89,11 @@ export function updatePerformanceOffersAvailability() {
         debug('finding performances...');
         const performances = await performanceRepo.performanceModel.find(
             {
-                day: {
+                start_date: {
                     // tslint:disable-next-line:no-magic-numbers
-                    $gt: moment().format('YYYYMMDD'),
+                    $gt: moment().toDate(),
                     // tslint:disable-next-line:no-magic-numbers
-                    $lt: moment().add(3, 'months').format('YYYYMMDD')
+                    $lt: moment().add(3, 'months').toDate()
                 }
             }
         )
@@ -140,8 +139,6 @@ export function updatePerformanceOffersAvailability() {
         await Promise.all(performances.map(async (performance) => {
             // 券種ごとにavailabilityを作成する
             const ticketTypes = performance.ticket_type_group.ticket_types;
-            debug('ticketTypes:', ticketTypes);
-
             const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
 
             await Promise.all(ticketTypes.map(async (ticketType) => {
