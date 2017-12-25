@@ -302,3 +302,13 @@ export interface ICheckinInfoByPerformance {
      */
     checkinInfosByWhere: ICheckinInfosByWhere;
 }
+
+/**
+ * 在庫状況インターフェース
+ * @interface
+ * @memberof factory.performance
+ */
+export interface IAvailability {
+    id: string;
+    remainingAttendeeCapacity: number;
+}

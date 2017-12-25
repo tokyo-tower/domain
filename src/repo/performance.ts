@@ -66,17 +66,17 @@ export class RedisRepository {
      * 集計データつきパフォーマンス情報を保管する
      * @param {factory.performance.IPerformanceWithAggregation} performance
      */
-    public async store(performance: factory.performance.IPerformanceWithAggregation): Promise<void> {
+    public async store(performances: factory.performance.IPerformanceWithAggregation[], ttl: number): Promise<void> {
         return new Promise<void>((resolve, reject) => {
             const key = RedisRepository.KEY_PREFIX;
-            const ttl = 3600;
 
-            debug('storing performance...', performance.id);
+            debug('storing performancesWithAggregation...');
+            const filedsAndValues = performances.reduce((a, b) => [...a, b.id, JSON.stringify(b)], []);
             this.redisClient.multi()
-                .hset(key, performance.id, JSON.stringify(performance))
+                .hmset(key, filedsAndValues)
                 .expire(key, ttl)
-                .exec((err, results) => {
-                    debug('results:', results);
+                .exec((err, __) => {
+                    debug('performancesWithAggregation stored.', err);
                     if (err !== null) {
                         reject(err);
                     } else {

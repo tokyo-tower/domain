@@ -9,12 +9,12 @@ import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize'
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
+import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnerRepo } from './repo/owner';
 import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
-import { RedisRepository as PerformanceStatusesRepo } from './repo/performanceStatuses';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
@@ -42,6 +42,11 @@ export namespace action {
 }
 
 export namespace itemAvailability {
+    /**
+     * パフォーマンス在庫状況リポジトリー
+     */
+    // tslint:disable-next-line:no-shadowed-variable
+    export class Performance extends PerformanceAvailabilityRepo { }
     /**
      * 座席予約オファー在庫状況リポジトリー
      */
@@ -88,10 +93,6 @@ export class Performance extends PerformanceRepo { }
  * 集計データ付きパフォーマンスリポジトリー
  */
 export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
-/**
- * パフォーマンス在庫状況リポジトリー
- */
-export class PerformanceStatuses extends PerformanceStatusesRepo { }
 /**
  * 予約リポジトリー
  */

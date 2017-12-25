@@ -77,7 +77,7 @@ export interface ISearchResult {
 
 export type ISearchOperation<T> = (
     performanceRepo: repository.Performance,
-    performanceStatusesRepo: repository.PerformanceStatuses,
+    performanceAvailabilityRepo: repository.itemAvailability.Performance,
     seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer
 ) => Promise<T>;
 
@@ -91,7 +91,7 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
     // tslint:disable-next-line:max-func-body-length
     return async (
         performanceRepo: repository.Performance,
-        performanceStatusesRepo: repository.PerformanceStatuses,
+        performanceAvailabilityRepo: repository.itemAvailability.Performance,
         seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer
     ) => {
         // MongoDB検索条件を作成
@@ -168,8 +168,8 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
         debug('performances found.', performances);
 
         // 空席情報を追加
-        const performanceStatuses = await performanceStatusesRepo.find();
-        debug('performanceStatuses found.', performanceStatuses);
+        const performanceAvailabilities = await performanceAvailabilityRepo.findAll();
+        debug('performanceAvailabilities found.', performanceAvailabilities);
 
         const data: IPerformance[] = await Promise.all(performances.map(async (performance) => {
             const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
@@ -196,7 +196,9 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
                     open_time: performance.open_time,
                     start_time: performance.start_time,
                     end_time: performance.end_time,
-                    seat_status: performanceStatuses.getStatus(performance.id),
+                    start_date: performance.start_date,
+                    end_date: performance.end_date,
+                    seat_status: performanceAvailabilities[performance.id],
                     // theater_name: performance.theater_name,
                     // screen_name: performance.screen_name,
                     // film: performance.film._id,
@@ -271,7 +273,7 @@ async function addFilmConditions(andConditions: any[], section: string | null, w
     }
 }
 
-export function aggregateCounts(searchConditions: ISearchConditions) {
+export function aggregateCounts(searchConditions: ISearchConditions, ttl: number) {
     return async (
         performanceRepo: repository.Performance,
         reservationRepo: repository.Reservation,
@@ -325,7 +327,6 @@ export function aggregateCounts(searchConditions: ISearchConditions) {
         // tslint:disable-next-line:max-func-body-length
         const aggregations = performances.map((performance) => {
             const reservations4performance = reservations.filter((r) => r.performance === performance.id);
-            debug('creating schedule...');
 
             // 全予約数
             const totalReservationCount = reservations4performance.filter(
@@ -428,9 +429,6 @@ export function aggregateCounts(searchConditions: ISearchConditions) {
             return aggregation;
         });
 
-        await Promise.all(aggregations.map(async (aggregation) => {
-            debug('storing aggregation...', aggregation.id);
-            await performanceWithAggregationRepo.store(aggregation);
-        }));
+        await performanceWithAggregationRepo.store(aggregations, ttl);
     };
 }

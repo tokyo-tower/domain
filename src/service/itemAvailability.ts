@@ -8,47 +8,47 @@ import * as moment from 'moment';
 
 import * as factory from '../factory';
 
+import { RedisRepository as PerformanceAvailabilityRepo } from '../repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from '../repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
-import { RedisRepository as PerformanceStatusesRepo } from '../repo/performanceStatuses';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as StockRepo } from '../repo/stock';
 
 const debug = createDebug('ttts-domain:service:itemAvailability');
 
-export type IStockAndPerformanceAndPerformanceStatusesOperation<T> = (
+export type IUpdatePerformanceAvailabilitiesOperation<T> = (
     stockRepo: StockRepo,
     performanceRepo: PerformanceRepo,
-    performanceStatusesRepo: PerformanceStatusesRepo
+    performanceAvailabilityRepo: PerformanceAvailabilityRepo
 ) => Promise<T>;
 
 /**
  * 空席ステータスを更新する
  * @memberof service.itemAvailability
  */
-export function updatePerformanceStatuses(): IStockAndPerformanceAndPerformanceStatusesOperation<void> {
+export function updatePerformanceAvailabilities(ttl: number): IUpdatePerformanceAvailabilitiesOperation<void> {
     return async (
         stockRepo: StockRepo,
-        performanceRepo: PerformanceRepo,
-        performanceStatusesRepo: PerformanceStatusesRepo
+        __: PerformanceRepo,
+        performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
-        debug('finding performances...');
-        const performances = await performanceRepo.performanceModel.find(
-            {
-                start_date: {
-                    // tslint:disable-next-line:no-magic-numbers
-                    $gt: moment().toDate(),
-                    // tslint:disable-next-line:no-magic-numbers
-                    $lt: moment().add(3, 'months').toDate()
-                }
-            },
-            'day start_time screen'
-        ).populate('screen', 'seats_number').exec();
-        debug('performances found.');
-
-        const performanceStatuses = new factory.performanceStatuses.PerformanceStatuses();
+        // debug('finding performances...');
+        // const performances = await performanceRepo.performanceModel.find(
+        //     {
+        //         start_date: {
+        //             // tslint:disable-next-line:no-magic-numbers
+        //             $gt: moment().toDate(),
+        //             // tslint:disable-next-line:no-magic-numbers
+        //             $lt: moment().add(3, 'months').toDate()
+        //         }
+        //     },
+        //     'day start_time screen'
+        // ).populate('screen', 'seats_number').exec();
+        // debug('performances found.');
 
         // パフォーマンスごとに在庫数を集計
+        // tslint:disable-next-line:no-suspicious-comment
+        // TODO 期間でフィルタリング
         debug('aggregating...');
         const results: any[] = await stockRepo.stockModel.aggregate(
             [
@@ -66,29 +66,13 @@ export function updatePerformanceStatuses(): IStockAndPerformanceAndPerformanceS
             ]
         ).exec();
 
-        // パフォーマンスIDごとに
-        const reservationNumbers: {
-            [key: string]: number
-        } = {};
-        results.forEach((result) => {
-            // tslint:disable-next-line:no-magic-numbers
-            reservationNumbers[result._id] = parseInt(result.count, 10);
+        const availabilities: factory.performance.IAvailability[] = results.map((result) => {
+            return { id: result._id.toString(), remainingAttendeeCapacity: result.count };
         });
 
-        performances.forEach((performance) => {
-            // パフォーマンスごとに空席ステータスを算出する
-            if (!reservationNumbers.hasOwnProperty(performance.get('_id').toString())) {
-                reservationNumbers[performance.get('_id').toString()] = 0;
-            }
-
-            // 空席ステータス変更(空席数("予約可能"な予約データ数)をそのままセット)
-            const reservationNumber: number = reservationNumbers[performance.get('_id')];
-            performanceStatuses.setStatus(performance._id.toString(), reservationNumber.toString());
-        });
-
-        debug('saving performanceStatusesModel...', performanceStatuses);
-        await performanceStatusesRepo.store(performanceStatuses);
-        debug('performanceStatusesModel saved.');
+        debug('storing performanceAvailabilities...');
+        await performanceAvailabilityRepo.store(availabilities, ttl);
+        debug('performanceAvailabilities stored.');
     };
 }
 
