@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import * as numeral from 'numeral';
 
 import Film from './film';
 import Owner from './owner';
@@ -192,68 +191,6 @@ schema.virtual('purchaser_name').get(function (this: any) {
                 ja = `${this.get('purchaser_last_name')} ${this.get('purchaser_first_name')}`;
                 break;
         }
-    }
-
-    return {
-        en: en,
-        ja: ja
-    };
-});
-
-/**
- * 券種金額文字列
- */
-schema.virtual('ticket_type_detail_str').get(function (this: any) {
-    let charge = 0;
-    switch (this.get('purchaser_group')) {
-        case factory.person.Group.Staff:
-            charge += this.get('ticket_type_charge');
-
-            break;
-        default:
-            charge += <number>this.get('ticket_type_charge') +
-                <number>this.get('seat_grade_additional_charge');
-
-            break;
-    }
-
-    let en = this.get('ticket_type_name').en;
-    switch (this.get('purchaser_group')) {
-        case factory.person.Group.Staff:
-            if (charge > 0) {
-                en += ` / \\${numeral(charge).format('0,0')}`;
-            }
-
-            break;
-        default:
-            if (charge > 0) {
-                en += ` / \\${numeral(charge).format('0,0')}(including tax)`;
-                if (this.get('seat_grade_additional_charge') > 0) {
-                    en += ` (including ${this.get('seat_grade_name').en} \\` +
-                        `${numeral(this.get('seat_grade_additional_charge')).format('0,0')})`;
-                }
-            }
-
-            break;
-    }
-
-    let ja = this.get('ticket_type_name').ja;
-    switch (this.get('purchaser_group')) {
-        case factory.person.Group.Staff:
-            if (charge > 0) {
-                ja += ` / \\${numeral(charge).format('0,0')}`;
-            }
-
-            break;
-        default:
-            if (charge > 0) {
-                ja += ` / \\${numeral(charge).format('0,0')}(税込)`;
-                if (this.get('seat_grade_additional_charge') > 0) {
-                    ja += ` (内${this.get('seat_grade_name').ja} \\${numeral(this.get('seat_grade_additional_charge')).format('0,0')})`;
-                }
-            }
-
-            break;
     }
 
     return {
