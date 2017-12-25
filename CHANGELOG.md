@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 - MongoDBからclientsコレクションを削除。
 - MongoDBからcustomer_cancel_requestsコレクションを削除。
+- メールユーティリティを削除。
+- GMO通知ユーティリティを削除。
 
 ### Fixed
 

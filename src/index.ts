@@ -10,8 +10,6 @@ import * as redis from 'redis';
 import * as Models from './repo/mongoose';
 
 import * as CommonUtil from './util/common';
-import * as EmailQueueUtil from './util/emailQueue';
-import * as GMONotificationUtil from './util/gmoNotification';
 
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
@@ -55,9 +53,7 @@ export import GMO = GMO;
 
 export {
     Models,
-    CommonUtil,
-    EmailQueueUtil,
-    GMONotificationUtil
+    CommonUtil
 };
 
 export namespace service {
