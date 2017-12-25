@@ -380,13 +380,19 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     const purchaserGroup = transaction.object.purchaser_group;
 
     // 予約データを作成
+    // tslint:disable-next-line:max-func-body-length
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
         const qrStr = `${orderNumber}-${index}`;
 
         let purchaserName = '';
         switch (purchaserGroup) {
             case factory.person.Group.Staff:
-                purchaserName = `${transaction.agent.name} ${transaction.agent.signature}`;
+                if (transaction.agent.name !== undefined) {
+                    purchaserName += transaction.agent.name;
+                }
+                if (transaction.agent.signature !== undefined) {
+                    purchaserName += transaction.agent.signature;
+                }
                 break;
             default:
                 purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
