@@ -10,9 +10,14 @@ ttts.mongoose.connect(process.env.MONGOLAB_URI, {
 });
 
 const performanceRepo = new ttts.repository.Performance(ttts.mongoose.connection);
-performanceRepo.findById('171217000001001010945')
+performanceRepo.findById('171225001001021000')
     .then((performance) => {
         console.log(performance);
         console.log(performance.ticket_type_group.ticket_types[0]);
+    })
+    .catch((err) => {
+        console.error(err);
+    })
+    .then(() => {
         ttts.mongoose.disconnect();
     });

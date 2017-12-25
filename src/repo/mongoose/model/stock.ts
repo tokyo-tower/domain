@@ -51,4 +51,10 @@ schema.index(
     }
 );
 
+schema.index(
+    {
+        availability: 1
+    }
+);
+
 export default mongoose.model('Stock', schema);

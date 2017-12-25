@@ -87,6 +87,9 @@ const schema = new mongoose.Schema(
 schema.index(
     { tasksExportationStatus: 1, status: 1 }
 );
+schema.index(
+    { tasksExportationStatus: 1, status: 1, typeOf: 1 }
+);
 
 // 取引期限切れ確認等に使用
 schema.index(

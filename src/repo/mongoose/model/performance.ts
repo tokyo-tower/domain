@@ -80,5 +80,7 @@ schema.index(
         start_time: 1
     }
 );
+schema.index({ start_date: 1 });
+schema.index({ end_date: 1 });
 
 export default mongoose.model('Performance', schema);

@@ -199,4 +199,8 @@ schema.virtual('purchaser_name').get(function (this: any) {
     };
 });
 
+schema.index(
+    { performance_day: 1, status: 1 }
+);
+
 export default mongoose.model('Reservation', schema);
