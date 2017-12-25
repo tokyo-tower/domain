@@ -103,6 +103,9 @@ export interface IReservation extends ReservationFactory.IReservation {
     performance_open_time: string;
     performance_start_time: string;
     performance_end_time: string;
+    performance_start_date: Date;
+    performance_end_date: Date;
+    performance_door_time: Date;
     performance_canceled: boolean;
     performance_ttts_extension: PerformanceFactory.IExtension;
 

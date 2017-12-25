@@ -139,7 +139,7 @@ export function updatePerformanceOffersAvailability() {
         await Promise.all(performances.map(async (performance) => {
             // 券種ごとにavailabilityを作成する
             const ticketTypes = performance.ticket_type_group.ticket_types;
-            const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+            const performanceStartDate = moment(performance.start_date).toDate();
 
             await Promise.all(ticketTypes.map(async (ticketType) => {
                 const availableStockNum = availableStockNums[performance.id];

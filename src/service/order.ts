@@ -141,9 +141,7 @@ export function processReturn(returnOrderTransactionId: string) {
                 && reservation.rate_limit_unit_in_seconds > 0
             ) {
                 debug('resetting wheelchair rate limit...');
-                const performanceStartDate = moment(
-                    `${reservation.performance_day} ${reservation.performance_start_time}00+09:00`, 'YYYYMMDD HHmmssZ'
-                ).toDate();
+                const performanceStartDate = moment(reservation.performance_start_date).toDate();
                 const rateLimitKey = {
                     performanceStartDate: performanceStartDate,
                     ticketTypeCategory: reservation.ticket_ttts_extension.category,
@@ -190,7 +188,7 @@ export function returnAllByPerformance(
 
         // 終了済かどうか
         const now = moment();
-        const endDate = moment(`${performance.day} ${performance.end_time}00+09:00`, 'YYYYMMDD HHmmssZ');
+        const endDate = moment(performance.end_date);
         debug(now, endDate);
         if (endDate >= now) {
             throw new Error('上映が終了していないので返品処理を実行できません。');

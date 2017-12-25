@@ -415,6 +415,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             performance_open_time: performance.open_time,
             performance_start_time: performance.start_time,
             performance_end_time: performance.end_time,
+            performance_start_date: performance.start_date,
+            performance_end_date: performance.end_date,
+            performance_door_time: performance.door_time,
             performance_ttts_extension: performance.ttts_extension,
             performance_canceled: performance.canceled,
 

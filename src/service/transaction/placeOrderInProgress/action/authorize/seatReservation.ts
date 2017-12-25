@@ -129,7 +129,7 @@ export function create(
         // 在庫から仮予約
         let paymentNo: string;
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
-        const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+        const performanceStartDate = moment(performance.start_date).toDate();
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
@@ -391,7 +391,7 @@ export function cancel(
 
             // レート制限があれば解除
             const performance = action.object.performance;
-            const performanceStartDate = moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+            const performanceStartDate = moment(performance.start_date).toDate();
             await Promise.all(actionResult.tmpReservations.map(async (tmpReservation) => {
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     const rateLimitKey = {

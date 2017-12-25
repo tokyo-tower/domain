@@ -65,6 +65,9 @@ const schema = new mongoose.Schema(
         performance_open_time: String,
         performance_start_time: String,
         performance_end_time: String,
+        performance_start_date: Date,
+        performance_end_date: Date,
+        performance_door_time: Date,
         performance_canceled: {
             type: Boolean,
             default: false

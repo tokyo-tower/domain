@@ -147,7 +147,7 @@ export interface IPerformanceWithDetails {
         copyright: string;
     };
     ttts_extension: IExtension;
-    door_time?: Date;
+    door_time: Date;
     start_date: Date;
     end_date: Date;
     duration: string;
@@ -173,7 +173,7 @@ export interface IPerformance {
     end_time: string;
     canceled: boolean;
     ttts_extension: IExtension;
-    door_time?: Date;
+    door_time: Date;
     start_date: Date;
     end_date: Date;
     duration: string;

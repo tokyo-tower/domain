@@ -58,8 +58,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     debug('resetting wheelchair rate limit...');
                     const performance = action.object.performance;
-                    const performanceStartDate =
-                        moment(`${performance.day} ${performance.start_time}00+09:00`, 'YYYYMMDD HHmmssZ').toDate();
+                    const performanceStartDate = moment(`${performance.start_date}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
                         ticketTypeCategory: tmpReservation.ticket_ttts_extension.category,

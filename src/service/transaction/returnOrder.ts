@@ -70,7 +70,7 @@ export function confirm(params: {
 
         // 検証
         if (!params.forcibly) {
-            validateRequest(now, transactionResult.eventReservations[0].performance_day);
+            validateRequest(now, transactionResult.eventReservations[0].performance_start_date);
         }
 
         const endDate = new Date();
@@ -123,10 +123,9 @@ export function confirm(params: {
 /**
  * キャンセル検証
  */
-function validateRequest(now: Date, performanceDay: string) {
+function validateRequest(now: Date, performanceStartDate: Date) {
     // 入塔予定日の3日前までキャンセル可能(3日前を過ぎていたらエラー)
-    const cancellableThrough = moment(`${performanceDay} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ')
-        .add(-CANCELLABLE_DAYS + 1, 'days').toDate();
+    const cancellableThrough = moment(performanceStartDate).add(-CANCELLABLE_DAYS + 1, 'days').toDate();
     if (cancellableThrough <= now) {
         throw new factory.errors.Argument('performance_day', 'キャンセルできる期限を過ぎています。');
     }
