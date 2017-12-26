@@ -257,8 +257,7 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
                 status: factory.reservationStatusType.ReservationConfirmed,
                 performance: performanceId,
                 purchaser_group: factory.person.Group.Customer
-            },
-            'transaction checkins'
+            }
         ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
 
         // 入場履歴なしの取引IDを取り出す
