@@ -273,14 +273,20 @@ async function addFilmConditions(andConditions: any[], section: string | null, w
     }
 }
 
+/**
+ * パフォーマンスに関する集計を行う
+ * @param {ISearchConditions} searchConditions パフォーマンス検索条件
+ * @param {number} ttl 集計データの保管期間(秒)
+ */
 export function aggregateCounts(searchConditions: ISearchConditions, ttl: number) {
     return async (
+        checkinGateRepo: repository.place.CheckinGate,
         performanceRepo: repository.Performance,
         reservationRepo: repository.Reservation,
-        ownerRepo: repository.Owner,
+        performanceAvailabilityRepo: repository.itemAvailability.Performance,
+        seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
         performanceWithAggregationRepo: repository.PerformanceWithAggregation
     ) => {
-
         // MongoDB検索条件を作成
         const andConditions: any[] = [
             { canceled: false }
@@ -313,19 +319,17 @@ export function aggregateCounts(searchConditions: ISearchConditions, ttl: number
         ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
         debug('reservations found,', reservations.length);
 
-        // チェックポイント名称取得
-        const owners = await ownerRepo.ownerModel.find({ notes: '1' }).exec();
+        // 入場ゲート取得
+        const checkGates = await checkinGateRepo.findAll();
+        debug('checkGates are', checkGates);
 
-        const checkpoints: factory.performance.ICheckpoint[] = owners.map((owner) => {
-            return {
-                where: owner.get('group'),
-                description: owner.get('description')
-            };
-        });
+        // パフォーマンスごとの在庫状況
+        const performanceAvailabilities = await performanceAvailabilityRepo.findAll();
+        debug('performanceAvailabilities found.', performanceAvailabilities);
 
         // パフォーマンスごとに集計
         // tslint:disable-next-line:max-func-body-length
-        const aggregations = performances.map((performance) => {
+        const aggregations = await Promise.all(performances.map(async (performance) => {
             const reservations4performance = reservations.filter((r) => r.performance === performance.id);
 
             // 全予約数
@@ -334,9 +338,9 @@ export function aggregateCounts(searchConditions: ISearchConditions, ttl: number
             ).length;
 
             // 場所ごとの入場情報を集計
-            const checkinInfosByWhere: factory.performance.ICheckinInfosByWhere = checkpoints.map((checkpoint) => {
+            const checkinInfosByWhere: factory.performance.ICheckinInfosByWhere = checkGates.map((checkGate) => {
                 return {
-                    where: checkpoint.where,
+                    where: checkGate.identifier,
                     checkins: [],
                     arrivedCountsByTicketType: performance.ticket_type_group.ticket_types.map((t) => {
                         return { ticketType: t.id, ticketCategory: t.ttts_extension.category, count: 0 };
@@ -387,11 +391,33 @@ export function aggregateCounts(searchConditions: ISearchConditions, ttl: number
                 )).count += 1;
             });
 
+            const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
+            debug('offerAvailabilities:', offerAvailabilities);
+            const ticketTypes = performance.ticket_type_group.ticket_types;
+
+            // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
+            // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
+            debug('check wheelchair availability...');
+            const wheelchairTicketTypeIds = ticketTypes.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
+                .map((t) => t.id);
+            let remainingAttendeeCapacityForWheelchair = 0;
+            wheelchairTicketTypeIds.forEach((ticketTypeId) => {
+                // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
+                if (offerAvailabilities[ticketTypeId] !== undefined && offerAvailabilities[ticketTypeId] > 0) {
+                    remainingAttendeeCapacityForWheelchair = offerAvailabilities[ticketTypeId];
+                }
+            });
+
             const aggregation: factory.performance.IPerformanceWithAggregation = {
                 id: performance.id,
+                doorTime: performance.door_time,
                 startDate: performance.start_date,
                 endDate: performance.end_date,
                 duration: performance.duration,
+                maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
+                // tslint:disable-next-line:no-magic-numbers
+                remainingAttendeeCapacity: parseInt(performanceAvailabilities[performance.id], 10),
+                remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
                 tourNumber: performance.tour_number,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
@@ -399,9 +425,9 @@ export function aggregateCounts(searchConditions: ISearchConditions, ttl: number
                 checkinCount: checkinInfosByWhere.reduce((a, b) => a + b.checkins.length, 0),
                 reservationCountsByTicketType: reservationCountsByTicketType,
                 // 場所ごとに、券種ごとの入場者数初期値をセット
-                checkinCountsByWhere: checkpoints.map((checkpoint) => {
+                checkinCountsByWhere: checkGates.map((checkGate) => {
                     return {
-                        where: checkpoint.where,
+                        where: checkGate.identifier,
                         checkinCountsByTicketType: performance.ticket_type_group.ticket_types.map((t) => {
                             return {
                                 ticketType: t.id,
@@ -427,7 +453,7 @@ export function aggregateCounts(searchConditions: ISearchConditions, ttl: number
             });
 
             return aggregation;
-        });
+        }));
 
         await performanceWithAggregationRepo.store(aggregations, ttl);
     };
