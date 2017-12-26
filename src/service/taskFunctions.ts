@@ -14,6 +14,7 @@ import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
+import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as NotificationService from '../service/notification';
@@ -77,8 +78,9 @@ export function returnOrder(
         const stockRepo = new StockRepo(connection);
         const transactionRepo = new TransactionRepo(connection);
         const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
+        const taskRepo = new TaskRepo(connection);
         await OrderService.processReturn(data.transactionId)(
-            performanceRepo, reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo
+            performanceRepo, reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
         );
     };
 }

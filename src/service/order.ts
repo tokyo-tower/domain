@@ -38,7 +38,8 @@ export function processReturn(returnOrderTransactionId: string) {
         reservationRepo: ReservationRepo,
         stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        taskRepo: TaskRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -134,6 +135,43 @@ export function processReturn(returnOrderTransactionId: string) {
             }
         }
 
+        // メール通知があれば実行
+        // tslint:disable-next-line:no-suspicious-comment
+        // TODO 二重送信対策
+        if ((<any>returnOrderTransaction.object).emailMessageAttributes !== undefined) {
+            const emailMessageAttributes = (<any>returnOrderTransaction.object).emailMessageAttributes;
+            const emailMessage = factory.creativeWork.message.email.create({
+                identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
+                sender: {
+                    typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
+                    name: emailMessageAttributes.sender.name,
+                    email: emailMessageAttributes.sender.email
+                },
+                toRecipient: {
+                    typeOf: returnOrderTransaction.object.transaction.agent.typeOf,
+                    name: emailMessageAttributes.toRecipient.name,
+                    email: emailMessageAttributes.toRecipient.email
+                },
+                about: emailMessageAttributes.about,
+                text: emailMessageAttributes.text
+            });
+
+            const taskAttributes = factory.task.sendEmailNotification.createAttributes({
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(), // なるはやで実行
+                remainingNumberOfTries: 10,
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: {
+                    transactionId: returnOrderTransactionId,
+                    emailMessage: emailMessage
+                }
+            });
+
+            await taskRepo.save(taskAttributes);
+        }
+
         await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
             // 車椅子の流入制限解放
             if (
@@ -221,11 +259,11 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
                 purchaser_group: factory.person.Group.Customer
             },
             'transaction checkins'
-        ).exec();
+        ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
 
         // 入場履歴なしの取引IDを取り出す
-        let transactionIds = reservations.map((r) => r.get('transaction'));
-        const transactionsIdsWithCheckins = reservations.filter((r) => (r.get('checkins').length > 0)).map((r) => r.get('transaction'));
+        let transactionIds = reservations.map((r) => r.transaction);
+        const transactionsIdsWithCheckins = reservations.filter((r) => (r.checkins.length > 0)).map((r) => r.transaction);
         debug(transactionIds, transactionsIdsWithCheckins);
         transactionIds = uniq(difference(transactionIds, transactionsIdsWithCheckins));
         debug('confirming returnOrderTransactions...', transactionIds);
@@ -243,14 +281,98 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
 
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {
+            // 返品処理後のメール通知を作成
+            const reservationsFromTransaction = reservations.filter((r) => r.transaction === transactionId);
+            const emailMessageAttributes = createEmail(reservationsFromTransaction);
+
             await ReturnOrderTransactionService.confirm({
                 agentId: agentId,
                 transactionId: transactionId,
                 cancellationFee: 0,
-                forcibly: true
+                forcibly: true,
+                emailMessageAttributes: emailMessageAttributes
             })(transactionRepo);
         }));
 
         debug('returnOrders by performance started.');
+    };
+}
+
+/**
+ * 返金メール作成(1通)
+ */
+function createEmail(
+    reservations: factory.reservation.event.IReservation[]
+): factory.creativeWork.message.email.IAttributes {
+    const reservation = reservations[0];
+    // 本文編集(日本語)
+    const infoJa = getEmailMessages(reservation, 'ja');
+    const contentJa: string = `${infoJa.titleEmail}\n\n${infoJa.purchaserName}\n\n${infoJa.messageInfos.join('\n')}`;
+
+    // 本文編集(英語)
+    const infoEn = getEmailMessages(reservation, 'en');
+    const contentEn: string = `${infoEn.titleEmail}\n\n${infoEn.purchaserName}\n\n${infoEn.messageInfos.join('\n')}`;
+
+    const line: string = '--------------------------------------------------';
+
+    return {
+        sender: {
+            name: 'TTTS_EVENT_NAME Online Ticket [dev]',
+            email: 'noreply@default.ttts.motionpicture.jp'
+        },
+        toRecipient: {
+            // tslint:disable-next-line:max-line-length
+            name: reservations[0].purchaser_name,
+            email: reservation.purchaser_email
+        },
+        about: `${infoJa.title} ${infoJa.titleEmail} (${infoEn.title} ${infoEn.titleEmail})`,
+        text: `${contentJa}\n\n${line}\n${contentEn}`
+    };
+}
+
+/**
+ * メールメッセージ取得
+ *
+ * @param {any} reservation
+ * @param {any} locale
+ * @return {any}
+ */
+function getEmailMessages(reservation: factory.reservation.event.IReservation, locale: string) {
+    // 購入者氏名
+    const purchaserName = reservation.purchaser_name;
+    // 入塔日
+    // const day: string = moment(reservation.performance_day, 'YYYYMMDD').format('YYYY/MM/DD');
+    // tslint:disable-next-line:no-magic-numbers
+    // const time: string = `${reservation.performance_start_time.substr(0, 2)}:${reservation.performance_start_time.substr(2, 2)}`;
+    // 返金額
+    // const amount: string = numeral(reservation.gmo_amount).format('0,0');
+    // 返金メールメッセージ
+    // const messages: string[] = conf.get<string[]>(`emailRefund.${locale}.messages`);
+    // 購入チケット情報
+    const messageInfos: string[] = [];
+    // for (const message of messages) {
+    //     let editMessage: string = message;
+    //     // 購入番号 : 850000001
+    //     editMessage = editMessage.replace('$payment_no$', reservation.payment_no);
+    //     // ご来塔日時 : 2017/12/10 09:15
+    //     editMessage = editMessage.replace('$day$', day);
+    //     editMessage = editMessage.replace('$start_time$', time);
+    //     // 返金金額 : \8,400
+    //     editMessage = editMessage.replace('$amount$', amount);
+    //     messageInfos.push(editMessage);
+    // }
+
+    return {
+        // 東京タワー TOP DECK Ticket
+        // title: conf.get<string>(`emailRefund.${locale}.title`),
+        title: `emailRefund.${locale}.title`,
+        // 返金のお知らせ
+        // titleEmail: conf.get<string>(`emailRefund.${locale}.titleEmail`),
+        titleEmail: `emailRefund.${locale}.titleEmail`,
+        // トウキョウ タロウ 様
+        // purchaserName: conf.get<string>(`emailRefund.${locale}.destinationName`).replace('$purchaser_name$', purchaserName),
+        purchaserName: purchaserName,
+        // 返金メールメッセージ
+        messageInfos: messageInfos
     };
 }
