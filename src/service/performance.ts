@@ -34,12 +34,6 @@ export interface ISearchConditions {
     wheelchair?: string;
 }
 
-export interface IMultilingualString {
-    en: string;
-    ja: string;
-    kr: string;
-}
-
 export interface IPerformance {
     id: string;
     attributes: {
@@ -64,7 +58,7 @@ export interface IPerformance {
     };
 }
 
-export type ITicketTypeWithAvailability = factory.performance.ITicketType & {
+export type ITicketTypeWithAvailability = factory.offer.seatReservation.ITicketType & {
     available_num: number
 };
 
@@ -72,7 +66,6 @@ export interface ISearchResult {
     performances: IPerformance[];
     numberOfPerformances: number;
     filmIds: string[];
-    // salesSuspended: any[];
 }
 
 export type ISearchOperation<T> = (
