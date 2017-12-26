@@ -10,13 +10,14 @@
   ],
   "dependencies": {
     "@motionpicture/gmo-service": "^4.1.0",
-    "@motionpicture/ttts-factory": "0.0.0-alpha.0",
+    "@motionpicture/ttts-factory": "0.0.0-alpha.1",
     "@motionpicture/waiter-domain": "^2.0.2",
     "@sendgrid/mail": "^6.1.4",
     "@types/mongoose": "^4.7.30",
     "@types/redis": "^2.8.3",
     "azure-storage": "^2.7.0",
     "debug": "^3.1.0",
+    "email-templates": "^3.2.0",
     "google-libphonenumber": "^3.0.9",
     "http-status": "^1.0.1",
     "jsonwebtoken": "^8.1.0",
@@ -26,6 +27,7 @@
     "moment-timezone": "^0.5.14",
     "mongoose": "^4.13.7",
     "numeral": "^2.0.6",
+    "pug": "^2.0.0-rc.4",
     "redis": "^2.8.0",
     "request": "^2.83.0",
     "request-promise-native": "^1.0.5",
@@ -35,6 +37,7 @@
   "description": "This is a TTTS domain repository.",
   "devDependencies": {
     "@types/debug": "0.0.30",
+    "@types/email-templates": "^3.1.0",
     "@types/google-libphonenumber": "^7.4.12",
     "@types/http-status": "^0.2.30",
     "@types/jsonwebtoken": "^7.2.5",
@@ -77,6 +80,7 @@
   "types": "./lib/index.d.ts",
   "files": [
     "doc",
+    "emails",
     "example",
     "lib"
   ],

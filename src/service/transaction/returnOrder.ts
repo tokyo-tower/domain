@@ -42,9 +42,9 @@ export function confirm(params: {
      */
     forcibly: boolean;
     /**
-     * 返品処理後のメール通知
+     * 返品理由
      */
-    emailMessageAttributes?: factory.creativeWork.message.email.IAttributes;
+    reason: factory.transaction.returnOrder.Reason;
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
     return async (transactionRepo: TransactionRepo) => {
         const now = new Date();
@@ -87,11 +87,11 @@ export function confirm(params: {
                 id: params.agentId
             },
             result: {},
-            object: <any>{
+            object: {
                 transaction: transaction,
                 cancelName: cancelName,
                 cancellationFee: params.cancellationFee,
-                emailMessageAttributes: params.emailMessageAttributes
+                reason: params.reason
             },
             expires: endDate,
             startDate: now,
