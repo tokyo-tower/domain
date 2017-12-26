@@ -6,7 +6,7 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import * as factory from '../factory';
+import * as factory from '@motionpicture/ttts-factory';
 
 import { RedisRepository as PerformanceAvailabilityRepo } from '../repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from '../repo/itemAvailability/seatReservationOffer';

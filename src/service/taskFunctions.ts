@@ -7,7 +7,7 @@
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import * as factory from '../factory';
+import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';

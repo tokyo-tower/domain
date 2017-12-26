@@ -6,7 +6,7 @@
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
-import * as factory from '../../factory';
+import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';

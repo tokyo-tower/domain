@@ -1,5 +1,5 @@
+import * as factory from '@motionpicture/ttts-factory';
 import * as mongoose from 'mongoose';
-import * as factory from '../../../factory';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 

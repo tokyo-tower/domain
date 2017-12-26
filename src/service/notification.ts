@@ -11,7 +11,7 @@ import * as request from 'request';
 import * as util from 'util';
 import * as validator from 'validator';
 
-import * as factory from '../factory';
+import * as factory from '@motionpicture/ttts-factory';
 
 export type Operation<T> = () => Promise<T>;
 

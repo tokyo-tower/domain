@@ -24,7 +24,7 @@ import * as PlaceOrderInProgressTransactionService from './service/transaction/p
 import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
 import * as UtilService from './service/util';
 
-import * as factory from './factory';
+import * as factory from '@motionpicture/ttts-factory';
 import * as repository from './repository';
 
 /**

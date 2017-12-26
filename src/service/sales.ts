@@ -8,7 +8,7 @@ import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as mongoose from 'mongoose';
 
-import * as factory from '../factory';
+import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 

@@ -1,6 +1,6 @@
+import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as redis from 'redis';
-import * as factory from '../../factory';
 
 const debug = createDebug('ttts-domain:repository:itemAvailability:performance');
 

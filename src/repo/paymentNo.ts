@@ -3,7 +3,7 @@
 import * as createDebug from 'debug';
 import { Connection } from 'mongoose';
 
-import * as factory from '../factory';
+import * as factory from '@motionpicture/ttts-factory';
 import SequenceModel from '../repo/mongoose/model/sequence';
 
 const debug = createDebug('ttts-domain:repository.sequence');

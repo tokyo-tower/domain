@@ -2,7 +2,7 @@ import * as createDebug from 'debug';
 import { Connection } from 'mongoose';
 import * as redis from 'redis';
 
-import * as factory from '../factory';
+import * as factory from '@motionpicture/ttts-factory';
 import PerformanceModel from './mongoose/model/performance';
 
 const debug = createDebug('ttts-domain:repository:performance');

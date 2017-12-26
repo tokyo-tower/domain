@@ -1,6 +1,6 @@
 import { Connection } from 'mongoose';
 
-import * as factory from '../../factory';
+import * as factory from '@motionpicture/ttts-factory';
 import ActionModel from '../mongoose/model/action';
 
 /**

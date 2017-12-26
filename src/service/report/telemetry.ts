@@ -7,7 +7,7 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import * as factory from '../../factory';
+import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as AuthorizeActionRepo } from '../../repo/action/authorize';
 import { MongoRepository as TaskRepo } from '../../repo/task';
