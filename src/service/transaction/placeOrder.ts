@@ -173,3 +173,96 @@ export function sendEmail(
         return <factory.task.sendEmailNotification.ITask>await taskRepo.save(taskAttributes);
     };
 }
+
+/**
+ * 取引レポートインターフェース
+ * @export
+ * @interface
+ * @memberof service.transaction.placeOrder
+ */
+export interface ITransactionReport {
+    id: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    customer: {
+        name: string;
+        email: string;
+        telephone: string;
+        group: string;
+    };
+    eventStartDate: string;
+    eventEndDate: string;
+    reservedTickets: string;
+    orderNumber: string;
+    confirmationNumber: string;
+    price: string;
+    paymentMethod: string[];
+    paymentMethodId: string[];
+    discounts: string[];
+    discountCodes: string[];
+    discountPrices: string[];
+}
+
+export function transaction2report(transaction: factory.transaction.placeOrder.ITransaction): ITransactionReport {
+    if (transaction.result !== undefined) {
+        const order = transaction.result.order;
+        const reservations = transaction.result.eventReservations.filter(
+            (r) => r.status === factory.reservationStatusType.ReservationConfirmed
+        );
+        const ticketsStr = reservations.map(
+            // tslint:disable-next-line:max-line-length
+            (r) => `${r.seat_code} ${r.ticket_type_name.ja} ￥${r.ticket_type_charge} [${r.qr_str}]`
+        ).join('\n');
+
+        return {
+            id: transaction.id,
+            status: transaction.status,
+            startDate: (transaction.startDate !== undefined) ? transaction.startDate.toISOString() : '',
+            endDate: (transaction.endDate !== undefined) ? transaction.endDate.toISOString() : '',
+            customer: {
+                name: reservations[0].purchaser_name,
+                email: reservations[0].purchaser_email,
+                telephone: reservations[0].purchaser_tel,
+                group: reservations[0].purchaser_group
+            },
+            eventStartDate: reservations[0].performance_start_date.toISOString(),
+            eventEndDate: reservations[0].performance_end_date.toISOString(),
+            reservedTickets: ticketsStr,
+            orderNumber: order.orderNumber,
+            confirmationNumber: order.confirmationNumber.toString(),
+            price: `${order.price} ${order.priceCurrency}`,
+            paymentMethod: order.paymentMethods.map((method) => method.name),
+            paymentMethodId: order.paymentMethods.map((method) => method.paymentMethodId),
+            discounts: order.discounts.map((discount) => discount.name),
+            discountCodes: order.discounts.map((discount) => discount.discountCode),
+            discountPrices: order.discounts.map((discount) => `${discount.discount} ${discount.discountCurrency}`)
+        };
+    } else {
+        const customerContact = transaction.object.customerContact;
+
+        return {
+            id: transaction.id,
+            status: transaction.status,
+            startDate: (transaction.startDate !== undefined) ? transaction.startDate.toISOString() : '',
+            endDate: (transaction.endDate !== undefined) ? transaction.endDate.toISOString() : '',
+            customer: {
+                name: (customerContact !== undefined) ? `${customerContact.last_name} ${customerContact.first_name}` : '',
+                email: (customerContact !== undefined) ? customerContact.email : '',
+                telephone: (customerContact !== undefined) ? customerContact.tel : '',
+                group: transaction.object.purchaser_group
+            },
+            eventStartDate: '',
+            eventEndDate: '',
+            reservedTickets: '',
+            orderNumber: '',
+            confirmationNumber: '',
+            price: '',
+            paymentMethod: [],
+            paymentMethodId: [],
+            discounts: [],
+            discountCodes: [],
+            discountPrices: []
+        };
+    }
+}
