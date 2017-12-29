@@ -3,67 +3,16 @@
  * @namespace service.performance
  */
 
+import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 
-import * as factory from '@motionpicture/ttts-factory';
-import * as repository from '../repository';
-
 import * as Models from '../repo/mongoose';
+import * as repository from '../repository';
 
 const debug = createDebug('ttts-domain:service:performance');
 
-export interface ISearchConditions {
-    limit?: number;
-    page?: number;
-    // 上映日
-    day?: string;
-    // 部門
-    section?: string;
-    // フリーワード
-    words?: string;
-    // この時間以降開始のパフォーマンスに絞る(timestamp milliseconds)
-    startFrom?: Date;
-    startThrough?: Date;
-    // 劇場
-    theater?: string;
-    // スクリーン
-    screen?: string;
-    // パフォーマンスID
-    performanceId?: string;
-    // 車椅子チェック要求
-    wheelchair?: string;
-}
-
-export interface IPerformance {
-    id: string;
-    attributes: {
-        day: string;
-        open_time: string;
-        start_time: string;
-        end_time: string;
-        seat_status: string;
-        // theater_name: IMultilingualString;
-        // screen_name: IMultilingualString;
-        // film: string;
-        // film_name: IMultilingualString;
-        // film_sections: string[];
-        // film_minutes: number;
-        // film_copyright: string;
-        // film_image: string;
-        tour_number: string;
-        wheelchair_available: number;
-        online_sales_status: factory.performance.OnlineSalesStatus;
-        ev_service_status: factory.performance.EvServiceStatus;
-        ticket_types: ITicketTypeWithAvailability[]
-    };
-}
-
-export type ITicketTypeWithAvailability = factory.offer.seatReservation.ITicketType & {
-    available_num: number
-};
-
 export interface ISearchResult {
-    performances: IPerformance[];
+    performances: factory.performance.IPerformanceWithAvailability[];
     numberOfPerformances: number;
     filmIds: string[];
 }
@@ -80,7 +29,7 @@ export type ISearchOperation<T> = (
  * @return {ISearchOperation<ISearchResult>} 検索結果
  * @memberof service.performance
  */
-export function search(searchConditions: ISearchConditions): ISearchOperation<ISearchResult> {
+export function search(searchConditions: factory.performance.ISearchConditions): ISearchOperation<ISearchResult> {
     // tslint:disable-next-line:max-func-body-length
     return async (
         performanceRepo: repository.Performance,
@@ -139,14 +88,11 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
         // 総数検索
         const performancesCount = await performanceRepo.performanceModel.count(conditions).exec();
 
-        // 必要な項目だけ指定すること(レスポンスタイムに大きく影響するので)
-        const fields = 'day open_time start_time end_time film screen screen_name theater theater_name ttts_extension';
-
         const page = (searchConditions.page !== undefined) ? searchConditions.page : 1;
         // tslint:disable-next-line:no-magic-numbers
         const limit = (searchConditions.limit !== undefined) ? searchConditions.limit : 1000;
 
-        const performances = await performanceRepo.performanceModel.find(conditions, fields)
+        const performances = await performanceRepo.performanceModel.find(conditions, '')
             .populate('film screen theater')
             .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .skip(limit * (page - 1)).limit(limit)
@@ -164,7 +110,7 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
         const performanceAvailabilities = await performanceAvailabilityRepo.findAll();
         debug('performanceAvailabilities found.', performanceAvailabilities);
 
-        const data: IPerformance[] = await Promise.all(performances.map(async (performance) => {
+        const data: factory.performance.IPerformanceWithAvailability[] = await Promise.all(performances.map(async (performance) => {
             const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
             debug('offerAvailabilities:', offerAvailabilities);
             const ticketTypes = performance.ticket_type_group.ticket_types;
@@ -174,16 +120,35 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
             debug('check wheelchair availability...');
             const wheelchairTicketTypeIds = ticketTypes.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
                 .map((t) => t.id);
-            let wheelchairAvailable = 0;
+            let remainingAttendeeCapacityForWheelchair = 0;
             wheelchairTicketTypeIds.forEach((ticketTypeId) => {
                 // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
                 if (offerAvailabilities[ticketTypeId] !== undefined && offerAvailabilities[ticketTypeId] > 0) {
-                    wheelchairAvailable = offerAvailabilities[ticketTypeId];
+                    remainingAttendeeCapacityForWheelchair = offerAvailabilities[ticketTypeId];
                 }
             });
 
             return {
                 id: performance.id,
+                doorTime: performance.door_time,
+                startDate: performance.start_date,
+                endDate: performance.end_date,
+                duration: performance.duration,
+                tourNumber: performance.tour_number,
+                evServiceStatus: performance.ttts_extension.ev_service_status,
+                onlineSalesStatus: performance.ttts_extension.online_sales_status,
+                maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
+                // tslint:disable-next-line:no-magic-numbers
+                remainingAttendeeCapacity: parseInt(performanceAvailabilities[performance.id], 10),
+                remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
+                ticketTypes: ticketTypes.map((ticketType) => {
+                    return {
+                        ...ticketType,
+                        ...{
+                            remainingAttendeeCapacity: offerAvailabilities[ticketType.id]
+                        }
+                    };
+                }),
                 attributes: {
                     day: performance.day,
                     open_time: performance.open_time,
@@ -191,16 +156,9 @@ export function search(searchConditions: ISearchConditions): ISearchOperation<IS
                     end_time: performance.end_time,
                     start_date: performance.start_date,
                     end_date: performance.end_date,
-                    seat_status: performanceAvailabilities[performance.id],
-                    // theater_name: performance.theater_name,
-                    // screen_name: performance.screen_name,
-                    // film: performance.film._id,
-                    // film_name: performance.film.name,
-                    // film_sections: performance.film.sections.map((filmSection: any) => filmSection.name),
-                    // film_minutes: performance.film.minutes,
-                    // film_copyright: performance.film.copyright,
-                    // film_image: `${process.env.FRONTEND_ENDPOINT}/images/film/${performance.film._id}.jpg`,
-                    wheelchair_available: wheelchairAvailable,
+                    // tslint:disable-next-line:no-magic-numbers
+                    seat_status: parseInt(performanceAvailabilities[performance.id], 10),
+                    wheelchair_available: remainingAttendeeCapacityForWheelchair,
                     ticket_types: ticketTypes.map((ticketType) => {
                         return {
                             ...ticketType,
@@ -271,7 +229,7 @@ async function addFilmConditions(andConditions: any[], section: string | null, w
  * @param {ISearchConditions} searchConditions パフォーマンス検索条件
  * @param {number} ttl 集計データの保管期間(秒)
  */
-export function aggregateCounts(searchConditions: ISearchConditions, ttl: number) {
+export function aggregateCounts(searchConditions: factory.performance.ISearchConditions, ttl: number) {
     return async (
         checkinGateRepo: repository.place.CheckinGate,
         performanceRepo: repository.Performance,
