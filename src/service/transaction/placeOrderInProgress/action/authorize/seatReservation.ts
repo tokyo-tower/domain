@@ -10,7 +10,7 @@ import * as mongoose from 'mongoose';
 import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
-import { MongoRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
+import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as StockRepo } from '../../../../../repo/stock';
@@ -127,13 +127,12 @@ export function create(
         );
 
         // 在庫から仮予約
-        let paymentNo: string;
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
         const performanceStartDate = moment(performance.start_date).toDate();
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-            paymentNo = await paymentNoRepo.publish(performance.day);
+            const paymentNo = await paymentNoRepo.publish();
 
             // 在庫をおさえると、座席コードが決定する
             debug('findding available seats...');
