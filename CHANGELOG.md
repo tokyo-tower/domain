@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - パフォーマンスIDと在庫IDを文字列に変更。
 - 購入番号を6桁に短縮。
 - ownerのnameを一言語に限定。
+- 購入番号リポジトリーをRedisへ移行。
 
 ### Deprecated
 

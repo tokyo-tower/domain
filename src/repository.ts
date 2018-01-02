@@ -13,7 +13,7 @@ import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvail
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { MongoRepository as OwnerRepo } from './repo/owner';
-import { MongoRepository as PaymentNoRepo } from './repo/paymentNo';
+import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
