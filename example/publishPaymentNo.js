@@ -14,7 +14,7 @@ const redisClient = ttts.redis.createClient(
     });
 
 const paymentNoRepo = new ttts.repository.PaymentNo(redisClient);
-paymentNoRepo.publish()
+paymentNoRepo.publish('20180102')
     .then(async (paymentNo) => {
         console.log('paymentNo published.', paymentNo);
     }).catch((err) => {

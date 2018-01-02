@@ -132,7 +132,7 @@ export function create(
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-            const paymentNo = await paymentNoRepo.publish();
+            const paymentNo = await paymentNoRepo.publish(moment(performance.start_date).tz('Asia/Tokyo').format('YYYYMMDD'));
 
             // 在庫をおさえると、座席コードが決定する
             debug('findding available seats...');

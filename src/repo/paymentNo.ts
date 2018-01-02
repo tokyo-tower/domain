@@ -1,7 +1,6 @@
 // tslint:disable:no-magic-numbers
 
 import * as createDebug from 'debug';
-import * as moment from 'moment';
 import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
@@ -140,12 +139,17 @@ export class RedisRepository {
 
     /**
      * 購入番号を発行する
+     * @param {string} date 採番対象の日付
      */
-    public async publish(): Promise<string> {
+    public async publish(date: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
+            if (!/\d{8}/.test(date)) {
+                throw new factory.errors.Argument('date', 'Invalid date.');
+            }
+
             // 日ごとにユニークになるように
             const TTL = 86400;
-            const key = `${RedisRepository.REDIS_KEY_PREFIX}.${moment().format('YYMMDD')}`;
+            const key = `${RedisRepository.REDIS_KEY_PREFIX}.${date}`;
 
             this.redisClient.multi()
                 .incr(key, debug)
