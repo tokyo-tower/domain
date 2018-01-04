@@ -29,6 +29,10 @@ export function confirm(params: {
      */
     agentId: string;
     /**
+     * APIクライアント
+     */
+    clientUser: factory.clientUser.IClientUser;
+    /**
      * 取引ID
      */
     transactionId: string;
@@ -88,6 +92,7 @@ export function confirm(params: {
             },
             result: {},
             object: {
+                clientUser: params.clientUser,
                 transaction: transaction,
                 cancelName: cancelName,
                 cancellationFee: params.cancellationFee,

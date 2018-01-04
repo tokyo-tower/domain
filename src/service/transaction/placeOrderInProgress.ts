@@ -48,6 +48,10 @@ export interface IStartParams {
      */
     sellerIdentifier: string;
     /**
+     * APIクライアント
+     */
+    clientUser: factory.clientUser.IClientUser;
+    /**
      * WAITER許可証トークン
      */
     passportToken?: waiter.factory.passport.IEncodedPassport;
@@ -63,7 +67,7 @@ export interface IStartParams {
  * @memberof service.transaction.placeOrderInProgress
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo, ownerRepo: OwnerRepo) => {
+    return async (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => {
         // 販売者を取得
         const seller = await organizationRepo.findCorporationByIdentifier(params.sellerIdentifier);
 
@@ -83,14 +87,17 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             }
         }
 
-        let agent: factory.transaction.placeOrder.IAgent = {
+        const agent: factory.transaction.placeOrder.IAgent = {
             typeOf: factory.personType.Person,
             id: params.agentId,
             url: ''
         };
-        if (params.purchaserGroup === factory.person.Group.Staff) {
-            // 会員情報取得
-            agent = await ownerRepo.findById(params.agentId);
+        if (params.clientUser.username !== undefined) {
+            agent.memberOf = {
+                membershipNumber: params.agentId,
+                programName: 'Amazon Cognito',
+                username: params.clientUser.username
+            };
         }
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
@@ -106,6 +113,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             object: {
                 passportToken: params.passportToken,
                 passport: passport,
+                clientUser: params.clientUser,
                 purchaser_group: params.purchaserGroup,
                 authorizeActions: []
             },
@@ -314,8 +322,8 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         case factory.paymentMethodType.GroupReservation:
         case factory.paymentMethodType.Invitation:
         case factory.paymentMethodType.Invoice:
-            // 認められるのはスタッフだけ
-            if (purchaserGroup !== factory.person.Group.Staff || agent.username === undefined) {
+            // 認められるのはスタッフだけ(CognitoUserログインしているはず)
+            if (purchaserGroup !== factory.person.Group.Staff || agent.memberOf === undefined) {
                 throw new factory.errors.Argument('paymentMethod', `Invalid payment method for ${purchaserGroup}.`);
             }
 
@@ -380,24 +388,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     const purchaserGroup = transaction.object.purchaser_group;
 
     // 予約データを作成
-    // tslint:disable-next-line:max-func-body-length
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
         const qrStr = `${orderNumber}-${index}`;
-
-        let purchaserName = '';
-        switch (purchaserGroup) {
-            case factory.person.Group.Staff:
-                if (transaction.agent.name !== undefined) {
-                    purchaserName += transaction.agent.name;
-                }
-                if (transaction.agent.signature !== undefined) {
-                    purchaserName += transaction.agent.signature;
-                }
-                break;
-            default:
-                purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
-                break;
-        }
+        const purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
 
         return {
             typeOf: factory.reservation.reservationType.EventReservation,
@@ -450,22 +443,20 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             film_copyright: performance.film.copyright,
 
             purchaser_name: purchaserName,
-            purchaser_last_name: (customerContact !== undefined) ? customerContact.last_name : '',
-            purchaser_first_name: (customerContact !== undefined) ? customerContact.first_name : '',
-            purchaser_email: (customerContact !== undefined) ? customerContact.email : '',
+            purchaser_last_name: customerContact.last_name,
+            purchaser_first_name: customerContact.first_name,
+            purchaser_email: customerContact.email,
             purchaser_international_tel: '',
-            purchaser_tel: (customerContact !== undefined) ? customerContact.tel : '',
-            purchaser_age: (customerContact !== undefined) ? customerContact.age : '',
-            purchaser_address: (customerContact !== undefined) ? customerContact.address : '',
-            purchaser_gender: (customerContact !== undefined) ? customerContact.gender : '',
+            purchaser_tel: customerContact.tel,
+            purchaser_age: customerContact.age,
+            purchaser_address: customerContact.address,
+            purchaser_gender: customerContact.gender,
 
             // 会員の場合は値を入れる
-            owner: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.id : undefined,
-            owner_username: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.username : undefined,
-            owner_name: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.name : undefined,
-            owner_email: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.email : undefined,
-            owner_group: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.group : undefined,
-            owner_signature: (purchaserGroup === factory.person.Group.Staff) ? transaction.agent.signature : undefined,
+            owner_username: (transaction.agent.memberOf !== undefined) ? transaction.agent.memberOf.username : undefined,
+            owner_name: (transaction.agent.memberOf !== undefined) ? purchaserName : undefined,
+            owner_email: (transaction.agent.memberOf !== undefined) ? customerContact.email : undefined,
+            owner_group: (transaction.agent.memberOf !== undefined) ? purchaserGroup : undefined,
 
             payment_method: <factory.paymentMethodType>transaction.object.paymentMethod,
 

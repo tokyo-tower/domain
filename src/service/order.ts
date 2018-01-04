@@ -294,6 +294,9 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {
             await ReturnOrderTransactionService.confirm({
+                // tslint:disable-next-line:no-suspicious-comment
+                // TODO クライアント情報連携
+                clientUser: <any>{},
                 agentId: agentId,
                 transactionId: transactionId,
                 cancellationFee: 0,

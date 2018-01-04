@@ -1,7 +1,6 @@
 import * as mongoose from 'mongoose';
 
 import Film from './film';
-import Owner from './owner';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
@@ -126,15 +125,10 @@ const schema = new mongoose.Schema(
 
         charge: Number, // 座席単体の料金
 
-        owner: { // オーナー
-            type: mongoose.Schema.Types.ObjectId,
-            ref: Owner.modelName
-        },
         owner_username: String,
         owner_name: String,
         owner_email: String,
         owner_group: String,
-        owner_signature: String,
 
         checkins: { // 入場履歴
             type: [{
