@@ -127,6 +127,8 @@ const schema = new mongoose.Schema(
 
         owner_username: String,
         owner_name: String,
+        owner_last_name: String,
+        owner_first_name: String,
         owner_email: String,
         owner_group: String,
 

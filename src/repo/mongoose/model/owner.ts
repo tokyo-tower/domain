@@ -9,7 +9,21 @@ const schema = new mongoose.Schema(
     {
         username: {
             type: String,
-            unique: true
+            required: true
+        },
+        memberOf: {
+            membershipNumber: {
+                type: String,
+                required: true
+            },
+            programName: {
+                type: String,
+                required: true
+            },
+            username: {
+                type: String,
+                required: true
+            }
         },
         password_salt: {
             type: String,
@@ -23,9 +37,18 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
+        familyName: {
+            type: String,
+            required: true
+        },
+        givenName: {
+            type: String,
+            required: true
+        },
+        email: String,
+        telephone: String,
         description: String,
         notes: String,
-        email: String,
         group: { // オーナー区分
             type: String,
             required: true
@@ -37,8 +60,8 @@ const schema = new mongoose.Schema(
         read: 'primaryPreferred',
         safe: safe,
         timestamps: {
-            createdAt: 'created_at',
-            updatedAt: 'updated_at'
+            createdAt: 'createdAt',
+            updatedAt: 'updatedAt'
         },
         toJSON: { getters: true },
         toObject: { getters: true }
