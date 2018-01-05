@@ -13,7 +13,6 @@ import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
-import { MongoRepository as OwnerRepo } from '../../repo/owner';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
@@ -21,7 +20,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
 
-export type IStartOperation<T> = (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo, ownerRepo: OwnerRepo) => Promise<T>;
+export type IStartOperation<T> = (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,

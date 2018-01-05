@@ -12,7 +12,6 @@ import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
-import { MongoRepository as OwnerRepo } from './repo/owner';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
@@ -77,10 +76,6 @@ export namespace place {
     export class CheckinGate extends CheckinGateRepo { }
 }
 
-/**
- * 所有者リポジトリー
- */
-export class Owner extends OwnerRepo { }
 /**
  * 購入番号リポジトリー
  */

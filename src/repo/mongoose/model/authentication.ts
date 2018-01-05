@@ -1,5 +1,4 @@
 import * as mongoose from 'mongoose';
-import Owner from './owner';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -12,10 +11,7 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        owner: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: Owner.modelName
-        },
+        owner: String,
         signature: String, // 署名
         locale: String // 使用言語
     },

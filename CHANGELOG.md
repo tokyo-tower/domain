@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - MongoDBからcustomer_cancel_requestsコレクションを削除。
 - メールユーティリティを削除。
 - GMO通知ユーティリティを削除。
+- 所有者コレクションを削除(ユーザー情報をCognitoへ移行)
 
 ### Fixed
 
