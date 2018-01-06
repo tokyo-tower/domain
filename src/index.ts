@@ -11,6 +11,7 @@ import * as Models from './repo/mongoose';
 
 import * as CommonUtil from './util/common';
 
+import * as AdminService from './service/admin';
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
 import * as OrderService from './service/order';
@@ -57,6 +58,7 @@ export {
 };
 
 export namespace service {
+    export import admin = AdminService;
     export import itemAvailability = ItemAvailabilityService;
     export import notification = NotificationService;
     export import order = OrderService;
