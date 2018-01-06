@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - ownerのnameを一言語に限定。
 - 購入番号リポジトリーをRedisへ移行。
 - 取引にAPIクライアント情報を結合。
+- 注文取引結果に印刷トークンを追加。
 
 ### Deprecated
 

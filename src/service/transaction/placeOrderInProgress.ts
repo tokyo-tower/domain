@@ -13,6 +13,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
@@ -25,7 +26,8 @@ export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Pro
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
-    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo
+    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+    tokenRepo: TokenRepo
 ) => Promise<T>;
 
 /**
@@ -248,7 +250,8 @@ export function confirm(params: {
     return async (
         transactionRepo: TransactionRepo,
         creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
-        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo
+        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+        tokenRepo: TokenRepo
     ) => {
         const now = new Date();
         const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
@@ -276,6 +279,15 @@ export function confirm(params: {
 
         // 結果作成
         transaction.result = createResult(transaction);
+
+        // 印刷トークンを発行
+        const printToken = await tokenRepo.createPrintToken(
+            transaction.result.eventReservations
+                .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
+                .map((r) => r.id)
+        );
+        debug('printToken created.', printToken);
+        transaction.result.printToken = printToken;
 
         // ステータス変更
         debug('updating transaction...');
@@ -507,6 +519,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
             }
         },
-        eventReservations
+        eventReservations,
+        printToken: ''
     };
 }
