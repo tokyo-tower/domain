@@ -243,3 +243,59 @@ export function findAllByGroup(
         });
     };
 }
+
+export interface IGroup {
+    name: string;
+    description: string;
+}
+
+/**
+ * ユーザーネームからグループを取得する
+ * @param {string} accessKeyId AWSアクセスキー
+ * @param {string} secretAccessKey AWSアクセスシークレット
+ * @param {string} userPoolId CognitoyユーザープールID
+ * @param {string} username ユーザーネーム
+ */
+export function getGroupsByUsername(
+    accessKeyId: string,
+    secretAccessKey: string,
+    userPoolId: string,
+    username: string
+) {
+    return async () => {
+        return new Promise<IGroup[]>((resolve, reject) => {
+            const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider({
+                apiVersion: 'latest',
+                region: REGION,
+                accessKeyId: accessKeyId,
+                secretAccessKey: secretAccessKey
+            });
+
+            cognitoIdentityServiceProvider.adminListGroupsForUser(
+                {
+                    Username: username,
+                    UserPoolId: userPoolId
+                },
+                (err, data2) => {
+                    if (err instanceof Error) {
+                        reject(err);
+                    } else {
+                        if (!Array.isArray(data2.Groups)) {
+                            reject(new Error('Unexpected.'));
+                        } else {
+                            resolve(
+                                data2.Groups.map((g) => {
+                                    return {
+                                        name: <string>g.GroupName,
+                                        description: <string>g.Description
+                                    };
+                                })
+                            );
+                        }
+                    }
+                }
+            );
+
+        });
+    };
+}
