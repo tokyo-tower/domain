@@ -15,6 +15,7 @@ import * as moment from 'moment';
 require('moment-timezone');
 import * as numeral from 'numeral';
 
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
@@ -29,6 +30,18 @@ import * as ReturnOrderTransactionService from './transaction/returnOrder';
 const debug = createDebug('ttts-domain:service:order');
 
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => Promise<T>;
+
+export function createFromTransaction(transactionId: string) {
+    return async (orderRepo: OrderRepo, transactionRepo: TransactionRepo) => {
+        const transaction = await transactionRepo.findPlaceOrderById(transactionId);
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (transaction.result !== undefined) {
+            await orderRepo.save(transaction.result.order);
+        }
+    };
+}
 
 /**
  * 返品処理を実行する

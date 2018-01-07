@@ -82,6 +82,17 @@ export async function exportTasksById(transactionId: string): Promise<factory.ta
                     transactionId: transaction.id
                 }
             }));
+            taskAttributes.push(factory.task.createOrder.createAttributes({
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(), // なるはやで実行
+                remainingNumberOfTries: 10,
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: {
+                    transactionId: transaction.id
+                }
+            }));
 
             break;
 

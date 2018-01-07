@@ -501,6 +501,28 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     return {
         order: {
             typeOf: 'Order',
+            seller: {
+                typeOf: transaction.seller.typeOf,
+                name: transaction.seller.name,
+                url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''
+            },
+            customer: {
+                typeOf: transaction.agent.typeOf,
+                id: transaction.agent.id,
+                name: `${customerContact.first_name} ${customerContact.last_name}`,
+                ...customerContact
+            },
+            acceptedOffers: eventReservations.map((r) => {
+                return {
+                    itemOffered: r,
+                    price: r.charge,
+                    priceCurrency: factory.priceCurrency.JPY,
+                    seller: {
+                        typeOf: transaction.seller.typeOf,
+                        name: transaction.seller.name
+                    }
+                };
+            }),
             confirmationNumber: eventReservations[0].payment_no,
             orderNumber: orderNumber,
             price: price,

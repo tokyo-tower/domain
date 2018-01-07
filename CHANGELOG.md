@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - パフォーマンス集計データリポジトリーを追加。
 - 入場ゲートリポジトリーを追加。
 - 管理者サービスを追加。
+- 注文作成タスクを追加。
 
 ### Changed
 - 取引と在庫スキーマを追加。予約を在庫を明確に分離。

@@ -10,6 +10,7 @@ import * as redis from 'redis';
 import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
+import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
@@ -66,6 +67,16 @@ export function settleCreditCard(
 ): IOperation<void> {
     return async () => {
         await SalesService.settleCreditCardAuth(data.transactionId);
+    };
+}
+
+export function createOrder(
+    data: factory.task.createOrder.IData
+): IOperation<void> {
+    return async (connection: mongoose.Connection) => {
+        const orderRepo = new OrderRepo(connection);
+        const transactionRepo = new TransactionRepo(connection);
+        await OrderService.createFromTransaction(data.transactionId)(orderRepo, transactionRepo);
     };
 }
 
