@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 購入番号リポジトリーをRedisへ移行。
 - 取引にAPIクライアント情報を結合。
 - 注文取引結果に印刷トークンを追加。
+- 返品タスクに注文ステータス変更処理を追加。
 
 ### Deprecated
 

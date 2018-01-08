@@ -56,7 +56,8 @@ export function processReturn(returnOrderTransactionId: string) {
         stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo
+        taskRepo: TaskRepo,
+        orderRepo: OrderRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -236,6 +237,12 @@ export function processReturn(returnOrderTransactionId: string) {
                 }
             ).exec();
         }));
+
+        // 注文を返品済ステータスに変更
+        await orderRepo.orderModel.findOneAndUpdate(
+            { orderNumber: placeOrderTransactionResult.order.orderNumber },
+            { orderStatus: factory.orderStatus.OrderReturned }
+        ).exec();
     };
 }
 

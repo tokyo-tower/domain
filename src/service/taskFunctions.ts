@@ -84,14 +84,14 @@ export function returnOrder(
     data: factory.task.returnOrder.IData
 ): IOperation<void> {
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
-        const performanceRepo = new PerformanceRepo(connection);
-        const reservationRepo = new ReservationRepo(connection);
-        const stockRepo = new StockRepo(connection);
-        const transactionRepo = new TransactionRepo(connection);
-        const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
-        const taskRepo = new TaskRepo(connection);
         await OrderService.processReturn(data.transactionId)(
-            performanceRepo, reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
+            new PerformanceRepo(connection),
+            new ReservationRepo(connection),
+            new StockRepo(connection),
+            new TransactionRepo(connection),
+            new TicketTypeCategoryRateLimitRepo(redisClient),
+            new TaskRepo(connection),
+            new OrderRepo(connection)
         );
     };
 }
