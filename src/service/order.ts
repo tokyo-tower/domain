@@ -153,16 +153,52 @@ export function processReturn(returnOrderTransactionId: string) {
             }
         }
 
+        let emailMessageAttributes: factory.creativeWork.message.email.IAttributes;
+        let emailMessage: factory.creativeWork.message.email.ICreativeWork;
+        let sendEmailTaskAttributes: factory.task.sendEmailNotification.IAttributes;
         switch (returnOrderTransaction.object.reason) {
             case factory.transaction.returnOrder.Reason.Customer:
+                // tslint:disable-next-line:no-suspicious-comment
+                // TODO 二重送信対策
+                // emailMessageAttributes = await createEmailMessage4customerReason(returnOrderTransaction.object.transaction);
+                // emailMessage = factory.creativeWork.message.email.create({
+                //     identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
+                //     sender: {
+                //         typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
+                //         name: emailMessageAttributes.sender.name,
+                //         email: emailMessageAttributes.sender.email
+                //     },
+                //     toRecipient: {
+                //         typeOf: returnOrderTransaction.object.transaction.agent.typeOf,
+                //         name: emailMessageAttributes.toRecipient.name,
+                //         email: emailMessageAttributes.toRecipient.email
+                //     },
+                //     about: emailMessageAttributes.about,
+                //     text: emailMessageAttributes.text
+                // });
+
+                // sendEmailTaskAttributes = factory.task.sendEmailNotification.createAttributes({
+                //     status: factory.taskStatus.Ready,
+                //     runsAt: new Date(), // なるはやで実行
+                //     remainingNumberOfTries: 10,
+                //     lastTriedAt: null,
+                //     numberOfTried: 0,
+                //     executionResults: [],
+                //     data: {
+                //         transactionId: returnOrderTransactionId,
+                //         emailMessage: emailMessage
+                //     }
+                // });
+
+                // await taskRepo.save(sendEmailTaskAttributes);
 
                 break;
 
             case factory.transaction.returnOrder.Reason.Seller:
                 // tslint:disable-next-line:no-suspicious-comment
                 // TODO 二重送信対策
-                const emailMessageAttributes = await createEmailMessage4sellerReason(returnOrderTransaction.object.transaction);
-                const emailMessage = factory.creativeWork.message.email.create({
+                emailMessageAttributes = await createEmailMessage4sellerReason(returnOrderTransaction.object.transaction);
+                emailMessage = factory.creativeWork.message.email.create({
                     identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
                     sender: {
                         typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
@@ -178,7 +214,7 @@ export function processReturn(returnOrderTransactionId: string) {
                     text: emailMessageAttributes.text
                 });
 
-                const taskAttributes = factory.task.sendEmailNotification.createAttributes({
+                sendEmailTaskAttributes = factory.task.sendEmailNotification.createAttributes({
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
@@ -191,7 +227,7 @@ export function processReturn(returnOrderTransactionId: string) {
                     }
                 });
 
-                await taskRepo.save(taskAttributes);
+                await taskRepo.save(sendEmailTaskAttributes);
 
                 break;
 

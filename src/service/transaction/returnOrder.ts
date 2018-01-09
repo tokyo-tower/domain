@@ -14,6 +14,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 const CANCELLABLE_DAYS = 3;
 
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
+export type ITaskAndTransactionOperation<T> = (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => Promise<T>;
 
 /**
  * 予約キャンセル処理
@@ -139,6 +140,60 @@ function validateRequest(now: Date, performanceStartDate: Date) {
     if (cancellableThrough <= now) {
         throw new factory.errors.Argument('performance_day', 'キャンセルできる期限を過ぎています。');
     }
+}
+
+/**
+ * 確定取引についてメールを送信する
+ * @export
+ * @function
+ * @memberof service.transaction.returnOrder
+ * @param transactionId 取引ID
+ * @param emailMessageAttributes Eメールメッセージ属性
+ */
+export function sendEmail(
+    transactionId: string,
+    emailMessageAttributes: factory.creativeWork.message.email.IAttributes
+): ITaskAndTransactionOperation<factory.task.sendEmailNotification.ITask> {
+    return async (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => {
+        const returnOrderTransaction = await transactionRepo.findReturnOrderById(transactionId);
+        if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
+            throw new factory.errors.Forbidden('Transaction not confirmed.');
+        }
+
+        const placeOrderTransaction = returnOrderTransaction.object.transaction;
+
+        const emailMessage = factory.creativeWork.message.email.create({
+            identifier: `returnOrderTransaction-${transactionId}`,
+            sender: {
+                typeOf: placeOrderTransaction.seller.typeOf,
+                name: emailMessageAttributes.sender.name,
+                email: emailMessageAttributes.sender.email
+            },
+            toRecipient: {
+                typeOf: placeOrderTransaction.agent.typeOf,
+                name: emailMessageAttributes.toRecipient.name,
+                email: emailMessageAttributes.toRecipient.email
+            },
+            about: emailMessageAttributes.about,
+            text: emailMessageAttributes.text
+        });
+
+        // その場で送信ではなく、DBにタスクを登録
+        const taskAttributes = factory.task.sendEmailNotification.createAttributes({
+            status: factory.taskStatus.Ready,
+            runsAt: new Date(), // なるはやで実行
+            remainingNumberOfTries: 10,
+            lastTriedAt: null,
+            numberOfTried: 0,
+            executionResults: [],
+            data: {
+                transactionId: transactionId,
+                emailMessage: emailMessage
+            }
+        });
+
+        return <factory.task.sendEmailNotification.ITask>await taskRepo.save(taskAttributes);
+    };
 }
 
 /**
