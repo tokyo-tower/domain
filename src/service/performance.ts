@@ -93,7 +93,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         const limit = (searchConditions.limit !== undefined) ? searchConditions.limit : 1000;
 
         const performances = await performanceRepo.performanceModel.find(conditions, '')
-            .populate('film screen theater')
             .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .skip(limit * (page - 1)).limit(limit)
             // 上映日、開始時刻
@@ -137,7 +136,9 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 tourNumber: performance.tour_number,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
-                maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
+                // tslint:disable-next-line:no-suspicious-comment
+                // TODO 値補充
+                maximumAttendeeCapacity: 0,
                 // tslint:disable-next-line:no-magic-numbers
                 remainingAttendeeCapacity: parseInt(performanceAvailabilities[performance.id], 10),
                 remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,

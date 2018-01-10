@@ -18,13 +18,14 @@ const redisClient = ttts.redis.createClient(
 
 ttts.service.performance.search({
     startFrom: moment().toDate(),
-    startThrough: moment().add(1, 'days').toDate()
+    startThrough: moment().add(1, 'month').toDate()
 })(
     new ttts.repository.Performance(ttts.mongoose.connection),
-    new ttts.repository.PerformanceStatuses(redisClient),
+    new ttts.repository.itemAvailability.Performance(redisClient),
     new ttts.repository.itemAvailability.SeatReservationOffer(redisClient)
     ).then((result) => {
-        console.log('result:', result);
+        console.log('performances[0]:', result.performances[0]);
+        console.log(result.performances.length, 'performances found.');
         ttts.mongoose.disconnect();
         redisClient.quit();
     });
