@@ -42,6 +42,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 所有者コレクションを削除(ユーザー情報をCognitoへ移行)
 
 ### Fixed
+- パフォーマンス残席数が0にならないバグを解消。
 
 ### Security
 

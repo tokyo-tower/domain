@@ -15,7 +15,7 @@ const redisClient = ttts.redis.createClient(
         tls: { servername: process.env.TEST_REDIS_HOST }
     });
 
-ttts.service.itemAvailability.updatePerformanceAvailabilities(3600)(
+ttts.service.itemAvailability.updatePerformanceAvailabilities(90, 3600)(
     new ttts.repository.Stock(ttts.mongoose.connection),
     new ttts.repository.Performance(ttts.mongoose.connection),
     new ttts.repository.itemAvailability.Performance(redisClient)

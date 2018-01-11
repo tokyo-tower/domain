@@ -26,29 +26,31 @@ export type IUpdatePerformanceAvailabilitiesOperation<T> = (
  * 空席ステータスを更新する
  * @memberof service.itemAvailability
  */
-export function updatePerformanceAvailabilities(ttl: number): IUpdatePerformanceAvailabilitiesOperation<void> {
+export function updatePerformanceAvailabilities(
+    searchPerformancesPeriodInDays: number,
+    ttl: number
+): IUpdatePerformanceAvailabilitiesOperation<void> {
     return async (
         stockRepo: StockRepo,
         performanceRepo: PerformanceRepo,
         performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
+        const now = moment();
         debug('finding performances...');
-        const ids = await performanceRepo.performanceModel.distinct(
+        const ids = <string[]>await performanceRepo.performanceModel.distinct(
             '_id',
             {
                 start_date: {
-                    // tslint:disable-next-line:no-magic-numbers
-                    $gt: moment().toDate(),
-                    // tslint:disable-next-line:no-magic-numbers
-                    $lt: moment().add(3, 'months').toDate()
+                    $gt: now.toDate(),
+                    $lt: moment(now).add(searchPerformancesPeriodInDays, 'days').toDate()
                 }
             }
         ).exec();
-        debug('performances found.', ids);
+        debug(ids.length, 'performances found.');
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
-        const results: any[] = await stockRepo.stockModel.aggregate(
+        const results = <{ _id: string, count: number }[]>await stockRepo.stockModel.aggregate(
             [
                 {
                     $match: {
@@ -65,11 +67,14 @@ export function updatePerformanceAvailabilities(ttl: number): IUpdatePerformance
             ]
         ).exec();
 
-        const availabilities: factory.performance.IAvailability[] = results.map((result) => {
-            return { id: result._id.toString(), remainingAttendeeCapacity: result.count };
+        const availabilities: factory.performance.IAvailability[] = ids.map((id) => {
+            // InStockの在庫がない場合は、resultsにデータとして含まれない
+            const result = results.find((r) => r._id === id);
+
+            return { id: id, remainingAttendeeCapacity: (result !== undefined) ? result.count : 0 };
         });
 
-        debug('storing performanceAvailabilities...');
+        debug(`storing ${availabilities.length} performanceAvailabilities...`);
         await performanceAvailabilityRepo.store(availabilities, ttl);
         debug('performanceAvailabilities stored.');
     };
