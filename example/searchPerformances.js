@@ -22,10 +22,11 @@ ttts.service.performance.search({
 })(
     new ttts.repository.Performance(ttts.mongoose.connection),
     new ttts.repository.itemAvailability.Performance(redisClient),
-    new ttts.repository.itemAvailability.SeatReservationOffer(redisClient)
-    ).then((result) => {
-        console.log('performances[0]:', result.performances[0]);
-        console.log(result.performances.length, 'performances found.');
-        ttts.mongoose.disconnect();
-        redisClient.quit();
-    });
+    new ttts.repository.itemAvailability.SeatReservationOffer(redisClient),
+    new ttts.repository.offer.ExhibitionEvent(redisClient),
+).then((result) => {
+    console.log('performances[0]:', result.performances[0]);
+    console.log(result.performances.length, 'performances found.');
+    ttts.mongoose.disconnect();
+    redisClient.quit();
+});

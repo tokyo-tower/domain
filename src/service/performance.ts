@@ -6,6 +6,7 @@
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 
+import { IAvailabilitiesByTicketType } from '../repo/itemAvailability/seatReservationOffer';
 import * as Models from '../repo/mongoose';
 import * as repository from '../repository';
 
@@ -20,7 +21,8 @@ export interface ISearchResult {
 export type ISearchOperation<T> = (
     performanceRepo: repository.Performance,
     performanceAvailabilityRepo: repository.itemAvailability.Performance,
-    seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer
+    seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
+    exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
 ) => Promise<T>;
 
 /**
@@ -34,7 +36,8 @@ export function search(searchConditions: factory.performance.ISearchConditions):
     return async (
         performanceRepo: repository.Performance,
         performanceAvailabilityRepo: repository.itemAvailability.Performance,
-        seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer
+        seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
+        exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
     ) => {
         // MongoDB検索条件を作成
         const andConditions: any[] = [
@@ -93,7 +96,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         const limit = (searchConditions.limit !== undefined) ? searchConditions.limit : 1000;
 
         const performances = await performanceRepo.performanceModel.find(conditions, '')
-            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .skip(limit * (page - 1)).limit(limit)
             // 上映日、開始時刻
             .setOptions({
@@ -110,22 +112,31 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         debug('performanceAvailabilities found.', performanceAvailabilities);
 
         const data: factory.performance.IPerformanceWithAvailability[] = await Promise.all(performances.map(async (performance) => {
-            const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
-            debug('offerAvailabilities:', offerAvailabilities);
-            const ticketTypes = performance.ticket_type_group.ticket_types;
-
-            // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
-            // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
-            debug('check wheelchair availability...');
-            const wheelchairTicketTypeIds = ticketTypes.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
-                .map((t) => t.id);
+            let ticketTypes: factory.offer.seatReservation.ITicketType[] = [];
             let remainingAttendeeCapacityForWheelchair = 0;
-            wheelchairTicketTypeIds.forEach((ticketTypeId) => {
-                // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
-                if (offerAvailabilities[ticketTypeId] !== undefined && offerAvailabilities[ticketTypeId] > 0) {
-                    remainingAttendeeCapacityForWheelchair = offerAvailabilities[ticketTypeId];
-                }
-            });
+            let offerAvailabilities: IAvailabilitiesByTicketType = {};
+
+            try {
+                offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
+                debug('offerAvailabilities:', offerAvailabilities);
+
+                ticketTypes = await exhibitionEventOfferRepo.findByEventId(performance.id);
+
+                // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
+                // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
+                debug('check wheelchair availability...');
+                const wheelchairTicketTypeIds = ticketTypes
+                    .filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
+                    .map((t) => t.id);
+                wheelchairTicketTypeIds.forEach((ticketTypeId) => {
+                    // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
+                    if (offerAvailabilities[ticketTypeId] !== undefined && offerAvailabilities[ticketTypeId] > 0) {
+                        remainingAttendeeCapacityForWheelchair = offerAvailabilities[ticketTypeId];
+                    }
+                });
+            } catch (error) {
+                // no op
+            }
 
             return {
                 id: performance.id,

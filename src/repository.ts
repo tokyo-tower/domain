@@ -11,6 +11,7 @@ import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/ac
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
+import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibitionEvent';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
@@ -63,6 +64,13 @@ export namespace rateLimit {
      * 券種カテゴリーレート制限リポジトリー
      */
     export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
+}
+
+export namespace offer {
+    /**
+     * 展示イベントの販売情報リポジトリー
+     */
+    export class ExhibitionEvent extends ExhibitionEventOffer { }
 }
 
 /**
