@@ -13,6 +13,10 @@ import { MongoRepository as TransactionRepo } from '../../../../../repo/transact
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:creditCard');
 
+const creditService = new GMO.service.Credit({
+    endpoint: <string>process.env.GMO_ENDPOINT
+});
+
 export type ICreateOperation<T> = (
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
     organizationRepo: OrganizationRepo,
@@ -83,7 +87,7 @@ export function create(
                 jobCd: GMO.utils.util.JobCd.Auth,
                 amount: amount
             };
-            entryTranResult = await GMO.services.credit.entryTran(entryTranArgs);
+            entryTranResult = await creditService.entryTran(entryTranArgs);
             debug('entryTranResult:', entryTranResult);
 
             execTranArgs = {
@@ -101,7 +105,7 @@ export function create(
                 cardSeq: (<factory.paymentMethod.paymentCard.creditCard.IUnauthorizedCardOfMember>creditCard).cardSeq,
                 seqMode: GMO.utils.util.SeqMode.Physics
             };
-            execTranResult = await GMO.services.credit.execTran(execTranArgs);
+            execTranResult = await creditService.execTran(execTranArgs);
             debug('execTranResult:', execTranResult);
         } catch (error) {
             // actionにエラー結果を追加
@@ -172,7 +176,7 @@ export function cancel(
         // 現時点では、ここで失敗したらオーソリ取消をあきらめる
         // GMO混雑エラーはここでも発生する(取消処理でも混雑エラーが発生することは確認済)
         try {
-            await GMO.services.credit.alterTran({
+            await creditService.alterTran({
                 shopId: actionResult.entryTranArgs.shopId,
                 shopPass: actionResult.entryTranArgs.shopPass,
                 accessId: actionResult.execTranArgs.accessId,
