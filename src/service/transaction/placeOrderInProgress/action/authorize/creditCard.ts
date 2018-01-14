@@ -13,14 +13,11 @@ import { MongoRepository as TransactionRepo } from '../../../../../repo/transact
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:creditCard');
 
-const creditService = new GMO.service.Credit({
-    endpoint: <string>process.env.GMO_ENDPOINT
-});
-
 export type ICreateOperation<T> = (
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
     organizationRepo: OrganizationRepo,
-    transactionRepo: TransactionRepo
+    transactionRepo: TransactionRepo,
+    creditService: GMO.service.Credit
 ) => Promise<T>;
 
 /**
@@ -46,7 +43,8 @@ export function create(
     return async (
         creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
         organizationRepo: OrganizationRepo,
-        transactionRepo: TransactionRepo
+        transactionRepo: TransactionRepo,
+        creditService: GMO.service.Credit
     ) => {
 
         const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
@@ -162,7 +160,11 @@ export function cancel(
     transactionId: string,
     actionId: string
 ) {
-    return async (creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo, transactionRepo: TransactionRepo) => {
+    return async (
+        creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
+        transactionRepo: TransactionRepo,
+        creditService: GMO.service.Credit
+    ) => {
         const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
         if (transaction.agent.id !== agentId) {
