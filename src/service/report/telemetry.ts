@@ -309,26 +309,26 @@ export interface ISellerFlowTelemetry extends ITelemetry {
 }
 
 export function searchGlobalFlow(searchConditions: {
-    measuredFrom: Date,
-    measuredThrough: Date
+    measuredFrom: Date;
+    measuredThrough: Date;
 }): TelemetryOperation<IGlobalFlowTelemetry[]> {
     return search({ ...searchConditions, ...{ scope: TelemetryScope.Global, purpose: TelemetryPurposeType.Flow } });
 }
 export function searchGlobalStock(searchConditions: {
-    measuredFrom: Date,
-    measuredThrough: Date
+    measuredFrom: Date;
+    measuredThrough: Date;
 }): TelemetryOperation<IGlobalStockTelemetry[]> {
     return search({ ...searchConditions, ...{ scope: TelemetryScope.Global, purpose: TelemetryPurposeType.Stock } });
 }
 export function searchSellerFlow(searchConditions: {
-    measuredFrom: Date,
-    measuredThrough: Date
+    measuredFrom: Date;
+    measuredThrough: Date;
 }): TelemetryOperation<ISellerFlowTelemetry[]> {
     return search({ ...searchConditions, ...{ scope: TelemetryScope.Seller, purpose: TelemetryPurposeType.Flow } });
 }
 export function searchSellerStock(searchConditions: {
-    measuredFrom: Date,
-    measuredThrough: Date
+    measuredFrom: Date;
+    measuredThrough: Date;
 }): TelemetryOperation<ISellerStockTelemetry[]> {
     return search({ ...searchConditions, ...{ scope: TelemetryScope.Seller, purpose: TelemetryPurposeType.Stock } });
 }
@@ -342,10 +342,10 @@ export function searchSellerStock(searchConditions: {
  * @param {Date} searchConditions.measuredThrough 計測日時through
  */
 export function search(searchConditions: {
-    measuredFrom: Date,
-    measuredThrough: Date,
-    scope: TelemetryScope,
-    purpose: TelemetryPurposeType
+    measuredFrom: Date;
+    measuredThrough: Date;
+    scope: TelemetryScope;
+    purpose: TelemetryPurposeType;
 }) {
     return async (telemetryRepo: TelemetryRepo) => {
         return <ITelemetry[]>await telemetryRepo.telemetryModel.find(
@@ -373,8 +373,8 @@ export function search(searchConditions: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createFlow(target: {
-    measuredAt: Date,
-    sellerId?: string
+    measuredAt: Date;
+    sellerId?: string;
 }): TaskAndTelemetryAndTransactionOperation<void> {
     return async (
         taskRepo: TaskRepo,
@@ -437,8 +437,8 @@ export function createFlow(target: {
 // tslint:disable-next-line:no-single-line-block-comment
 /* istanbul ignore next */
 export function createStock(target: {
-    measuredAt: Date,
-    sellerId?: string
+    measuredAt: Date;
+    sellerId?: string;
 }): TaskAndTelemetryAndTransactionOperation<void> {
     return async (
         taskRepo: TaskRepo,
@@ -592,7 +592,7 @@ function createSellerFlow(
 
         // アクション数集計
         const numbersOfActions = confirmedTransactions.map(
-            (transaction) => (<factory.transaction.placeOrder.IObject>transaction.object).authorizeActions.length
+            (transaction) => transaction.object.authorizeActions.length
         );
         const totalNumberOfActions = numbersOfActions.reduce((a, b) => a + b, 0);
         const maxNumberOfActions = numbersOfActions.reduce((a, b) => Math.max(a, b), 0);

@@ -31,9 +31,8 @@ export function createToken(): string {
 
 /**
  * ハッシュ値を作成する
- *
- * @param {string} password
- * @param {string} salt
+ * @param {string} password パスワード
+ * @param {string} salt ソルト値
  * @memberOf CommonUtil
  */
 export function createHash(password: string, salt: string): string {
@@ -51,7 +50,7 @@ export function createHash(password: string, salt: string): string {
 export function toHalfWidth(str: string): string {
     return str.split('').map((value) => {
         // 全角であれば変換
-        // tslint:disable-next-line:no-magic-numbers
+        // tslint:disable-next-line:no-magic-numbers no-irregular-whitespace
         return value.replace(/[！-～]/g, String.fromCharCode(value.charCodeAt(0) - 0xFEE0)).replace('　', ' ');
     }).join('');
 }
@@ -64,7 +63,7 @@ export function toHalfWidth(str: string): string {
 export function toFullWidth(str: string): string {
     return str.split('').map((value) => {
         // 半角であれば変換
-        // tslint:disable-next-line:no-magic-numbers
+        // tslint:disable-next-line:no-magic-numbers no-irregular-whitespace
         return value.replace(/[!-~]/g, String.fromCharCode(value.charCodeAt(0) + 0xFEE0)).replace(' ', '　');
     }).join('');
 }

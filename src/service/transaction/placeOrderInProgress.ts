@@ -217,7 +217,7 @@ export function setCustomerContact(
         }
 
         // 連絡先を再生成(validationの意味も含めて)
-        contact = {
+        const customerContact = {
             last_name: contact.last_name,
             first_name: contact.first_name,
             email: contact.email,
@@ -233,9 +233,9 @@ export function setCustomerContact(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, contact);
+        await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
 
-        return contact;
+        return customerContact;
     };
 }
 
@@ -243,9 +243,9 @@ export function setCustomerContact(
  * 取引確定
  */
 export function confirm(params: {
-    agentId: string,
-    transactionId: string,
-    paymentMethod: factory.paymentMethodType
+    agentId: string;
+    transactionId: string;
+    paymentMethod: factory.paymentMethodType;
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     return async (
         transactionRepo: TransactionRepo,
@@ -299,7 +299,7 @@ export function confirm(params: {
             transaction.result
         );
 
-        return (<factory.transaction.placeOrder.IResult>transaction.result);
+        return transaction.result;
     };
 }
 
@@ -383,7 +383,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
-    const performance = (<factory.action.authorize.seatReservation.IObject>seatReservationAuthorizeAction.object).performance;
+    const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const now = moment();
 

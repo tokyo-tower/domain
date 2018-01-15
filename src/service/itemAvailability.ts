@@ -50,7 +50,7 @@ export function updatePerformanceAvailabilities(
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
-        const results = <{ _id: string, count: number }[]>await stockRepo.stockModel.aggregate(
+        const results = <{ _id: string; count: number }[]>await stockRepo.stockModel.aggregate(
             [
                 {
                     $match: {
@@ -133,7 +133,7 @@ export function updatePerformanceOffersAvailability() {
 
         // パフォーマンスIDごとに
         const availableStockNums: {
-            [key: string]: number
+            [key: string]: number;
         } = {};
         results.forEach((result) => {
             // tslint:disable-next-line:no-magic-numbers

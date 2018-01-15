@@ -33,6 +33,7 @@
         "no-magic-numbers": true,
         "no-misused-new": true,
         "no-relative-imports": false,
+        "no-redundant-jsdoc": false,
         "no-unnecessary-initializer": true,
         "no-unsafe-any": false,
         "prefer-function-over-method": true,

@@ -232,7 +232,6 @@ export function processReturn(returnOrderTransactionId: string) {
                 break;
 
             default:
-                break;
         }
 
         await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {

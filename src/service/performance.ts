@@ -213,8 +213,8 @@ async function addFilmConditions(andConditions: any[], section: string | null, w
     // 空白つなぎでOR検索
     if (words !== null) {
         // trim and to half-width space
-        words = words.replace(/(^\s+)|(\s+$)/g, '').replace(/\s/g, ' ');
-        const orConditions = words.split(' ').filter((value) => (value.length > 0)).reduce(
+        const words4search = words.replace(/(^\s+)|(\s+$)/g, '').replace(/\s/g, ' ');
+        const orConditions = words4search.split(' ').filter((value) => (value.length > 0)).reduce(
             (a: any[], word) => {
                 return a.concat(
                     { 'name.ja': { $regex: `${word}` } },
