@@ -259,18 +259,20 @@ export function processReturn(returnOrderTransactionId: string) {
             ).exec();
 
             // 在庫を空きに(在庫IDに対して、元の状態に戻す)
-            debug('making a stock available...', reservation.stock);
-            await stockRepo.stockModel.findOneAndUpdate(
-                {
-                    _id: reservation.stock,
-                    availability: reservation.stock_availability_after,
-                    holder: returnOrderTransaction.object.transaction.id // 対象取引に保持されている
-                },
-                {
-                    $set: { availability: reservation.stock_availability_before },
-                    $unset: { holder: 1 }
-                }
-            ).exec();
+            debug(`making ${reservation.stocks.length} stocks available...`);
+            await Promise.all(reservation.stocks.map(async (stock) => {
+                await stockRepo.stockModel.findOneAndUpdate(
+                    {
+                        _id: stock.id,
+                        availability: stock.availability_after,
+                        holder: stock.holder // 対象取引に保持されている
+                    },
+                    {
+                        $set: { availability: stock.availability_before },
+                        $unset: { holder: 1 }
+                    }
+                ).exec();
+            }));
         }));
 
         // 注文を返品済ステータスに変更

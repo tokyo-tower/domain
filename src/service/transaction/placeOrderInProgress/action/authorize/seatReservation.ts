@@ -155,15 +155,20 @@ export function create(
 
             // 仮予約作成
             await Promise.all(offers.map(async (offer) => {
-                const tmpReservationsByOffer = await reserveTemporarilyByOffer(
-                    transaction.id, paymentNo, performance, offer
-                );
-                tmpReservations.push(...tmpReservationsByOffer);
+                try {
+                    tmpReservations.push(await reserveTemporarilyByOffer(
+                        transaction.id, paymentNo, performance, offer
+                    ));
+                } catch (error) {
+                    // no op
+                }
             }));
             debug(tmpReservations.length, 'tmp reservation(s) created.');
 
             // 予約枚数が指定枚数に達しなかった場合エラー
-            if (tmpReservations.length < offers.reduce((a, b) => a + b.ticket_ttts_extension.required_seat_num, 0)) {
+            const numberOfHoldStock = tmpReservations.reduce((a, b) => a + b.stocks.length, 0);
+            const requiredNumberOfStocks = offers.reduce((a, b) => a + b.ticket_ttts_extension.required_seat_num, 0);
+            if (numberOfHoldStock < requiredNumberOfStocks) {
                 throw new factory.errors.AlreadyInUse('action.object', ['offers'], 'No available seats.');
             }
         } catch (error) {
@@ -227,109 +232,68 @@ async function reserveTemporarilyByOffer(
     paymentNo: string,
     performance: factory.performance.IPerformanceWithDetails,
     offer: factory.offer.seatReservation.IOffer
-): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> {
+): Promise<factory.action.authorize.seatReservation.ITmpReservation> {
     const stockRepo = new StockRepo(mongoose.connection);
-
-    // 予約情報更新キーセット(パフォーマンス,'予約可能')
-    const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+    const holdStocks: factory.reservation.event.IStock[] = [];
 
     try {
-        // 在庫ステータス変更
-        const stock = await stockRepo.stockModel.findOneAndUpdate(
-            {
-                performance: performance.id,
-                availability: factory.itemAvailability.InStock
-            },
-            {
-                availability: factory.itemAvailability.OutOfStock,
-                holder: transactionId
-            },
-            { new: true }
-        ).exec();
-
-        // 在庫がばなければ失敗
-        if (stock !== null) {
-            debug('1 stock found.', stock.get('id'));
-            const seatCode = stock.get('seat_code');
-            const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
-            if (seatInfo === undefined) {
-                throw new Error('Invalid Seat Code.');
-            }
-
-            tmpReservations.push({
-                stock: stock.get('id'),
-                stock_availability_before: factory.itemAvailability.InStock,
-                stock_availability_after: stock.get('availability'),
-                stock_holder: stock.get('holder'),
-                status_after: factory.reservationStatusType.ReservationConfirmed,
-                seat_code: seatCode,
-                seat_grade_name: seatInfo.grade.name,
-                seat_grade_additional_charge: seatInfo.grade.additional_charge,
-                ticket_type: offer.ticket_type,
-                ticket_type_name: offer.ticket_type_name,
-                ticket_type_charge: offer.ticket_type_charge,
-                charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
-                watcher_name: offer.watcher_name,
-                ticket_cancel_charge: offer.ticket_cancel_charge,
-                ticket_ttts_extension: offer.ticket_ttts_extension,
-                rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
-                reservation_ttts_extension: {
-                    seat_code_base: seatCode
+        // 必要な在庫数分の在庫ステータス変更
+        await Promise.all(Array.from(Array(offer.ticket_ttts_extension.required_seat_num)).map(async () => {
+            const stock = await stockRepo.stockModel.findOneAndUpdate(
+                {
+                    performance: performance.id,
+                    availability: factory.itemAvailability.InStock
                 },
-                payment_no: paymentNo
-            });
+                {
+                    availability: factory.itemAvailability.OutOfStock,
+                    holder: transactionId
+                },
+                { new: true }
+            ).exec();
 
-            // 余分確保分の予約更新
-            const numberOdfRequiredExtraReservations = offer.ticket_ttts_extension.required_seat_num - 1;
-            await Promise.all(Array.from(Array(numberOdfRequiredExtraReservations)).map(async () => {
-                const extraStock = await stockRepo.stockModel.findOneAndUpdate(
-                    {
-                        performance: performance.id,
-                        availability: factory.itemAvailability.InStock
-                    },
-                    {
-                        availability: factory.itemAvailability.OutOfStock,
-                        holder: transactionId,
-                        reservation_ttts_extension: {
-                            seat_code_base: seatCode
-                        }
-                    },
-                    { new: true }
-                ).exec();
-
-                // 更新エラー(対象データなし):次のseatへ
-                if (extraStock !== null) {
-                    debug('1 stock found.', extraStock.get('id'));
-                    tmpReservations.push({
-                        stock: extraStock.get('id'),
-                        stock_availability_before: factory.itemAvailability.InStock,
-                        stock_availability_after: extraStock.get('availability'),
-                        stock_holder: extraStock.get('holder'),
-                        status_after: factory.reservationStatusType.ReservationSecuredExtra,
-                        seat_code: extraStock.get('seat_code'),
-                        seat_grade_name: seatInfo.grade.name,
-                        seat_grade_additional_charge: seatInfo.grade.additional_charge,
-                        ticket_type: offer.ticket_type,
-                        ticket_type_name: offer.ticket_type_name,
-                        ticket_type_charge: offer.ticket_type_charge,
-                        charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
-                        watcher_name: offer.watcher_name,
-                        ticket_cancel_charge: offer.ticket_cancel_charge,
-                        ticket_ttts_extension: offer.ticket_ttts_extension,
-                        rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
-                        reservation_ttts_extension: {
-                            seat_code_base: seatCode
-                        },
-                        payment_no: paymentNo
-                    });
-                }
-            }));
-        }
+            // 更新エラー(対象データなし):次のseatへ
+            if (stock !== null) {
+                debug('1 stock found.', stock.get('id'));
+                holdStocks.push({
+                    id: stock.get('id'),
+                    seat_code: stock.get('seat_code'),
+                    availability_before: factory.itemAvailability.InStock,
+                    availability_after: stock.get('availability'),
+                    holder: stock.get('holder')
+                });
+            }
+        }));
     } catch (error) {
         // no op
     }
 
-    return tmpReservations;
+    if (holdStocks.length <= 0) {
+        throw new Error('Available stock not found.');
+    }
+
+    // ひとつでも在庫確保があれば仮予約オブジェクトを作成
+    const seatCode = holdStocks[0].seat_code;
+    const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
+    if (seatInfo === undefined) {
+        throw new factory.errors.NotFound('Seat code', 'Seat code does not exist in the screen.');
+    }
+
+    return {
+        stocks: holdStocks,
+        status_after: factory.reservationStatusType.ReservationConfirmed,
+        seat_code: seatCode,
+        seat_grade_name: seatInfo.grade.name,
+        seat_grade_additional_charge: seatInfo.grade.additional_charge,
+        ticket_type: offer.ticket_type,
+        ticket_type_name: offer.ticket_type_name,
+        ticket_type_charge: offer.ticket_type_charge,
+        charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
+        watcher_name: offer.watcher_name,
+        ticket_cancel_charge: offer.ticket_cancel_charge,
+        ticket_ttts_extension: offer.ticket_ttts_extension,
+        rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
+        payment_no: paymentNo
+    };
 }
 
 /**
@@ -412,20 +376,26 @@ export function cancel(
     };
 }
 
+/**
+ * 仮予約データから在庫確保を取り消す
+ * @param {factory.action.authorize.seatReservation.ITmpReservation[]} tmpReservations 仮予約リスト
+ */
 async function removeTmpReservations(tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[]) {
     const stockRepo = new StockRepo(mongoose.connection);
 
     await Promise.all(tmpReservations.map(async (tmpReservation) => {
-        try {
-            await stockRepo.stockModel.findByIdAndUpdate(
-                tmpReservation.stock,
-                {
-                    $set: { availability: factory.itemAvailability.InStock },
-                    $unset: { holder: 1 }
-                }
-            ).exec();
-        } catch (error) {
-            // no op
-        }
+        await Promise.all(tmpReservation.stocks.map(async (stock) => {
+            try {
+                await stockRepo.stockModel.findByIdAndUpdate(
+                    stock.id,
+                    {
+                        $set: { availability: stock.availability_before },
+                        $unset: { holder: 1 }
+                    }
+                ).exec();
+            } catch (error) {
+                // no op
+            }
+        }));
     }));
 }

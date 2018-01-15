@@ -409,10 +409,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             qr_str: qrStr,
             transaction: transaction.id,
             order_number: orderNumber,
-            stock: tmpReservation.stock,
-            stock_availability_before: tmpReservation.stock_availability_before,
-            stock_availability_after: tmpReservation.stock_availability_after,
-
+            stocks: tmpReservation.stocks,
             status: tmpReservation.status_after,
 
             seat_code: tmpReservation.seat_code,
@@ -475,8 +472,6 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             watcher_name: tmpReservation.watcher_name,
             watcher_name_updated_at: now.toDate(),
-
-            reservation_ttts_extension: tmpReservation.reservation_ttts_extension,
 
             purchased_at: now.toDate(),
 

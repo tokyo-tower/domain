@@ -5,7 +5,6 @@ import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
 import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
-import tttsExtensionReservation from './schemaTypes/tttsExtensionReservation';
 import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
@@ -30,18 +29,7 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        stock: {
-            type: String,
-            required: true
-        },
-        stock_availability_before: {
-            type: String,
-            required: true
-        },
-        stock_availability_after: {
-            type: String,
-            required: true
-        },
+        stocks: [mongoose.SchemaTypes.Mixed],
         performance: {
             type: String,
             ref: Performance.modelName,
@@ -55,7 +43,6 @@ const schema = new mongoose.Schema(
             type: String,
             required: true
         },
-        reservation_ttts_extension: tttsExtensionReservation,
 
         performance_day: String,
         performance_open_time: String,

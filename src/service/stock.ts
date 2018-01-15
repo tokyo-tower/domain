@@ -43,17 +43,19 @@ export function cancelSeatReservationAuth(transactionId: string) {
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
-                await stockRepo.stockModel.findOneAndUpdate(
-                    {
-                        _id: tmpReservation.stock,
-                        availability: tmpReservation.stock_availability_after,
-                        holder: transactionId // 対象取引に保持されている
-                    },
-                    {
-                        $set: { availability: tmpReservation.stock_availability_before },
-                        $unset: { holder: 1 }
-                    }
-                ).exec();
+                await Promise.all(tmpReservation.stocks.map(async (stock) => {
+                    await stockRepo.stockModel.findOneAndUpdate(
+                        {
+                            _id: stock.id,
+                            availability: stock.availability_after,
+                            holder: stock.holder // 対象取引に保持されている
+                        },
+                        {
+                            $set: { availability: stock.availability_before },
+                            $unset: { holder: 1 }
+                        }
+                    ).exec();
+                }));
 
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     debug('resetting wheelchair rate limit...');
@@ -68,7 +70,6 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     debug('wheelchair rate limit reset.');
                 }
             }));
-
         }));
     };
 }
