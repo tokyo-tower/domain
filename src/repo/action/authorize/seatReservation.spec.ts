@@ -5,6 +5,7 @@
  * @ignore
  */
 
+import { errors } from '@motionpicture/ttts-factory';
 import { } from 'mocha';
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
@@ -12,7 +13,6 @@ import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
 require('sinon-mongoose');
 
-import { errors } from '../../../factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './seatReservation';
 
 let sandbox: sinon.SinonSandbox;

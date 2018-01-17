@@ -36,25 +36,20 @@ describe('start()', () => {
         const transaction = {
             expires: new Date()
         };
-        const scope = {};
-        const maxCountPerUnit = 999;
 
         const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-        const transactioCountRepo = new ttts.repository.TransactionCount(redis.createClient());
 
         sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
-        sandbox.mock(transactioCountRepo).expects('incr').once().withExactArgs(scope).resolves(maxCountPerUnit - 1);
         sandbox.mock(transactionRepo).expects('startPlaceOrder').once().resolves(transaction);
 
         const result = await ttts.service.transaction.placeOrderInProgress.start({
             expires: transaction.expires,
-            maxCountPerUnit: maxCountPerUnit,
             clientUser: <any>{},
-            scope: <any>scope,
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo, transactioCountRepo);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo);
 
         assert.deepEqual(result, transaction);
         // assert.equal(result.expires, transaction.expires);
@@ -71,28 +66,23 @@ describe('start()', () => {
         const transaction = {
             expires: new Date()
         };
-        const scope = {};
-        const maxCountPerUnit = 999;
         const clientUser = {
             username: 'username'
         };
 
         const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-        const transactioCountRepo = new ttts.repository.TransactionCount(redis.createClient());
 
         sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
-        sandbox.mock(transactioCountRepo).expects('incr').once().withExactArgs(scope).resolves(maxCountPerUnit - 1);
         sandbox.mock(transactionRepo).expects('startPlaceOrder').once().resolves(transaction);
 
         const result = await ttts.service.transaction.placeOrderInProgress.start({
             expires: transaction.expires,
-            maxCountPerUnit: maxCountPerUnit,
             clientUser: <any>clientUser,
-            scope: <any>scope,
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo, transactioCountRepo);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo);
 
         assert.deepEqual(result, transaction);
         sandbox.verify();
@@ -130,8 +120,9 @@ describe('start()', () => {
             passportToken: passportToken,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo);
         assert.deepEqual(result, transaction);
         sandbox.verify();
     });
@@ -162,8 +153,9 @@ describe('start()', () => {
             passportToken: passportToken,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         assert(result instanceof ttts.factory.errors.Argument);
         sandbox.verify();
     });
@@ -200,8 +192,9 @@ describe('start()', () => {
             passportToken: passportToken,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         assert(result instanceof ttts.factory.errors.Argument);
         sandbox.verify();
     });
@@ -216,25 +209,20 @@ describe('start()', () => {
         const transaction = {
             expires: new Date()
         };
-        const scope = undefined;
-        const maxCountPerUnit = 999;
 
         const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-        const transactioCountRepo = new ttts.repository.TransactionCount(redis.createClient());
 
         sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
-        sandbox.mock(transactioCountRepo).expects('incr').never();
         sandbox.mock(transactionRepo).expects('startPlaceOrder').never();
 
         const result = await ttts.service.transaction.placeOrderInProgress.start({
             expires: transaction.expires,
-            scope: <any>scope,
-            maxCountPerUnit: maxCountPerUnit,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo, transactioCountRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         assert(result instanceof ttts.factory.errors.ArgumentNull);
         sandbox.verify();
     });
@@ -249,25 +237,20 @@ describe('start()', () => {
         const transaction = {
             expires: new Date()
         };
-        const scope = {};
-        const maxCountPerUnit = undefined;
 
         const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-        const transactioCountRepo = new ttts.repository.TransactionCount(redis.createClient());
 
         sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
-        sandbox.mock(transactioCountRepo).expects('incr').never();
         sandbox.mock(transactionRepo).expects('startPlaceOrder').never();
 
         const result = await ttts.service.transaction.placeOrderInProgress.start({
             expires: transaction.expires,
-            scope: <any>scope,
-            maxCountPerUnit: maxCountPerUnit,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo, transactioCountRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         assert(result instanceof ttts.factory.errors.ArgumentNull);
         sandbox.verify();
     });
@@ -282,25 +265,20 @@ describe('start()', () => {
         const transaction = {
             expires: new Date()
         };
-        const scope = {};
-        const maxCountPerUnit = 999;
 
         const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-        const transactioCountRepo = new ttts.repository.TransactionCount(redis.createClient());
 
         sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
-        sandbox.mock(transactioCountRepo).expects('incr').never();
         sandbox.mock(transactionRepo).expects('startPlaceOrder').never();
 
         const result = await ttts.service.transaction.placeOrderInProgress.start({
             expires: transaction.expires,
-            scope: <any>scope,
-            maxCountPerUnit: maxCountPerUnit,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         console.error(result);
         assert(result instanceof ttts.factory.errors.ArgumentNull);
         sandbox.verify();
@@ -337,8 +315,9 @@ describe('start()', () => {
             passportToken: passportToken,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         assert.deepEqual(result, startResult);
         sandbox.verify();
     });
@@ -374,8 +353,9 @@ describe('start()', () => {
             passportToken: passportToken,
             clientUser: <any>{},
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo).catch((err) => err);
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo).catch((err) => err);
         assert(result instanceof ttts.factory.errors.AlreadyInUse);
         sandbox.verify();
     });
@@ -390,25 +370,20 @@ describe('start()', () => {
         const transaction = {
             expires: new Date()
         };
-        const scope = {};
-        const maxCountPerUnit = 999;
 
         const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-        const transactioCountRepo = new ttts.repository.TransactionCount(redis.createClient());
 
         sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
-        sandbox.mock(transactioCountRepo).expects('incr').once().withExactArgs(scope).resolves(maxCountPerUnit + 1);
         sandbox.mock(transactionRepo).expects('startPlaceOrder').never();
 
         const startError = await ttts.service.transaction.placeOrderInProgress.start({
             expires: transaction.expires,
-            maxCountPerUnit: maxCountPerUnit,
             clientUser: <any>{},
-            scope: <any>scope,
             agentId: agentId,
-            sellerId: seller.id
-        })(organizationRepo, transactionRepo, transactioCountRepo)
+            sellerIdentifier: seller.id,
+            purchaserGroup: ttts.factory.person.Group.Customer
+        })(transactionRepo, organizationRepo)
             .catch((err) => err);
 
         assert(startError instanceof ttts.factory.errors.RateLimitExceeded);
@@ -604,26 +579,24 @@ describe('confirm()', () => {
         };
 
         const creditCardAuthorizeActionRepo = new ttts.repository.action.authorize.CreditCard(ttts.mongoose.connection);
-        const mvtkAuthorizeActionRepo = new ttts.repository.action.authorize.Mvtk(ttts.mongoose.connection);
         const seatReservationAuthorizeActionRepo = new ttts.repository.action.authorize.SeatReservation(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const tokenRepo = new ttts.repository.Token(redis.createClient());
 
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(creditCardAuthorizeActionRepo).expects('findByTransactionId').once()
             .withExactArgs(transaction.id).resolves(creditCardAuthorizeActions);
-        sandbox.mock(mvtkAuthorizeActionRepo).expects('findByTransactionId').once()
-            .withExactArgs(transaction.id).resolves([]);
         sandbox.mock(seatReservationAuthorizeActionRepo).expects('findByTransactionId').once()
             .withExactArgs(transaction.id).resolves(seatReservationAuthorizeActions);
         sandbox.mock(ttts.factory.order).expects('createFromPlaceOrderTransaction').once().returns(order);
-        sandbox.mock(ttts.factory.ownershipInfo).expects('create').exactly(order.acceptedOffers.length).returns([]);
         sandbox.mock(transactionRepo).expects('confirmPlaceOrder').once().withArgs(transaction.id).resolves();
 
-        const result = await ttts.service.transaction.placeOrderInProgress.confirm(
-            agent.id,
-            transaction.id
-        )(creditCardAuthorizeActionRepo, mvtkAuthorizeActionRepo, seatReservationAuthorizeActionRepo, transactionRepo);
+        const result = await ttts.service.transaction.placeOrderInProgress.confirm({
+            agentId: agent.id,
+            transactionId: transaction.id,
+            paymentMethod: ttts.factory.paymentMethodType.CreditCard
+        })(transactionRepo, creditCardAuthorizeActionRepo, seatReservationAuthorizeActionRepo, tokenRepo);
 
         assert.deepEqual(result, order);
         sandbox.verify();
@@ -670,26 +643,24 @@ describe('confirm()', () => {
         ];
 
         const creditCardAuthorizeActionRepo = new ttts.repository.action.authorize.CreditCard(ttts.mongoose.connection);
-        const mvtkAuthorizeActionRepo = new ttts.repository.action.authorize.Mvtk(ttts.mongoose.connection);
         const seatReservationAuthorizeActionRepo = new ttts.repository.action.authorize.SeatReservation(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const tokenRepo = new ttts.repository.Token(redis.createClient());
 
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(creditCardAuthorizeActionRepo).expects('findByTransactionId').once()
             .withExactArgs(transaction.id).resolves(authorizeActions);
-        sandbox.mock(mvtkAuthorizeActionRepo).expects('findByTransactionId').once()
-            .withExactArgs(transaction.id).resolves(authorizeActions);
         sandbox.mock(seatReservationAuthorizeActionRepo).expects('findByTransactionId').once()
             .withExactArgs(transaction.id).resolves(authorizeActions);
         sandbox.mock(ttts.factory.order).expects('createFromPlaceOrderTransaction').never();
-        sandbox.mock(ttts.factory.ownershipInfo).expects('create').never();
         sandbox.mock(transactionRepo).expects('confirmPlaceOrder').never();
 
-        const result = await ttts.service.transaction.placeOrderInProgress.confirm(
-            agent.id,
-            transaction.id
-        )(creditCardAuthorizeActionRepo, mvtkAuthorizeActionRepo, seatReservationAuthorizeActionRepo, transactionRepo)
+        const result = await ttts.service.transaction.placeOrderInProgress.confirm({
+            agentId: agent.id,
+            transactionId: transaction.id,
+            paymentMethod: ttts.factory.paymentMethodType.CreditCard
+        })(transactionRepo, creditCardAuthorizeActionRepo, seatReservationAuthorizeActionRepo, tokenRepo)
             .catch((err) => err);
 
         assert(result instanceof ttts.factory.errors.Argument);
@@ -713,23 +684,22 @@ describe('confirm()', () => {
         };
 
         const creditCardAuthorizeActionRepo = new ttts.repository.action.authorize.CreditCard(ttts.mongoose.connection);
-        const mvtkAuthorizeActionRepo = new ttts.repository.action.authorize.Mvtk(ttts.mongoose.connection);
         const seatReservationAuthorizeActionRepo = new ttts.repository.action.authorize.SeatReservation(ttts.mongoose.connection);
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const tokenRepo = new ttts.repository.Token(redis.createClient());
 
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(creditCardAuthorizeActionRepo).expects('findByTransactionId').never();
-        sandbox.mock(mvtkAuthorizeActionRepo).expects('findByTransactionId').never();
         sandbox.mock(seatReservationAuthorizeActionRepo).expects('findByTransactionId').never();
         sandbox.mock(ttts.factory.order).expects('createFromPlaceOrderTransaction').never();
-        sandbox.mock(ttts.factory.ownershipInfo).expects('create').never();
         sandbox.mock(transactionRepo).expects('confirmPlaceOrder').never();
 
-        const result = await ttts.service.transaction.placeOrderInProgress.confirm(
-            agent.id,
-            transaction.id
-        )(creditCardAuthorizeActionRepo, mvtkAuthorizeActionRepo, seatReservationAuthorizeActionRepo, transactionRepo)
+        const result = await ttts.service.transaction.placeOrderInProgress.confirm({
+            agentId: agent.id,
+            transactionId: transaction.id,
+            paymentMethod: ttts.factory.paymentMethodType.CreditCard
+        })(transactionRepo, creditCardAuthorizeActionRepo, seatReservationAuthorizeActionRepo, tokenRepo)
             .catch((err) => err);
 
         assert(result instanceof ttts.factory.errors.Forbidden);

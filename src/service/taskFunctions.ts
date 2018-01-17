@@ -9,6 +9,7 @@ import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
 
+import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
@@ -49,24 +50,31 @@ export function cancelSeatReservation(
 export function cancelCreditCard(
     data: factory.task.cancelCreditCard.IData
 ): IOperation<void> {
-    return async () => {
-        await SalesService.cancelCreditCardAuth(data.transactionId);
+    return async (connection: mongoose.Connection) => {
+        await SalesService.cancelCreditCardAuth(data.transactionId)(
+            new CreditCardAuthorizeActionRepo(connection)
+        );
     };
 }
 
 export function settleSeatReservation(
     data: factory.task.settleSeatReservation.IData
 ): IOperation<void> {
-    return async () => {
-        await StockService.transferSeatReservation(data.transactionId);
+    return async (connection: mongoose.Connection) => {
+        await StockService.transferSeatReservation(data.transactionId)(
+            new TransactionRepo(connection),
+            new ReservationRepo(connection)
+        );
     };
 }
 
 export function settleCreditCard(
     data: factory.task.settleCreditCard.IData
 ): IOperation<void> {
-    return async () => {
-        await SalesService.settleCreditCardAuth(data.transactionId);
+    return async (connection: mongoose.Connection) => {
+        await SalesService.settleCreditCardAuth(data.transactionId)(
+            new TransactionRepo(connection)
+        );
     };
 }
 

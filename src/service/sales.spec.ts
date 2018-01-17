@@ -1,3 +1,5 @@
+// tslint:disable:no-implicit-dependencies
+
 /**
  * sales service test
  * @ignore
@@ -95,32 +97,6 @@ describe('settleCreditCardAuth()', () => {
         sandbox.mock(ttts.GMO.services.credit).expects('alterTran').never();
 
         const result = await ttts.service.sales.settleCreditCardAuth(existingTransaction.id)(transactionRepo);
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('cancelMvtk()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('何もしないので、エラーにならないはず', async () => {
-        const result = await ttts.service.sales.cancelMvtk(existingTransaction.id)();
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('settleMvtk()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('何もしないので、エラーにならないはず', async () => {
-        const result = await ttts.service.sales.settleMvtk(existingTransaction.id)();
 
         assert.equal(result, undefined);
         sandbox.verify();

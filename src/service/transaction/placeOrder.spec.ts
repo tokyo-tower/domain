@@ -1,3 +1,5 @@
+// tslint:disable:no-implicit-dependencies
+
 /**
  * placeOrder transaction service test
  * @ignore
@@ -220,107 +222,6 @@ describe('sendEmail', () => {
         )(taskRepo, transactionRepo).catch((err) => err);
 
         assert(result instanceof ttts.factory.errors.Forbidden);
-        sandbox.verify();
-    });
-});
-
-describe('download', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('DBが正常であれば、成立取引をダウンロードできるはず', async () => {
-        const conditions = {
-            startFrom: new Date(),
-            startThrough: new Date()
-        };
-        const transactions = [{
-            id: 'id',
-            status: ttts.factory.transactionStatusType.Confirmed,
-            seller: {},
-            agent: {},
-            startDate: new Date(),
-            endDate: new Date(),
-            object: {
-                customerContact: {}
-            },
-            result: {
-                order: {
-                    confirmationNumber: 123,
-                    acceptedOffers: [{
-                        itemOffered: {
-                            reservationFor: {
-                                superEvent: {
-                                    workPerformed: {},
-                                    location: {
-                                        name: {}
-                                    }
-                                },
-                                startDate: new Date(),
-                                endDate: new Date(),
-                                location: {
-                                    name: {}
-                                }
-                            },
-                            reservedTicket: {
-                                ticketedSeat: {},
-                                coaTicketInfo: {}
-                            }
-                        }
-                    }],
-                    paymentMethods: [{
-                        name: 'name',
-                        paymentMethodId: 'paymentMethodId'
-                    }],
-                    discounts: [{
-                        name: 'name',
-                        discountCode: 'discountCode',
-                        discount: 123
-                    }]
-                }
-            }
-        }];
-
-        const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('searchPlaceOrder').once().resolves(transactions);
-
-        const result = await ttts.service.transaction.placeOrder.download(
-            conditions,
-            'csv'
-        )(transactionRepo);
-
-        assert(typeof result === 'string');
-        sandbox.verify();
-    });
-
-    it('DBが正常であれば、成立以外の取引をダウンロードできるはず', async () => {
-        const conditions = {
-            startFrom: new Date(),
-            startThrough: new Date()
-        };
-        const transactions = [{
-            id: 'id',
-            status: ttts.factory.transactionStatusType.Confirmed,
-            seller: {},
-            agent: {},
-            startDate: new Date(),
-            endDate: new Date(),
-            object: {
-                customerContact: {}
-            }
-        }];
-
-        const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-
-        sandbox.mock(transactionRepo).expects('searchPlaceOrder').once().resolves(transactions);
-
-        const result = await ttts.service.transaction.placeOrder.download(
-            conditions,
-            'csv'
-        )(transactionRepo);
-
-        assert(typeof result === 'string');
         sandbox.verify();
     });
 });
