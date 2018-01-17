@@ -77,18 +77,18 @@ export class RedisRepository {
      * チェックディジットを求める2
      * @param {string} source
      */
-    public static GET_CHECK_DIGIT2(source: string): number {
-        if (source.length !== RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO) {
-            throw new factory.errors.Argument('source', `Source length must be ${RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO}.`);
-        }
+    // public static GET_CHECK_DIGIT2(source: string): number {
+    //     if (source.length !== RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO) {
+    //         throw new factory.errors.Argument('source', `Source length must be ${RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO}.`);
+    //     }
 
-        let sum = 0;
-        source.split('').reverse().forEach((digitNumber, index) => {
-            sum += parseInt(digitNumber, 10) * RedisRepository.CHECK_DIGIT_WEIGHTS[index];
-        });
+    //     let sum = 0;
+    //     source.split('').reverse().forEach((digitNumber, index) => {
+    //         sum += parseInt(digitNumber, 10) * RedisRepository.CHECK_DIGIT_WEIGHTS[index];
+    //     });
 
-        return 9 - (sum % 9);
-    }
+    //     return 9 - (sum % 9);
+    // }
 
     /**
      * 購入番号の有効性をチェックする
@@ -143,7 +143,7 @@ export class RedisRepository {
      */
     public async publish(date: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
-            if (!/\d{8}/.test(date)) {
+            if (!/^\d{8}$/.test(date)) {
                 throw new factory.errors.Argument('date', 'Invalid date.');
             }
 
