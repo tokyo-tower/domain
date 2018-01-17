@@ -5,6 +5,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+
+## v12.0.0 - 2018-01-17
+### Added
 - 注文取引サービス、在庫状況サービス、在庫サービス、売上サービス、通知サービス、タスクサービスを追加。
 - パフォーマンスに対する返品タスクを追加。
 - パフォーマンスと在庫保管メソッドをレポジトリーに追加。
@@ -32,8 +46,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文取引結果に印刷トークンを追加。
 - 返品タスクに注文ステータス変更処理を追加。
 
-### Deprecated
-
 ### Removed
 - MongoDBからclientsコレクションを削除。
 - MongoDBからcustomer_cancel_requestsコレクションを削除。
@@ -43,9 +55,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 - パフォーマンス残席数が0にならないバグを解消。
-
-### Security
-
 
 ## v11.2.0 - 2017-07-24
 ### Added
