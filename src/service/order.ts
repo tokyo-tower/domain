@@ -386,25 +386,63 @@ async function createEmailMessage4sellerReason(
         // htmlToText: false
     });
 
+    // 券種ごとに合計枚数算出
+    const ticketInfos: {
+        [ticketTypeId: string]: {
+            name: {
+                ja: string;
+                en: string;
+            };
+            charge: string;
+            count: number;
+        };
+    } = {};
+    transactionResult.eventReservations.forEach((r) => {
+        // チケットタイプごとにチケット情報セット
+        if (ticketInfos[r.ticket_type] === undefined) {
+            ticketInfos[r.ticket_type] = {
+                name: r.ticket_type_name,
+                charge: `\\${numeral(r.charge).format('0,0')}`,
+                count: 0
+            };
+        }
+
+        ticketInfos[r.ticket_type].count += 1;
+    });
+    // 券種ごとの表示情報編集 (sort順を変えないよう同期Loop:"for of")
+    const ticketInfoJa = Object.keys(ticketInfos).map((ticketTypeId) => {
+        const ticketInfo = ticketInfos[ticketTypeId];
+
+        return `${ticketInfo.name.ja} ${ticketInfo.charge} × ${ticketInfo.count}枚`;
+    }).join('\n');
+    const ticketInfoEn = Object.keys(ticketInfos).map((ticketTypeId) => {
+        const ticketInfo = ticketInfos[ticketTypeId];
+
+        return `${ticketInfo.name.en} ${ticketInfo.charge} × ${ticketInfo.count} ticket(s)`;
+    }).join('\n');
+
     const message = await email.render('returnOrderBySeller', {
         purchaserName: reservation.purchaser_name,
         paymentNo: reservation.payment_no,
         day: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('YYYY/MM/DD'),
         startTime: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('HH:mm'),
-        amount: numeral(transactionResult.order.price).format('0,0')
+        amount: numeral(transactionResult.order.price).format('0,0'),
+        numberOfReservations: transactionResult.eventReservations.length,
+        ticketInfoJa,
+        ticketInfoEn
     });
     debug('message:', message);
 
     return {
         sender: {
-            name: 'TTTS_EVENT_NAME Online Ticket [dev]',
-            email: 'noreply@default.ttts.motionpicture.jp'
+            name: 'Tokyo Tower TOP DECK TOUR Online Ticket',
+            email: 'noreply@tokyotower.co.jp'
         },
         toRecipient: {
             name: reservation.purchaser_name,
             email: reservation.purchaser_email
         },
-        about: '東京タワー TOP DECK Ticket 返金のお知らせ (Tokyo Tower TOP DECK Ticket Refund notice)',
+        about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Top Deck Tour)',
         text: message
     };
 }
