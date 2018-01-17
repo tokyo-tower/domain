@@ -28,4 +28,11 @@ const schema = new mongoose.Schema(
         toObject: { getters: true }
     });
 
-export default mongoose.model('Theater', schema);
+export default mongoose.model('Theater', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });

@@ -57,4 +57,11 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('Screen', schema);
+export default mongoose.model('Screen', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });

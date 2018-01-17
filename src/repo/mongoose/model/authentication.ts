@@ -29,4 +29,11 @@ const schema = new mongoose.Schema(
     }
 );
 
-export default mongoose.model('Authentication', schema);
+export default mongoose.model('Authentication', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });

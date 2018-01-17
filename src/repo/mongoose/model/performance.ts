@@ -83,4 +83,16 @@ schema.index(
 schema.index({ start_date: 1 });
 schema.index({ end_date: 1 });
 
-export default mongoose.model('Performance', schema);
+schema.index(
+    { canceled: 1, day: 1, start_time: 1, start_date: 1 },
+    { name: 'searchPerformances' }
+);
+
+export default mongoose.model('Performance', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });

@@ -150,4 +150,41 @@ schema.index(
     { performance_day: 1, status: 1 }
 );
 
-export default mongoose.model('Reservation', schema);
+// 予約のQR文字列はグローバルユニーク
+schema.index(
+    {
+        qr_str: 1
+    },
+    {
+        unique: true
+    }
+);
+
+// 予約検索
+schema.index(
+    {
+        performance: 1,
+        purchaser_group: 1
+    }
+);
+
+// 予約検索
+schema.index(
+    {
+        status: 1,
+        performance_day: 1,
+        performance_start_time: 1,
+        payment_no: 1,
+        ticket_type: 1
+    },
+    { name: 'findAndSortReservations' }
+);
+
+export default mongoose.model('Reservation', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });

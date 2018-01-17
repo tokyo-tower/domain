@@ -223,6 +223,38 @@ schema.index(
     }
 );
 
+// 管理アプリケーションでの取引検索
+schema.index(
+    {
+        'result.eventReservations.payment_no': 1,
+        'result.eventReservations.performance_day': 1,
+        typeOf: 1
+    },
+    {
+        name: 'findPlaceOrderTransactionByReservationPaymentNo',
+        partialFilterExpression: {
+            typeOf: factory.transactionType.PlaceOrder,
+            result: { $exists: true }
+        }
+    }
+);
+
+// 管理アプリケーションでの取引検索
+schema.index(
+    {
+        'result.order.orderInquiryKey.paymentNo': 1,
+        'result.order.orderInquiryKey.performanceDay': 1,
+        typeOf: 1
+    },
+    {
+        name: 'findPlaceOrderTransactionByInquiryKeyPaymentNo',
+        partialFilterExpression: {
+            typeOf: factory.transactionType.PlaceOrder,
+            result: { $exists: true }
+        }
+    }
+);
+
 export default mongoose.model('Transaction', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

@@ -57,4 +57,19 @@ schema.index(
     }
 );
 
-export default mongoose.model('Stock', schema);
+// パフォーマンスの在庫引き当て
+schema.index(
+    {
+        availability: 1,
+        performance: 1
+    }
+);
+
+export default mongoose.model('Stock', schema)
+    .on('index', (error) => {
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (error !== undefined) {
+            console.error(error);
+        }
+    });
