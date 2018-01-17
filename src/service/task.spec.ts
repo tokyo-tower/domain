@@ -1,9 +1,12 @@
+// tslint:disable:no-implicit-dependencies
+
 /**
- * stock service test
+ * task service test
  * @ignore
  */
 
 import * as assert from 'power-assert';
+import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
 import * as ttts from '../index';
 
@@ -32,7 +35,7 @@ describe('executeByName()', () => {
         sandbox.mock(TaskFunctionsService).expects(task.name).once().withArgs(task.data).returns(async () => Promise.resolve());
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, ttts.factory.taskStatus.Executed).resolves();
 
-        const result = await ttts.service.task.executeByName(task.name)(taskRepo, ttts.mongoose.connection);
+        const result = await ttts.service.task.executeByName(task.name)(taskRepo, ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -46,7 +49,7 @@ describe('executeByName()', () => {
             .withArgs(taskName).rejects(new ttts.factory.errors.NotFound('task'));
         sandbox.mock(ttts.service.task).expects('execute').never();
 
-        const result = await ttts.service.task.executeByName(taskName)(taskRepo, ttts.mongoose.connection);
+        const result = await ttts.service.task.executeByName(taskName)(taskRepo, ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -113,7 +116,7 @@ describe('execute()', () => {
         sandbox.mock(TaskFunctionsService).expects(task.name).once().withArgs(task.data).returns(async () => Promise.resolve());
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, ttts.factory.taskStatus.Executed).resolves();
 
-        const result = await ttts.service.task.execute(<any>task)(taskRepo, ttts.mongoose.connection);
+        const result = await ttts.service.task.execute(<any>task)(taskRepo, ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -130,7 +133,7 @@ describe('execute()', () => {
 
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, task.status).resolves();
 
-        const result = await ttts.service.task.execute(<any>task)(taskRepo, ttts.mongoose.connection);
+        const result = await ttts.service.task.execute(<any>task)(taskRepo, ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();

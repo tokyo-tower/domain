@@ -156,6 +156,7 @@ describe('confirmPlaceOrder()', () => {
     it('取引が存在すれば、エラーにならないはず', async () => {
         const transactionId = 'transactionId';
         const endDate = new Date();
+        const paymentMethod = ttts.factory.paymentMethodType.CreditCard;
         const authorizeActions: any[] = [];
         const transactionResult = {};
 
@@ -165,7 +166,7 @@ describe('confirmPlaceOrder()', () => {
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(doc);
 
-        const result = await repository.confirmPlaceOrder(transactionId, endDate, authorizeActions, <any>transactionResult);
+        const result = await repository.confirmPlaceOrder(transactionId, endDate, paymentMethod, authorizeActions, <any>transactionResult);
         assert.equal(typeof result, 'object');
         sandbox.verify();
     });
@@ -173,6 +174,7 @@ describe('confirmPlaceOrder()', () => {
     it('取引が存在しなければ、NotFoundエラーになるはず', async () => {
         const transactionId = 'transactionId';
         const endDate = new Date();
+        const paymentMethod = ttts.factory.paymentMethodType.CreditCard;
         const authorizeActions: any[] = [];
         const transactionResult = {};
 
@@ -181,7 +183,7 @@ describe('confirmPlaceOrder()', () => {
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
 
-        const result = await repository.confirmPlaceOrder(transactionId, endDate, authorizeActions, <any>transactionResult)
+        const result = await repository.confirmPlaceOrder(transactionId, endDate, paymentMethod, authorizeActions, <any>transactionResult)
             .catch((err) => err);
         assert(result instanceof ttts.factory.errors.NotFound);
         sandbox.verify();

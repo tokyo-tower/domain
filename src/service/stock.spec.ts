@@ -6,6 +6,7 @@
  */
 
 import * as assert from 'power-assert';
+import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
 import * as ttts from '../index';
 
@@ -96,12 +97,15 @@ describe('cancelSeatReservationAuth()', () => {
             }
         ];
         const authorizeActionRepo = new ttts.repository.action.authorize.SeatReservation(ttts.mongoose.connection);
+        const stockRepo = new ttts.repository.Stock(ttts.mongoose.connection);
+        const rateLimitRepo = new ttts.repository.rateLimit.TicketTypeCategory(redis.createClient());
 
         sandbox.mock(authorizeActionRepo).expects('findByTransactionId').once()
             .withExactArgs(existingTransaction.id).resolves(authorizeActions);
-        sandbox.mock(ttts.COA.services.reserve).expects('delTmpReserve').once().resolves();
 
-        const result = await ttts.service.stock.cancelSeatReservationAuth(existingTransaction.id)(authorizeActionRepo);
+        const result = await ttts.service.stock.cancelSeatReservationAuth(existingTransaction.id)(
+            authorizeActionRepo, stockRepo, rateLimitRepo
+        );
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -115,23 +119,24 @@ describe('transferSeatReservation()', () => {
 
     it('COA未本予約であれば、本予約が実行されるはず', async () => {
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const reservationRepo = new ttts.repository.Reservation(ttts.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findPlaceOrderById').once()
             .withArgs(existingTransaction.id).resolves(existingTransaction);
-        sandbox.mock(ttts.COA.services.reserve).expects('stateReserve').once()
-            .withExactArgs({
-                theaterCode: '123',
-                reserveNum: 123,
-                telNum: '09012345678' // 電話番号は数字のみで本予約されるはず
-            }).resolves(null);
-        sandbox.mock(ttts.COA.services.reserve).expects('updReserve').once()
-            // 予約金額はOrderのpriceのはず
-            .withArgs(sinon.match({ reserveAmount: existingTransaction.result.order.price }))
-            .resolves();
+        // sandbox.mock(ttts.COA.services.reserve).expects('stateReserve').once()
+        //     .withExactArgs({
+        //         theaterCode: '123',
+        //         reserveNum: 123,
+        //         telNum: '09012345678' // 電話番号は数字のみで本予約されるはず
+        //     }).resolves(null);
+        // sandbox.mock(ttts.COA.services.reserve).expects('updReserve').once()
+        //     // 予約金額はOrderのpriceのはず
+        //     .withArgs(sinon.match({ reserveAmount: existingTransaction.result.order.price }))
+        //     .resolves();
 
         const result = await ttts.service.stock.transferSeatReservation(
             existingTransaction.id
-        )(transactionRepo);
+        )(transactionRepo, reservationRepo);
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -145,15 +150,16 @@ describe('transferSeatReservation()', () => {
             }
         };
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const reservationRepo = new ttts.repository.Reservation(ttts.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findPlaceOrderById').once()
             .withArgs(transaction.id).resolves(transaction);
-        sandbox.mock(ttts.COA.services.reserve).expects('stateReserve').never();
-        sandbox.mock(ttts.COA.services.reserve).expects('updReserve').never();
+        // sandbox.mock(ttts.COA.services.reserve).expects('stateReserve').never();
+        // sandbox.mock(ttts.COA.services.reserve).expects('updReserve').never();
 
         const result = await ttts.service.stock.transferSeatReservation(
             transaction.id
-        )(transactionRepo).catch((err) => err);
+        )(transactionRepo, reservationRepo).catch((err) => err);
 
         assert(result instanceof ttts.factory.errors.NotImplemented);
         sandbox.verify();
@@ -184,15 +190,16 @@ describe('transferSeatReservation()', () => {
             }
         };
         const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const reservationRepo = new ttts.repository.Reservation(ttts.mongoose.connection);
 
         sandbox.mock(transactionRepo).expects('findPlaceOrderById').once()
             .withArgs(transaction.id).resolves(transaction);
-        sandbox.mock(ttts.COA.services.reserve).expects('stateReserve').never();
-        sandbox.mock(ttts.COA.services.reserve).expects('updReserve').never();
+        // sandbox.mock(ttts.COA.services.reserve).expects('stateReserve').never();
+        // sandbox.mock(ttts.COA.services.reserve).expects('updReserve').never();
 
         const transferSeatReservationError = await ttts.service.stock.transferSeatReservation(
             transaction.id
-        )(transactionRepo).catch((err) => err);
+        )(transactionRepo, reservationRepo).catch((err) => err);
 
         assert(transferSeatReservationError instanceof ttts.factory.errors.Argument);
         sandbox.verify();

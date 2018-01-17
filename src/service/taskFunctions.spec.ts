@@ -1,9 +1,12 @@
+// tslint:disable:no-implicit-dependencies
+
 /**
  * taskFunctions test
  * @ignore
  */
 
 import * as assert from 'power-assert';
+import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
 import * as ttts from '../index';
 
@@ -28,7 +31,7 @@ describe('TaskFunctionsService.sendEmailNotification()', () => {
         sandbox.mock(ttts.service.notification).expects('sendEmail').once()
             .withArgs(data.emailMessage).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.sendEmailNotification(<any>data)(ttts.mongoose.connection);
+        const result = await TaskFunctionsService.sendEmailNotification(<any>data)(ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -48,7 +51,7 @@ describe('TaskFunctionsService.cancelSeatReservation()', () => {
         sandbox.mock(ttts.service.stock).expects('cancelSeatReservationAuth').once()
             .withArgs(data.transactionId).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.cancelSeatReservation(<any>data)(ttts.mongoose.connection);
+        const result = await TaskFunctionsService.cancelSeatReservation(<any>data)(ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -68,27 +71,7 @@ describe('TaskFunctionsService.cancelCreditCard()', () => {
         sandbox.mock(ttts.service.sales).expects('cancelCreditCardAuth').once()
             .withArgs(data.transactionId).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.cancelCreditCard(<any>data)(ttts.mongoose.connection);
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('TaskFunctionsService.cancelMvtk()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('ムビチケキャンセルサービスが正常であれば、エラーにならないはず', async () => {
-        const data = {
-            transactionId: 'transactionId'
-        };
-
-        sandbox.mock(ttts.service.sales).expects('cancelMvtk').once()
-            .withArgs(data.transactionId).returns(async () => Promise.resolve());
-
-        const result = await TaskFunctionsService.cancelMvtk(<any>data)(ttts.mongoose.connection);
+        const result = await TaskFunctionsService.cancelCreditCard(<any>data)(ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -108,7 +91,7 @@ describe('TaskFunctionsService.settleSeatReservation()', () => {
         sandbox.mock(ttts.service.stock).expects('transferSeatReservation').once()
             .withArgs(data.transactionId).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.settleSeatReservation(<any>data)(ttts.mongoose.connection);
+        const result = await TaskFunctionsService.settleSeatReservation(<any>data)(ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -128,27 +111,7 @@ describe('TaskFunctionsService.settleCreditCard()', () => {
         sandbox.mock(ttts.service.sales).expects('settleCreditCardAuth').once()
             .withArgs(data.transactionId).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.settleCreditCard(<any>data)(ttts.mongoose.connection);
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('TaskFunctionsService.settleMvtk()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('ムビチケ確定サービスが正常であれば、エラーにならないはず', async () => {
-        const data = {
-            transactionId: 'transactionId'
-        };
-
-        sandbox.mock(ttts.service.sales).expects('settleMvtk').once()
-            .withArgs(data.transactionId).returns(async () => Promise.resolve());
-
-        const result = await TaskFunctionsService.settleMvtk(<any>data)(ttts.mongoose.connection);
+        const result = await TaskFunctionsService.settleCreditCard(<any>data)(ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -168,27 +131,7 @@ describe('TaskFunctionsService.createOrder()', () => {
         sandbox.mock(ttts.service.order).expects('createFromTransaction').once()
             .withArgs(data.transactionId).returns(async () => Promise.resolve());
 
-        const result = await TaskFunctionsService.createOrder(<any>data)(ttts.mongoose.connection);
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-});
-
-describe('TaskFunctionsService.createOwnershipInfos()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('所有権作成サービスが正常であれば、エラーにならないはず', async () => {
-        const data = {
-            transactionId: 'transactionId'
-        };
-
-        sandbox.mock(ttts.service.ownershipInfo).expects('createFromTransaction').once()
-            .withArgs(data.transactionId).returns(async () => Promise.resolve());
-
-        const result = await TaskFunctionsService.createOwnershipInfos(<any>data)(ttts.mongoose.connection);
+        const result = await TaskFunctionsService.createOrder(<any>data)(ttts.mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();

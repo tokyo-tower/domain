@@ -6,7 +6,6 @@
 
 import * as createDebug from 'debug';
 import * as moment from 'moment';
-import * as mongoose from 'mongoose';
 
 import * as factory from '@motionpicture/ttts-factory';
 
@@ -81,15 +80,14 @@ export function cancelSeatReservationAuth(transactionId: string) {
  * @memberof service.stock
  * @param {string} transactionId 取引ID
  */
-export async function transferSeatReservation(transactionId: string) {
-    const transactionRepository = new TransactionRepo(mongoose.connection);
-    const reservationRepo = new ReservationRepo(mongoose.connection);
+export function transferSeatReservation(transactionId: string) {
+    return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo) => {
+        const transaction = await transactionRepo.findPlaceOrderById(transactionId);
+        const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
 
-    const transaction = await transactionRepository.findPlaceOrderById(transactionId);
-    const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
-
-    await Promise.all(eventReservations.map(async (eventReservation) => {
-        /// 予約データを作成する
-        await reservationRepo.saveEventReservation(eventReservation);
-    }));
+        await Promise.all(eventReservations.map(async (eventReservation) => {
+            /// 予約データを作成する
+            await reservationRepo.saveEventReservation(eventReservation);
+        }));
+    };
 }
