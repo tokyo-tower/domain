@@ -19,6 +19,7 @@ import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithA
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
+import { MongoRepository as SendGridEventRepo } from './repo/sendGridEvent';
 import { MongoRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
@@ -106,6 +107,10 @@ export class PerformanceWithAggregation extends PerformanceWithAggregationRepo {
  * 予約リポジトリー
  */
 export class Reservation extends ReservationRepo { }
+/**
+ * SendGridイベントリポジトリー
+ */
+export class SendGridEvent extends SendGridEventRepo { }
 /**
  * 在庫リポジトリー
  */
