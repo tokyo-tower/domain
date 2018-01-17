@@ -1,52 +1,57 @@
+<img src="https://motionpicture.jp/images/common/logo_01.svg" alt="motionpicture" title="motionpicture" align="right" height="56" width="98"/>
+
 # 東京タワードメインモデル for Node.js
 
-東京タワーオンラインチケットシステムのドメインモデルをnode.jsで使いやすいようにまとめたパッケージです。
+[![CircleCI](https://circleci.com/gh/motionpicture/ttts-domain.svg?style=svg&circle-token=2659057577162e85a2d91f193282f94ac7780afc)](https://circleci.com/gh/motionpicture/ttts-domain)
 
-# Features
+node.jsで使用するための東京タワーオンラインチケットシステムのドメインモデルパッケージです。
 
-# Getting Started
 
-## Install
+## Table of contents
+
+* [Usage](#usage)
+* [Code Samples](#code-samples)
+* [Jsdoc](#jsdoc)
+* [License](#license)
+
+
+## Usage
+
+### Install
 
 ```shell
 npm install --save @motionpicture/ttts-domain
 ```
 
-## Usage
-
 ```Javascript
-var TTTS = require("@motionpicture/ttts-domain");
+var ttts = require("@motionpicture/ttts-domain");
 ```
-
-前提として、mongooseでdefault connectionを確保することと、redis情報をセットすることが必要。
 
 * mongoose default connection
 ```Javascript
-mongoose.connect();
+ttts.mongoose.connect();
 ```
 
-* set environment variables
-```shell
-set TTTS_PERFORMANCE_STATUSES_REDIS_PORT=*****
-set TTTS_PERFORMANCE_STATUSES_REDIS_HOST=*****
-set TTTS_PERFORMANCE_STATUSES_REDIS_KEY=*****
-```
+### Environment variables
+
+| Name                | Required | Value         | Purpose          |
+| ------------------- | -------- | ------------- | ---------------- |
+| `DEBUG`             | false    | ttts-domain:* | Debug            |
+| `NPM_TOKEN`         | true     |               | NPM auth token   |
+| `GMO_ENDPOINT`      | false    |               | GMO API endpoint |
+| `GMO_SITE_ID`       | false    |               | GMO SiteID       |
+| `GMO_SITE_PASS`     | false    |               | GMO SitePass     |
+| `TTTS_TOKEN_SECRET` | true     |               | トークン検証シークレット   |
+
 
 ## Code Samples
 
-コードサンプルが./examplesにあります。
+コードサンプルは [example](https://github.com/motionpicture/ttts-domain/tree/master/example) にあります。
 
-# tslint
+## Jsdoc
 
-コード品質チェックをtslintで行っています。lintパッケージとして以下を仕様。
-* [tslint](https://github.com/palantir/tslint)
-* [tslint-microsoft-contrib](https://github.com/Microsoft/tslint-microsoft-contrib)
-`npm run check`でチェック実行。改修の際には、必ずチェックすること。
+`npm run doc`でjsdocを作成できます。./docに出力されます。
 
-# Test
+## License
 
-`npm test`でテスト実行。パッケージをpublishする前にこれで確認。
-
-# JsDoc
-
-`npm run jsdoc`でjsdocを作成できます。./docsに出力されます。
+ISC
