@@ -4,10 +4,10 @@
  * @namespace service.report
  */
 
-// import * as HealthService from './report/health';
+import * as HealthService from './report/health';
 import * as TelemetryService from './report/telemetry';
 
 export {
-    // HealthService as health,
+    HealthService as health,
     TelemetryService as telemetry
 };
