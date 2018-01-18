@@ -5,8 +5,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
 ### Added
-- 健康診断サービスを追加。
-- 取引ダウンロードサービスを追加。
 
 ### Changed
 
@@ -18,6 +16,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+
+## v12.1.0 - 2018-01-18
+### Added
+- 健康診断サービスを追加。
+- 取引ダウンロードサービスを追加。
 
 ## v12.0.0 - 2018-01-17
 ### Added
