@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Security
 
 
+## v12.1.0 - 2018-01-18
+### Added
+- 健康診断サービスを追加。
+- 取引ダウンロードサービスを追加。
+
 ## v12.0.0 - 2018-01-17
 ### Added
 - 注文取引サービス、在庫状況サービス、在庫サービス、売上サービス、通知サービス、タスクサービスを追加。

@@ -34,14 +34,15 @@ ttts.mongoose.connect();
 
 ### Environment variables
 
-| Name                | Required | Value         | Purpose          |
-| ------------------- | -------- | ------------- | ---------------- |
-| `DEBUG`             | false    | ttts-domain:* | Debug            |
-| `NPM_TOKEN`         | true     |               | NPM auth token   |
-| `GMO_ENDPOINT`      | false    |               | GMO API endpoint |
-| `GMO_SITE_ID`       | false    |               | GMO SiteID       |
-| `GMO_SITE_PASS`     | false    |               | GMO SitePass     |
-| `TTTS_TOKEN_SECRET` | true     |               | トークン検証シークレット   |
+| Name                              | Required | Value         | Purpose                         |
+| --------------------------------- | -------- | ------------- | ------------------------------- |
+| `DEBUG`                           | false    | ttts-domain:* | Debug                           |
+| `NPM_TOKEN`                       | true     |               | NPM auth token                  |
+| `GMO_ENDPOINT`                    | false    |               | GMO API endpoint                |
+| `GMO_SITE_ID`                     | false    |               | GMO SiteID                      |
+| `GMO_SITE_PASS`                   | false    |               | GMO SitePass                    |
+| `TTTS_TOKEN_SECRET`               | true     |               | トークン検証シークレット                  |
+| `AZURE_STORAGE_CONNECTION_STRING` | true     |               | ファイル保管用のazureストレージ接続文字列 |
 
 
 ## Code Samples
