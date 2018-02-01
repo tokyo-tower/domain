@@ -206,7 +206,8 @@ export function setCustomerContact(
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
-            const phoneNumber = phoneUtil.parse(contact.tel, 'JP'); // 日本の電話番号前提仕様
+            // addressが国コード
+            const phoneNumber = phoneUtil.parse(contact.tel, contact.address);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
                 throw new Error('invalid phone number format.');
             }
