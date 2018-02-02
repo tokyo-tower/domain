@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 ### Fixed
+- 同じ上演日で購入番号が重複するバグを修正。
 
 ### Security
 
