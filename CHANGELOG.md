@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 ### Fixed
+- クレジットカード決済のない注文の返品処理が完了しないバグを修正。
 
 ### Security
 
