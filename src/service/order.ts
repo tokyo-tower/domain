@@ -46,10 +46,9 @@ export function createFromTransaction(transactionId: string) {
 /**
  * 返品処理を実行する
  * リトライ可能なように実装すること
- * @param {IReturnOrderTransaction} returnOrderTransaction
+ * @param returnOrderTransactionId 返品取引ID
  */
 export function processReturn(returnOrderTransactionId: string) {
-    // tslint:disable-next-line:max-func-body-length
     return async (
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
@@ -70,88 +69,109 @@ export function processReturn(returnOrderTransactionId: string) {
             });
         debug('processing return order...', returnOrderTransaction);
 
-        const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>
-            returnOrderTransaction.object.transaction.object.authorizeActions
-                .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .find((action) => action.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
-        const entryTranArgs = (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).entryTranArgs;
-        const execTranArgs = (<factory.action.authorize.creditCard.IResult>creditCardAuthorizeAction.result).execTranArgs;
+        await returnCreditCardSales(returnOrderTransactionId)(performanceRepo, transactionRepo);
+
+        await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
+
+        await cancelReservations(returnOrderTransactionId)(
+            reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo
+        );
+
+        // 注文を返品済ステータスに変更
+        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
+        await orderRepo.orderModel.findOneAndUpdate(
+            { orderNumber: placeOrderTransactionResult.order.orderNumber },
+            { orderStatus: factory.orderStatus.OrderReturned }
+        ).exec();
+    };
+}
+
+/**
+ * 返品処理に該当する予約を取り消す
+ * @param returnOrderTransactionId 返品取引ID
+ */
+export function cancelReservations(returnOrderTransactionId: string) {
+    return async (
+        reservationRepo: ReservationRepo,
+        stockRepo: StockRepo,
+        transactionRepo: TransactionRepo,
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+    ) => {
+        debug('finding returnOrder transaction...');
+        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
+            .then((doc) => {
+                if (doc === null) {
+                    throw new factory.errors.NotFound('transaction');
+                }
+
+                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+            });
+        debug('processing return order...', returnOrderTransaction);
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
-        const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
-        const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
 
-        // 取引状態参照
-        const searchTradeResult = await GMO.services.credit.searchTrade({
-            shopId: entryTranArgs.shopId,
-            shopPass: entryTranArgs.shopPass,
-            orderId: orderId
-        });
-        debug('searchTradeResult:', searchTradeResult);
+        await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
+            // 車椅子の流入制限解放
+            if (
+                reservation.status === factory.reservationStatusType.ReservationConfirmed
+                && reservation.rate_limit_unit_in_seconds > 0
+            ) {
+                debug('resetting wheelchair rate limit...');
+                const performanceStartDate = moment(reservation.performance_start_date).toDate();
+                const rateLimitKey = {
+                    performanceStartDate: performanceStartDate,
+                    ticketTypeCategory: reservation.ticket_ttts_extension.category,
+                    unitInSeconds: reservation.rate_limit_unit_in_seconds
+                };
+                await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
+                debug('wheelchair rate limit reset.');
+            }
 
-        // GMO取引状態に変更がなければ金額変更
-        debug('trade already changed?', (searchTradeResult.tranId !== creditCardSalesBefore.tranId));
-        if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
-            // 手数料0円であれば、決済取り消し(返品)処理
-            if (returnOrderTransaction.object.cancellationFee === 0) {
-                debug(`altering tran. ${GMO.utils.util.JobCd.Return}..`, orderId);
-                const alterTranResult = await GMO.services.credit.alterTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    accessId: execTranArgs.accessId,
-                    accessPass: execTranArgs.accessPass,
-                    jobCd: GMO.utils.util.JobCd.Return
-                });
-                // クレジットカード取引結果を返品取引結果に連携
-                await transactionRepo.transactionModel.findByIdAndUpdate(
-                    returnOrderTransaction.id,
+            // 予約をキャンセル
+            debug('canceling a reservation...', reservation.qr_str);
+            await reservationRepo.reservationModel.findOneAndUpdate(
+                { qr_str: reservation.qr_str },
+                { status: factory.reservationStatusType.ReservationCancelled }
+            ).exec();
+
+            // 在庫を空きに(在庫IDに対して、元の状態に戻す)
+            debug(`making ${reservation.stocks.length} stocks available...`);
+            await Promise.all(reservation.stocks.map(async (stock) => {
+                await stockRepo.stockModel.findOneAndUpdate(
                     {
-                        'result.returnCreditCardResult': alterTranResult
-                    }
-                ).exec();
-
-                // パフォーマンスに返品済数を連携
-                await performanceRepo.performanceModel.findByIdAndUpdate(
-                    placeOrderTransactionResult.eventReservations[0].performance,
-                    {
-                        $inc: {
-                            'ttts_extension.refunded_count': 1,
-                            'ttts_extension.unrefunded_count': -1
-                        },
-                        'ttts_extension.refund_update_at': new Date()
-                    }
-                ).exec();
-
-                // すべて返金完了したら、返金ステータス変更
-                await performanceRepo.performanceModel.findOneAndUpdate(
-                    {
-                        _id: placeOrderTransactionResult.eventReservations[0].performance,
-                        'ttts_extension.unrefunded_count': 0
+                        _id: stock.id,
+                        availability: stock.availability_after,
+                        holder: stock.holder // 対象取引に保持されている
                     },
                     {
-                        'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
-                        'ttts_extension.refund_update_at': new Date()
+                        $set: { availability: stock.availability_before },
+                        $unset: { holder: 1 }
                     }
                 ).exec();
-            } else {
-                debug('changing amount...', orderId);
-                const changeTranResult = await GMO.services.credit.changeTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    accessId: execTranArgs.accessId,
-                    accessPass: execTranArgs.accessPass,
-                    jobCd: GMO.utils.util.JobCd.Capture,
-                    amount: returnOrderTransaction.object.cancellationFee
-                });
-                // クレジットカード取引結果を返品取引結果に連携
-                await transactionRepo.transactionModel.findByIdAndUpdate(
-                    returnOrderTransaction.id,
-                    {
-                        'result.changeCreditCardAmountResult': changeTranResult
-                    }
-                ).exec();
-            }
-        }
+            }));
+        }));
+    };
+}
+
+/**
+ * 返品処理を受け付けたことを購入者へ通知する
+ * @param returnOrderTransactionId 返品取引ID
+ */
+export function notifyReturnOrder(returnOrderTransactionId: string) {
+    return async (
+        transactionRepo: TransactionRepo,
+        taskRepo: TaskRepo
+    ) => {
+        debug('finding returnOrder transaction...');
+        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
+            .then((doc) => {
+                if (doc === null) {
+                    throw new factory.errors.NotFound('transaction');
+                }
+
+                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+            });
+        debug('processing return order...', returnOrderTransaction);
 
         let emailMessageAttributes: factory.creativeWork.message.email.IAttributes;
         let emailMessage: factory.creativeWork.message.email.ICreativeWork;
@@ -233,53 +253,122 @@ export function processReturn(returnOrderTransactionId: string) {
 
             default:
         }
+    };
+}
 
-        await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
-            // 車椅子の流入制限解放
-            if (
-                reservation.status === factory.reservationStatusType.ReservationConfirmed
-                && reservation.rate_limit_unit_in_seconds > 0
-            ) {
-                debug('resetting wheelchair rate limit...');
-                const performanceStartDate = moment(reservation.performance_start_date).toDate();
-                const rateLimitKey = {
-                    performanceStartDate: performanceStartDate,
-                    ticketTypeCategory: reservation.ticket_ttts_extension.category,
-                    unitInSeconds: reservation.rate_limit_unit_in_seconds
-                };
-                await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
-                debug('wheelchair rate limit reset.');
-            }
+/**
+ * クレジットカード売上があれば取り下げる処理
+ * @param returnOrderTransactionId 返品取引ID
+ */
+export function returnCreditCardSales(returnOrderTransactionId: string) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (
+        performanceRepo: PerformanceRepo,
+        transactionRepo: TransactionRepo
+    ) => {
+        debug('finding returnOrder transaction...');
+        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
+            .then((doc) => {
+                if (doc === null) {
+                    throw new factory.errors.NotFound('transaction');
+                }
 
-            // 予約をキャンセル
-            debug('canceling a reservation...', reservation.qr_str);
-            await reservationRepo.reservationModel.findOneAndUpdate(
-                { qr_str: reservation.qr_str },
-                { status: factory.reservationStatusType.ReservationCancelled }
-            ).exec();
+                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+            });
+        debug('processing return order...', returnOrderTransaction);
 
-            // 在庫を空きに(在庫IDに対して、元の状態に戻す)
-            debug(`making ${reservation.stocks.length} stocks available...`);
-            await Promise.all(reservation.stocks.map(async (stock) => {
-                await stockRepo.stockModel.findOneAndUpdate(
+        const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>
+            returnOrderTransaction.object.transaction.object.authorizeActions
+                .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .find((action) => action.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+
+        // クレジットカードオーソリがなければ何もしない
+        if (creditCardAuthorizeAction === undefined) {
+            return;
+        }
+        // CompletedActionStatusにも関わらずresultがなければ謎のデータ
+        if (creditCardAuthorizeAction.result === undefined) {
+            throw new factory.errors.NotFound('creditCardAuthorizeAction.result', 'クレジットカード承認アクションに結果が見つかりません。');
+        }
+
+        const entryTranArgs = creditCardAuthorizeAction.result.entryTranArgs;
+        const execTranArgs = creditCardAuthorizeAction.result.execTranArgs;
+
+        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
+        const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
+        const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
+
+        // 取引状態参照
+        const searchTradeResult = await GMO.services.credit.searchTrade({
+            shopId: entryTranArgs.shopId,
+            shopPass: entryTranArgs.shopPass,
+            orderId: orderId
+        });
+        debug('searchTradeResult:', searchTradeResult);
+
+        // GMO取引状態に変更がなければ金額変更
+        debug('trade already changed?', (searchTradeResult.tranId !== creditCardSalesBefore.tranId));
+        if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
+            // 手数料0円であれば、決済取り消し(返品)処理
+            if (returnOrderTransaction.object.cancellationFee === 0) {
+                debug(`altering tran. ${GMO.utils.util.JobCd.Return}..`, orderId);
+                const alterTranResult = await GMO.services.credit.alterTran({
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    accessId: execTranArgs.accessId,
+                    accessPass: execTranArgs.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Return
+                });
+                // クレジットカード取引結果を返品取引結果に連携
+                await transactionRepo.transactionModel.findByIdAndUpdate(
+                    returnOrderTransaction.id,
                     {
-                        _id: stock.id,
-                        availability: stock.availability_after,
-                        holder: stock.holder // 対象取引に保持されている
-                    },
-                    {
-                        $set: { availability: stock.availability_before },
-                        $unset: { holder: 1 }
+                        'result.returnCreditCardResult': alterTranResult
                     }
                 ).exec();
-            }));
-        }));
 
-        // 注文を返品済ステータスに変更
-        await orderRepo.orderModel.findOneAndUpdate(
-            { orderNumber: placeOrderTransactionResult.order.orderNumber },
-            { orderStatus: factory.orderStatus.OrderReturned }
-        ).exec();
+                // パフォーマンスに返品済数を連携
+                await performanceRepo.performanceModel.findByIdAndUpdate(
+                    placeOrderTransactionResult.eventReservations[0].performance,
+                    {
+                        $inc: {
+                            'ttts_extension.refunded_count': 1,
+                            'ttts_extension.unrefunded_count': -1
+                        },
+                        'ttts_extension.refund_update_at': new Date()
+                    }
+                ).exec();
+
+                // すべて返金完了したら、返金ステータス変更
+                await performanceRepo.performanceModel.findOneAndUpdate(
+                    {
+                        _id: placeOrderTransactionResult.eventReservations[0].performance,
+                        'ttts_extension.unrefunded_count': 0
+                    },
+                    {
+                        'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
+                        'ttts_extension.refund_update_at': new Date()
+                    }
+                ).exec();
+            } else {
+                debug('changing amount...', orderId);
+                const changeTranResult = await GMO.services.credit.changeTran({
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    accessId: execTranArgs.accessId,
+                    accessPass: execTranArgs.accessPass,
+                    jobCd: GMO.utils.util.JobCd.Capture,
+                    amount: returnOrderTransaction.object.cancellationFee
+                });
+                // クレジットカード取引結果を返品取引結果に連携
+                await transactionRepo.transactionModel.findByIdAndUpdate(
+                    returnOrderTransaction.id,
+                    {
+                        'result.changeCreditCardAmountResult': changeTranResult
+                    }
+                ).exec();
+            }
+        }
     };
 }
 

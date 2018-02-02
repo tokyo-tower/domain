@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Security
 
 
+## v12.1.2 - 2018-02-02
+### Fixed
+- 同じ上演日で購入番号が重複するバグを修正。
+- クレジットカード決済のない注文の返品処理が完了しないバグを修正。
+
 ## v12.1.1 - 2018-02-01
 ### Fixed
 - 購入者情報として日本以外の国の電話番号が登録できないバグを修正。

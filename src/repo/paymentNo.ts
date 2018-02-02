@@ -1,6 +1,7 @@
 // tslint:disable:no-magic-numbers
 
 import * as createDebug from 'debug';
+import * as moment from 'moment';
 import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
@@ -147,8 +148,10 @@ export class RedisRepository {
                 throw new factory.errors.Argument('date', 'Invalid date.');
             }
 
-            // 日ごとにユニークになるように
-            const TTL = 86400;
+            // 上映日を過ぎたら期限が切れるようにTTLを設定
+            const now = moment();
+            const TTL = moment(`${date} 00:00:00+09:00`, 'YYYYMMDD HH:mm:ssZ').add(1, 'day').diff(now, 'seconds');
+            debug(`TTL:${TTL} seconds`);
             const key = `${RedisRepository.REDIS_KEY_PREFIX}.${date}`;
 
             this.redisClient.multi()
