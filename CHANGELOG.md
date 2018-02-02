@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 - 同じ上演日で購入番号が重複するバグを修正。
+- クレジットカード決済のない注文の返品処理が完了しないバグを修正。
 
 ### Security
 
