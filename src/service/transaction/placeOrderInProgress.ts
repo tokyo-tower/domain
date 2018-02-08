@@ -481,7 +481,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             payment_seat_index: index,
 
-            checkins: []
+            checkins: [],
+            transaction_agent: transaction.agent
         };
     });
 
