@@ -248,7 +248,8 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         reservationRepo: repository.Reservation,
         performanceAvailabilityRepo: repository.itemAvailability.Performance,
         seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
-        performanceWithAggregationRepo: repository.PerformanceWithAggregation
+        performanceWithAggregationRepo: repository.PerformanceWithAggregation,
+        exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
     ) => {
         // MongoDB検索条件を作成
         const andConditions: any[] = [
@@ -267,20 +268,29 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
             });
         }
 
-        const performances = await performanceRepo.performanceModel.find({ $and: andConditions })
-            .populate('film screen theater')
-            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
+        const performances = await performanceRepo.performanceModel.find(
+            { $and: andConditions },
+            // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
+            'door_time start_date end_date duration screen tour_number ttts_extension'
+        )
+            // 必要なのはスクリーン情報
+            .populate('screen')
             .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
-        debug('performances found,', performances.length);
+        debug('performances found.', performances.length);
+
+        // 販売情報を取得
+        const offersByEvent = await exhibitionEventOfferRepo.findAll();
 
         // 予約情報取得
         const reservations = await reservationRepo.reservationModel.find(
             {
                 performance: { $in: performances.map((p) => p.id) },
                 status: factory.reservationStatusType.ReservationConfirmed
-            }
+            },
+            // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
+            'performance checkins ticket_type ticket_ttts_extension'
         ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
-        debug('reservations found,', reservations.length);
+        debug('reservations found.', reservations.length);
 
         // 入場ゲート取得
         const checkGates = await checkinGateRepo.findAll();
@@ -294,18 +304,17 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         // tslint:disable-next-line:max-func-body-length
         const aggregations = await Promise.all(performances.map(async (performance) => {
             const reservations4performance = reservations.filter((r) => r.performance === performance.id);
-
-            // 全予約数
-            const totalReservationCount = reservations4performance.filter(
-                (r) => (r.status === factory.reservationStatusType.ReservationConfirmed)
-            ).length;
+            let offers = offersByEvent[performance.id];
+            if (offers === undefined) {
+                offers = [];
+            }
 
             // 場所ごとの入場情報を集計
             const checkinInfosByWhere: factory.performance.ICheckinInfosByWhere = checkGates.map((checkGate) => {
                 return {
                     where: checkGate.identifier,
                     checkins: [],
-                    arrivedCountsByTicketType: performance.ticket_type_group.ticket_types.map((t) => {
+                    arrivedCountsByTicketType: offers.map((t) => {
                         return { ticketType: t.id, ticketCategory: t.ttts_extension.category, count: 0 };
                     })
                 };
@@ -344,7 +353,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
             });
 
             // 券種ごとの予約数を集計
-            const reservationCountsByTicketType = performance.ticket_type_group.ticket_types.map((t) => {
+            const reservationCountsByTicketType = offers.map((t) => {
                 return { ticketType: t.id, count: 0 };
             });
             reservations4performance.map((reservation) => {
@@ -356,12 +365,11 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
 
             const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
             debug('offerAvailabilities:', offerAvailabilities);
-            const ticketTypes = performance.ticket_type_group.ticket_types;
 
             // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
             // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
             debug('check wheelchair availability...');
-            const wheelchairTicketTypeIds = ticketTypes.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
+            const wheelchairTicketTypeIds = offers.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
                 .map((t) => t.id);
             let remainingAttendeeCapacityForWheelchair = 0;
             wheelchairTicketTypeIds.forEach((ticketTypeId) => {
@@ -371,6 +379,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 }
             });
 
+            debug('creating aggregation...');
             const aggregation: factory.performance.IPerformanceWithAggregation = {
                 id: performance.id,
                 doorTime: performance.door_time,
@@ -384,14 +393,14 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 tourNumber: performance.tour_number,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
-                reservationCount: totalReservationCount,
+                reservationCount: reservations4performance.length,
                 checkinCount: checkinInfosByWhere.reduce((a, b) => a + b.checkins.length, 0),
                 reservationCountsByTicketType: reservationCountsByTicketType,
                 // 場所ごとに、券種ごとの入場者数初期値をセット
                 checkinCountsByWhere: checkGates.map((checkGate) => {
                     return {
                         where: checkGate.identifier,
-                        checkinCountsByTicketType: performance.ticket_type_group.ticket_types.map((t) => {
+                        checkinCountsByTicketType: offers.map((t) => {
                             return {
                                 ticketType: t.id,
                                 ticketCategory: t.ttts_extension.category,
@@ -414,6 +423,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                     )).count += 1;
                 });
             });
+            debug('aggregated.', performance.id);
 
             return aggregation;
         }));
