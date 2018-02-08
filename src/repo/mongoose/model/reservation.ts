@@ -130,7 +130,8 @@ const schema = new mongoose.Schema(
             default: []
         },
 
-        gmo_order_id: String // GMOオーダーID
+        gmo_order_id: String, // GMOオーダーID
+        transaction_agent: mongoose.SchemaTypes.Mixed
     },
     {
         collection: 'reservations',
