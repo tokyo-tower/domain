@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 - パフォーマンス集計が毎秒の仕様であるのに対して、処理時間が数分、という状況に対して、処理自体をチューニング。
+- 注文取引確定時の注文番号重複エラーをAlreadyInUseエラーとしてハンドリング。
 
 ### Security
 

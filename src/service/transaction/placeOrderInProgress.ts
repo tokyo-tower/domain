@@ -292,13 +292,29 @@ export function confirm(params: {
 
         // ステータス変更
         debug('updating transaction...');
-        await transactionRepo.confirmPlaceOrder(
-            params.transactionId,
-            now,
-            params.paymentMethod,
-            authorizeActions,
-            transaction.result
-        );
+
+        try {
+            await transactionRepo.confirmPlaceOrder(
+                params.transactionId,
+                now,
+                params.paymentMethod,
+                authorizeActions,
+                transaction.result
+            );
+        } catch (error) {
+            if (error.name === 'MongoError') {
+                // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
+                // name: 'MongoError',
+                // message: 'E11000 duplicate key error collection: prodttts.transactions index:result.order.orderNumber_1 dup key:...',
+                // code: 11000,
+                // tslint:disable-next-line:no-magic-numbers
+                if (error.code === 11000) {
+                    throw new factory.errors.AlreadyInUse('transaction', ['result.order.orderNumber']);
+                }
+            }
+
+            throw error;
+        }
 
         return transaction.result;
     };
