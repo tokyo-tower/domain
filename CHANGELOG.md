@@ -17,6 +17,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Security
 
 
+## v12.1.3 - 2018-02-14
+### Changed
+- 予約スキーマに注文取引主体属性を追加。
+
+### Fixed
+- パフォーマンス集計が毎秒の仕様であるのに対して、処理時間が数分、という状況に対して、処理自体をチューニング。
+- 注文取引確定時の注文番号重複エラーをAlreadyInUseエラーとしてハンドリング。
+
 ## v12.1.2 - 2018-02-02
 ### Fixed
 - 同じ上演日で購入番号が重複するバグを修正。
