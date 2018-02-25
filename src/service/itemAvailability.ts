@@ -150,7 +150,12 @@ export function updatePerformanceOffersAvailability() {
                 const availableStockNum = availableStockNums[performance.id];
                 const requiredNum = ticketType.ttts_extension.required_seat_num;
 
-                let availableNum: number;
+                // 基本は、在庫なしであれば0、あれば必要座席数から算出
+                let availableNum: number = 0;
+                // 必要座席数が正の値で、残席数があれば、在庫を算出
+                if (requiredNum > 0 && availableStockNum !== undefined) {
+                    availableNum = Math.floor(availableStockNum / requiredNum);
+                }
 
                 // 流入制限ありの場合は、そちらも考慮
                 if (ticketType.rate_limit_unit_in_seconds > 0) {
@@ -162,10 +167,10 @@ export function updatePerformanceOffersAvailability() {
                     const rateLimitHolder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                     debug('rate limtit holder exists?', rateLimitHolder);
 
-                    availableNum = (rateLimitHolder === null) ? 1 : 0;
-                } else {
-                    // レート制限保持者がいる、あるいは、在庫なしであれば、0
-                    availableNum = (availableStockNum !== undefined) ? Math.floor(availableStockNum / requiredNum) : 0;
+                    // 流入制限保持者がいれば在庫数はその時点で0
+                    if (rateLimitHolder !== null) {
+                        availableNum = 0;
+                    }
                 }
 
                 // 券種ごとの在庫数をDBに保管

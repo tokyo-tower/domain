@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 ### Fixed
+- 流入制限あり券種の在庫数算出に対して、流入制限制限保持者がいない場合に残席数が考慮されていなかったので修正。
 
 ### Security
 
