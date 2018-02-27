@@ -157,7 +157,7 @@ export function updatePerformanceOffersAvailability() {
                     availableNum = Math.floor(availableStockNum / requiredNum);
                 }
 
-                // 流入制限ありの場合は、そちらも考慮
+                // 流入制限ありの場合は、そちらを考慮して在庫数を上書き
                 if (ticketType.rate_limit_unit_in_seconds > 0) {
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
@@ -167,10 +167,8 @@ export function updatePerformanceOffersAvailability() {
                     const rateLimitHolder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                     debug('rate limtit holder exists?', rateLimitHolder);
 
-                    // 流入制限保持者がいれば在庫数はその時点で0
-                    if (rateLimitHolder !== null) {
-                        availableNum = 0;
-                    }
+                    // 流入制限保持者がいなければ在庫数は固定で1、いれば0
+                    availableNum = (rateLimitHolder === null) ? 1 : 0;
                 }
 
                 // 券種ごとの在庫数をDBに保管
