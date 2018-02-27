@@ -26,23 +26,23 @@ export type IUpdatePerformanceAvailabilitiesOperation<T> = (
  * 空席ステータスを更新する
  * @memberof service.itemAvailability
  */
-export function updatePerformanceAvailabilities(
-    searchPerformancesPeriodInDays: number,
-    ttl: number
-): IUpdatePerformanceAvailabilitiesOperation<void> {
+export function updatePerformanceAvailabilities(params: {
+    startFrom: Date;
+    startThrough: Date;
+    ttl: number;
+}): IUpdatePerformanceAvailabilitiesOperation<void> {
     return async (
         stockRepo: StockRepo,
         performanceRepo: PerformanceRepo,
         performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
-        const now = moment();
         debug('finding performances...');
         const ids = <string[]>await performanceRepo.performanceModel.distinct(
             '_id',
             {
                 start_date: {
-                    $gt: now.toDate(),
-                    $lt: moment(now).add(searchPerformancesPeriodInDays, 'days').toDate()
+                    $gte: params.startFrom,
+                    $lt: params.startThrough
                 }
             }
         ).exec();
@@ -75,7 +75,7 @@ export function updatePerformanceAvailabilities(
         });
 
         debug(`storing ${availabilities.length} performanceAvailabilities...`);
-        await performanceAvailabilityRepo.store(availabilities, ttl);
+        await performanceAvailabilityRepo.store(availabilities, params.ttl);
         debug('performanceAvailabilities stored.');
     };
 }

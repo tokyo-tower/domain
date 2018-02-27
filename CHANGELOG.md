@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 ### Changed
+- パフォーマンスの在庫状況集計時に集計日時fromとthroughを指定できるように変更。
 
 ### Deprecated
 
