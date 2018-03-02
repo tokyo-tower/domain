@@ -167,8 +167,8 @@ export function updatePerformanceOffersAvailability() {
                     const rateLimitHolder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                     debug('rate limtit holder exists?', rateLimitHolder);
 
-                    // 流入制限保持者がいなければ在庫数は固定で1、いれば0
-                    availableNum = (rateLimitHolder === null) ? 1 : 0;
+                    // 流入制限保持者がいない、かつ、在庫必要数あれば、在庫数は固定で1、いれば0
+                    availableNum = (rateLimitHolder === null && availableNum > 0) ? 1 : 0;
                 }
 
                 // 券種ごとの在庫数をDBに保管
