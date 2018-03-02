@@ -352,15 +352,12 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 });
             });
 
-            // 券種ごとの予約数を集計
-            const reservationCountsByTicketType = offers.map((t) => {
-                return { ticketType: t.id, count: 0 };
-            });
-            reservations4performance.map((reservation) => {
-                // 券種ごとの予約数をセット
-                (<factory.performance.IReservationCountByTicketType>reservationCountsByTicketType.find(
-                    (c) => c.ticketType === reservation.ticket_type
-                )).count += 1;
+            // 券種ごと(販売情報ごと)の予約数を集計
+            const reservationCountsByTicketType = offers.map((offer) => {
+                return {
+                    ticketType: offer.id,
+                    count: reservations4performance.filter((r) => r.ticket_type === offer.id).length
+                };
             });
 
             const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);

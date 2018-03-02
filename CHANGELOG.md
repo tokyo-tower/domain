@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 - 流入制限あり券種の在庫数算出に対して、流入制限制限保持者がいない場合に残席数が考慮されていなかったので修正。
+- パフォーマンスの集計データ作成時の、販売情報ごとの予約数カウントロジックを修正。
 
 ### Security
 
