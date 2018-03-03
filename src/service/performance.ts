@@ -363,16 +363,26 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
             const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
             debug('offerAvailabilities:', offerAvailabilities);
 
+            // 残席数
+            let remainingAttendeeCapacity = 0;
+            if (performanceAvailabilities[performance.id] !== undefined) {
+                remainingAttendeeCapacity = parseInt(performanceAvailabilities[performance.id], 10);
+            }
+
             // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
             // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
             debug('check wheelchair availability...');
-            const wheelchairTicketTypeIds = offers.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
-                .map((t) => t.id);
+            const wheelchairOffers = offers.filter((o) => o.ttts_extension.category === factory.ticketTypeCategory.Wheelchair);
             let remainingAttendeeCapacityForWheelchair = 0;
-            wheelchairTicketTypeIds.forEach((ticketTypeId) => {
+            wheelchairOffers.forEach((offer) => {
                 // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
-                if (offerAvailabilities[ticketTypeId] !== undefined && offerAvailabilities[ticketTypeId] > 0) {
-                    remainingAttendeeCapacityForWheelchair = offerAvailabilities[ticketTypeId];
+                if (offerAvailabilities[offer.id] !== undefined && offerAvailabilities[offer.id] > 0) {
+                    remainingAttendeeCapacityForWheelchair = offerAvailabilities[offer.id];
+                }
+
+                // 車椅子券種の場合、同伴者必須を考慮して、そもそもremainingAttendeeCapacityが0であれば0
+                if (remainingAttendeeCapacity < offer.ttts_extension.required_seat_num + 1) {
+                    remainingAttendeeCapacityForWheelchair = 0;
                 }
             });
 
@@ -385,7 +395,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 duration: performance.duration,
                 maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
                 // tslint:disable-next-line:no-magic-numbers
-                remainingAttendeeCapacity: parseInt(performanceAvailabilities[performance.id], 10),
+                remainingAttendeeCapacity: remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
                 tourNumber: performance.tour_number,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
