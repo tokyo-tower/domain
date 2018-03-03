@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 - パフォーマンスの在庫状況集計時に集計日時fromとthroughを指定できるように変更。
+- イベント販売情報更新ジョブにイベント開始日時fromとthroughを指定できるように変更。
 
 ### Deprecated
 

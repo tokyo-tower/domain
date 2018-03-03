@@ -4,7 +4,6 @@
  */
 
 import * as createDebug from 'debug';
-import * as moment from 'moment';
 
 import * as factory from '@motionpicture/ttts-factory';
 
@@ -20,20 +19,22 @@ export type IUpdateExhibitionEventOffersOperation<T> = (
 
 /**
  * 展示イベントの販売情報を更新する
- * @memberof service.offer
  */
-export function updateExhibitionEventOffers(searchEventsPeriodInDays: number, ttl: number): IUpdateExhibitionEventOffersOperation<void> {
+export function updateExhibitionEventOffers(params: {
+    startFrom: Date;
+    startThrough: Date;
+    ttl: number;
+}): IUpdateExhibitionEventOffersOperation<void> {
     return async (
         performanceRepo: PerformanceRepo,
         offerRepo: ExhibitionEventOfferRepo
     ) => {
-        const now = moment();
         debug('finding performances...');
         const performances = await performanceRepo.performanceModel.find(
             {
                 start_date: {
-                    $gt: now.toDate(),
-                    $lt: moment(now).add(searchEventsPeriodInDays, 'days').toDate()
+                    $gt: params.startFrom,
+                    $lt: params.startThrough
                 }
             }
         )
@@ -47,7 +48,7 @@ export function updateExhibitionEventOffers(searchEventsPeriodInDays: number, tt
         });
 
         debug('storing offers...');
-        await offerRepo.store(offers, ttl);
+        await offerRepo.store(offers, params.ttl);
         debug('offers stored.');
     };
 }
