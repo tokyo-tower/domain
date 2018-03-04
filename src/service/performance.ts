@@ -391,30 +391,30 @@ export async function aggregateCheckinCount(
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
 }> {
     // 全予約の入場履歴をマージ
-    const allCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
+    const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
         (a, b) => {
-            const checkins = b.checkins.map((c) => {
-                return {
-                    ...c,
-                    ticketType: b.ticket_type,
-                    ticketCategory: b.ticket_ttts_extension.category
-                };
-            });
+            // 同一ポイントでの重複チェックインを除外
+            // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
+            const checkinWheres = b.checkins.map((c) => c.where);
+            const uniqueCheckins = b.checkins
+                .filter((c, pos) => checkinWheres.indexOf(c.where) === pos)
+                .map((c) => {
+                    return {
+                        ...c,
+                        ticketType: b.ticket_type,
+                        ticketCategory: b.ticket_ttts_extension.category
+                    };
+                });
 
-            return [...a, ...checkins];
+            return [...a, ...uniqueCheckins];
         },
         []
     );
 
-    // 同一ポイントでの重複チェックインを除外
-    // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
-    const checkinWheres = allCheckins.map((c) => c.where);
-    const uniqueCheckins = allCheckins.filter((c, pos) => checkinWheres.indexOf(c.where) === pos);
-
     // 入場ゲートごとに、券種ごとの入場者数を算出する
     const checkinCountsByWhere = checkinGates.map((checkinGate) => {
         // この入場ゲートの入場履歴
-        const uniqueCheckins4where = uniqueCheckins.filter((c) => c.where === checkinGate.identifier);
+        const uniqueCheckins4where = allUniqueCheckins.filter((c) => c.where === checkinGate.identifier);
 
         return {
             where: checkinGate.identifier,
@@ -430,7 +430,7 @@ export async function aggregateCheckinCount(
     });
 
     return {
-        checkinCount: uniqueCheckins.length,
+        checkinCount: allUniqueCheckins.length,
         checkinCountsByWhere: checkinCountsByWhere
     };
 }
