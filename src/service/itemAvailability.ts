@@ -26,23 +26,23 @@ export type IUpdatePerformanceAvailabilitiesOperation<T> = (
  * 空席ステータスを更新する
  * @memberof service.itemAvailability
  */
-export function updatePerformanceAvailabilities(
-    searchPerformancesPeriodInDays: number,
-    ttl: number
-): IUpdatePerformanceAvailabilitiesOperation<void> {
+export function updatePerformanceAvailabilities(params: {
+    startFrom: Date;
+    startThrough: Date;
+    ttl: number;
+}): IUpdatePerformanceAvailabilitiesOperation<void> {
     return async (
         stockRepo: StockRepo,
         performanceRepo: PerformanceRepo,
         performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
-        const now = moment();
         debug('finding performances...');
         const ids = <string[]>await performanceRepo.performanceModel.distinct(
             '_id',
             {
                 start_date: {
-                    $gt: now.toDate(),
-                    $lt: moment(now).add(searchPerformancesPeriodInDays, 'days').toDate()
+                    $gte: params.startFrom,
+                    $lt: params.startThrough
                 }
             }
         ).exec();
@@ -75,7 +75,7 @@ export function updatePerformanceAvailabilities(
         });
 
         debug(`storing ${availabilities.length} performanceAvailabilities...`);
-        await performanceAvailabilityRepo.store(availabilities, ttl);
+        await performanceAvailabilityRepo.store(availabilities, params.ttl);
         debug('performanceAvailabilities stored.');
     };
 }
@@ -150,9 +150,14 @@ export function updatePerformanceOffersAvailability() {
                 const availableStockNum = availableStockNums[performance.id];
                 const requiredNum = ticketType.ttts_extension.required_seat_num;
 
-                let availableNum: number;
+                // 基本は、在庫なしであれば0、あれば必要座席数から算出
+                let availableNum: number = 0;
+                // 必要座席数が正の値で、残席数があれば、在庫を算出
+                if (requiredNum > 0 && availableStockNum !== undefined) {
+                    availableNum = Math.floor(availableStockNum / requiredNum);
+                }
 
-                // 流入制限ありの場合は、そちらも考慮
+                // 流入制限ありの場合は、そちらを考慮して在庫数を上書き
                 if (ticketType.rate_limit_unit_in_seconds > 0) {
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
@@ -162,10 +167,8 @@ export function updatePerformanceOffersAvailability() {
                     const rateLimitHolder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                     debug('rate limtit holder exists?', rateLimitHolder);
 
-                    availableNum = (rateLimitHolder === null) ? 1 : 0;
-                } else {
-                    // レート制限保持者がいる、あるいは、在庫なしであれば、0
-                    availableNum = (availableStockNum !== undefined) ? Math.floor(availableStockNum / requiredNum) : 0;
+                    // 流入制限保持者がいない、かつ、在庫必要数あれば、在庫数は固定で1、いれば0
+                    availableNum = (rateLimitHolder === null && availableNum > 0) ? 1 : 0;
                 }
 
                 // 券種ごとの在庫数をDBに保管

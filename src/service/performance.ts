@@ -276,7 +276,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
             // 必要なのはスクリーン情報
             .populate('screen')
             .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
-        debug('performances found.', performances.length);
+        debug(performances.length, 'performances found.');
 
         // 販売情報を取得
         const offersByEvent = await exhibitionEventOfferRepo.findAll();
@@ -290,144 +290,147 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             'performance checkins ticket_type ticket_ttts_extension'
         ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
-        debug('reservations found.', reservations.length);
+        debug(reservations.length, 'reservations found.');
 
         // 入場ゲート取得
         const checkGates = await checkinGateRepo.findAll();
-        debug('checkGates are', checkGates);
+        debug(checkGates.length, 'checkGates found.');
 
         // パフォーマンスごとの在庫状況
         const performanceAvailabilities = await performanceAvailabilityRepo.findAll();
-        debug('performanceAvailabilities found.', performanceAvailabilities);
+        debug(Object.keys(performanceAvailabilities).length, 'performanceAvailabilities found.');
 
         // パフォーマンスごとに集計
+        debug('creating aggregations...');
+        const aggregations: factory.performance.IPerformanceWithAggregation[] = [];
         // tslint:disable-next-line:max-func-body-length
-        const aggregations = await Promise.all(performances.map(async (performance) => {
-            const reservations4performance = reservations.filter((r) => r.performance === performance.id);
-            let offers = offersByEvent[performance.id];
-            if (offers === undefined) {
-                offers = [];
-            }
+        await Promise.all(performances.map(async (performance) => {
+            try {
+                const reservations4performance = reservations.filter((r) => r.performance === performance.id);
+                let offers = offersByEvent[performance.id];
+                if (offers === undefined) {
+                    offers = [];
+                }
 
-            // 場所ごとの入場情報を集計
-            const checkinInfosByWhere: factory.performance.ICheckinInfosByWhere = checkGates.map((checkGate) => {
-                return {
-                    where: checkGate.identifier,
-                    checkins: [],
-                    arrivedCountsByTicketType: offers.map((t) => {
-                        return { ticketType: t.id, ticketCategory: t.ttts_extension.category, count: 0 };
-                    })
-                };
-            });
+                const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
 
-            reservations4performance.forEach((reservation) => {
-                const tempCheckinWhereArray: string[] = [];
+                // 残席数
+                let remainingAttendeeCapacity = 0;
+                if (performanceAvailabilities[performance.id] !== undefined) {
+                    remainingAttendeeCapacity = parseInt(performanceAvailabilities[performance.id], 10);
+                }
 
-                reservation.checkins.forEach((checkin) => {
-                    // 同一ポイントでの重複チェックインを除外
-                    // ※チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複はここでは問題にしない
-                    if (tempCheckinWhereArray.indexOf(checkin.where) >= 0) {
-                        return;
+                // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
+                // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
+                const wheelchairOffers = offers.filter((o) => o.ttts_extension.category === factory.ticketTypeCategory.Wheelchair);
+                let remainingAttendeeCapacityForWheelchair = 0;
+                wheelchairOffers.forEach((offer) => {
+                    // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
+                    if (offerAvailabilities[offer.id] !== undefined && offerAvailabilities[offer.id] > 0) {
+                        remainingAttendeeCapacityForWheelchair = offerAvailabilities[offer.id];
                     }
 
-                    tempCheckinWhereArray.push(checkin.where);
-
-                    const checkinInfoByWhere = <factory.performance.ICheckinInfoByWhere>checkinInfosByWhere.find(
-                        (info) => info.where === checkin.where
-                    );
-
-                    // チェックイン数セット
-                    (<factory.performance.IArrivedCountByTicketType>checkinInfoByWhere.arrivedCountsByTicketType.find(
-                        (c) => c.ticketType === reservation.ticket_type
-                    )).count += 1;
-
-                    // チェックイン数セット
-                    checkinInfoByWhere.checkins.push({
-                        ...checkin,
-                        ...{
-                            ticketType: reservation.ticket_type,
-                            ticketCategory: reservation.ticket_ttts_extension.category
-                        }
-                    });
+                    // 車椅子券種の場合、同伴者必須を考慮して、そもそもremainingAttendeeCapacityが0であれば0
+                    if (remainingAttendeeCapacity < offer.ttts_extension.required_seat_num + 1) {
+                        remainingAttendeeCapacityForWheelchair = 0;
+                    }
                 });
-            });
 
-            // 券種ごとの予約数を集計
-            const reservationCountsByTicketType = offers.map((t) => {
-                return { ticketType: t.id, count: 0 };
-            });
-            reservations4performance.map((reservation) => {
-                // 券種ごとの予約数をセット
-                (<factory.performance.IReservationCountByTicketType>reservationCountsByTicketType.find(
-                    (c) => c.ticketType === reservation.ticket_type
-                )).count += 1;
-            });
-
-            const offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
-            debug('offerAvailabilities:', offerAvailabilities);
-
-            // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
-            // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
-            debug('check wheelchair availability...');
-            const wheelchairTicketTypeIds = offers.filter((t) => t.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
-                .map((t) => t.id);
-            let remainingAttendeeCapacityForWheelchair = 0;
-            wheelchairTicketTypeIds.forEach((ticketTypeId) => {
-                // 車椅子カテゴリーの券種に在庫がひとつでもあれば、wheelchairAvailableは在庫あり。
-                if (offerAvailabilities[ticketTypeId] !== undefined && offerAvailabilities[ticketTypeId] > 0) {
-                    remainingAttendeeCapacityForWheelchair = offerAvailabilities[ticketTypeId];
-                }
-            });
-
-            debug('creating aggregation...');
-            const aggregation: factory.performance.IPerformanceWithAggregation = {
-                id: performance.id,
-                doorTime: performance.door_time,
-                startDate: performance.start_date,
-                endDate: performance.end_date,
-                duration: performance.duration,
-                maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
-                // tslint:disable-next-line:no-magic-numbers
-                remainingAttendeeCapacity: parseInt(performanceAvailabilities[performance.id], 10),
-                remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
-                tourNumber: performance.tour_number,
-                evServiceStatus: performance.ttts_extension.ev_service_status,
-                onlineSalesStatus: performance.ttts_extension.online_sales_status,
-                reservationCount: reservations4performance.length,
-                checkinCount: checkinInfosByWhere.reduce((a, b) => a + b.checkins.length, 0),
-                reservationCountsByTicketType: reservationCountsByTicketType,
-                // 場所ごとに、券種ごとの入場者数初期値をセット
-                checkinCountsByWhere: checkGates.map((checkGate) => {
+                // 券種ごと(販売情報ごと)の予約数を集計
+                const reservationCountsByTicketType = offers.map((offer) => {
                     return {
-                        where: checkGate.identifier,
-                        checkinCountsByTicketType: offers.map((t) => {
-                            return {
-                                ticketType: t.id,
-                                ticketCategory: t.ttts_extension.category,
-                                count: 0
-                            };
-                        })
+                        ticketType: offer.id,
+                        count: reservations4performance.filter((r) => r.ticket_type === offer.id).length
                     };
-                })
-            };
-
-            // 場所ごとに、券種ごとの未入場者数を算出する
-            checkinInfosByWhere.forEach((checkinInfoByWhere) => {
-                const checkinCountsByTicketType = <factory.performance.ICheckinCountByWhere>aggregation.checkinCountsByWhere.find(
-                    (c) => c.where === checkinInfoByWhere.where
-                );
-
-                checkinInfoByWhere.checkins.forEach((checkin) => {
-                    (<factory.performance.ICheckinCountsByTicketType>checkinCountsByTicketType.checkinCountsByTicketType.find(
-                        (c) => c.ticketType === checkin.ticketType
-                    )).count += 1;
                 });
-            });
-            debug('aggregated.', performance.id);
 
-            return aggregation;
+                // 入場数の集計を行う
+                const checkinCountAggregation = await aggregateCheckinCount(checkGates, reservations4performance, offers);
+
+                const aggregation: factory.performance.IPerformanceWithAggregation = {
+                    id: performance.id,
+                    doorTime: performance.door_time,
+                    startDate: performance.start_date,
+                    endDate: performance.end_date,
+                    duration: performance.duration,
+                    maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
+                    remainingAttendeeCapacity: remainingAttendeeCapacity,
+                    remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
+                    tourNumber: performance.tour_number,
+                    evServiceStatus: performance.ttts_extension.ev_service_status,
+                    onlineSalesStatus: performance.ttts_extension.online_sales_status,
+                    reservationCount: reservations4performance.length,
+                    checkinCount: checkinCountAggregation.checkinCount,
+                    reservationCountsByTicketType: reservationCountsByTicketType,
+                    checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere
+                };
+
+                // 集計リストに追加
+                aggregations.push(aggregation);
+            } catch (error) {
+                console.error('couldn\'t create aggregation on performance', performance.id, error);
+            }
         }));
 
         await performanceWithAggregationRepo.store(aggregations, ttl);
+    };
+}
+
+/**
+ * 入場数の集計を行う
+ * @param checkinGates 入場ゲートリスト
+ * @param reservations 予約リスト
+ * @param offers 販売情報リスト
+ */
+export async function aggregateCheckinCount(
+    checkinGates: factory.place.checkinGate.IPlace[],
+    reservations: factory.reservation.event.IReservation[],
+    offers: factory.offer.seatReservation.ITicketType[]
+): Promise<{
+    checkinCount: number;
+    checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
+}> {
+    // 全予約の入場履歴をマージ
+    const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
+        (a, b) => {
+            // 同一ポイントでの重複チェックインを除外
+            // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
+            const checkinWheres = b.checkins.map((c) => c.where);
+            const uniqueCheckins = b.checkins
+                .filter((c, pos) => checkinWheres.indexOf(c.where) === pos)
+                .map((c) => {
+                    return {
+                        ...c,
+                        ticketType: b.ticket_type,
+                        ticketCategory: b.ticket_ttts_extension.category
+                    };
+                });
+
+            return [...a, ...uniqueCheckins];
+        },
+        []
+    );
+
+    // 入場ゲートごとに、券種ごとの入場者数を算出する
+    const checkinCountsByWhere = checkinGates.map((checkinGate) => {
+        // この入場ゲートの入場履歴
+        const uniqueCheckins4where = allUniqueCheckins.filter((c) => c.where === checkinGate.identifier);
+
+        return {
+            where: checkinGate.identifier,
+            checkinCountsByTicketType: offers.map((offer) => {
+                return {
+                    ticketType: offer.id,
+                    ticketCategory: offer.ttts_extension.category,
+                    // この券種の入場履歴数を集計
+                    count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
+                };
+            })
+        };
+    });
+
+    return {
+        checkinCount: allUniqueCheckins.length,
+        checkinCountsByWhere: checkinCountsByWhere
     };
 }
