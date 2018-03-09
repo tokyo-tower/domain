@@ -1,12 +1,16 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## Unreleased
+
 ### Added
 
 ### Changed
+
+- イベントの販売情報ごとの在庫状況集計時に、集計日時fromとthroughを指定できるように変更。
 
 ### Deprecated
 
@@ -15,7 +19,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
-
 
 ## v12.1.4 - 2018-03-05
 ### Changed
