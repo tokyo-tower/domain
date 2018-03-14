@@ -511,7 +511,8 @@ async function createEmailMessage4sellerReason(
     }).join('\n');
 
     const message = await email.render('returnOrderBySeller', {
-        purchaserName: reservation.purchaser_name,
+        purchaserNameJa: `${reservation.purchaser_last_name} ${reservation.purchaser_first_name}`,
+        purchaserNameEn: reservation.purchaser_name,
         paymentNo: reservation.payment_no,
         day: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('YYYY/MM/DD'),
         startTime: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('HH:mm'),
@@ -531,7 +532,7 @@ async function createEmailMessage4sellerReason(
             name: reservation.purchaser_name,
             email: reservation.purchaser_email
         },
-        about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Top Deck Tour)',
+        about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Tower Top Deck Tour)',
         text: message
     };
 }
