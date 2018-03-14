@@ -82,8 +82,13 @@ export function updatePerformanceAvailabilities(params: {
 
 /**
  * パフォーマンスの券種ごとに在庫状況を更新する
+ * @param params.startFrom 集計対象イベントの開始日時from
+ * @param params.startFrom 集計対象イベントの開始日時through
  */
-export function updatePerformanceOffersAvailability() {
+export function updatePerformanceOffersAvailability(params: {
+    startFrom: Date;
+    startThrough: Date;
+}) {
     return async (
         stockRepo: StockRepo,
         performanceRepo: PerformanceRepo,
@@ -95,10 +100,8 @@ export function updatePerformanceOffersAvailability() {
         const performances = await performanceRepo.performanceModel.find(
             {
                 start_date: {
-                    // tslint:disable-next-line:no-magic-numbers
-                    $gt: moment().toDate(),
-                    // tslint:disable-next-line:no-magic-numbers
-                    $lt: moment().add(3, 'months').toDate()
+                    $gte: params.startFrom,
+                    $lt: params.startThrough
                 }
             }
         )
