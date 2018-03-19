@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- MongoDBのreservationsとtransactionsに対して、レポートダウンロード時に使用するインデックスを追加。
+
 ### Deprecated
 
 ### Removed
