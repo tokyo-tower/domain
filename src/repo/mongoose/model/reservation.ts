@@ -181,6 +181,13 @@ schema.index(
     { name: 'findAndSortReservations' }
 );
 
+// backendでのレポートダウンロード時に使用
+schema.index(
+    {
+        order_number: 1
+    }
+);
+
 export default mongoose.model('Reservation', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

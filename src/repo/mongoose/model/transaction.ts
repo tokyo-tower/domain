@@ -255,6 +255,38 @@ schema.index(
     }
 );
 
+// backendでのレポートダウンロード時に使用
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.purchaser_group': 1,
+        endDate: 1
+    },
+    {
+        name: 'downloadSalesReport',
+        partialFilterExpression: {
+            endDate: { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.purchaser_group': 1,
+        'result.eventReservations.owner_username': 1,
+        endDate: 1
+    },
+    {
+        name: 'downloadSalesReportByStaff',
+        partialFilterExpression: {
+            endDate: { $exists: true },
+            'result.eventReservations.owner_username': { $exists: true }
+        }
+    }
+);
+
 export default mongoose.model('Transaction', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

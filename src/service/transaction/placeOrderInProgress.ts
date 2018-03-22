@@ -350,6 +350,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         case factory.paymentMethodType.GroupReservation:
         case factory.paymentMethodType.Invitation:
         case factory.paymentMethodType.Invoice:
+        case factory.paymentMethodType.OTC:
             // 認められるのはスタッフだけ(CognitoUserログインしているはず)
             if (purchaserGroup !== factory.person.Group.Staff || agent.memberOf === undefined) {
                 throw new factory.errors.Argument('paymentMethod', `Invalid payment method for ${purchaserGroup}.`);

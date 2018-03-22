@@ -18,6 +18,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v13.1.0 - 2018-03-22
+
+### Added
+
+- 決済方法に手売りを追加。
+
+### Changed
+
+- MongoDBのreservationsとtransactionsに対して、レポートダウンロード時に使用するインデックスを追加。
+
+### Fixed
+
+- 販売者都合での返金完了メールの内容調整。
+
 ## v13.0.0 - 2018-03-14
 
 ### Changed
