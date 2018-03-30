@@ -59,7 +59,7 @@ export interface IStartParams {
     /**
      * 購入者区分
      */
-    purchaserGroup: string;
+    purchaserGroup: factory.person.Group;
 }
 
 /**

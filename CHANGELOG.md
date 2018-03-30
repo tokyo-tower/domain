@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- パフォーマンスの拡張属性に、販売ステータス最終更新時の予約データリストを追加。
+
 ### Deprecated
 
 ### Removed
