@@ -286,6 +286,68 @@ schema.index(
         }
     }
 );
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.purchaser_group': 1,
+        startDate: 1,
+        endDate: 1
+    },
+    {
+        name: 'searchPlaceOrder4report',
+        partialFilterExpression: {
+            'object.purchaser_group': { $exists: true },
+            endDate: { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.transaction.object.purchaser_group': 1,
+        startDate: 1,
+        endDate: 1
+    },
+    {
+        name: 'searchReturnOrder4report',
+        partialFilterExpression: {
+            'object.transaction.object.purchaser_group': { $exists: true },
+            endDate: { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.purchaser_group': 1,
+        'result.eventReservations.performance_start_date': 1
+    },
+    {
+        name: 'searchPlaceOrder4reportByEventStartDate',
+        partialFilterExpression: {
+            'object.purchaser_group': { $exists: true },
+            'result.eventReservations.performance_start_date': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.transaction.object.purchaser_group': 1,
+        'object.transaction.result.eventReservations.performance_start_date': 1
+    },
+    {
+        name: 'searchReturnOrder4reportByEventStartDate',
+        partialFilterExpression: {
+            'object.transaction.object.purchaser_group': { $exists: true },
+            'result.eventReservations.performance_start_date': { $exists: true }
+        }
+    }
+);
 
 export default mongoose.model('Transaction', schema)
     .on('index', (error) => {
