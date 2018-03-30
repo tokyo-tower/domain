@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 売上レポート出力時に使用するtransactionsのインデックスを調整。
+
 ### Deprecated
 
 ### Removed
