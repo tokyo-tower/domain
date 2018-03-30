@@ -2,12 +2,20 @@ import * as mongoose from 'mongoose';
 
 import Film from './film';
 import multilingualString from './schemaTypes/multilingualString';
-import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
 import Screen from './screen';
 import Theater from './theater';
 import TicketTypeGroup from './ticketTypeGroup';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
+
+const extentedSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
 
 /**
  * パフォーマンススキーマ
@@ -42,7 +50,7 @@ const schema = new mongoose.Schema(
         start_time: String, // 上映開始時刻
         end_time: String, // 上映終了時刻
         canceled: Boolean, // 上映中止フラグ
-        ttts_extension: tttsExtensionPerformance, // 拡張情報
+        ttts_extension: extentedSchema, // 拡張情報
         door_time: Date,
         start_date: {
             type: Date,

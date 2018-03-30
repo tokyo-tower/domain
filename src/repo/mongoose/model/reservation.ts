@@ -4,12 +4,20 @@ import Film from './film';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
-import tttsExtensionPerformance from './schemaTypes/tttsExtensionPerformance';
 import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 import Screen from './screen';
 import Theater from './theater';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
+
+const performanceExtentedSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
 
 /**
  * 予約スキーマ
@@ -55,7 +63,7 @@ const schema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        performance_ttts_extension: tttsExtensionPerformance,
+        performance_ttts_extension: performanceExtentedSchema,
 
         theater: {
             type: String,
