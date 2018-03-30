@@ -264,6 +264,37 @@ schema.index(
         endDate: 1
     },
     {
+        name: 'downloadSalesReport',
+        partialFilterExpression: {
+            endDate: { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.purchaser_group': 1,
+        'result.eventReservations.owner_username': 1,
+        endDate: 1
+    },
+    {
+        name: 'downloadSalesReportByStaff',
+        partialFilterExpression: {
+            endDate: { $exists: true },
+            'result.eventReservations.owner_username': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        typeOf: 1,
+        status: 1,
+        'object.purchaser_group': 1,
+        startDate: 1,
+        endDate: 1
+    },
+    {
         name: 'searchPlaceOrder4report',
         partialFilterExpression: {
             'object.purchaser_group': { $exists: true },
@@ -276,6 +307,7 @@ schema.index(
         typeOf: 1,
         status: 1,
         'object.transaction.object.purchaser_group': 1,
+        startDate: 1,
         endDate: 1
     },
     {
@@ -313,22 +345,6 @@ schema.index(
         partialFilterExpression: {
             'object.transaction.object.purchaser_group': { $exists: true },
             'result.eventReservations.performance_start_date': { $exists: true }
-        }
-    }
-);
-schema.index(
-    {
-        typeOf: 1,
-        status: 1,
-        'object.purchaser_group': 1,
-        'result.eventReservations.owner_username': 1,
-        endDate: 1
-    },
-    {
-        name: 'downloadSalesReportByStaff',
-        partialFilterExpression: {
-            endDate: { $exists: true },
-            'result.eventReservations.owner_username': { $exists: true }
         }
     }
 );
