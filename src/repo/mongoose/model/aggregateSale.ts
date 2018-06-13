@@ -20,7 +20,7 @@ const schema = new mongoose.Schema(
         performance: {
             id: String,
             startDay: String,
-            startTime: Date
+            startTime: String
         },
         theater: {
             name: String
@@ -83,6 +83,34 @@ schema.index(
     {
         transaction_endDate_bucket: 1,
         aggregateUnit: 1
+    },
+    {
+        name: 'findByEndDateBucket'
+    }
+);
+
+schema.index(
+    {
+        'performance.startDay': 1,
+        aggregateUnit: 1
+    },
+    {
+        name: 'findByEventStartDate'
+    }
+);
+
+// ソートindex
+schema.index(
+    {
+        'performance.startDay': 1, // トライ回数の少なさ優先
+        'performance.startTime': 1, // 実行予定日時の早さ優先
+        payment_no: 1,
+        reservationStatus: -1,
+        'seat.code': 1,
+        status_sort: 1
+    },
+    {
+        name: 'sort4report'
     }
 );
 
