@@ -61,7 +61,8 @@ const schema = new mongoose.Schema(
         status_sort: String,
         price: String,
         cancellationFee: Number,
-        transaction_endDate_bucket: Date
+        transaction_endDate_bucket: Date,
+        aggregateUnit: String
     },
     {
         collection: 'aggregateSales',
@@ -80,7 +81,8 @@ const schema = new mongoose.Schema(
 // 検索
 schema.index(
     {
-        transaction_endDate_bucket: 1
+        transaction_endDate_bucket: 1,
+        aggregateUnit: 1
     }
 );
 
