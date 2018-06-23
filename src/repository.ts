@@ -8,6 +8,7 @@
 import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
+import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
@@ -25,6 +26,11 @@ import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
+
+/**
+ * 売上集計リポジトリー
+ */
+export class AggregateSale extends AggregateSaleRepo { }
 
 export namespace action {
     /**

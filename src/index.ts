@@ -12,6 +12,7 @@ import * as Models from './repo/mongoose';
 import * as CommonUtil from './util/common';
 
 import * as AdminService from './service/admin';
+import * as AggregateService from './service/aggregate';
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
 import * as OfferService from './service/offer';
@@ -66,6 +67,7 @@ export namespace service {
     export import order = OrderService;
     export import performance = PerformanceService;
     export import report = ReportService;
+    export import aggregate = AggregateService;
     export import sales = SalesService;
     export import stock = StockService;
     export import task = TaskService;
