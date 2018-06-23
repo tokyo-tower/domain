@@ -61,7 +61,7 @@ const schema = new mongoose.Schema(
         status_sort: String,
         price: String,
         cancellationFee: Number,
-        transaction_endDate_bucket: Date,
+        date_bucket: Date,
         aggregateUnit: String
     },
     {
@@ -81,11 +81,11 @@ const schema = new mongoose.Schema(
 // 検索
 schema.index(
     {
-        transaction_endDate_bucket: 1,
+        date_bucket: 1,
         aggregateUnit: 1
     },
     {
-        name: 'findByEndDateBucket'
+        name: 'findByDateBucket'
     }
 );
 
