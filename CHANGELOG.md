@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v13.2.0 - 2018-06-23
+
+### Changed
+
+- 集計ドメインとリポジトリ追加（売上レポート集計用）
+
 ## v13.1.1 - 2018-04-17
 
 ### Changed
