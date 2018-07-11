@@ -273,3 +273,36 @@ describe('searchPlaceOrder()', () => {
         sandbox.verify();
     });
 });
+
+describe('findReturnOrderById()', () => {
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('MongoDBの状態が正常であれば、オブジェクトを取得できるはず', async () => {
+        const id = '';
+
+        const repo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const doc = new repo.transactionModel();
+
+        sandbox.mock(repo.transactionModel).expects('findOne').once()
+            .chain('exec').resolves(doc);
+
+        const result = await repo.findReturnOrderById(id);
+        assert.equal(typeof result, 'object');
+        sandbox.verify();
+    });
+
+    it('取引が存在しなければ、NotFoundエラーになるはず', async () => {
+        const id = '';
+
+        const repo = new ttts.repository.Transaction(ttts.mongoose.connection);
+
+        sandbox.mock(repo.transactionModel).expects('findOne').once()
+            .chain('exec').resolves(null);
+
+        const result = await repo.findReturnOrderById(id).catch((err) => err);
+        assert(result instanceof ttts.factory.errors.NotFound);
+        sandbox.verify();
+    });
+});

@@ -137,3 +137,48 @@ describe('TaskFunctionsService.createOrder()', () => {
         sandbox.verify();
     });
 });
+
+describe('TaskFunctionsService.returnOrder()', () => {
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('注文作成サービスが正常であれば、エラーにならないはず', async () => {
+        const data = {
+            transactionId: 'transactionId'
+        };
+
+        const returnOrder = TaskFunctionsService.returnOrder(<any>data);
+
+        sandbox.mock(ttts.service.order).expects('processReturn').withArgs(data.transactionId).once()
+            .returns(sandbox.stub().resolves());
+
+        const result = await returnOrder(ttts.mongoose.connection, redis.createClient());
+
+        assert.equal(result, undefined);
+        sandbox.verify();
+    });
+});
+
+describe('TaskFunctionsService.returnOrdersByPerformance()', () => {
+    afterEach(() => {
+        sandbox.restore();
+    });
+
+    it('注文作成サービスが正常であれば、エラーにならないはず', async () => {
+        const data = {
+            performanceId: 'performanceId',
+            agentId: 'agentId'
+        };
+
+        const returnOrder = TaskFunctionsService.returnOrdersByPerformance(<any>data);
+
+        sandbox.mock(ttts.service.order).expects('processReturnAllByPerformance').withArgs(data.agentId, data.performanceId).once()
+            .returns(sandbox.stub().resolves());
+
+        const result = await returnOrder(ttts.mongoose.connection, redis.createClient());
+
+        assert.equal(result, undefined);
+        sandbox.verify();
+    });
+});

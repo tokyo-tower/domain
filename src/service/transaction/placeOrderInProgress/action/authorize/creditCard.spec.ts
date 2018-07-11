@@ -56,7 +56,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
         sandbox.mock(creditService).expects('entryTran').once().resolves(entryTranResult);
         sandbox.mock(creditService).expects('execTran').once().resolves(execTranResult);
         sandbox.mock(authorizeActionRepo).expects('complete').once().resolves(action);
@@ -105,7 +105,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').never();
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').never();
+        sandbox.mock(organizationRepo).expects('findCorporationById').never();
         sandbox.mock(creditService).expects('entryTran').never();
         sandbox.mock(creditService).expects('execTran').never();
 
@@ -158,7 +158,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
         sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(creditService).expects('execTran').never();
         sandbox.mock(authorizeActionRepo).expects('giveUp').once()
@@ -213,7 +213,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
         sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(creditService).expects('execTran').never();
         sandbox.mock(authorizeActionRepo).expects('giveUp').once()
@@ -229,11 +229,11 @@ describe('action.authorize.creditCard.create()', () => {
             creditCard
         )(authorizeActionRepo, organizationRepo, transactionRepo, creditService).catch((err) => err);
 
-        assert(result instanceof Error);
+        assert.equal(result, entryTranResult);
         sandbox.verify();
     });
 
-    it('GMOで流量制限オーバーエラーが発生すれば、承認アクションを諦めて、ServiceUnavailableエラーとなるはず', async () => {
+    it('GMOで流量制限オーバーエラーが発生すれば、承認アクションを諦めて、RateLimitExceededエラーとなるはず', async () => {
         const agent = {
             id: 'agentId'
         };
@@ -272,7 +272,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
         sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(creditService).expects('execTran').never();
         sandbox.mock(authorizeActionRepo).expects('giveUp').once()
@@ -289,6 +289,121 @@ describe('action.authorize.creditCard.create()', () => {
         )(authorizeActionRepo, organizationRepo, transactionRepo, creditService).catch((err) => err);
 
         assert(result instanceof ttts.factory.errors.RateLimitExceeded);
+        sandbox.verify();
+    });
+
+    it('GMOでrequestモジュールのエラーが発生すれば、承認アクションを諦めて、ServiceUnavailableエラーとなるはず', async () => {
+        const agent = {
+            id: 'agentId'
+        };
+        const seller = {
+            id: 'sellerId',
+            name: { ja: 'ja', en: 'ne' },
+            gmoInfo: {
+                shopId: 'shopId',
+                shopPass: 'shopPass'
+            }
+        };
+        const transaction = {
+            id: 'transactionId',
+            agent: agent,
+            seller: seller
+        };
+        const orderId = 'orderId';
+        const amount = 1234;
+        const creditCard = <any>{};
+        const action = {
+            id: 'actionId',
+            agent: agent,
+            recipient: seller
+        };
+        const entryTranResult = new Error('message');
+        entryTranResult.name = 'RequestError';
+        (<any>entryTranResult).error = {
+            code: 'ETIMEDOUT'
+        };
+
+        const authorizeActionRepo = new ttts.repository.action.authorize.CreditCard(ttts.mongoose.connection);
+        const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
+        const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const creditService = new ttts.GMO.service.Credit({ endpoint: 'https://example.com' });
+
+        sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
+            .withExactArgs(transaction.id).resolves(transaction);
+        sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
+        sandbox.mock(creditService).expects('execTran').never();
+        sandbox.mock(authorizeActionRepo).expects('giveUp').once()
+            .withArgs(action.id, sinon.match({ message: entryTranResult.message })).resolves(action);
+        sandbox.mock(authorizeActionRepo).expects('complete').never();
+
+        const result = await ttts.service.transaction.placeOrderInProgress.action.authorize.creditCard.create(
+            agent.id,
+            transaction.id,
+            orderId,
+            amount,
+            ttts.GMO.utils.util.Method.Lump,
+            creditCard
+        )(authorizeActionRepo, organizationRepo, transactionRepo, creditService).catch((err) => err);
+
+        assert(result instanceof ttts.factory.errors.ServiceUnavailable);
+        sandbox.verify();
+    });
+
+    it('GMOでrequestモジュールのエラーが発生すれば、承認アクションを諦めて、そのままエラーとなるはず', async () => {
+        const agent = {
+            id: 'agentId'
+        };
+        const seller = {
+            id: 'sellerId',
+            name: { ja: 'ja', en: 'ne' },
+            gmoInfo: {
+                shopId: 'shopId',
+                shopPass: 'shopPass'
+            }
+        };
+        const transaction = {
+            id: 'transactionId',
+            agent: agent,
+            seller: seller
+        };
+        const orderId = 'orderId';
+        const amount = 1234;
+        const creditCard = <any>{};
+        const action = {
+            id: 'actionId',
+            agent: agent,
+            recipient: seller
+        };
+        const entryTranResult = new Error('message');
+        entryTranResult.name = 'RequestError';
+
+        const authorizeActionRepo = new ttts.repository.action.authorize.CreditCard(ttts.mongoose.connection);
+        const organizationRepo = new ttts.repository.Organization(ttts.mongoose.connection);
+        const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const creditService = new ttts.GMO.service.Credit({ endpoint: 'https://example.com' });
+
+        sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
+            .withExactArgs(transaction.id).resolves(transaction);
+        sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
+        sandbox.mock(creditService).expects('execTran').never();
+        sandbox.mock(authorizeActionRepo).expects('giveUp').once()
+            .withArgs(action.id, sinon.match({ message: entryTranResult.message })).resolves(action);
+        sandbox.mock(authorizeActionRepo).expects('complete').never();
+
+        const result = await ttts.service.transaction.placeOrderInProgress.action.authorize.creditCard.create(
+            agent.id,
+            transaction.id,
+            orderId,
+            amount,
+            ttts.GMO.utils.util.Method.Lump,
+            creditCard
+        )(authorizeActionRepo, organizationRepo, transactionRepo, creditService).catch((err) => err);
+
+        assert.equal(result, entryTranResult);
         sandbox.verify();
     });
 
@@ -331,7 +446,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
         sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(creditService).expects('execTran').never();
         sandbox.mock(authorizeActionRepo).expects('giveUp').once()
@@ -390,7 +505,7 @@ describe('action.authorize.creditCard.create()', () => {
         sandbox.mock(transactionRepo).expects('findPlaceOrderInProgressById').once()
             .withExactArgs(transaction.id).resolves(transaction);
         sandbox.mock(authorizeActionRepo).expects('start').once().resolves(action);
-        sandbox.mock(organizationRepo).expects('findMovieTheaterById').once().withExactArgs(seller.id).resolves(seller);
+        sandbox.mock(organizationRepo).expects('findCorporationById').once().withExactArgs(seller.id).resolves(seller);
         sandbox.mock(creditService).expects('entryTran').once().rejects(entryTranResult);
         sandbox.mock(creditService).expects('execTran').never();
         sandbox.mock(authorizeActionRepo).expects('giveUp').once()

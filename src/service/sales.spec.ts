@@ -80,6 +80,7 @@ describe('settleCreditCardAuth()', () => {
             .withArgs(existingTransaction.id).resolves(existingTransaction);
         sandbox.mock(ttts.GMO.services.credit).expects('searchTrade').once().resolves(searchTradeResult);
         sandbox.mock(ttts.GMO.services.credit).expects('alterTran').once().resolves();
+        sandbox.mock(transactionRepo.transactionModel).expects('findByIdAndUpdate').once().chain('exec').resolves();
 
         const result = await ttts.service.sales.settleCreditCardAuth(existingTransaction.id)(transactionRepo);
 
