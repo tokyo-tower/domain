@@ -221,11 +221,16 @@ export function aggregateSalesByEndDate(targetDate: string) {
         debug(datas);
 
         try {
-            await aggregateSaleRepo.aggregateSaleModel.remove({ date_bucket: datas[0].date_bucket, aggregateUnit: AggregateUnit.SalesByEndDate });
-            await aggregateSaleRepo.aggregateSaleModel.create(datas);
+            aggregateSaleRepo.aggregateSaleModel.remove(
+                { date_bucket: datas[0].date_bucket, aggregateUnit: AggregateUnit.SalesByEndDate },
+                async (err) => {
+                    if (err) { throw Error(err); }
+                    await aggregateSaleRepo.aggregateSaleModel.create(datas);
+                });
         } catch (err) {
             console.error(err);
         }
+
     };
 }
 
@@ -279,14 +284,17 @@ export function aggregateSalesByEventStartDate(targetDate: string) {
 
         debug(datas);
 
-        if (datas) {
-            try {
-                await aggregateSaleRepo.aggregateSaleModel.remove({ date_bucket: datas[0].date_bucket, aggregateUnit: AggregateUnit.SalesByEventStartDate });
-                await aggregateSaleRepo.aggregateSaleModel.create(datas);
-            } catch (err) {
-                console.error(err);
-            }
+        try {
+            aggregateSaleRepo.aggregateSaleModel.remove(
+                { date_bucket: datas[0].date_bucket, aggregateUnit: AggregateUnit.SalesByEventStartDate },
+                async (err) => {
+                    if (err) { throw Error(err); }
+                    await aggregateSaleRepo.aggregateSaleModel.create(datas);
+                });
+        } catch (err) {
+            console.error(err);
         }
+
     };
 }
 
