@@ -221,10 +221,15 @@ export function aggregateSalesByEndDate(targetDate: string) {
         debug(datas);
 
         try {
-            await aggregateSaleRepo.aggregateSaleModel.create(datas);
+            await aggregateSaleRepo.aggregateSaleModel.remove(
+                { date_bucket: datas[0].date_bucket, aggregateUnit: AggregateUnit.SalesByEndDate }).exec();
+            await aggregateSaleRepo.aggregateSaleModel.create(datas).catch((reason) => {
+                if (reason) { throw Error(reason); }
+            });
         } catch (err) {
             console.error(err);
         }
+
     };
 }
 
@@ -279,10 +284,15 @@ export function aggregateSalesByEventStartDate(targetDate: string) {
         debug(datas);
 
         try {
-            await aggregateSaleRepo.aggregateSaleModel.create(datas);
+            await aggregateSaleRepo.aggregateSaleModel.remove(
+                { date_bucket: datas[0].date_bucket, aggregateUnit: AggregateUnit.SalesByEventStartDate }).exec();
+            await aggregateSaleRepo.aggregateSaleModel.create(datas).catch((reason) => {
+                if (reason) { throw Error(reason); }
+            });
         } catch (err) {
             console.error(err);
         }
+
     };
 }
 
