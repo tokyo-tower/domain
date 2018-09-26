@@ -12,6 +12,7 @@ import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
+import { RedisRepository as SuspensionRepo } from './repo/itemAvailability/suspension';
 import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibitionEvent';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { MongoRepository as OrganizationRepo } from './repo/organization';
@@ -59,6 +60,10 @@ export namespace itemAvailability {
      * 座席予約オファー在庫状況リポジトリー
      */
     export class SeatReservationOffer extends SeatReservationOfferAvailabilityRepo { }
+    /**
+     * パフォーマンス在庫状況レポジトリー
+     */
+    export class Suspension extends SuspensionRepo { }
 }
 
 /**
