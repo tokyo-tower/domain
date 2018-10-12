@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 取引と予約の検索パフォーマンス向上のため、MongoDBのインデックスを調整。
+
 ### Deprecated
 
 ### Removed
