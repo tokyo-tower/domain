@@ -11,6 +11,7 @@ import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
+import { MongoRepository as AggregateSaleRepo } from '../repo/aggregateSale';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
@@ -19,6 +20,7 @@ import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
+import * as AggregateService from '../service/aggregate';
 import * as NotificationService from '../service/notification';
 import * as OrderService from '../service/order';
 import * as SalesService from '../service/sales';
@@ -115,5 +117,23 @@ export function returnOrdersByPerformance(
         await OrderService.processReturnAllByPerformance(data.agentId, data.performanceId)(
             performanceRepo, reservationRepo, transactionRepo
         );
+    };
+}
+
+export function createPlaceOrderReport(
+    data: factory.task.createPlaceOrderReport.IData
+): IOperation<void> {
+    return async (connection: mongoose.Connection) => {
+        const aggregateSaleRepo = new AggregateSaleRepo(connection);
+        await AggregateService.report4sales.createPlaceOrderReport(data)(aggregateSaleRepo);
+    };
+}
+
+export function createReturnOrderReport(
+    data: factory.task.createReturnOrderReport.IData
+): IOperation<void> {
+    return async (connection: mongoose.Connection) => {
+        const aggregateSaleRepo = new AggregateSaleRepo(connection);
+        await AggregateService.report4sales.createReturnOrderReport(data)(aggregateSaleRepo);
     };
 }

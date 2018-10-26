@@ -114,6 +114,15 @@ schema.index(
     }
 );
 
+schema.index(
+    {
+        'performance.id': 1
+    },
+    {
+        name: 'searchByPerformanceId'
+    }
+);
+
 export default mongoose.model('AggregateSale', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

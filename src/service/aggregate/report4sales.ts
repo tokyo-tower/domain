@@ -171,6 +171,122 @@ export interface IUnhealthGMOSale {
 }
 
 /**
+ * 注文取引からレポートを作成する
+ */
+export function createPlaceOrderReport(params: { transaction: factory.transaction.placeOrder.ITransaction }) {
+    return async (
+        aggregateSaleRepo: AggregateSaleRepo
+    ): Promise<void> => {
+        const datas: IData[] = [];
+        if (params.transaction.endDate !== undefined) {
+            const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
+            datas.push(...transactionResult.eventReservations.map((r) => {
+                return reservation2data(
+                    r,
+                    transactionResult.order.price,
+                    <Date>params.transaction.endDate,
+                    AggregateUnit.SalesByEndDate
+                );
+            }));
+        }
+        debug('creating', datas.length, 'datas...');
+
+        // 冪等性の確保!
+        await Promise.all(datas.map(async (data) => {
+            await saveReport(data)(aggregateSaleRepo);
+        }));
+    };
+}
+
+/**
+ * 注文返品取引からレポートを作成する
+ */
+export function createReturnOrderReport(params: { transaction: factory.transaction.returnOrder.ITransaction }) {
+    return async (
+        aggregateSaleRepo: AggregateSaleRepo
+    ): Promise<void> => {
+        const datas: IData[] = [];
+
+        // 取引からキャンセル予約情報取得
+        const placeOrderTransaction = params.transaction.object.transaction;
+        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
+        const eventReservations = placeOrderTransactionResult.eventReservations;
+        for (const r of eventReservations) {
+            // 座席分のキャンセルデータ
+            datas.push({
+                ...reservation2data(
+                    r,
+                    placeOrderTransactionResult.order.price,
+                    <Date>params.transaction.endDate,
+                    AggregateUnit.SalesByEndDate
+                ),
+                reservationStatus: Status4csv.Cancelled,
+                status_sort: `${r.status}_1`,
+                cancellationFee: params.transaction.object.cancellationFee,
+                orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
+            });
+
+            // 購入分のキャンセル料データ
+            if (r.payment_seat_index === 0) {
+                datas.push({
+                    ...reservation2data(
+                        r,
+                        placeOrderTransactionResult.order.price,
+                        <Date>params.transaction.endDate,
+                        AggregateUnit.SalesByEndDate
+                    ),
+                    seat: {
+                        code: '',
+                        gradeName: '',
+                        gradeAdditionalCharge: ''
+                    },
+                    ticketType: {
+                        name: '',
+                        charge: params.transaction.object.cancellationFee.toString(),
+                        csvCode: ''
+                    },
+                    payment_seat_index: '',
+                    reservationStatus: Status4csv.CancellationFee,
+                    status_sort: `${r.status}_2`,
+                    cancellationFee: params.transaction.object.cancellationFee,
+                    price: params.transaction.object.cancellationFee.toString(),
+                    orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
+                });
+            }
+        }
+
+        debug('creating', datas.length, 'datas...');
+
+        // 冪等性の確保!
+        await Promise.all(datas.map(async (data) => {
+            await saveReport(data)(aggregateSaleRepo);
+        }));
+    };
+}
+
+/**
+ * レポートを保管する
+ */
+function saveReport(data: IData) {
+    return async (
+        aggregateSaleRepo: AggregateSaleRepo
+    ): Promise<void> => {
+        const report = await aggregateSaleRepo.aggregateSaleModel.findOneAndUpdate(
+            {
+                'performance.id': data.performance.id,
+                payment_no: data.payment_no,
+                payment_seat_index: data.payment_seat_index,
+                reservationStatus: data.reservationStatus,
+                aggregateUnit: data.aggregateUnit
+            },
+            data,
+            { new: true, upsert: true }
+        ).exec();
+        debug('report created', report);
+    };
+}
+
+/**
  * 日付指定で売上データを集計する。
  * @export
  * @function
