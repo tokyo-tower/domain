@@ -113,14 +113,21 @@ schema.index(
         name: 'sort4report'
     }
 );
-
 schema.index(
-    {
-        'performance.id': 1
-    },
-    {
-        name: 'searchByPerformanceId'
-    }
+    { 'performance.id': 1 },
+    { name: 'searchByPerformanceId' }
+);
+schema.index(
+    { payment_no: 1 },
+    { name: 'searchByPaymentNo' }
+);
+schema.index(
+    { payment_seat_index: 1 },
+    { name: 'searchByPaymentSeatIndex' }
+);
+schema.index(
+    { reservationStatus: 1 },
+    { name: 'searchByReservationStatus' }
 );
 
 export default mongoose.model('AggregateSale', schema)

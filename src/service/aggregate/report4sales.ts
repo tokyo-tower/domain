@@ -287,6 +287,32 @@ function saveReport(data: IData) {
 }
 
 /**
+ * 予約データからレポートを更新する
+ * 何かしらの操作で予約データ更新時に連動される(入場時など)
+ */
+export function updateOrderReportByReservation(params: { reservation: factory.reservation.event.IReservation }) {
+    return async (
+        aggregateSaleRepo: AggregateSaleRepo
+    ): Promise<void> => {
+        const result = await aggregateSaleRepo.aggregateSaleModel.update(
+            {
+                'performance.id': params.reservation.performance,
+                payment_no: params.reservation.payment_no,
+                payment_seat_index: params.reservation.payment_seat_index
+            },
+            {
+                checkedin: params.reservation.checkins.length > 0 ? 'TRUE' : 'FALSE',
+                checkinDate: params.reservation.checkins.length > 0
+                    ? moment(params.reservation.checkins[0].when).format('YYYY/MM/DD HH:mm:ss')
+                    : ''
+            },
+            { multi: true }
+        ).exec();
+        debug('report updated', result);
+    };
+}
+
+/**
  * 日付指定で売上データを集計する。
  * @export
  * @function

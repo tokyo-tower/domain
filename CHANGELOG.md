@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 注文取引レポート作成タスクを追加。
 - 注文返品取引レポート作成タスクを追加。
+- 注文レポート更新タスクを追加。
 
 ### Changed
 

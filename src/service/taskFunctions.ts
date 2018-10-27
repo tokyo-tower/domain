@@ -137,3 +137,12 @@ export function createReturnOrderReport(
         await AggregateService.report4sales.createReturnOrderReport(data)(aggregateSaleRepo);
     };
 }
+
+export function updateOrderReportByReservation(
+    data: factory.task.updateOrderReportByReservation.IData
+): IOperation<void> {
+    return async (connection: mongoose.Connection) => {
+        const aggregateSaleRepo = new AggregateSaleRepo(connection);
+        await AggregateService.report4sales.updateOrderReportByReservation(data)(aggregateSaleRepo);
+    };
+}
