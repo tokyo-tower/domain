@@ -348,7 +348,58 @@ schema.index(
         }
     }
 );
-
+schema.index(
+    {
+        'result.eventReservations.performance_start_date': 1
+    },
+    {
+        name: 'searchPlaceOrderByEventStartDate',
+        partialFilterExpression: {
+            'result.eventReservations.performance_start_date': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'object.transaction.result.eventReservations.performance_start_date': 1
+    },
+    {
+        name: 'searchReturnOrderByEventStartDate',
+        partialFilterExpression: {
+            'object.transaction.result.eventReservations.performance_start_date': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'object.purchaser_group': 1
+    },
+    {
+        name: 'searchPlaceOrderByPurchaserGroup',
+        partialFilterExpression: {
+            'object.purchaser_group': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'object.transaction.object.purchaser_group': 1
+    },
+    {
+        name: 'searchReturnOrderByPurchaserGroup',
+        partialFilterExpression: {
+            'object.transaction.object.purchaser_group': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { typeOf: 1 },
+    { name: 'searchByTypeOf' }
+);
+schema.index(
+    { status: 1 },
+    { name: 'searchByStatus' }
+);
 export default mongoose.model('Transaction', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

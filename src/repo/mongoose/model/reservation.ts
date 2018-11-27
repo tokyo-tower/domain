@@ -191,9 +191,15 @@ schema.index(
 
 // backendでのレポートダウンロード時に使用
 schema.index(
-    {
-        order_number: 1
-    }
+    { order_number: 1 }
+);
+schema.index(
+    { performance_start_date: 1 },
+    { name: 'searchByPerformanceStartDate' }
+);
+schema.index(
+    { purchased_at: 1 },
+    { name: 'searchByPurchasedAt' }
 );
 
 export default mongoose.model('Reservation', schema)

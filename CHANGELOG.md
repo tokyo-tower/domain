@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v13.2.2 - 2018-11-27
+
+### Added
+
+- 注文取引レポート作成タスクを追加。
+- 注文返品取引レポート作成タスクを追加。
+- 注文レポート更新タスクを追加。
+
+### Changed
+
+- 取引と予約の検索パフォーマンス向上のため、MongoDBのインデックスを調整。
 
 ## v13.2.1 - 2018-08-08
 ### Changed
