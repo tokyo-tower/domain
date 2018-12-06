@@ -187,7 +187,7 @@ export function cancel(
             });
             debug('alterTran processed', GMO.utils.util.JobCd.Void);
         } catch (error) {
-            console.error('cancelCreditCardAuth threw', error);
+            // no op
         }
     };
 }

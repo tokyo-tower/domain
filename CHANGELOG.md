@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 複数のWAITER許可証発行者に対応
+- install @waiter/domain@3.0.0
+
 ### Deprecated
 
 ### Removed

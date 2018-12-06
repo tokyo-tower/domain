@@ -369,6 +369,7 @@ export function aggregateSalesByEndDate(targetDate: string) {
                 if (reason) { throw Error(reason); }
             });
         } catch (err) {
+            // tslint:disable-next-line:no-console
             console.error(err);
         }
 
@@ -432,6 +433,7 @@ export function aggregateSalesByEventStartDate(targetDate: string) {
                 if (reason) { throw Error(reason); }
             });
         } catch (err) {
+            // tslint:disable-next-line:no-console
             console.error(err);
         }
 

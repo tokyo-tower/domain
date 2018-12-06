@@ -1,10 +1,7 @@
 /**
- * placeOrder in progress transaction service
  * 進行中注文取引サービス
- * @namespace service.transaction.placeOrderInProgress
  */
-
-import * as waiter from '@motionpicture/waiter-domain';
+import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
@@ -32,8 +29,6 @@ export type IConfirmOperation<T> = (
 
 /**
  * 取引開始パラメーターインターフェース
- * @interface
- * @memberof service.transaction.placeOrderInProgress
  */
 export interface IStartParams {
     /**
@@ -64,8 +59,6 @@ export interface IStartParams {
 
 /**
  * 取引開始
- * @function
- * @memberof service.transaction.placeOrderInProgress
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
     return async (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => {
@@ -77,7 +70,10 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         // WAITER許可証トークンがあれば検証する
         if (params.passportToken !== undefined) {
             try {
-                passport = await waiter.service.passport.verify(params.passportToken, <string>process.env.WAITER_SECRET);
+                passport = await waiter.service.passport.verify({
+                    token: params.passportToken,
+                    secret: <string>process.env.WAITER_SECRET
+                });
             } catch (error) {
                 throw new factory.errors.Argument('passportToken', `Invalid token. ${error.message}`);
             }
@@ -150,45 +146,41 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
 /**
  * WAITER許可証の有効性チェック
- * @function
  * @param passport WAITER許可証
  * @param sellerIdentifier 販売者識別子
  */
 function validatePassport(passport: waiter.factory.passport.IPassport, sellerIdentifier: string) {
+    const WAITER_PASSPORT_ISSUER = process.env.WAITER_PASSPORT_ISSUER;
+    if (WAITER_PASSPORT_ISSUER === undefined) {
+        throw new Error('WAITER_PASSPORT_ISSUER unset');
+    }
+    const issuers = WAITER_PASSPORT_ISSUER.split(',');
+    const validIssuer = issuers.indexOf(passport.iss) >= 0;
+
     // スコープのフォーマットは、placeOrderTransaction.{sellerId}
     const explodedScopeStrings = passport.scope.split('.');
-
-    return (
-        passport.iss === <string>process.env.WAITER_PASSPORT_ISSUER && // 許可証発行者確認
-        // tslint:disable-next-line:no-magic-numbers
-        explodedScopeStrings.length === 2 &&
+    const validScope = (
         explodedScopeStrings[0] === 'placeOrderTransaction' && // スコープ接頭辞確認
         explodedScopeStrings[1] === sellerIdentifier // 販売者識別子確認
     );
+
+    return validIssuer && validScope;
 }
 
 /**
  * 取引に対するアクション
- * @export
- * @memberof service.transaction.placeOrderInProgress
  */
 export namespace action {
     /**
      * 取引に対する承認アクション
-     * @export
-     * @memberof service.transaction.placeOrderInProgress.action
      */
     export namespace authorize {
         /**
          * クレジットカード承認アクションサービス
-         * @export
-         * @memberof service.transaction.placeOrderInProgress.action.authorize
          */
         export import creditCard = CreditCardAuthorizeActionService;
         /**
          * 座席予約承認アクションサービス
-         * @export
-         * @memberof service.transaction.placeOrderInProgress.action.authorize
          */
         export import seatReservation = SeatReservationAuthorizeActionService;
     }
@@ -322,8 +314,6 @@ export function confirm(params: {
 
 /**
  * 取引が確定可能な状態かどうかをチェックする
- * @function
- * @returns {boolean}
  */
 function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
     const paymentMethod = transaction.object.paymentMethod;

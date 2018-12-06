@@ -62,6 +62,7 @@ export default mongoose.model('Screen', schema)
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
         if (error !== undefined) {
+            // tslint:disable-next-line:no-console
             console.error(error);
         }
     });
