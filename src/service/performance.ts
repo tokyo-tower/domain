@@ -368,6 +368,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 // 集計リストに追加
                 aggregations.push(aggregation);
             } catch (error) {
+                // tslint:disable-next-line:no-console
                 console.error('couldn\'t create aggregation on performance', performance.id, error);
             }
         }));

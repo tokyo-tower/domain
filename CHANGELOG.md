@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v13.2.3 - 2018-12-10
+
+### Changed
+
+- 複数のWAITER許可証発行者に対応
+- install @waiter/domain@3.0.0
+
 ## v13.2.2 - 2018-11-27
 
 ### Added
