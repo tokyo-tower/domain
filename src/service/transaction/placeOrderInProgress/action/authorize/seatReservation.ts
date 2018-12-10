@@ -4,7 +4,7 @@
  */
 
 import * as createDebug from 'debug';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 import * as mongoose from 'mongoose';
 
 import * as factory from '@motionpicture/ttts-factory';
