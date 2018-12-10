@@ -10,9 +10,7 @@ import * as Email from 'email-templates';
 import * as difference from 'lodash.difference';
 // @ts-ignore
 import * as uniq from 'lodash.uniq';
-import * as moment from 'moment';
-// tslint:disable-next-line:no-require-imports no-var-requires
-require('moment-timezone');
+import * as moment from 'moment-timezone';
 import * as numeral from 'numeral';
 
 import { MongoRepository as OrderRepo } from '../repo/order';
