@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 注文検索を追加
 - タスク検索を追加
+- TriggerWebhookタスクを追加
 
 ### Changed
 

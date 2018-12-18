@@ -1,13 +1,10 @@
 /**
- * placeOrder transaction service
  * 注文取引サービス
- * @namespace service.transaction.placeOrder
  */
-
+import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as json2csv from 'json2csv';
 
-import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as TaskRepository } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -47,12 +44,34 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
     };
 }
 
-// tslint:disable-next-line:max-func-body-length
 export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask[]> {
+    // tslint:disable-next-line:max-func-body-length
     return async (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
 
         const taskAttributes: factory.task.IAttributes[] = [];
+
+        // ウェブフックタスクを追加
+        const webhookUrl =
+            // tslint:disable-next-line:max-line-length
+            `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/analyzePlaceOrder`;
+        const triggerWebhookTaskAttributes: factory.task.triggerWebhook.IAttributes = {
+            name: factory.taskName.TriggerWebhook,
+            status: factory.taskStatus.Ready,
+            runsAt: new Date(), // なるはやで実行
+            remainingNumberOfTries: 3,
+            lastTriedAt: null,
+            numberOfTried: 0,
+            executionResults: [],
+            data: {
+                url: webhookUrl,
+                payload: { transaction: transaction }
+            }
+        };
+        taskAttributes.push(
+            triggerWebhookTaskAttributes
+        );
+
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
                 taskAttributes.push(factory.task.settleSeatReservation.createAttributes({
