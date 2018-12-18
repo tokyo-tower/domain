@@ -120,8 +120,7 @@ export class MongoRepository {
     }
 
     /**
-     * IDから返品取引を取得する
-     * @param {string} transactionId transaction id
+     * 返品取引をひとつ検索する
      */
     public async findReturnOrderById(transactionId: string): Promise<factory.transaction.returnOrder.ITransaction> {
         const doc = await this.transactionModel.findOne({

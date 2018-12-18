@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@motionpicture/gmo-service": "^4.3.0",
-    "@motionpicture/ttts-factory": "^0.2.0",
+    "@motionpicture/ttts-factory": "^1.0.0-alpha.0",
     "@sendgrid/mail": "^6.3.1",
     "@types/mongoose": "^4.7.40",
     "@types/redis": "^2.8.8",
@@ -69,17 +69,17 @@
     "sinon": "^4.5.0",
     "sinon-mongoose": "^2.2.1",
     "snyk": "^1.115.0",
-    "ts-node": "^3.3.0",
+    "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
-    "tslint-microsoft-contrib": "^5.2.1",
-    "typescript": "^3.2.1"
+    "tslint-microsoft-contrib": "^6.0.0",
+    "typescript": "^3.2.2"
   },
   "engines": {
     "node": ">=6.9.1",
     "npm": ">=3.10.8"
   },
   "keywords": [],
-  "license": "UNLICENSED",
+  "license": "ISC",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [

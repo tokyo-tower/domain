@@ -47,9 +47,6 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
     };
 }
 
-/**
- * ID指定で取引のタスク出力
- */
 // tslint:disable-next-line:max-func-body-length
 export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask[]> {
     return async (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => {

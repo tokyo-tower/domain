@@ -228,9 +228,6 @@ export async function exportTasks(status: factory.transactionStatusType) {
     await transactionRepo.setTasksExportedById(transaction.id);
 }
 
-/**
- * ID指定で取引のタスク出力
- */
 export async function exportTasksById(transactionId: string): Promise<factory.task.ITask[]> {
     const transactionRepo = new TransactionRepo(mongoose.connection);
     const taskRepo = new TaskRepo(mongoose.connection);

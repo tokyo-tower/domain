@@ -1,9 +1,8 @@
 /**
  * TTTSドメインモジュール
- * @module
  */
-
 import * as GMO from '@motionpicture/gmo-service';
+import * as AWS from 'aws-sdk';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
@@ -53,6 +52,11 @@ export import mongoose = mongoose;
 export import redis = redis;
 
 export import GMO = GMO;
+
+/**
+ * AWS SDK
+ */
+export import AWS = AWS;
 
 export {
     Models,

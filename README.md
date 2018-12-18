@@ -1,17 +1,13 @@
-<img src="https://motionpicture.jp/images/common/logo_01.svg" alt="motionpicture" title="motionpicture" align="right" height="56" width="98"/>
-
 # 東京タワードメインモデル for Node.js
 
-[![CircleCI](https://circleci.com/gh/motionpicture/ttts-domain.svg?style=svg&circle-token=2659057577162e85a2d91f193282f94ac7780afc)](https://circleci.com/gh/motionpicture/ttts-domain)
+[![CircleCI](https://circleci.com/gh/motionpicture/ttts-domain.svg?style=svg)](https://circleci.com/gh/motionpicture/ttts-domain)
 
-node.jsで使用するための東京タワーオンラインチケットシステムのドメインモデルパッケージです。
-
+Node.jsで使用するための東京タワーオンラインチケットシステムのドメインモデルパッケージです。
 
 ## Table of contents
 
 * [Usage](#usage)
 * [Code Samples](#code-samples)
-* [Jsdoc](#jsdoc)
 * [License](#license)
 
 
@@ -34,13 +30,12 @@ ttts.mongoose.connect();
 
 ### Environment variables
 
-| Name                              | Required | Value         | Purpose                         |
-| --------------------------------- | -------- | ------------- | ------------------------------- |
-| `DEBUG`                           | false    | ttts-domain:* | Debug                           |
-| `NPM_TOKEN`                       | true     |               | NPM auth token                  |
-| `GMO_ENDPOINT`                    | false    |               | GMO API endpoint                |
-| `GMO_SITE_ID`                     | false    |               | GMO SiteID                      |
-| `GMO_SITE_PASS`                   | false    |               | GMO SitePass                    |
+| Name                              | Required | Value         | Purpose                                   |
+| --------------------------------- | -------- | ------------- | ----------------------------------------- |
+| `DEBUG`                           | false    | ttts-domain:* | Debug                                     |
+| `GMO_ENDPOINT`                    | false    |               | GMO API endpoint                          |
+| `GMO_SITE_ID`                     | false    |               | GMO SiteID                                |
+| `GMO_SITE_PASS`                   | false    |               | GMO SitePass                              |
 | `TTTS_TOKEN_SECRET`               | true     |               | トークン検証シークレット                  |
 | `AZURE_STORAGE_CONNECTION_STRING` | true     |               | ファイル保管用のazureストレージ接続文字列 |
 
@@ -48,10 +43,6 @@ ttts.mongoose.connect();
 ## Code Samples
 
 コードサンプルは [example](https://github.com/motionpicture/ttts-domain/tree/master/example) にあります。
-
-## Jsdoc
-
-`npm run doc`でjsdocを作成できます。./docに出力されます。
 
 ## License
 

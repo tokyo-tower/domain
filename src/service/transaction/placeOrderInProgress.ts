@@ -494,9 +494,11 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     });
 
     const paymentMethods = [{
+        typeOf: transaction.object.paymentMethod,
         name: transaction.object.paymentMethod.toString(),
-        paymentMethod: transaction.object.paymentMethod.toString(),
-        paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : ''
+        paymentMethod: transaction.object.paymentMethod,
+        paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : '',
+        additionalProperty: []
     }];
     const price = eventReservations
         .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
@@ -506,6 +508,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         order: {
             typeOf: 'Order',
             seller: {
+                id: transaction.seller.id,
                 typeOf: transaction.seller.typeOf,
                 name: transaction.seller.name,
                 url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''

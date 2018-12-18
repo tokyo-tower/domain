@@ -51,6 +51,44 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
+schema.index(
+    { name: 1 },
+    { name: 'searchByName' }
+);
+schema.index(
+    { status: 1 },
+    { name: 'searchByStatus' }
+);
+schema.index(
+    { runsAt: 1 },
+    { name: 'searchByRunsAt' }
+);
+schema.index(
+    { lastTriedAt: 1 },
+    {
+        name: 'searchByLastTriedAt',
+        partialFilterExpression: {
+            lastTriedAt: { $type: 'date' }
+        }
+    }
+);
+schema.index(
+    { remainingNumberOfTries: 1 },
+    { name: 'searchByRemainingNumberOfTries' }
+);
+schema.index(
+    { numberOfTried: 1 },
+    { name: 'searchByNumberOfTried' }
+);
+
 // 取引のタスク検索に使用
 schema.index(
     { 'data.transactionId': 1 },
@@ -80,7 +118,6 @@ schema.index(
 // 測定データ作成時に使用
 schema.index({ createdAt: 1, lastTriedAt: 1 });
 schema.index({ status: 1, createdAt: 1 });
-schema.index({ createdAt: 1 });
 
 export default mongoose.model('Task', schema)
     .on('index', (error) => {

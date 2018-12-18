@@ -175,10 +175,7 @@ export interface ICredentials {
 }
 
 /**
- * token取得
- * @memberof CommonUtil
- * @param {string} apiEndpoint
- * @returns {any}
+ * トークンを取得する
  */
 export async function getToken(options: {
     /**
