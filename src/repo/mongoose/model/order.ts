@@ -201,45 +201,69 @@ schema.index(
         }
     }
 );
-// CustomerIDで検索
 schema.index(
     {
-        'customer.typeOf': 1,
         'customer.id': 1
     },
     {
         name: 'searchByCustomerId',
         partialFilterExpression: {
-            'customer.typeOf': { $exists: true },
             'customer.id': { $exists: true }
         }
     }
 );
-// Customer識別子で検索
 schema.index(
     {
-        'customer.typeOf': 1,
         'customer.identifier': 1
     },
     {
         name: 'searchByCustomerIdentifier',
         partialFilterExpression: {
-            'customer.typeOf': { $exists: true },
             'customer.identifier': { $exists: true }
         }
     }
 );
-// CustomerMembershipNumberで検索
 schema.index(
     {
-        'customer.typeOf': 1,
         'customer.memberOf.membershipNumber': 1
     },
     {
         name: 'searchByCustomerMemberhipNumber',
         partialFilterExpression: {
-            'customer.typeOf': { $exists: true },
             'customer.memberOf.membershipNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'customer.givenName': 1
+    },
+    {
+        name: 'searchByCustomerGivenName',
+        partialFilterExpression: {
+            'customer.givenName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'customer.familyName': 1
+    },
+    {
+        name: 'searchByCustomerFamilyName',
+        partialFilterExpression: {
+            'customer.familyName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    {
+        'customer.email': 1
+    },
+    {
+        name: 'searchByCustomerEmail',
+        partialFilterExpression: {
+            'customer.email': { $exists: true }
         }
     }
 );

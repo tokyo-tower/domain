@@ -1,12 +1,12 @@
 /**
  * 進行中注文取引サービス
  */
+import * as factory from '@motionpicture/ttts-factory';
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment';
 
-import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
 import { MongoRepository as OrganizationRepo } from '../../repo/organization';
@@ -36,9 +36,9 @@ export interface IStartParams {
      */
     expires: Date;
     /**
-     * 取引主体ID
+     * 取引主体
      */
-    agentId: string;
+    agent: factory.person.IPerson;
     /**
      * 販売者識別子
      */
@@ -84,23 +84,23 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             }
         }
 
-        const agent: factory.transaction.placeOrder.IAgent = {
-            typeOf: factory.personType.Person,
-            id: params.agentId,
-            url: ''
-        };
-        if (params.clientUser.username !== undefined) {
-            agent.memberOf = {
-                membershipNumber: params.agentId,
-                programName: 'Amazon Cognito',
-                username: params.clientUser.username
-            };
-        }
+        // const agent: factory.transaction.placeOrder.IAgent = {
+        //     typeOf: factory.personType.Person,
+        //     id: params.agent.id,
+        //     url: ''
+        // };
+        // if (params.clientUser.username !== undefined) {
+        //     agent.memberOf = {
+        //         membershipNumber: params.agent.id,
+        //         programName: 'Amazon Cognito',
+        //         username: params.clientUser.username
+        //     };
+        // }
 
         // 取引ファクトリーで新しい進行中取引オブジェクトを作成
         const transactionAttributes = factory.transaction.placeOrder.createAttributes({
             status: factory.transactionStatusType.InProgress,
-            agent: agent,
+            agent: params.agent,
             seller: {
                 typeOf: factory.organizationType.Corporation,
                 id: seller.id,
@@ -210,14 +210,17 @@ export function setCustomerContact(
         }
 
         // 連絡先を再生成(validationの意味も含めて)
-        const customerContact = {
+        const customerContact: factory.transaction.placeOrder.ICustomerContact = {
             last_name: contact.last_name,
             first_name: contact.first_name,
             email: contact.email,
             tel: formattedTelephone,
             age: contact.age,
             address: contact.address,
-            gender: contact.gender
+            gender: contact.gender,
+            givenName: contact.first_name,
+            familyName: contact.last_name,
+            telephone: formattedTelephone
         };
 
         const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
@@ -504,6 +507,15 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
         .reduce((a, b) => a + b.charge, 0);
 
+    const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
+    const customer: factory.order.ICustomer = {
+        typeOf: transaction.agent.typeOf,
+        id: transaction.agent.id,
+        name: `${customerContact.first_name} ${customerContact.last_name}`,
+        ...customerContact,
+        identifier: customerIdentifier
+    };
+
     return {
         order: {
             typeOf: 'Order',
@@ -513,12 +525,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 name: transaction.seller.name,
                 url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''
             },
-            customer: {
-                typeOf: transaction.agent.typeOf,
-                id: transaction.agent.id,
-                name: `${customerContact.first_name} ${customerContact.last_name}`,
-                ...customerContact
-            },
+            customer: customer,
             acceptedOffers: eventReservations.map((r) => {
                 return {
                     itemOffered: r,
