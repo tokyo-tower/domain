@@ -83,6 +83,66 @@ const schema = new mongoose.Schema(
     }
 );
 
+schema.index(
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
+schema.index(
+    { typeOf: 1 },
+    { name: 'searchByTypeOf' }
+);
+schema.index(
+    { status: 1 },
+    { name: 'searchByStatus' }
+);
+schema.index(
+    { agent: 1 },
+    { name: 'searchByAgent' }
+);
+schema.index(
+    { seller: 1 },
+    {
+        name: 'searchBySeller',
+        partialFilterExpression: {
+            seller: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { startDate: 1 },
+    { name: 'searchByStartDate' }
+);
+schema.index(
+    { endDate: 1 },
+    {
+        name: 'searchByEndDate',
+        partialFilterExpression: {
+            endDate: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { expires: 1 },
+    { name: 'searchByExpires' }
+);
+schema.index(
+    { tasksExportationStatus: 1 },
+    { name: 'searchByTasksExportationStatus' }
+);
+schema.index(
+    { tasksExportedAt: 1 },
+    {
+        name: 'searchByTasksExportedAt',
+        partialFilterExpression: {
+            tasksExportedAt: { $exists: true }
+        }
+    }
+);
+
 // タスクエクスポート時の検索で使用
 schema.index(
     { tasksExportationStatus: 1, status: 1 }
@@ -177,8 +237,6 @@ schema.index(
 );
 
 // レポート作成時に使用
-schema.index({ startDate: 1 });
-schema.index({ endDate: 1 });
 schema.index(
     { 'seller.id': 1, startDate: 1, endDate: 1 },
     {
@@ -198,14 +256,6 @@ schema.index(
             'seller.id': { $exists: true },
             endDate: { $exists: true }
         }
-    }
-);
-
-// 取引タイプ指定で取得する場合に使用
-schema.index(
-    {
-        typeOf: 1,
-        _id: 1
     }
 );
 
@@ -392,14 +442,7 @@ schema.index(
         }
     }
 );
-schema.index(
-    { typeOf: 1 },
-    { name: 'searchByTypeOf' }
-);
-schema.index(
-    { status: 1 },
-    { name: 'searchByStatus' }
-);
+
 export default mongoose.model('Transaction', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

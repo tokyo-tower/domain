@@ -97,8 +97,9 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
         //     };
         // }
 
-        // 取引ファクトリーで新しい進行中取引オブジェクトを作成
-        const transactionAttributes = factory.transaction.placeOrder.createAttributes({
+        // 新しい進行中取引を作成
+        const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
+            typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
             agent: params.agent,
             seller: {
@@ -117,7 +118,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             expires: params.expires,
             startDate: new Date(),
             tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
-        });
+        };
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
