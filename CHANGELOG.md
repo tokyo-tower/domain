@@ -8,11 +8,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- 注文検索を追加
-- タスク検索を追加
-- TriggerWebhookタスクを追加
-- 取引検索を追加
-
 ### Changed
 
 ### Deprecated
@@ -22,6 +17,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v13.3.0 - 2018-12-22
+
+### Added
+
+- 注文検索を追加
+- タスク検索を追加
+- TriggerWebhookタスクを追加
+- 取引検索を追加
 
 ## v13.2.4 - 2018-12-10
 
