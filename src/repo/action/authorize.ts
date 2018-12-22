@@ -4,9 +4,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import ActionModel from '../mongoose/model/action';
 
 /**
- * 承認アクションMongoレポジトリー
- * @export
- * @class
+ * 承認アクションリポジトリ
  */
 export class MongoRepository {
     public readonly actionModel: typeof ActionModel;

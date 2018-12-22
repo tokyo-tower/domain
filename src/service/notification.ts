@@ -1,17 +1,14 @@
 /**
  * 通知サービス
- * @namespace service.notification
  */
-
+import * as factory from '@motionpicture/ttts-factory';
 // tslint:disable-next-line:no-require-imports
 import sgMail = require('@sendgrid/mail');
 import * as createDebug from 'debug';
-import * as httpStatus from 'http-status';
+import { ACCEPTED, CREATED, NO_CONTENT, OK } from 'http-status';
 import * as request from 'request';
 import * as util from 'util';
 import * as validator from 'validator';
-
-import * as factory from '@motionpicture/ttts-factory';
 
 export type Operation<T> = () => Promise<T>;
 
@@ -59,7 +56,7 @@ export function sendEmail(emailMessage: factory.creativeWork.message.email.ICrea
         debug('response is', response);
 
         // check the response.
-        if (response[0].statusCode !== httpStatus.ACCEPTED) {
+        if (response[0].statusCode !== ACCEPTED) {
             throw new Error(`sendgrid request not accepted. response is ${util.inspect(response)}`);
         }
     };
@@ -125,6 +122,41 @@ ${content}`
                             reject(new Error(body.message));
                         } else {
                             resolve();
+                        }
+                    }
+                }
+            );
+        });
+    };
+}
+
+export function triggerWebhook(params: {
+    url: string;
+    payload: any;
+}) {
+    return async () => {
+        return new Promise<void>((resolve, reject) => {
+            request.post(
+                {
+                    url: params.url,
+                    body: {
+                        data: params.payload
+                    },
+                    json: true
+                },
+                (error, response, body) => {
+                    if (error instanceof Error) {
+                        reject(error);
+                    } else {
+                        switch (response.statusCode) {
+                            case OK:
+                            case CREATED:
+                            case ACCEPTED:
+                            case NO_CONTENT:
+                                resolve();
+                                break;
+                            default:
+                                reject(body);
                         }
                     }
                 }

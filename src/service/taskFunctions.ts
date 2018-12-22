@@ -1,13 +1,10 @@
 /**
  * タスクファンクションサービス
  * タスク名ごとに、実行するファンクションをひとつずつ定義しています
- * @namespace service.taskFunctions
  */
-
+import * as factory from '@motionpicture/ttts-factory';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
-
-import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
@@ -33,6 +30,12 @@ export function sendEmailNotification(
 ): IOperation<void> {
     return async (__: mongoose.Connection) => {
         await NotificationService.sendEmail(data.emailMessage)();
+    };
+}
+
+export function triggerWebhook(data: factory.task.triggerWebhook.IData): IOperation<void> {
+    return async (_: mongoose.Connection) => {
+        await NotificationService.triggerWebhook(data)();
     };
 }
 

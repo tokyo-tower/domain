@@ -1,12 +1,9 @@
 /**
  * 注文返品サービス
- * @namespace service.transaction.returnOrder
  */
-
+import * as factory from '@motionpicture/ttts-factory';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
-
-import * as factory from '@motionpicture/ttts-factory';
 
 import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -85,7 +82,8 @@ export function confirm(params: {
         const endDate = new Date();
         const eventReservations = transactionResult.eventReservations;
         const cancelName = `${eventReservations[0].purchaser_last_name} ${eventReservations[0].purchaser_first_name}`;
-        const returnOrderAttributes = factory.transaction.returnOrder.createAttributes({
+        const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
+            typeOf: factory.transactionType.ReturnOrder,
             status: factory.transactionStatusType.Confirmed,
             agent: {
                 typeOf: factory.personType.Person,
@@ -94,6 +92,7 @@ export function confirm(params: {
             result: {},
             object: {
                 clientUser: params.clientUser,
+                order: transactionResult.order,
                 transaction: transaction,
                 cancelName: cancelName,
                 cancellationFee: params.cancellationFee,
@@ -103,7 +102,7 @@ export function confirm(params: {
             startDate: now,
             endDate: endDate,
             tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
-        });
+        };
 
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;
         try {
@@ -228,9 +227,6 @@ export async function exportTasks(status: factory.transactionStatusType) {
     await transactionRepo.setTasksExportedById(transaction.id);
 }
 
-/**
- * ID指定で取引のタスク出力
- */
 export async function exportTasksById(transactionId: string): Promise<factory.task.ITask[]> {
     const transactionRepo = new TransactionRepo(mongoose.connection);
     const taskRepo = new TaskRepo(mongoose.connection);
