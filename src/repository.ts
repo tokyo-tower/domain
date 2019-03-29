@@ -1,10 +1,7 @@
 // tslint:disable:max-classes-per-file
-
 /**
- * TTTSリポジトリー
- * @namespace repository
+ * リポジトリ
  */
-
 import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
@@ -20,6 +17,7 @@ import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithA
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
+import { MongoRepository as SellerRepo } from './repo/seller';
 import { MongoRepository as SendGridEventRepo } from './repo/sendGridEvent';
 import { MongoRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
@@ -28,22 +26,22 @@ import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
 /**
- * 売上集計リポジトリー
+ * 売上集計リポジトリ
  */
 export class AggregateSale extends AggregateSaleRepo { }
 
 export namespace action {
     /**
-     * 承認アクションリポジトリー
+     * 承認アクションリポジトリ
      */
     export class Authorize extends AuthorizeActionRepo { }
     export namespace authorize {
         /**
-         * クレジットカード承認アクションリポジトリー
+         * クレジットカード承認アクションリポジトリ
          */
         export class CreditCard extends CreditCardAuthorizeActionRepo { }
         /**
-         * 座席予約承認アクションリポジトリー
+         * 座席予約承認アクションリポジトリ
          */
         export class SeatReservation extends SeatReservationAuthorizeActionRepo { }
     }
@@ -51,93 +49,97 @@ export namespace action {
 
 export namespace itemAvailability {
     /**
-     * パフォーマンス在庫状況リポジトリー
+     * パフォーマンス在庫状況リポジトリ
      */
     // tslint:disable-next-line:no-shadowed-variable
     export class Performance extends PerformanceAvailabilityRepo { }
     /**
-     * 座席予約オファー在庫状況リポジトリー
+     * 座席予約オファー在庫状況リポジトリ
      */
     export class SeatReservationOffer extends SeatReservationOfferAvailabilityRepo { }
 }
 
 /**
- * GMO通知リポジトリー
+ * GMO通知リポジトリ
  */
 export class GMONotification extends GMONotificationRepo { }
 
 export namespace rateLimit {
     /**
-     * 券種カテゴリーレート制限リポジトリー
+     * 券種カテゴリーレート制限リポジトリ
      */
     export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
 }
 
 export namespace offer {
     /**
-     * 展示イベントの販売情報リポジトリー
+     * 展示イベントの販売情報リポジトリ
      */
     export class ExhibitionEvent extends ExhibitionEventOffer { }
 }
 
 /**
- * 注文リポジトリー
+ * 注文リポジトリ
  */
 export class Order extends OrderRepo { }
 
 /**
- * 組織リポジトリー
+ * 組織リポジトリ
  */
 export class Organization extends OrganizationRepo { }
 
 export namespace place {
     /**
-     * 入場場所リポジトリー
+     * 入場場所リポジトリ
      */
     export class CheckinGate extends CheckinGateRepo { }
 }
 
 /**
- * 購入番号リポジトリー
+ * 購入番号リポジトリ
  */
 export class PaymentNo extends PaymentNoRepo { }
 /**
- * パフォーマンスリポジトリー
+ * パフォーマンスリポジトリ
  */
 export class Performance extends PerformanceRepo { }
 /**
- * 集計データ付きパフォーマンスリポジトリー
+ * 集計データ付きパフォーマンスリポジトリ
  */
 export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
 /**
- * 予約リポジトリー
+ * 予約リポジトリ
  */
 export class Reservation extends ReservationRepo { }
 /**
- * SendGridイベントリポジトリー
+ * 販売者リポジトリ
+ */
+export class Seller extends SellerRepo { }
+/**
+ * SendGridイベントリポジトリ
  */
 export class SendGridEvent extends SendGridEventRepo { }
 /**
- * 在庫リポジトリー
+ * 在庫リポジトリ
  */
 export class Stock extends StockRepo { }
 /**
- * タスクリポジトリー
+ * タスクリポジトリ
  */
 export class Task extends TaskRepo { }
 /**
- * 測定データリポジトリー
+ * 測定データリポジトリ
  */
 export class Telemetry extends TelemetryRepo { }
 /**
- * トークンリポジトリー
+ * トークンリポジトリ
  */
 export class Token extends TokenRepo { }
 /**
- * 取引リポジトリー
+ * 取引リポジトリ
  */
 export class Transaction extends TransactionRepo { }
 /**
- * 車椅子予約数リポジトリー
+ * 車椅子予約数リポジトリ
  */
 // export class WheelchairReservationCount extends WheelchairReservationCountRepo { }
