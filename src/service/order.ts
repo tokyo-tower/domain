@@ -81,6 +81,20 @@ export function processReturn(returnOrderTransactionId: string) {
             { orderNumber: placeOrderTransactionResult.order.orderNumber },
             { orderStatus: factory.orderStatus.OrderReturned }
         ).exec();
+
+        // 返品処理が全て完了した時点で、レポート作成タスクを追加
+        const createReturnOrderReportTask = factory.task.createReturnOrderReport.createAttributes({
+            status: factory.taskStatus.Ready,
+            runsAt: new Date(), // なるはやで実行
+            remainingNumberOfTries: 10,
+            lastTriedAt: null,
+            numberOfTried: 0,
+            executionResults: [],
+            data: {
+                transaction: returnOrderTransaction
+            }
+        });
+        await taskRepo.save(createReturnOrderReportTask);
     };
 }
 
