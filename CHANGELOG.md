@@ -18,6 +18,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v13.4.0 - 2019-04-04
+
+### Added
+
+- 販売者リポジトリを追加
+
+### Changed
+
+- 返品レポート作成タスク追加のタイミングを、返品取引確定後から、返品処理完了後に変更
+
 ## v13.3.0 - 2018-12-22
 
 ### Added
