@@ -91,54 +91,141 @@ schema.index(
     { updatedAt: 1 },
     { name: 'searchByUpdatedAt' }
 );
+
 schema.index(
-    { typeOf: 1 },
-    { name: 'searchByTypeOf' }
+    { typeOf: 1, startDate: -1 },
+    { name: 'searchByTypeOf-v2' }
 );
 schema.index(
-    { status: 1 },
-    { name: 'searchByStatus' }
+    { status: 1, startDate: -1 },
+    { name: 'searchByStatus-v2' }
 );
 schema.index(
-    { agent: 1 },
-    { name: 'searchByAgent' }
+    { startDate: -1 },
+    { name: 'searchByStartDate-v2' }
 );
 schema.index(
-    { seller: 1 },
+    { endDate: 1, startDate: -1 },
     {
-        name: 'searchBySeller',
-        partialFilterExpression: {
-            seller: { $exists: true }
-        }
-    }
-);
-schema.index(
-    { startDate: 1 },
-    { name: 'searchByStartDate' }
-);
-schema.index(
-    { endDate: 1 },
-    {
-        name: 'searchByEndDate',
+        name: 'searchByEndDate-v2',
         partialFilterExpression: {
             endDate: { $exists: true }
         }
     }
 );
 schema.index(
-    { expires: 1 },
-    { name: 'searchByExpires' }
+    { expires: 1, startDate: -1 },
+    { name: 'searchByExpires-v2' }
 );
 schema.index(
-    { tasksExportationStatus: 1 },
-    { name: 'searchByTasksExportationStatus' }
+    { tasksExportationStatus: 1, startDate: -1 },
+    { name: 'searchByTasksExportationStatus-v2' }
 );
 schema.index(
-    { tasksExportedAt: 1 },
+    { tasksExportedAt: 1, startDate: -1 },
     {
-        name: 'searchByTasksExportedAt',
+        name: 'searchByTasksExportedAt-v2',
         partialFilterExpression: {
             tasksExportedAt: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'result.order.orderNumber': 1, startDate: -1 },
+    {
+        name: 'searchByResultOrderNumber',
+        partialFilterExpression: {
+            'result.order.orderNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'object.order.orderNumber': 1, startDate: -1 },
+    {
+        name: 'searchByObjectOrderNumber',
+        partialFilterExpression: {
+            'object.order.orderNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.typeOf': 1, startDate: -1 },
+    {
+        name: 'searchByAgentTypeOf',
+        partialFilterExpression: {
+            'agent.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.id': 1, startDate: -1 },
+    {
+        name: 'searchByAgentId',
+        partialFilterExpression: {
+            'agent.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.identifier': 1, startDate: -1 },
+    {
+        name: 'searchByAgentIdentifier',
+        partialFilterExpression: {
+            'agent.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.familyName': 1, startDate: -1 },
+    {
+        name: 'searchByAgentFamilyName',
+        partialFilterExpression: {
+            'agent.familyName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.givenName': 1, startDate: -1 },
+    {
+        name: 'searchByAgentGivenName',
+        partialFilterExpression: {
+            'agent.givenName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.email': 1, startDate: -1 },
+    {
+        name: 'searchByAgentEmail',
+        partialFilterExpression: {
+            'agent.email': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'agent.telephone': 1, startDate: -1 },
+    {
+        name: 'searchByAgentTelephone',
+        partialFilterExpression: {
+            'agent.telephone': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'seller.typeOf': 1, startDate: -1 },
+    {
+        name: 'searchBySellerTypeOf',
+        partialFilterExpression: {
+            'seller.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'seller.id': 1, startDate: -1 },
+    {
+        name: 'searchBySellerId',
+        partialFilterExpression: {
+            'seller.id': { $exists: true }
         }
     }
 );
@@ -273,34 +360,42 @@ schema.index(
     }
 );
 
-// 管理アプリケーションでの取引検索
 schema.index(
+    { 'result.eventReservations.payment_no': 1, startDate: -1 },
     {
-        'result.eventReservations.payment_no': 1,
-        'result.eventReservations.performance_day': 1,
-        typeOf: 1
-    },
-    {
-        name: 'findPlaceOrderTransactionByReservationPaymentNo',
+        name: 'searchByResultEventReservationsPaymentNo',
         partialFilterExpression: {
-            typeOf: factory.transactionType.PlaceOrder,
-            result: { $exists: true }
+            'result.eventReservations.payment_no': { $exists: true }
         }
     }
 );
 
-// 管理アプリケーションでの取引検索
 schema.index(
+    { 'result.eventReservations.performance_day': 1, startDate: -1 },
     {
-        'result.order.orderInquiryKey.paymentNo': 1,
-        'result.order.orderInquiryKey.performanceDay': 1,
-        typeOf: 1
-    },
-    {
-        name: 'findPlaceOrderTransactionByInquiryKeyPaymentNo',
+        name: 'searchByResultEventReservationsPerformanceDay',
         partialFilterExpression: {
-            typeOf: factory.transactionType.PlaceOrder,
-            result: { $exists: true }
+            'result.eventReservations.performance_day': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'result.order.orderInquiryKey.paymentNo': 1, startDate: -1 },
+    {
+        name: 'searchByResultOrderOrderInquiryKeyPaymentNo',
+        partialFilterExpression: {
+            'result.order.orderInquiryKey.paymentNo': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'result.order.orderInquiryKey.performanceDay': 1, startDate: -1 },
+    {
+        name: 'searchByResultOrderOrderInquiryKeyPerformanceDay',
+        partialFilterExpression: {
+            'result.order.orderInquiryKey.performanceDay': { $exists: true }
         }
     }
 );
