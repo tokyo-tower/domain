@@ -11,7 +11,6 @@ import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvail
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibitionEvent';
 import { MongoRepository as OrderRepo } from './repo/order';
-import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
@@ -82,11 +81,6 @@ export namespace offer {
  * 注文リポジトリ
  */
 export class Order extends OrderRepo { }
-
-/**
- * 組織リポジトリ
- */
-export class Organization extends OrganizationRepo { }
 
 export namespace place {
     /**

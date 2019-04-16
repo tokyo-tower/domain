@@ -31,6 +31,42 @@ const locationSchema = new mongoose.Schema(
     }
 );
 
+const paymentAcceptedSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
+const hasPOSSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
+const areaServedSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
+const makesOfferSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 /**
  * 組織スキーマ
  * @ignore
@@ -44,11 +80,18 @@ const schema = new mongoose.Schema(
         identifier: String,
         name: multilingualString,
         legalName: multilingualString,
+        sameAs: String,
         url: String,
-        gmoInfo: gmoInfoSchema,
         parentOrganization: parentOrganizationSchema,
         telephone: String,
-        location: locationSchema
+        location: locationSchema,
+        branchCode: String,
+        paymentAccepted: [paymentAcceptedSchema],
+        hasPOS: [hasPOSSchema],
+        areaServed: [areaServedSchema],
+        makesOffer: [makesOfferSchema],
+        additionalProperty: [mongoose.SchemaTypes.Mixed],
+        gmoInfo: gmoInfoSchema
     },
     {
         collection: 'organizations',
@@ -66,9 +109,56 @@ const schema = new mongoose.Schema(
     }
 );
 
-// 組織取得に使用
 schema.index(
-    { typeOf: 1, _id: 1 }
+    { createdAt: 1 },
+    { name: 'searchByCreatedAt' }
+);
+schema.index(
+    { updatedAt: 1 },
+    { name: 'searchByUpdatedAt' }
+);
+
+schema.index(
+    { typeOf: 1 },
+    {
+        name: 'searchByType'
+    }
+);
+schema.index(
+    { name: 1 },
+    {
+        name: 'searchByName',
+        partialFilterExpression: {
+            name: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'location.typeOf': 1 },
+    {
+        name: 'searchByLocationType',
+        partialFilterExpression: {
+            'location.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'location.branchCode': 1 },
+    {
+        name: 'searchByLocationBranchCode',
+        partialFilterExpression: {
+            'location.branchCode': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'location.name': 1 },
+    {
+        name: 'searchByLocationName',
+        partialFilterExpression: {
+            'location.name': { $exists: true }
+        }
+    }
 );
 
 export default mongoose.model('Organization', schema)

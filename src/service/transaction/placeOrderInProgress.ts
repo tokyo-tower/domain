@@ -9,7 +9,7 @@ import * as moment from 'moment';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
-import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -18,7 +18,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 
 const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
 
-export type IStartOperation<T> = (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => Promise<T>;
+export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
@@ -61,9 +61,17 @@ export interface IStartParams {
  * 取引開始
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => {
+    return async (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => {
         // 販売者を取得
-        const seller = await organizationRepo.findCorporationByIdentifier(params.sellerIdentifier);
+        const doc = await sellerRepo.organizationModel.findOne({
+            identifier: params.sellerIdentifier
+        })
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound('Seller');
+        }
+
+        const seller = <factory.organization.corporation.IOrganization>doc.toObject();
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
