@@ -139,7 +139,30 @@ const schema = new mongoose.Schema(
         },
 
         gmo_order_id: String, // GMOオーダーID
-        transaction_agent: mongoose.SchemaTypes.Mixed
+        transaction_agent: mongoose.SchemaTypes.Mixed,
+
+        // 以下Chevreのスキーマを継承
+        typeOf: String,
+        additionalTicketText: String,
+        bookingAgent: mongoose.SchemaTypes.Mixed,
+        bookingTime: Date,
+        cancelReservationUrl: String,
+        checkinUrl: String,
+        confirmReservationUrl: String,
+        modifiedTime: Date,
+        modifyReservationUrl: String,
+        numSeats: Number,
+        price: mongoose.SchemaTypes.Mixed,
+        priceCurrency: String,
+        programMembershipUsed: String,
+        reservationFor: mongoose.SchemaTypes.Mixed,
+        reservationNumber: String,
+        reservationStatus: String,
+        reservedTicket: mongoose.SchemaTypes.Mixed,
+        underName: mongoose.SchemaTypes.Mixed,
+        checkedIn: { type: Boolean, default: false },
+        attended: { type: Boolean, default: false },
+        additionalProperty: mongoose.SchemaTypes.Mixed
     },
     {
         collection: 'reservations',
