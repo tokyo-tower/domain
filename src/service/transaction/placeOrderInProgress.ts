@@ -238,7 +238,12 @@ export function setCustomerContact(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
+        // await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
+        await transactionRepo.updateCustomerProfile({
+            typeOf: transaction.typeOf,
+            id: transaction.id,
+            agent: customerContact
+        });
 
         return customerContact;
     };
@@ -424,7 +429,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         const qrStr = `${orderNumber}-${index}`;
         const purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
 
-        const unitPriceSpec = {
+        const unitPriceSpec:
+            factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>
+            = {
             typeOf: <factory.chevre.priceSpecificationType.UnitPriceSpecification>
                 factory.chevre.priceSpecificationType.UnitPriceSpecification,
             price: tmpReservation.charge,
@@ -437,7 +444,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             }
         };
 
-        const compoundPriceSpec = {
+        const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
             typeOf: <factory.chevre.priceSpecificationType.CompoundPriceSpecification>
                 factory.chevre.priceSpecificationType.CompoundPriceSpecification,
             priceCurrency: factory.priceCurrency.JPY,
@@ -445,7 +452,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             priceComponent: [unitPriceSpec]
         };
 
-        const underName: factory.chevre.reservation.IUnderName = {
+        const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
             typeOf: factory.personType.Person,
             // id: transaction.agent.id,
             name: purchaserName,
@@ -456,7 +463,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             identifier: [{ name: 'orderNumber', value: orderNumber }]
         };
 
-        const reservedTicket: factory.chevre.reservation.ITicket<any> = {
+        const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
             typeOf: 'Ticket',
             dateIssued: now.toDate(),
             issuedBy: {
@@ -547,7 +554,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         };
 
         return {
-            typeOf: factory.reservation.reservationType.EventReservation,
+            typeOf: factory.reservationType.EventReservation,
 
             additionalTicketText: '',
             bookingTime: now.toDate(),
