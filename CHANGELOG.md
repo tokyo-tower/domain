@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 予約インターフェースをChevreを継承するように拡張
 - 組織コレクションのインデックス調整
 - 注文取引の購入者プロフィール情報の持ち方をCinerinoに統一
-- install mongoose@5.x.x
+- install mongoose@5.5.1
 
 ### Deprecated
 

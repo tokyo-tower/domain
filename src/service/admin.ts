@@ -9,7 +9,7 @@ import * as AWS from 'aws-sdk';
 import * as crypto from 'crypto';
 import * as createDebug from 'debug';
 
-const debug = createDebug('ttts-domain:service:admin');
+const debug = createDebug('ttts-domain:service');
 const REGION = 'ap-northeast-1';
 
 type CognitoUserAttributeType = AWS.CognitoIdentityServiceProvider.AttributeType;

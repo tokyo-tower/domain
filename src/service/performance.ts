@@ -10,7 +10,7 @@ import { IAvailabilitiesByTicketType } from '../repo/itemAvailability/seatReserv
 import * as Models from '../repo/mongoose';
 import * as repository from '../repository';
 
-const debug = createDebug('ttts-domain:service:performance');
+const debug = createDebug('ttts-domain:service');
 
 export interface ISearchResult {
     performances: factory.performance.IPerformanceWithAvailability[];

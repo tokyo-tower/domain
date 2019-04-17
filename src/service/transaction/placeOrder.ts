@@ -8,7 +8,7 @@ import * as json2csv from 'json2csv';
 import { MongoRepository as TaskRepository } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-const debug = createDebug('ttts-domain:service:transaction:placeOrder');
+const debug = createDebug('ttts-domain:service');
 
 export type ITaskAndTransactionOperation<T> = (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => Promise<T>;
 

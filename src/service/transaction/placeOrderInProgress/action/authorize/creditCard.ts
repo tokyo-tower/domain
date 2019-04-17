@@ -9,7 +9,7 @@ import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../../../..
 import { MongoRepository as SellerRepo } from '../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
-const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:creditCard');
+const debug = createDebug('ttts-domain:service');
 
 export type ICreateOperation<T> = (
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,

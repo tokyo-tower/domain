@@ -1,7 +1,7 @@
 import * as createDebug from 'debug';
 import * as redis from 'redis';
 
-const debug = createDebug('ttts-domain:repository:itemAvailability:seatReservationOffer');
+const debug = createDebug('ttts-domain:repository');
 
 /**
  * 座席予約オファーの在庫状況リポジトリー

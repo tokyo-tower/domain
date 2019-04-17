@@ -14,7 +14,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 export type GMONotificationOperation<T> = (gmoNotificationRepository: GMONotificationRepo) => Promise<T>;
 export type IGMOResultNotification = GMO.factory.resultNotification.creditCard.IResultNotification;
 
-const debug = createDebug('ttts-domain:service:report:health');
+const debug = createDebug('ttts-domain:service');
 
 /**
  * GMO売上健康診断レポートインターフェース

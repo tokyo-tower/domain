@@ -33,7 +33,7 @@ export type TaskAndTelemetryAndTransactionOperation<T> = (
     authorizeActionRepo: AuthorizeActionRepo
 ) => Promise<T>;
 
-const debug = createDebug('ttts-domain:service:report:telemetry');
+const debug = createDebug('ttts-domain:service');
 const TELEMETRY_UNIT_OF_MEASUREMENT_IN_SECONDS = 60; // 測定単位時間(秒)
 
 export interface IGlobalFlowTaskResultByName {

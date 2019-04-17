@@ -16,7 +16,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
-const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
+const debug = createDebug('ttts-domain:service');
 
 export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
@@ -400,6 +400,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
  */
 // tslint:disable-next-line:max-func-body-length
 export function createResult(transaction: factory.transaction.placeOrder.ITransaction): factory.transaction.placeOrder.IResult {
+    debug('creating result of transaction...', transaction.id);
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
@@ -408,6 +409,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
+    debug('tmpReservations:', tmpReservations);
     const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const now = moment();

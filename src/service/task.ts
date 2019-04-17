@@ -20,7 +20,7 @@ export type IExecuteOperation<T> = (
     taskRepository: TaskRepository, connection: mongoose.Connection, redisClient: redis.RedisClient
 ) => Promise<T>;
 
-const debug = createDebug('ttts-domain:service:task');
+const debug = createDebug('ttts-domain:service');
 
 export const ABORT_REPORT_SUBJECT = 'One task aboted !!!';
 

@@ -25,7 +25,7 @@ import * as factory from '@motionpicture/ttts-factory';
 
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
-const debug = createDebug('ttts-domain:service:order');
+const debug = createDebug('ttts-domain:service');
 
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => Promise<T>;
 

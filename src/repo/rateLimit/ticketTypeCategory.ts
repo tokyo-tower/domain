@@ -4,7 +4,7 @@ import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
 
-const debug = createDebug('ttts-domain:repository:rateLimit:ticketTypeCategory');
+const debug = createDebug('ttts-domain:repository');
 
 /**
  * レート制限キーインターフェース
