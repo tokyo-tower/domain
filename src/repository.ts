@@ -13,6 +13,7 @@ import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibition
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
+import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
@@ -101,6 +102,10 @@ export class Performance extends PerformanceRepo { }
  * 集計データ付きパフォーマンスリポジトリ
  */
 export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
+/**
+ * 会員リポジトリ
+ */
+export class Person extends PersonRepo { }
 /**
  * 予約リポジトリ
  */

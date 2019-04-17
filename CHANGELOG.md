@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 会員リポジトリを追加
+
 ### Changed
 
 - 取引コレクションのインデックス調整

@@ -628,7 +628,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             purchaser_gender: customerContact.gender,
 
             // 会員の場合は値を入れる
-            owner_username: (transaction.agent.memberOf !== undefined) ? transaction.agent.memberOf.username : undefined,
+            owner_username: (transaction.agent.memberOf !== undefined) ? transaction.agent.memberOf.membershipNumber : undefined,
             owner_name: (transaction.agent.memberOf !== undefined) ? purchaserName : undefined,
             owner_last_name: (transaction.agent.memberOf !== undefined) ? customerContact.last_name : undefined,
             owner_first_name: (transaction.agent.memberOf !== undefined) ? customerContact.first_name : undefined,
