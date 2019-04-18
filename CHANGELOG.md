@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v13.5.0 - 2019-04-18
+
+### Added
+
 - 会員リポジトリを追加
 
 ### Changed
@@ -19,15 +33,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - install mongoose@5.5.1
 - install @motionpicture/ttts-factory@1.0.1
 
-### Deprecated
-
 ### Removed
 
 - 組織リポジトリを削除
-
-### Fixed
-
-### Security
 
 ## v13.4.0 - 2019-04-04
 
