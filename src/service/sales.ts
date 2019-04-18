@@ -11,7 +11,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-const debug = createDebug('ttts-domain:service:sales');
+const debug = createDebug('ttts-domain:service');
 
 /**
  * クレジットカードオーソリ取消

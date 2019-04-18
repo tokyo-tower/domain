@@ -7,7 +7,7 @@
 import * as azureStorage from 'azure-storage';
 import * as createDebug from 'debug';
 
-const debug = createDebug('ttts-domain:service:util');
+const debug = createDebug('ttts-domain:service');
 
 /**
  * ファイルをアップロードする

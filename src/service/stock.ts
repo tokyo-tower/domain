@@ -15,7 +15,7 @@ import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-const debug = createDebug('ttts-domain:service:stock');
+const debug = createDebug('ttts-domain:service');
 
 /**
  * 資産承認解除(在庫ステータス変更)

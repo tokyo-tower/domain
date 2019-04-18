@@ -1,8 +1,6 @@
 /**
  * IDでパフォーマンス検索するサンプル
- * @ignore
  */
-
 const ttts = require('../lib/index');
 
 ttts.mongoose.connect(process.env.MONGOLAB_URI, {
@@ -19,5 +17,5 @@ performanceRepo.findById('171225001001021000')
         console.error(err);
     })
     .then(() => {
-        ttts.mongoose.disconnect();
+        // ttts.mongoose.disconnect();
     });

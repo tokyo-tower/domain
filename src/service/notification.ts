@@ -12,7 +12,7 @@ import * as validator from 'validator';
 
 export type Operation<T> = () => Promise<T>;
 
-const debug = createDebug('ttts-domain:service:notification');
+const debug = createDebug('ttts-domain:service');
 
 export const LINE_NOTIFY_URL = 'https://notify-api.line.me/api/notify';
 

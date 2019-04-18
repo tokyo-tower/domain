@@ -103,6 +103,46 @@ export class MongoRepository {
                     }
                 });
             }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.familyName !== undefined) {
+                andConditions.push({
+                    'agent.familyName': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.familyName, 'i')
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.givenName !== undefined) {
+                andConditions.push({
+                    'agent.givenName': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.givenName, 'i')
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.email !== undefined) {
+                andConditions.push({
+                    'agent.email': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.email, 'i')
+                    }
+                });
+            }
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.agent.telephone !== undefined) {
+                andConditions.push({
+                    'agent.telephone': {
+                        $exists: true,
+                        $regex: new RegExp(params.agent.telephone, 'i')
+                    }
+                });
+            }
         }
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -138,54 +178,7 @@ export class MongoRepository {
                         });
                     }
                 }
-                // tslint:disable-next-line:no-single-line-block-comment
-                /* istanbul ignore else */
-                if (params.object !== undefined) {
-                    // tslint:disable-next-line:no-single-line-block-comment
-                    /* istanbul ignore else */
-                    if (params.object.customerContact !== undefined) {
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.familyName !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.familyName': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.familyName, 'i')
-                                }
-                            });
-                        }
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.givenName !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.givenName': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.givenName, 'i')
-                                }
-                            });
-                        }
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.email !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.email': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.email, 'i')
-                                }
-                            });
-                        }
-                        // tslint:disable-next-line:no-single-line-block-comment
-                        /* istanbul ignore else */
-                        if (params.object.customerContact.telephone !== undefined) {
-                            andConditions.push({
-                                'object.customerContact.telephone': {
-                                    $exists: true,
-                                    $regex: new RegExp(params.object.customerContact.telephone, 'i')
-                                }
-                            });
-                        }
-                    }
-                }
+
                 // tslint:disable-next-line:no-single-line-block-comment
                 /* istanbul ignore else */
                 if (params.result !== undefined) {
@@ -295,6 +288,34 @@ export class MongoRepository {
 
         if (doc === null) {
             throw new factory.errors.NotFound('transaction in progress');
+        }
+    }
+
+    /**
+     * 取引の顧客プロフィールを更新
+     */
+    public async updateCustomerProfile<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+        agent: factory.transaction.placeOrder.ICustomerContact;
+    }): Promise<void> {
+        const doc = await this.transactionModel.findOneAndUpdate(
+            {
+                _id: params.id,
+                typeOf: params.typeOf,
+                status: factory.transactionStatusType.InProgress
+            },
+            {
+                'agent.email': params.agent.email,
+                'agent.familyName': params.agent.familyName,
+                'agent.givenName': params.agent.givenName,
+                'agent.telephone': params.agent.telephone,
+                'object.customerContact': params.agent // agentでの情報保持である程度運用したら削除する
+            }
+        )
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound(this.transactionModel.modelName);
         }
     }
 

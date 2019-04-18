@@ -2,7 +2,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as redis from 'redis';
 
-const debug = createDebug('ttts-domain:repository:offer:ExhibitionEvent');
+const debug = createDebug('ttts-domain:repository');
 
 export type IOffer = factory.offer.seatReservation.ITicketType;
 

@@ -9,16 +9,16 @@ import * as moment from 'moment';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
-import { MongoRepository as OrganizationRepo } from '../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
-const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress');
+const debug = createDebug('ttts-domain:service');
 
-export type IStartOperation<T> = (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => Promise<T>;
+export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
@@ -61,9 +61,17 @@ export interface IStartParams {
  * 取引開始
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, organizationRepo: OrganizationRepo) => {
+    return async (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => {
         // 販売者を取得
-        const seller = await organizationRepo.findCorporationByIdentifier(params.sellerIdentifier);
+        const doc = await sellerRepo.organizationModel.findOne({
+            identifier: params.sellerIdentifier
+        })
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound('Seller');
+        }
+
+        const seller = <factory.organization.corporation.IOrganization>doc.toObject();
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
@@ -230,7 +238,12 @@ export function setCustomerContact(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
+        // await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
+        await transactionRepo.updateCustomerProfile({
+            typeOf: transaction.typeOf,
+            id: transaction.id,
+            agent: customerContact
+        });
 
         return customerContact;
     };
@@ -387,6 +400,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
  */
 // tslint:disable-next-line:max-func-body-length
 export function createResult(transaction: factory.transaction.placeOrder.ITransaction): factory.transaction.placeOrder.IResult {
+    debug('creating result of transaction...', transaction.id);
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
@@ -395,6 +409,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
+    debug('tmpReservations:', tmpReservations);
     const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const now = moment();
@@ -411,12 +426,152 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     const purchaserGroup = transaction.object.purchaser_group;
 
     // 予約データを作成
+    // tslint:disable-next-line:max-func-body-length
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
         const qrStr = `${orderNumber}-${index}`;
         const purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
 
+        const unitPriceSpec:
+            factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>
+            = {
+            typeOf: <factory.chevre.priceSpecificationType.UnitPriceSpecification>
+                factory.chevre.priceSpecificationType.UnitPriceSpecification,
+            price: tmpReservation.charge,
+            priceCurrency: factory.priceCurrency.JPY,
+            valueAddedTaxIncluded: true,
+            referenceQuantity: {
+                typeOf: <'QuantitativeValue'>'QuantitativeValue',
+                value: 1,
+                unitCode: factory.chevre.unitCode.C62
+            }
+        };
+
+        const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
+            typeOf: <factory.chevre.priceSpecificationType.CompoundPriceSpecification>
+                factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+            priceCurrency: factory.priceCurrency.JPY,
+            valueAddedTaxIncluded: true,
+            priceComponent: [unitPriceSpec]
+        };
+
+        const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
+            typeOf: factory.personType.Person,
+            // id: transaction.agent.id,
+            name: purchaserName,
+            familyName: customerContact.last_name,
+            givenName: customerContact.first_name,
+            email: customerContact.email,
+            telephone: customerContact.telephone,
+            identifier: [{ name: 'orderNumber', value: orderNumber }]
+        };
+
+        const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
+            typeOf: 'Ticket',
+            dateIssued: now.toDate(),
+            issuedBy: {
+                typeOf: transaction.seller.typeOf,
+                name: transaction.seller.name
+            },
+            totalPrice: compoundPriceSpec,
+            priceCurrency: factory.priceCurrency.JPY,
+            ticketedSeat: {
+                seatSection: 'Default',
+                seatNumber: tmpReservation.seat_code,
+                seatRow: '',
+                seatingType: <any>{},
+                typeOf: factory.chevre.placeType.Seat
+            },
+            underName: underName,
+            ticketType: {
+                name: tmpReservation.ticket_type_name,
+                description: { en: '', ja: '' },
+                alternateName: tmpReservation.ticket_type_name,
+                typeOf: 'Offer',
+                priceCurrency: factory.priceCurrency.JPY,
+                availability: factory.chevre.itemAvailability.InStock,
+                priceSpecification: unitPriceSpec,
+                additionalProperty: [],
+                // category: {},
+                // color: '',
+                id: tmpReservation.ticket_type
+            }
+        };
+
+        const reservationFor: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> = {
+            typeOf: factory.chevre.eventType.ScreeningEvent,
+            id: performance.id,
+            name: performance.film.name,
+            eventStatus: (performance.canceled)
+                ? factory.chevre.eventStatusType.EventCancelled
+                : factory.chevre.eventStatusType.EventScheduled,
+            doorTime: moment(performance.door_time).toDate(),
+            startDate: moment(performance.start_date).toDate(),
+            endDate: moment(performance.end_date).toDate(),
+            superEvent: {
+                typeOf: factory.chevre.eventType.ScreeningEventSeries,
+                id: '',
+                eventStatus: factory.chevre.eventStatusType.EventScheduled,
+                kanaName: '',
+                name: performance.film.name,
+                videoFormat: [],
+                soundFormat: [],
+                workPerformed: {
+                    typeOf: factory.chevre.creativeWorkType.Movie,
+                    identifier: performance.film.id,
+                    name: performance.film.name.ja
+                },
+                location: {
+                    typeOf: factory.chevre.placeType.MovieTheater,
+                    id: performance.theater.id,
+                    branchCode: performance.theater.id,
+                    name: performance.theater.name,
+                    kanaName: ''
+                }
+
+            },
+            workPerformed: {
+                typeOf: factory.chevre.creativeWorkType.Movie,
+                identifier: performance.film.id,
+                name: performance.film.name.ja
+            },
+            location: {
+                typeOf: factory.chevre.placeType.ScreeningRoom,
+                branchCode: performance.screen.id,
+                name: performance.screen.name
+            },
+            offers: <any>{
+                typeOf: 'Offer',
+                id: performance.ticket_type_group.id,
+                name: performance.ticket_type_group.name,
+                itemOffered: {
+                    serviceType: {
+                        typeOf: 'ServiceType',
+                        id: '',
+                        name: ''
+                    }
+                }
+            },
+            checkInCount: 0,
+            attendeeCount: 0
+        };
+
         return {
-            typeOf: factory.reservation.reservationType.EventReservation,
+            typeOf: factory.reservationType.EventReservation,
+
+            additionalTicketText: '',
+            bookingTime: now.toDate(),
+            modifiedTime: now.toDate(),
+            numSeats: 1,
+            price: compoundPriceSpec,
+            priceCurrency: factory.priceCurrency.JPY,
+            reservationFor: reservationFor,
+            reservationNumber: tmpReservation.payment_no,
+            reservationStatus: tmpReservation.status_after,
+            reservedTicket: reservedTicket,
+            underName: underName,
+            checkedIn: false,
+            attended: false,
+
             id: qrStr,
             qr_str: qrStr,
             transaction: transaction.id,
@@ -473,7 +628,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             purchaser_gender: customerContact.gender,
 
             // 会員の場合は値を入れる
-            owner_username: (transaction.agent.memberOf !== undefined) ? transaction.agent.memberOf.username : undefined,
+            owner_username: (transaction.agent.memberOf !== undefined) ? transaction.agent.memberOf.membershipNumber : undefined,
             owner_name: (transaction.agent.memberOf !== undefined) ? purchaserName : undefined,
             owner_last_name: (transaction.agent.memberOf !== undefined) ? customerContact.last_name : undefined,
             owner_first_name: (transaction.agent.memberOf !== undefined) ? customerContact.first_name : undefined,

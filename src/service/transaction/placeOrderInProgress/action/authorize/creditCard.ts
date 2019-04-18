@@ -1,21 +1,19 @@
 /**
  * クレジットカード承認アクションサービス
- * @namespace service.transaction.placeOrderInProgress.action.authorize.creditCard
  */
-
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
 import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../../../../repo/action/authorize/creditCard';
-import { MongoRepository as OrganizationRepo } from '../../../../../repo/organization';
+import { MongoRepository as SellerRepo } from '../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
-const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:creditCard');
+const debug = createDebug('ttts-domain:service');
 
 export type ICreateOperation<T> = (
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
-    organizationRepo: OrganizationRepo,
+    sellerRepo: SellerRepo,
     transactionRepo: TransactionRepo,
     creditService: GMO.service.Credit
 ) => Promise<T>;
@@ -42,7 +40,7 @@ export function create(
     // tslint:disable-next-line:max-func-body-length
     return async (
         creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
-        organizationRepo: OrganizationRepo,
+        sellerRepo: SellerRepo,
         transactionRepo: TransactionRepo,
         creditService: GMO.service.Credit
     ) => {
@@ -54,7 +52,7 @@ export function create(
         }
 
         // GMOショップ情報取得
-        const seller = await organizationRepo.findCorporationById(transaction.seller.id);
+        const seller = await sellerRepo.findById({ id: transaction.seller.id });
 
         // 承認アクションを開始する
         const action = await creditCardAuthorizeActionRepo.start(

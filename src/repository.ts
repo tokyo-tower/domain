@@ -11,9 +11,9 @@ import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvail
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibitionEvent';
 import { MongoRepository as OrderRepo } from './repo/order';
-import { MongoRepository as OrganizationRepo } from './repo/organization';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
+import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
@@ -83,11 +83,6 @@ export namespace offer {
  */
 export class Order extends OrderRepo { }
 
-/**
- * 組織リポジトリ
- */
-export class Organization extends OrganizationRepo { }
-
 export namespace place {
     /**
      * 入場場所リポジトリ
@@ -107,6 +102,10 @@ export class Performance extends PerformanceRepo { }
  * 集計データ付きパフォーマンスリポジトリ
  */
 export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
+/**
+ * 会員リポジトリ
+ */
+export class Person extends PersonRepo { }
 /**
  * 予約リポジトリ
  */

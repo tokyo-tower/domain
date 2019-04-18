@@ -5,7 +5,7 @@ import * as redis from 'redis';
 import * as factory from '@motionpicture/ttts-factory';
 import PerformanceModel from './mongoose/model/performance';
 
-const debug = createDebug('ttts-domain:repository:performance');
+const debug = createDebug('ttts-domain:repository');
 
 /**
  * performance repository

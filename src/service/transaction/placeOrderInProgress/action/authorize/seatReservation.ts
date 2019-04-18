@@ -16,7 +16,7 @@ import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../
 import { MongoRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
-const debug = createDebug('ttts-domain:service:transaction:placeOrderInProgress:action:authorize:seatReservation');
+const debug = createDebug('ttts-domain:service');
 
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,

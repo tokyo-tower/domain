@@ -2,7 +2,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as redis from 'redis';
 
-const debug = createDebug('ttts-domain:repository:itemAvailability:performance');
+const debug = createDebug('ttts-domain:repository');
 
 export interface IAvailabilitiesById {
     [id: string]: string;

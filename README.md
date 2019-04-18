@@ -7,7 +7,6 @@ Node.jsで使用するための東京タワーオンラインチケットシス�
 ## Table of contents
 
 * [Usage](#usage)
-* [Code Samples](#code-samples)
 * [License](#license)
 
 ## Usage
@@ -37,11 +36,6 @@ ttts.mongoose.connect();
 | `GMO_SITE_PASS`                   | true     |               | GMO SitePass                              |
 | `TTTS_TOKEN_SECRET`               | true     |               | トークン検証シークレット                  |
 | `AZURE_STORAGE_CONNECTION_STRING` | true     |               | ファイル保管用のazureストレージ接続文字列 |
-
-
-## Code Samples
-
-コードサンプルは [example](https://github.com/motionpicture/ttts-domain/tree/master/example) にあります。
 
 ## License
 

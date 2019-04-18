@@ -10,7 +10,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import { IOffersByEvent, RedisRepository as ExhibitionEventOfferRepo } from '../repo/offer/exhibitionEvent';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 
-const debug = createDebug('ttts-domain:service:offer');
+const debug = createDebug('ttts-domain:service');
 
 export type IUpdateExhibitionEventOffersOperation<T> = (
     performanceRepo: PerformanceRepo,

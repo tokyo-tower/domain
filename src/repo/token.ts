@@ -4,7 +4,7 @@ import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
 
-const debug = createDebug('ttts-domain:repository:token');
+const debug = createDebug('ttts-domain:repository');
 const SECRET = <string>process.env.TTTS_TOKEN_SECRET;
 
 /**

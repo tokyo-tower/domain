@@ -15,7 +15,7 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 // export type GMONotificationOperation<T> = (gmoNotificationRepository: GMONotificationRepo) => Promise<T>;
 // export type IGMOResultNotification = GMO.factory.resultNotification.creditCard.IResultNotification;
 
-const debug = createDebug('ttts-domain:service:report:health');
+const debug = createDebug('ttts-domain:service');
 
 const POS_CLIENT_ID = process.env.POS_CLIENT_ID;
 const TOP_DECK_OPEN_DATE = process.env.TOP_DECK_OPEN_DATE;

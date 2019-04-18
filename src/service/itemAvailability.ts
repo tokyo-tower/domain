@@ -14,7 +14,7 @@ import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as StockRepo } from '../repo/stock';
 
-const debug = createDebug('ttts-domain:service:itemAvailability');
+const debug = createDebug('ttts-domain:service');
 
 export type IUpdatePerformanceAvailabilitiesOperation<T> = (
     stockRepo: StockRepo,

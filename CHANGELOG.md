@@ -18,6 +18,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v13.5.0 - 2019-04-18
+
+### Added
+
+- 会員リポジトリを追加
+
+### Changed
+
+- 取引コレクションのインデックス調整
+- 予約インターフェースをChevreを継承するように拡張
+- 組織コレクションのインデックス調整
+- 注文取引の購入者プロフィール情報の持ち方をCinerinoに統一
+- install mongoose@5.5.1
+- install @motionpicture/ttts-factory@1.0.1
+
+### Removed
+
+- 組織リポジトリを削除
+
 ## v13.4.0 - 2019-04-04
 
 ### Added
