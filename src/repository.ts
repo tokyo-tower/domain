@@ -15,6 +15,7 @@ import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
+import { MongoRepository as ProjectRepo } from './repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as SellerRepo } from './repo/seller';
@@ -106,6 +107,10 @@ export class PerformanceWithAggregation extends PerformanceWithAggregationRepo {
  * 会員リポジトリ
  */
 export class Person extends PersonRepo { }
+/**
+ * プロジェクトリポジトリ
+ */
+export class Project extends ProjectRepo { }
 /**
  * 予約リポジトリ
  */
