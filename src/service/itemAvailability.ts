@@ -105,8 +105,6 @@ export function updatePerformanceOffersAvailability(params: {
                 }
             }
         )
-            .populate('film screen theater')
-            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .exec()
             .then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
         debug('performances found.', performances.length);

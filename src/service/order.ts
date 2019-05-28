@@ -141,10 +141,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
             // 予約をキャンセル
             debug('canceling a reservation...', reservation.qr_str);
-            await reservationRepo.reservationModel.findOneAndUpdate(
-                { qr_str: reservation.qr_str },
-                { status: factory.reservationStatusType.ReservationCancelled }
-            ).exec();
+            await reservationRepo.cancel(reservation);
 
             // 在庫を空きに(在庫IDに対して、元の状態に戻す)
             debug(`making ${reservation.stocks.length} stocks available...`);
@@ -423,13 +420,13 @@ export function returnAllByPerformance(
 export function processReturnAllByPerformance(agentId: string, performanceId: string) {
     return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
-        const reservations = await reservationRepo.reservationModel.find(
+        const reservations = await reservationRepo.search(
             {
                 status: factory.reservationStatusType.ReservationConfirmed,
                 performance: performanceId,
                 purchaser_group: factory.person.Group.Customer
             }
-        ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
+        );
 
         // 入場履歴なしの取引IDを取り出す
         let transactionIds = reservations.map((r) => r.transaction);

@@ -1,13 +1,10 @@
 /**
  * パフォーマンスサービス
- * @namespace service.performance
  */
-
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 
 import { IAvailabilitiesByTicketType } from '../repo/itemAvailability/seatReservationOffer';
-import * as Models from '../repo/mongoose';
 import * as repository from '../repository';
 
 const debug = createDebug('ttts-domain:service');
@@ -72,13 +69,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             });
         }
 
-        // 作品条件を追加する
-        await addFilmConditions(
-            andConditions,
-            (searchConditions.section !== undefined) ? searchConditions.section : null,
-            (searchConditions.words !== undefined) ? searchConditions.words : null
-        );
-
         let conditions: any = null;
         if (andConditions.length > 0) {
             conditions = { $and: andConditions };
@@ -86,7 +76,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         debug('search conditions;', conditions);
 
         // 作品件数取得
-        const filmIds = await performanceRepo.performanceModel.distinct('film', conditions).exec();
+        const filmIds = await performanceRepo.performanceModel.distinct('film.id', conditions).exec();
 
         // 総数検索
         const performancesCount = await performanceRepo.performanceModel.count(conditions).exec();
@@ -197,46 +187,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
 }
 
 /**
- * 作品に関する検索条件を追加する
- * @param andConditions パフォーマンス検索条件
- * @param section 作品部門
- * @param words フリーワード
- */
-async function addFilmConditions(andConditions: any[], section: string | null, words: string | null): Promise<void> {
-    const filmAndConditions: any[] = [];
-    if (section !== null) {
-        // 部門条件の追加
-        filmAndConditions.push({ 'sections.code': { $in: [section] } });
-    }
-
-    // フリーワードの検索対象はタイトル(日英両方)
-    // 空白つなぎでOR検索
-    if (words !== null) {
-        // trim and to half-width space
-        const words4search = words.replace(/(^\s+)|(\s+$)/g, '').replace(/\s/g, ' ');
-        const orConditions = words4search.split(' ').filter((value) => (value.length > 0)).reduce(
-            (a: any[], word) => {
-                return a.concat(
-                    { 'name.ja': { $regex: `${word}` } },
-                    { 'name.en': { $regex: `${word}` } }
-                );
-            },
-            []
-        );
-        debug(orConditions);
-        filmAndConditions.push({ $or: orConditions });
-    }
-
-    // 条件があれば作品検索してID条件として追加
-    if (filmAndConditions.length > 0) {
-        const filmIds = await Models.Film.distinct('_id', { $and: filmAndConditions }).exec();
-        debug('filmIds:', filmIds);
-        // 該当作品がない場合、filmIdsが空配列となりok
-        andConditions.push({ film: { $in: filmIds } });
-    }
-}
-
-/**
  * パフォーマンスに関する集計を行う
  * @param {ISearchConditions} searchConditions パフォーマンス検索条件
  * @param {number} ttl 集計データの保管期間(秒)
@@ -273,8 +223,6 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             'door_time start_date end_date duration screen tour_number ttts_extension'
         )
-            // 必要なのはスクリーン情報
-            .populate('screen')
             .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
         debug(performances.length, 'performances found.');
 
@@ -282,14 +230,14 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         const offersByEvent = await exhibitionEventOfferRepo.findAll();
 
         // 予約情報取得
-        const reservations = await reservationRepo.reservationModel.find(
+        const reservations = await reservationRepo.search(
             {
-                performance: { $in: performances.map((p) => p.id) },
+                performances: performances.map((p) => p.id),
                 status: factory.reservationStatusType.ReservationConfirmed
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             'performance checkins ticket_type ticket_ttts_extension'
-        ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
+        );
         debug(reservations.length, 'reservations found.');
 
         // 入場ゲート取得

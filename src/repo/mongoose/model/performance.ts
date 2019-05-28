@@ -1,10 +1,6 @@
 import * as mongoose from 'mongoose';
 
-import Film from './film';
 import multilingualString from './schemaTypes/multilingualString';
-import Screen from './screen';
-import Theater from './theater';
-import TicketTypeGroup from './ticketTypeGroup';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -23,26 +19,22 @@ const extentedSchema = new mongoose.Schema(
 const schema = new mongoose.Schema(
     {
         _id: String,
-        theater: { // 劇場ID
-            type: String,
-            ref: Theater.modelName,
+        theater: {
+            type: mongoose.SchemaTypes.Mixed,
             required: true
         },
         theater_name: multilingualString,
-        screen: { // スクリーンID
-            type: String,
-            ref: Screen.modelName,
+        screen: {
+            type: mongoose.SchemaTypes.Mixed,
             required: true
         },
         screen_name: multilingualString,
-        film: { // 作品ID
-            type: String,
-            ref: Film.modelName,
+        film: {
+            type: mongoose.SchemaTypes.Mixed,
             required: true
         },
-        ticket_type_group: { // 券種グループID
-            type: String,
-            ref: TicketTypeGroup.modelName,
+        ticket_type_group: {
+            type: mongoose.SchemaTypes.Mixed,
             required: true
         },
         day: String, // 上映日

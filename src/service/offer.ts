@@ -38,7 +38,6 @@ export function updateExhibitionEventOffers(params: {
                 }
             }
         )
-            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
         debug(performances.length, 'performances found.');
 

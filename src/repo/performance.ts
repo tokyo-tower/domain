@@ -8,8 +8,7 @@ import PerformanceModel from './mongoose/model/performance';
 const debug = createDebug('ttts-domain:repository');
 
 /**
- * performance repository
- * @class
+ * イベントリポジトリ
  */
 export class MongoRepository {
     public readonly performanceModel: typeof PerformanceModel;
@@ -20,8 +19,6 @@ export class MongoRepository {
 
     public async findById(id: string): Promise<factory.performance.IPerformanceWithDetails> {
         const doc = await this.performanceModel.findById(id)
-            .populate('film screen theater')
-            .populate({ path: 'ticket_type_group', populate: { path: 'ticket_types' } })
             .exec();
 
         if (doc === null) {
@@ -36,10 +33,24 @@ export class MongoRepository {
      * @param {factory.performance.IPerformance} performance
      */
     public async saveIfNotExists(performance: factory.performance.IPerformance) {
+        const update: any = {
+            film: performance.film,
+            theater: performance.theater,
+            screen: performance.screen,
+            ticket_type_group: performance.ticket_type_group
+        };
+
+        const setOnInsert = performance;
+        delete setOnInsert.film;
+        delete setOnInsert.theater;
+        delete setOnInsert.screen;
+        delete setOnInsert.ticket_type_group;
+
         await this.performanceModel.findByIdAndUpdate(
             performance.id,
             {
-                $setOnInsert: performance
+                $setOnInsert: setOnInsert,
+                $set: update
             },
             {
                 upsert: true,
@@ -50,8 +61,7 @@ export class MongoRepository {
 }
 
 /**
- * Redis Cacheリポジトリー
- * @class
+ * 一時イベントリポジトリ
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'performancesWithAggregation';
