@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 劇場、スクリーン、作品コレクションを削除(一時的に動的データ管理を不可能に変更)
+
 ### Fixed
 
 ### Security

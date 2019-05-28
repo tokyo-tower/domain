@@ -1,12 +1,9 @@
 import * as mongoose from 'mongoose';
 
-import Film from './film';
 import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
 import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
-import Screen from './screen';
-import Theater from './theater';
 
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
@@ -65,23 +62,14 @@ const schema = new mongoose.Schema(
         },
         performance_ttts_extension: performanceExtentedSchema,
 
-        theater: {
-            type: String,
-            ref: Theater.modelName
-        },
+        theater: String,
         theater_name: multilingualString,
         theater_address: multilingualString,
 
-        screen: {
-            type: String,
-            ref: Screen.modelName
-        },
+        screen: String,
         screen_name: multilingualString,
 
-        film: {
-            type: String,
-            ref: Film.modelName
-        },
+        film: String,
         film_name: multilingualString,
         film_is_mx4d: Boolean,
         film_copyright: String,
