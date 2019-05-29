@@ -6,8 +6,6 @@ import * as AWS from 'aws-sdk';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import * as Models from './repo/mongoose';
-
 import * as CommonUtil from './util/common';
 
 import * as AdminService from './service/admin';
@@ -59,7 +57,6 @@ export import GMO = GMO;
 export import AWS = AWS;
 
 export {
-    Models,
     CommonUtil
 };
 

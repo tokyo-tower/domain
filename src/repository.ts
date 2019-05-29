@@ -6,7 +6,6 @@ import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize'
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
-import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
 import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibitionEvent';
@@ -19,7 +18,6 @@ import { MongoRepository as ProjectRepo } from './repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as SellerRepo } from './repo/seller';
-import { MongoRepository as SendGridEventRepo } from './repo/sendGridEvent';
 import { MongoRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
@@ -59,11 +57,6 @@ export namespace itemAvailability {
      */
     export class SeatReservationOffer extends SeatReservationOfferAvailabilityRepo { }
 }
-
-/**
- * GMO通知リポジトリ
- */
-export class GMONotification extends GMONotificationRepo { }
 
 export namespace rateLimit {
     /**
@@ -119,10 +112,6 @@ export class Reservation extends ReservationRepo { }
  * 販売者リポジトリ
  */
 export class Seller extends SellerRepo { }
-/**
- * SendGridイベントリポジトリ
- */
-export class SendGridEvent extends SendGridEventRepo { }
 /**
  * 在庫リポジトリ
  */
