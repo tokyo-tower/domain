@@ -239,27 +239,20 @@ async function reserveTemporarilyByOffer(
     try {
         // 必要な在庫数分の在庫ステータス変更
         await Promise.all(Array.from(Array(offer.ticket_ttts_extension.required_seat_num)).map(async () => {
-            const stock = await stockRepo.stockModel.findOneAndUpdate(
-                {
-                    performance: performance.id,
-                    availability: factory.itemAvailability.InStock
-                },
-                {
-                    availability: factory.itemAvailability.OutOfStock,
-                    holder: transactionId
-                },
-                { new: true }
-            ).exec();
+            const stock = await stockRepo.lock({
+                performance: performance.id,
+                holder: transactionId
+            });
 
             // 更新エラー(対象データなし):次のseatへ
             if (stock !== null) {
-                debug('1 stock found.', stock.get('id'));
+                debug('1 stock found.', stock.id);
                 holdStocks.push({
-                    id: stock.get('id'),
-                    seat_code: stock.get('seat_code'),
+                    id: stock.id,
+                    seat_code: stock.seat_code,
                     availability_before: factory.itemAvailability.InStock,
-                    availability_after: stock.get('availability'),
-                    holder: stock.get('holder')
+                    availability_after: stock.availability,
+                    holder: <string>stock.holder
                 });
             }
         }));
@@ -386,13 +379,7 @@ async function removeTmpReservations(tmpReservations: factory.action.authorize.s
     await Promise.all(tmpReservations.map(async (tmpReservation) => {
         await Promise.all(tmpReservation.stocks.map(async (stock) => {
             try {
-                await stockRepo.stockModel.findByIdAndUpdate(
-                    stock.id,
-                    {
-                        $set: { availability: stock.availability_before },
-                        $unset: { holder: 1 }
-                    }
-                ).exec();
+                await stockRepo.unlock(stock);
             } catch (error) {
                 // no op
             }

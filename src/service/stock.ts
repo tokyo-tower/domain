@@ -43,17 +43,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
                 await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                    await stockRepo.stockModel.findOneAndUpdate(
-                        {
-                            _id: stock.id,
-                            availability: stock.availability_after,
-                            holder: stock.holder // 対象取引に保持されている
-                        },
-                        {
-                            $set: { availability: stock.availability_before },
-                            $unset: { holder: 1 }
-                        }
-                    ).exec();
+                    await stockRepo.unlock(stock);
                 }));
 
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {

@@ -146,17 +146,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
             // 在庫を空きに(在庫IDに対して、元の状態に戻す)
             debug(`making ${reservation.stocks.length} stocks available...`);
             await Promise.all(reservation.stocks.map(async (stock) => {
-                await stockRepo.stockModel.findOneAndUpdate(
-                    {
-                        _id: stock.id,
-                        availability: stock.availability_after,
-                        holder: stock.holder // 対象取引に保持されている
-                    },
-                    {
-                        $set: { availability: stock.availability_before },
-                        $unset: { holder: 1 }
-                    }
-                ).exec();
+                await stockRepo.unlock(stock);
             }));
         }));
     };

@@ -50,22 +50,10 @@ export function updatePerformanceAvailabilities(params: {
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
-        const results = <{ _id: string; count: number }[]>await stockRepo.stockModel.aggregate(
-            [
-                {
-                    $match: {
-                        availability: factory.itemAvailability.InStock,
-                        performance: { $in: ids }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$performance',
-                        count: { $sum: 1 }
-                    }
-                }
-            ]
-        ).exec();
+        const results = await stockRepo.count({
+            availability: factory.itemAvailability.InStock,
+            performance: { ids: ids }
+        });
 
         const availabilities: factory.performance.IAvailability[] = ids.map((id) => {
             // InStockの在庫がない場合は、resultsにデータとして含まれない
@@ -111,25 +99,10 @@ export function updatePerformanceOffersAvailability(params: {
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
-        const results: {
-            _id: string;
-            count: number;
-        }[] = await stockRepo.stockModel.aggregate(
-            [
-                {
-                    $match: {
-                        availability: factory.itemAvailability.InStock,
-                        performance: { $in: performances.map((p) => p.id) }
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$performance',
-                        count: { $sum: 1 }
-                    }
-                }
-            ]
-        ).exec();
+        const results = await stockRepo.count({
+            availability: factory.itemAvailability.InStock,
+            performance: { ids: performances.map((p) => p.id) }
+        });
         debug('stock aggregated.', results.length);
 
         // パフォーマンスIDごとに
