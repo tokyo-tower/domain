@@ -25,7 +25,7 @@ export interface ISearchConditions {
  * 予約リポジトリ
  */
 export class MongoRepository {
-    private readonly reservationModel: typeof ReservationModel;
+    public readonly reservationModel: typeof ReservationModel;
 
     constructor(connection: Connection) {
         this.reservationModel = connection.model(ReservationModel.modelName);
