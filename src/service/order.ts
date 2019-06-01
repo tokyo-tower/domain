@@ -1,8 +1,6 @@
 /**
  * 注文サービス
- * @namespace service.order
  */
-
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as Email from 'email-templates';
@@ -327,8 +325,8 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                 ).exec();
 
                 // パフォーマンスに返品済数を連携
-                await performanceRepo.performanceModel.findByIdAndUpdate(
-                    placeOrderTransactionResult.eventReservations[0].performance,
+                await performanceRepo.updateOne(
+                    { _id: placeOrderTransactionResult.eventReservations[0].performance },
                     {
                         $inc: {
                             'ttts_extension.refunded_count': 1,
@@ -336,10 +334,10 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                         },
                         'ttts_extension.refund_update_at': new Date()
                     }
-                ).exec();
+                );
 
                 // すべて返金完了したら、返金ステータス変更
-                await performanceRepo.performanceModel.findOneAndUpdate(
+                await performanceRepo.updateOne(
                     {
                         _id: placeOrderTransactionResult.eventReservations[0].performance,
                         'ttts_extension.unrefunded_count': 0
@@ -348,7 +346,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                         'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
                         'ttts_extension.refund_update_at': new Date()
                     }
-                ).exec();
+                );
             } else {
                 debug('changing amount...', orderId);
                 const changeTranResult = await GMO.services.credit.changeTran({
@@ -426,15 +424,15 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         debug('confirming returnOrderTransactions...', transactionIds);
 
         // パフォーマンスに返金対対象数を追加する
-        await performanceRepo.performanceModel.findByIdAndUpdate(
-            performanceId,
+        await performanceRepo.updateOne(
+            { _id: performanceId },
             {
                 'ttts_extension.refunded_count': 0, // 返金済数は最初0
                 'ttts_extension.unrefunded_count': transactionIds.length, // 未返金数をセット
                 'ttts_extension.refund_status': factory.performance.RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }
-        ).exec();
+        );
 
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {

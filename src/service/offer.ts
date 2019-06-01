@@ -1,11 +1,7 @@
 /**
- * 販売情報サービス
- * @namespace service.offer
+ * オファーサービス
  */
-
 import * as createDebug from 'debug';
-
-import * as factory from '@motionpicture/ttts-factory';
 
 import { IOffersByEvent, RedisRepository as ExhibitionEventOfferRepo } from '../repo/offer/exhibitionEvent';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
@@ -30,15 +26,12 @@ export function updateExhibitionEventOffers(params: {
         offerRepo: ExhibitionEventOfferRepo
     ) => {
         debug('finding performances...');
-        const performances = await performanceRepo.performanceModel.find(
+        const performances = await performanceRepo.search(
             {
-                start_date: {
-                    $gt: params.startFrom,
-                    $lt: params.startThrough
-                }
+                startFrom: params.startFrom,
+                startThrough: params.startThrough
             }
-        )
-            .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
+        );
         debug(performances.length, 'performances found.');
 
         const offers: IOffersByEvent = {};

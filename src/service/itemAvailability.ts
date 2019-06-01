@@ -37,15 +37,13 @@ export function updatePerformanceAvailabilities(params: {
         performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
         debug('finding performances...');
-        const ids = <string[]>await performanceRepo.performanceModel.distinct(
+        const ids = <string[]>await performanceRepo.distinct(
             '_id',
             {
-                start_date: {
-                    $gte: params.startFrom,
-                    $lt: params.startThrough
-                }
+                startFrom: params.startFrom,
+                startThrough: params.startThrough
             }
-        ).exec();
+        );
         debug(ids.length, 'performances found.');
 
         // パフォーマンスごとに在庫数を集計
@@ -85,16 +83,12 @@ export function updatePerformanceOffersAvailability(params: {
     ) => {
         // 本日以降
         debug('finding performances...');
-        const performances = await performanceRepo.performanceModel.find(
+        const performances = await performanceRepo.search(
             {
-                start_date: {
-                    $gte: params.startFrom,
-                    $lt: params.startThrough
-                }
+                startFrom: params.startFrom,
+                startThrough: params.startThrough
             }
-        )
-            .exec()
-            .then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
+        );
         debug('performances found.', performances.length);
 
         // パフォーマンスごとに在庫数を集計

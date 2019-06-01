@@ -36,65 +36,23 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
         exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
     ) => {
-        // MongoDB検索条件を作成
-        const andConditions: any[] = [
-            { canceled: false }
-        ];
-
-        if (searchConditions.day !== undefined) {
-            andConditions.push({ day: searchConditions.day });
-        }
-
-        if (searchConditions.theater !== undefined) {
-            andConditions.push({ theater: searchConditions.theater });
-        }
-
-        if (searchConditions.screen !== undefined) {
-            andConditions.push({ screen: searchConditions.screen });
-        }
-
-        if (searchConditions.performanceId !== undefined) {
-            andConditions.push({ _id: searchConditions.performanceId });
-        }
-
-        // 開始日時条件
-        if (searchConditions.startFrom !== undefined) {
-            andConditions.push({
-                start_date: { $gte: searchConditions.startFrom }
-            });
-        }
-        if (searchConditions.startThrough !== undefined) {
-            andConditions.push({
-                start_date: { $lt: searchConditions.startThrough }
-            });
-        }
-
-        let conditions: any = null;
-        if (andConditions.length > 0) {
-            conditions = { $and: andConditions };
-        }
-        debug('search conditions;', conditions);
-
         // 作品件数取得
-        const filmIds = await performanceRepo.performanceModel.distinct('film.id', conditions).exec();
+        const filmIds = await performanceRepo.distinct('film.id', searchConditions);
 
         // 総数検索
-        const performancesCount = await performanceRepo.performanceModel.count(conditions).exec();
+        const performancesCount = await performanceRepo.count(searchConditions);
 
-        const page = (searchConditions.page !== undefined) ? searchConditions.page : 1;
-        // tslint:disable-next-line:no-magic-numbers
-        const limit = (searchConditions.limit !== undefined) ? searchConditions.limit : 1000;
-
-        const performances = await performanceRepo.performanceModel.find(conditions, '')
-            .skip(limit * (page - 1)).limit(limit)
-            // 上映日、開始時刻
-            .setOptions({
-                sort: {
-                    day: 1,
-                    start_time: 1
-                }
-            })
-            .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
+        const performances = await performanceRepo.search({
+            ...searchConditions,
+            canceled: false,
+            // tslint:disable-next-line:no-magic-numbers
+            limit: (searchConditions.limit !== undefined) ? searchConditions.limit : 1000,
+            page: (searchConditions.page !== undefined) ? searchConditions.page : 1,
+            sort: {
+                day: 1,
+                start_time: 1
+            }
+        });
         debug('performances found.', performances);
 
         // 空席情報を追加
@@ -201,29 +159,11 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         performanceWithAggregationRepo: repository.PerformanceWithAggregation,
         exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
     ) => {
-        // MongoDB検索条件を作成
-        const andConditions: any[] = [
-            { canceled: false }
-        ];
-
-        // 開始日時条件
-        if (searchConditions.startFrom !== undefined) {
-            andConditions.push({
-                start_date: { $gte: searchConditions.startFrom }
-            });
-        }
-        if (searchConditions.startThrough !== undefined) {
-            andConditions.push({
-                start_date: { $lt: searchConditions.startThrough }
-            });
-        }
-
-        const performances = await performanceRepo.performanceModel.find(
-            { $and: andConditions },
+        const performances = await performanceRepo.search(
+            { ...searchConditions, canceled: false },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             'door_time start_date end_date duration screen tour_number ttts_extension'
-        )
-            .exec().then((docs) => docs.map((doc) => <factory.performance.IPerformanceWithDetails>doc.toObject()));
+        );
         debug(performances.length, 'performances found.');
 
         // 販売情報を取得

@@ -7,14 +7,158 @@ import PerformanceModel from './mongoose/model/performance';
 
 const debug = createDebug('ttts-domain:repository');
 
+export type ISearchConditions = factory.performance.ISearchConditions & {
+    sort?: any;
+    canceled?: boolean;
+    days?: string[];
+    startTimes?: string[];
+    ttts_extension?: {
+        online_sales_status?: factory.performance.OnlineSalesStatus;
+        online_sales_update_at?: any;
+        refund_status?: string;
+    };
+};
+
 /**
  * イベントリポジトリ
  */
 export class MongoRepository {
-    public readonly performanceModel: typeof PerformanceModel;
+    private readonly performanceModel: typeof PerformanceModel;
 
     constructor(connection: Connection) {
         this.performanceModel = connection.model(PerformanceModel.modelName);
+    }
+
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+    public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
+        const andConditions: any[] = [];
+
+        if (params.canceled !== undefined) {
+            andConditions.push({ canceled: params.canceled });
+        }
+
+        if (Array.isArray(params.days)) {
+            andConditions.push({ day: { $in: params.days } });
+        }
+
+        if (params.day !== undefined) {
+            andConditions.push({ day: params.day });
+        }
+
+        if (Array.isArray(params.startTimes)) {
+            andConditions.push({ start_time: { $in: params.startTimes } });
+        }
+
+        if (params.theater !== undefined) {
+            andConditions.push({ theater: params.theater });
+        }
+
+        if (params.screen !== undefined) {
+            andConditions.push({ screen: params.screen });
+        }
+
+        if (params.performanceId !== undefined) {
+            andConditions.push({ _id: params.performanceId });
+        }
+
+        // 開始日時条件
+        if (params.startFrom !== undefined) {
+            andConditions.push({
+                start_date: { $gte: params.startFrom }
+            });
+        }
+        if (params.startThrough !== undefined) {
+            andConditions.push({
+                start_date: { $lt: params.startThrough }
+            });
+        }
+
+        if (params.ttts_extension !== undefined) {
+            if (params.ttts_extension.online_sales_status !== undefined) {
+                andConditions.push({ 'ttts_extension.online_sales_status': params.ttts_extension.online_sales_status });
+            }
+
+            if (params.ttts_extension.online_sales_update_at !== undefined) {
+                andConditions.push({ 'ttts_extension.online_sales_update_at': params.ttts_extension.online_sales_update_at });
+            }
+
+            if (params.ttts_extension.refund_status !== undefined) {
+                andConditions.push({ 'ttts_extension.refund_status': params.ttts_extension.refund_status });
+            }
+        }
+
+        if (params.day !== undefined) {
+            andConditions.push({ day: params.day });
+        }
+
+        return andConditions;
+    }
+
+    public async count(params: ISearchConditions): Promise<number> {
+        const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+
+        return this.performanceModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
+            .setOptions({ maxTimeMS: 10000 })
+            .exec();
+    }
+
+    /**
+     * 予約検索
+     */
+    public async  search(
+        params: ISearchConditions, projection?: any | null
+    ): Promise<factory.performance.IPerformanceWithDetails[]> {
+        const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+
+        const query = this.performanceModel.find(
+            (andConditions.length > 0) ? { $and: andConditions } : {},
+            {
+                __v: 0,
+                ...projection
+            }
+        );
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.sort !== undefined) {
+            query.sort(params.sort);
+        }
+
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec()
+            .then((docs) => docs.map((doc) => doc.toObject()));
+    }
+
+    public async  distinct(field: string, params: ISearchConditions): Promise<any[]> {
+        const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
+
+        const query = this.performanceModel.distinct(
+            field,
+            (andConditions.length > 0) ? { $and: andConditions } : {}
+        );
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.limit !== undefined && params.page !== undefined) {
+            query.limit(params.limit)
+                .skip(params.limit * (params.page - 1));
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.sort !== undefined) {
+            query.sort(params.sort);
+        }
+
+        return query.setOptions({ maxTimeMS: 10000 })
+            .exec();
     }
 
     public async findById(id: string): Promise<factory.performance.IPerformanceWithDetails> {
@@ -56,6 +200,13 @@ export class MongoRepository {
                 upsert: true,
                 new: true
             }
+        ).exec();
+    }
+
+    public async updateOne(conditions: any, update: any) {
+        await this.performanceModel.findOneAndUpdate(
+            conditions,
+            update
         ).exec();
     }
 }
