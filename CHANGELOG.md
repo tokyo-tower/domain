@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 在庫リポジトリのmongooseモデルをprivate化
 - 予約リポジトリのmongooseモデルをprivate化
 - パフォーマンスリポジトリのmongooseモデルをprivate化
+- 新しいRedis在庫リポジトリで再構築
 
 ### Deprecated
 

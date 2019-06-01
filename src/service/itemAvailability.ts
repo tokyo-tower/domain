@@ -12,7 +12,7 @@ import { RedisRepository as PerformanceAvailabilityRepo } from '../repo/itemAvai
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from '../repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
 
 const debug = createDebug('ttts-domain:service');
 
@@ -37,27 +37,32 @@ export function updatePerformanceAvailabilities(params: {
         performanceAvailabilityRepo: PerformanceAvailabilityRepo
     ) => {
         debug('finding performances...');
-        const ids = <string[]>await performanceRepo.distinct(
-            '_id',
+        const performances = await performanceRepo.search(
             {
                 startFrom: params.startFrom,
                 startThrough: params.startThrough
-            }
+            },
+            '_id screen'
         );
-        debug(ids.length, 'performances found.');
+        debug(performances.length, 'performances found.');
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
-        const results = await stockRepo.count({
-            availability: factory.itemAvailability.InStock,
-            performance: { ids: ids }
-        });
+        const results = await Promise.all(performances.map(async (performance) => {
+            const unavailableSeats = await stockRepo.findUnavailableOffersByEventId({ eventId: performance.id });
+            const numSeats = performance.screen.sections[0].seats.length;
 
-        const availabilities: factory.performance.IAvailability[] = ids.map((id) => {
+            return {
+                _id: performance.id,
+                count: numSeats - unavailableSeats.length
+            };
+        }));
+
+        const availabilities: factory.performance.IAvailability[] = performances.map((performance) => {
             // InStockの在庫がない場合は、resultsにデータとして含まれない
-            const result = results.find((r) => r._id === id);
+            const result = results.find((r) => r._id === performance.id);
 
-            return { id: id, remainingAttendeeCapacity: (result !== undefined) ? result.count : 0 };
+            return { id: performance.id, remainingAttendeeCapacity: (result !== undefined) ? result.count : 0 };
         });
 
         debug(`storing ${availabilities.length} performanceAvailabilities...`);
@@ -93,10 +98,15 @@ export function updatePerformanceOffersAvailability(params: {
 
         // パフォーマンスごとに在庫数を集計
         debug('aggregating...');
-        const results = await stockRepo.count({
-            availability: factory.itemAvailability.InStock,
-            performance: { ids: performances.map((p) => p.id) }
-        });
+        const results = await Promise.all(performances.map(async (performance) => {
+            const unavailableSeats = await stockRepo.findUnavailableOffersByEventId({ eventId: performance.id });
+            const numSeats = performance.screen.sections[0].seats.length;
+
+            return {
+                _id: performance.id,
+                count: numSeats - unavailableSeats.length
+            };
+        }));
         debug('stock aggregated.', results.length);
 
         // パフォーマンスIDごとに

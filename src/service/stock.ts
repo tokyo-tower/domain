@@ -12,7 +12,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
@@ -37,18 +37,27 @@ export function cancelSeatReservationAuth(transactionId: string) {
 
         await Promise.all(authorizeActions.map(async (action) => {
             debug('calling deleteTmpReserve...', action);
+
+            const performance = action.object.performance;
+            const section = performance.screen.sections[0];
+
             // 在庫を元の状態に戻す
             // stock_availability_afterからstock_availability_beforeに戻せばよいはず
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
                 await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                    await stockRepo.unlock(stock);
+                    await stockRepo.unlock({
+                        eventId: performance.id,
+                        offer: {
+                            seatSection: section.code,
+                            seatNumber: stock.seat_code
+                        }
+                    });
                 }));
 
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     debug('resetting wheelchair rate limit...');
-                    const performance = action.object.performance;
                     const performanceStartDate = moment(`${performance.start_date}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,

@@ -18,7 +18,7 @@ import { MongoRepository as ProjectRepo } from './repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as SellerRepo } from './repo/seller';
-import { MongoRepository as StockRepo } from './repo/stock';
+import { MongoRepository as OldStockRepo, RedisRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
@@ -112,6 +112,10 @@ export class Reservation extends ReservationRepo { }
  * 販売者リポジトリ
  */
 export class Seller extends SellerRepo { }
+/**
+ * 旧在庫リポジトリ
+ */
+export class OldStock extends OldStockRepo { }
 /**
  * 在庫リポジトリ
  */

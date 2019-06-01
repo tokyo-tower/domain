@@ -15,7 +15,7 @@ import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -144,7 +144,13 @@ export function cancelReservations(returnOrderTransactionId: string) {
             // 在庫を空きに(在庫IDに対して、元の状態に戻す)
             debug(`making ${reservation.stocks.length} stocks available...`);
             await Promise.all(reservation.stocks.map(async (stock) => {
-                await stockRepo.unlock(stock);
+                await stockRepo.unlock({
+                    eventId: reservation.performance,
+                    offer: {
+                        seatSection: '',
+                        seatNumber: stock.seat_code
+                    }
+                });
             }));
         }));
     };

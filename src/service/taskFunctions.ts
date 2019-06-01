@@ -13,7 +13,7 @@ import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -44,7 +44,7 @@ export function cancelSeatReservation(
 ): IOperation<void> {
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
         const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(connection);
-        const stockRepo = new StockRepo(connection);
+        const stockRepo = new StockRepo(redisClient);
         const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
         await StockService.cancelSeatReservationAuth(data.transactionId)(
             seatReservationAuthorizeActionRepo, stockRepo, ticketTypeCategoryRateLimitRepo
@@ -100,7 +100,7 @@ export function returnOrder(
         await OrderService.processReturn(data.transactionId)(
             new PerformanceRepo(connection),
             new ReservationRepo(connection),
-            new StockRepo(connection),
+            new StockRepo(redisClient),
             new TransactionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection),

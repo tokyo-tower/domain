@@ -1,11 +1,8 @@
 /**
- * 座席予約承認アクションサービス
- * @namespace service.transaction.placeOrderInProgress.action.authorize.seatReservation
+ * 座席予約オファー承認サービス
  */
-
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
-import * as mongoose from 'mongoose';
 
 import * as factory from '@motionpicture/ttts-factory';
 
@@ -13,7 +10,7 @@ import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../
 import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
-import { MongoRepository as StockRepo } from '../../../../../repo/stock';
+import { RedisRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
@@ -23,13 +20,15 @@ export type ICreateOpetaiton<T> = (
     performanceRepo: PerformanceRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     paymentNoRepo: PaymentNoRepo,
-    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+    stockRepo: StockRepo
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+    ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+    stockRepo: StockRepo
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (
@@ -96,7 +95,8 @@ export function create(
         performanceRepo: PerformanceRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         paymentNoRepo: PaymentNoRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        stockRepo: StockRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
 
@@ -156,9 +156,11 @@ export function create(
             // 仮予約作成
             await Promise.all(offers.map(async (offer) => {
                 try {
-                    tmpReservations.push(await reserveTemporarilyByOffer(
-                        transaction.id, paymentNo, performance, offer
-                    ));
+                    tmpReservations.push(
+                        await reserveTemporarilyByOffer(
+                            transaction.id, paymentNo, performance, offer
+                        )({ stock: stockRepo })
+                    );
                 } catch (error) {
                     // no op
                 }
@@ -182,7 +184,7 @@ export function create(
 
             try {
                 // 仮予約があれば削除
-                await removeTmpReservations(tmpReservations);
+                await removeTmpReservations(tmpReservations, performance)({ stock: stockRepo });
 
                 // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
                 await Promise.all(offers.map(async (offer) => {
@@ -227,65 +229,80 @@ export function create(
  * 1offerの仮予約を実行する
  */
 // tslint:disable-next-line:max-func-body-length
-async function reserveTemporarilyByOffer(
+function reserveTemporarilyByOffer(
     transactionId: string,
     paymentNo: string,
     performance: factory.performance.IPerformanceWithDetails,
     offer: factory.offer.seatReservation.IOffer
-): Promise<factory.action.authorize.seatReservation.ITmpReservation> {
-    const stockRepo = new StockRepo(mongoose.connection);
-    const holdStocks: factory.reservation.event.IStock[] = [];
+) {
+    return async (repos: {
+        stock: StockRepo;
+    }): Promise<factory.action.authorize.seatReservation.ITmpReservation> => {
+        const holdStocks: factory.reservation.event.IStock[] = [];
 
-    try {
-        // 必要な在庫数分の在庫ステータス変更
-        await Promise.all(Array.from(Array(offer.ticket_ttts_extension.required_seat_num)).map(async () => {
-            const stock = await stockRepo.lock({
-                performance: performance.id,
-                holder: transactionId
-            });
+        try {
+            const section = performance.screen.sections[0];
+            const seats = section.seats;
 
-            // 更新エラー(対象データなし):次のseatへ
-            if (stock !== null) {
-                debug('1 stock found.', stock.id);
-                holdStocks.push({
-                    id: stock.id,
-                    seat_code: stock.seat_code,
-                    availability_before: factory.itemAvailability.InStock,
-                    availability_after: stock.availability,
-                    holder: <string>stock.holder
-                });
-            }
-        }));
-    } catch (error) {
-        // no op
-    }
+            // 必要な在庫数分の在庫ステータス変更
+            await Promise.all(Array.from(Array(offer.ticket_ttts_extension.required_seat_num)).map(async () => {
+                // 空席を探す
+                const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: performance.id });
+                const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
+                const availableSeat = seats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
 
-    if (holdStocks.length <= 0) {
-        throw new Error('Available stock not found.');
-    }
+                if (availableSeat !== undefined) {
+                    await repos.stock.lock({
+                        eventId: performance.id,
+                        offers: [{
+                            seatSection: section.code,
+                            seatNumber: availableSeat.code
+                        }],
+                        expires: moment(performance.end_date).add(1, 'month').toDate(),
+                        holder: transactionId
+                    });
 
-    // ひとつでも在庫確保があれば仮予約オブジェクトを作成
-    const seatCode = holdStocks[0].seat_code;
-    const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
-    if (seatInfo === undefined) {
-        throw new factory.errors.NotFound('Seat code', 'Seat code does not exist in the screen.');
-    }
+                    // 更新エラー(対象データなし):次のseatへ
+                    holdStocks.push({
+                        id: `${performance.id}-${availableSeat.code}`,
+                        seat_code: availableSeat.code,
+                        availability_before: factory.itemAvailability.InStock,
+                        availability_after: factory.itemAvailability.OutOfStock,
+                        holder: transactionId
+                    });
+                }
+            }));
+        } catch (error) {
+            // no op
+        }
 
-    return {
-        stocks: holdStocks,
-        status_after: factory.reservationStatusType.ReservationConfirmed,
-        seat_code: seatCode,
-        seat_grade_name: seatInfo.grade.name,
-        seat_grade_additional_charge: seatInfo.grade.additional_charge,
-        ticket_type: offer.ticket_type,
-        ticket_type_name: offer.ticket_type_name,
-        ticket_type_charge: offer.ticket_type_charge,
-        charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
-        watcher_name: offer.watcher_name,
-        ticket_cancel_charge: offer.ticket_cancel_charge,
-        ticket_ttts_extension: offer.ticket_ttts_extension,
-        rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
-        payment_no: paymentNo
+        if (holdStocks.length <= 0) {
+            throw new Error('Available stock not found.');
+        }
+
+        // ひとつでも在庫確保があれば仮予約オブジェクトを作成
+        const seatCode = holdStocks[0].seat_code;
+        const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
+        if (seatInfo === undefined) {
+            throw new factory.errors.NotFound('Seat code', 'Seat code does not exist in the screen.');
+        }
+
+        return {
+            stocks: holdStocks,
+            status_after: factory.reservationStatusType.ReservationConfirmed,
+            seat_code: seatCode,
+            seat_grade_name: seatInfo.grade.name,
+            seat_grade_additional_charge: seatInfo.grade.additional_charge,
+            ticket_type: offer.ticket_type,
+            ticket_type_name: offer.ticket_type_name,
+            ticket_type_charge: offer.ticket_type_charge,
+            charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
+            watcher_name: offer.watcher_name,
+            ticket_cancel_charge: offer.ticket_cancel_charge,
+            ticket_ttts_extension: offer.ticket_ttts_extension,
+            rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
+            payment_no: paymentNo
+        };
     };
 }
 
@@ -327,7 +344,8 @@ export function cancel(
     return async (
         transactionRepo: TransactionRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        stockRepo: StockRepo
     ) => {
         try {
             const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
@@ -341,12 +359,13 @@ export function cancel(
             const action = await seatReservationAuthorizeActionRepo.cancel(actionId, transactionId);
             const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
 
+            const performance = action.object.performance;
+
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
-            await removeTmpReservations(actionResult.tmpReservations);
+            await removeTmpReservations(actionResult.tmpReservations, performance)({ stock: stockRepo });
 
             // レート制限があれば解除
-            const performance = action.object.performance;
             const performanceStartDate = moment(performance.start_date).toDate();
             await Promise.all(actionResult.tmpReservations.map(async (tmpReservation) => {
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
@@ -373,16 +392,28 @@ export function cancel(
  * 仮予約データから在庫確保を取り消す
  * @param {factory.action.authorize.seatReservation.ITmpReservation[]} tmpReservations 仮予約リスト
  */
-async function removeTmpReservations(tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[]) {
-    const stockRepo = new StockRepo(mongoose.connection);
-
-    await Promise.all(tmpReservations.map(async (tmpReservation) => {
-        await Promise.all(tmpReservation.stocks.map(async (stock) => {
-            try {
-                await stockRepo.unlock(stock);
-            } catch (error) {
-                // no op
-            }
+function removeTmpReservations(
+    tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[],
+    performance: factory.performance.IPerformanceWithDetails
+) {
+    return async (repos: {
+        stock: StockRepo;
+    }) => {
+        const section = performance.screen.sections[0];
+        await Promise.all(tmpReservations.map(async (tmpReservation) => {
+            await Promise.all(tmpReservation.stocks.map(async (stock) => {
+                try {
+                    await repos.stock.unlock({
+                        eventId: performance.id,
+                        offer: {
+                            seatSection: section.code,
+                            seatNumber: stock.seat_code
+                        }
+                    });
+                } catch (error) {
+                    // no op
+                }
+            }));
         }));
-    }));
+    };
 }
