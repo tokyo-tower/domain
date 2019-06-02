@@ -271,20 +271,10 @@ export class MongoRepository {
      * 予約取消
      */
     public async cancel(params: {
-        id?: string;
-        qr_str?: string;
+        id: string;
     }) {
-        const conditions: any = {};
-        if (params.id !== undefined) {
-            conditions.id = params.id;
-        } else if (params.qr_str !== undefined) {
-            conditions.qr_str = params.qr_str;
-        } else {
-            throw new factory.errors.Argument('CancelParams', 'id or qr_str must be specified');
-        }
-
         await this.reservationModel.findOneAndUpdate(
-            conditions,
+            { _id: params.id },
             {
                 reservationStatus: factory.reservationStatusType.ReservationCancelled,
                 status: factory.reservationStatusType.ReservationCancelled

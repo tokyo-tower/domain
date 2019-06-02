@@ -21,6 +21,7 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as factory from '@motionpicture/ttts-factory';
 
+import * as ReserveService from './reserve';
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
@@ -121,37 +122,11 @@ export function cancelReservations(returnOrderTransactionId: string) {
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
 
         await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
-            // 車椅子の流入制限解放
-            if (
-                reservation.status === factory.reservationStatusType.ReservationConfirmed
-                && reservation.rate_limit_unit_in_seconds > 0
-            ) {
-                debug('resetting wheelchair rate limit...');
-                const performanceStartDate = moment(reservation.performance_start_date).toDate();
-                const rateLimitKey = {
-                    performanceStartDate: performanceStartDate,
-                    ticketTypeCategory: reservation.ticket_ttts_extension.category,
-                    unitInSeconds: reservation.rate_limit_unit_in_seconds
-                };
-                await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
-                debug('wheelchair rate limit reset.');
-            }
-
-            // 予約をキャンセル
-            debug('canceling a reservation...', reservation.qr_str);
-            await reservationRepo.cancel(reservation);
-
-            // 在庫を空きに(在庫IDに対して、元の状態に戻す)
-            debug(`making ${reservation.stocks.length} stocks available...`);
-            await Promise.all(reservation.stocks.map(async (stock) => {
-                await stockRepo.unlock({
-                    eventId: reservation.performance,
-                    offer: {
-                        seatSection: '',
-                        seatNumber: stock.seat_code
-                    }
-                });
-            }));
+            await ReserveService.cancelReservation(reservation)({
+                reservation: reservationRepo,
+                stock: stockRepo,
+                ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
+            });
         }));
     };
 }

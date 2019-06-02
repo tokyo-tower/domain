@@ -47,13 +47,17 @@ export function cancelSeatReservationAuth(transactionId: string) {
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
                 await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                    await stockRepo.unlock({
+                    const lockKey = {
                         eventId: performance.id,
                         offer: {
                             seatSection: section.code,
                             seatNumber: stock.seat_code
                         }
-                    });
+                    };
+                    const holder = await stockRepo.getHolder(lockKey);
+                    if (holder === transactionId) {
+                        await stockRepo.unlock(lockKey);
+                    }
                 }));
 
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
