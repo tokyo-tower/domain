@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 予約サービスを追加
+
 ### Changed
 
 - パフォーマンス検索条件から作品関係を削除

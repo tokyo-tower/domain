@@ -16,6 +16,7 @@ import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReportService from './service/report';
+import * as ReserveService from './service/reserve';
 import * as SalesService from './service/sales';
 import * as StockService from './service/stock';
 import * as TaskService from './service/task';
@@ -68,6 +69,7 @@ export namespace service {
     export import order = OrderService;
     export import performance = PerformanceService;
     export import report = ReportService;
+    export import reserve = ReserveService;
     export import aggregate = AggregateService;
     export import sales = SalesService;
     export import stock = StockService;
