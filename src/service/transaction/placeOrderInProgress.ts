@@ -475,7 +475,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             totalPrice: compoundPriceSpec,
             priceCurrency: factory.priceCurrency.JPY,
             ticketedSeat: {
-                seatSection: 'Default',
+                seatSection: '',
                 seatNumber: tmpReservation.seat_code,
                 seatRow: '',
                 seatingType: <any>{},

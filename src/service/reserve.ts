@@ -45,13 +45,17 @@ export function cancelReservation(params: { id: string }) {
             const lockKey = {
                 eventId: reservation.performance,
                 offer: {
-                    seatNumber: '',
-                    seatSection: stock.seat_code
+                    seatNumber: stock.seat_code,
+                    seatSection: ''
                 }
             };
+            debug('checking stock...', stock, lockKey);
             const holder = await repos.stock.getHolder(lockKey);
-            if (holder === reservation.transaction) {
+            debug('holder:', holder);
+            if (holder === stock.holder) {
+                debug('unlocking...', lockKey);
                 await repos.stock.unlock(lockKey);
+                debug('unlocked', lockKey);
             }
         }));
         debug(reservation.stocks.length, 'stock(s) returned in stock.');

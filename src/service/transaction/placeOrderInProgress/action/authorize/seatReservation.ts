@@ -184,7 +184,7 @@ export function create(
 
             try {
                 // 仮予約があれば削除
-                await removeTmpReservations(transaction, tmpReservations, performance)({ stock: stockRepo });
+                await removeTmpReservations(tmpReservations, performance)({ stock: stockRepo });
 
                 // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
                 await Promise.all(offers.map(async (offer) => {
@@ -368,7 +368,7 @@ export function cancel(
 
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
-            await removeTmpReservations(transaction, actionResult.tmpReservations, performance)({ stock: stockRepo });
+            await removeTmpReservations(actionResult.tmpReservations, performance)({ stock: stockRepo });
 
             // レート制限があれば解除
             const performanceStartDate = moment(performance.start_date).toDate();
@@ -398,7 +398,6 @@ export function cancel(
  * @param {factory.action.authorize.seatReservation.ITmpReservation[]} tmpReservations 仮予約リスト
  */
 function removeTmpReservations(
-    transaction: { id: string },
     tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[],
     performance: factory.performance.IPerformanceWithDetails
 ) {
@@ -412,12 +411,12 @@ function removeTmpReservations(
                     const lockKey = {
                         eventId: performance.id,
                         offer: {
-                            seatSection: section.code,
-                            seatNumber: stock.seat_code
+                            seatNumber: stock.seat_code,
+                            seatSection: section.code
                         }
                     };
                     const holder = await repos.stock.getHolder(lockKey);
-                    if (holder === transaction.id) {
+                    if (holder === stock.holder) {
                         await repos.stock.unlock(lockKey);
                     }
                 } catch (error) {
