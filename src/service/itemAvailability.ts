@@ -42,7 +42,12 @@ export function updatePerformanceAvailabilities(params: {
                 startFrom: params.startFrom,
                 startThrough: params.startThrough
             },
-            '_id screen'
+            {
+                film: 0,
+                theater: 0,
+                ticket_type_group: 0,
+                ttts_extension: 0
+            }
         );
         debug(performances.length, 'performances found.');
 

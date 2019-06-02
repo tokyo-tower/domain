@@ -153,18 +153,18 @@ export function create(
                 }
             }));
 
-            // 仮予約作成
-            await Promise.all(offers.map(async (offer) => {
+            // 仮予約作成(直列実行すること)
+            for (const offer of offers) {
                 try {
                     tmpReservations.push(
-                        await reserveTemporarilyByOffer(
-                            transaction.id, paymentNo, performance, offer
-                        )({ stock: stockRepo })
+                        await reserveTemporarilyByOffer(transaction.id, paymentNo, performance, offer)({
+                            stock: stockRepo
+                        })
                     );
                 } catch (error) {
                     // no op
                 }
-            }));
+            }
             debug(tmpReservations.length, 'tmp reservation(s) created.');
 
             // 予約枚数が指定枚数に達しなかった場合エラー
@@ -245,13 +245,16 @@ function reserveTemporarilyByOffer(
             const seats = section.seats;
 
             // 必要な在庫数分の在庫ステータス変更
-            await Promise.all(Array.from(Array(offer.ticket_ttts_extension.required_seat_num)).map(async () => {
+            for (const _ of [...Array(offer.ticket_ttts_extension.required_seat_num)]) {
                 // 空席を探す
                 const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: performance.id });
                 const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
+                debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
                 const availableSeat = seats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+                debug('availableSeat:', availableSeat);
 
                 if (availableSeat !== undefined) {
+                    debug('locking...', availableSeat.code);
                     await repos.stock.lock({
                         eventId: performance.id,
                         offers: [{
@@ -261,6 +264,7 @@ function reserveTemporarilyByOffer(
                         expires: moment(performance.end_date).add(1, 'month').toDate(),
                         holder: transactionId
                     });
+                    debug('locked:', availableSeat.code);
 
                     // 更新エラー(対象データなし):次のseatへ
                     holdStocks.push({
@@ -271,9 +275,10 @@ function reserveTemporarilyByOffer(
                         holder: transactionId
                     });
                 }
-            }));
+            }
         } catch (error) {
             // no op
+            debug(error);
         }
 
         if (holdStocks.length <= 0) {
