@@ -45,8 +45,20 @@ export function updatePerformanceAvailabilities(params: {
             {
                 film: 0,
                 theater: 0,
+                theater_name: 0,
+                screen_name: 0,
                 ticket_type_group: 0,
-                ttts_extension: 0
+                ttts_extension: 0,
+                start_date: 0,
+                end_data: 0,
+                door_time: 0,
+                start_time: 0,
+                end_time: 0,
+                open_time: 0,
+                day: 0,
+                canceled: 0,
+                tour_number: 0,
+                duration: 0
             }
         );
         debug(performances.length, 'performances found.');
