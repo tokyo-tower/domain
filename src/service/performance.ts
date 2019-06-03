@@ -48,10 +48,12 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             // tslint:disable-next-line:no-magic-numbers
             limit: (searchConditions.limit !== undefined) ? searchConditions.limit : 1000,
             page: (searchConditions.page !== undefined) ? searchConditions.page : 1,
-            sort: {
-                day: 1,
-                start_time: 1
-            }
+            sort: (searchConditions.sort !== undefined)
+                ? searchConditions.sort
+                : {
+                    day: 1,
+                    start_time: 1
+                }
         });
         debug('performances found.', performances);
 
@@ -109,6 +111,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                         }
                     };
                 }),
+                extension: performance.ttts_extension,
                 attributes: {
                     day: performance.day,
                     open_time: performance.open_time,
