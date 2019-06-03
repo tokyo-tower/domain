@@ -3,21 +3,12 @@ import { Connection } from 'mongoose';
 import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
+
 import PerformanceModel from './mongoose/model/performance';
 
 const debug = createDebug('ttts-domain:repository');
 
-export type ISearchConditions = factory.performance.ISearchConditions & {
-    sort?: any;
-    canceled?: boolean;
-    days?: string[];
-    startTimes?: string[];
-    ttts_extension?: {
-        online_sales_status?: factory.performance.OnlineSalesStatus;
-        online_sales_update_at?: any;
-        refund_status?: string;
-    };
-};
+export type ISearchConditions = factory.performance.ISearchConditions;
 
 /**
  * イベントリポジトリ
@@ -49,14 +40,6 @@ export class MongoRepository {
             andConditions.push({ start_time: { $in: params.startTimes } });
         }
 
-        if (params.theater !== undefined) {
-            andConditions.push({ theater: params.theater });
-        }
-
-        if (params.screen !== undefined) {
-            andConditions.push({ screen: params.screen });
-        }
-
         if (params.performanceId !== undefined) {
             andConditions.push({ _id: params.performanceId });
         }
@@ -85,10 +68,6 @@ export class MongoRepository {
             if (params.ttts_extension.refund_status !== undefined) {
                 andConditions.push({ 'ttts_extension.refund_status': params.ttts_extension.refund_status });
             }
-        }
-
-        if (params.day !== undefined) {
-            andConditions.push({ day: params.day });
         }
 
         return andConditions;
