@@ -296,12 +296,15 @@ function reserveTemporarilyByOffer(
             stocks: holdStocks,
             status_after: factory.reservationStatusType.ReservationConfirmed,
             seat_code: seatCode,
-            seat_grade_name: seatInfo.grade.name,
-            seat_grade_additional_charge: seatInfo.grade.additional_charge,
+            seat_grade_name: {
+                en: 'Normal Seat',
+                ja: 'ノーマルシート'
+            },
+            seat_grade_additional_charge: 0,
             ticket_type: offer.ticket_type,
             ticket_type_name: offer.ticket_type_name,
             ticket_type_charge: offer.ticket_type_charge,
-            charge: getCharge(offer.ticket_type_charge, seatInfo.grade.additional_charge),
+            charge: getCharge(offer.ticket_type_charge, 0),
             watcher_name: offer.watcher_name,
             ticket_cancel_charge: offer.ticket_cancel_charge,
             ticket_ttts_extension: offer.ticket_ttts_extension,
