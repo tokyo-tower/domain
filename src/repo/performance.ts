@@ -123,19 +123,6 @@ export class MongoRepository {
             (andConditions.length > 0) ? { $and: andConditions } : {}
         );
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.limit !== undefined && params.page !== undefined) {
-            query.limit(params.limit)
-                .skip(params.limit * (params.page - 1));
-        }
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (params.sort !== undefined) {
-            query.sort(params.sort);
-        }
-
         return query.setOptions({ maxTimeMS: 10000 })
             .exec();
     }
