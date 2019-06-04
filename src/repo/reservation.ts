@@ -165,7 +165,7 @@ export class MongoRepository {
         const query = this.reservationModel.find(
             (andConditions.length > 0) ? { $and: andConditions } : {},
             {
-                __v: 0,
+                ...(projection === undefined || projection === null) ? { __v: 0 } : undefined,
                 ...projection
             }
         );

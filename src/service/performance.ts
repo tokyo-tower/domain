@@ -165,7 +165,15 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         const performances = await performanceRepo.search(
             { ...searchConditions, canceled: false },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
-            'door_time start_date end_date duration screen tour_number ttts_extension'
+            {
+                door_time: 1,
+                start_date: 1,
+                end_date: 1,
+                duration: 1,
+                screen: 1,
+                tour_number: 1,
+                ttts_extension: 1
+            }
         );
         debug(performances.length, 'performances found.');
 
@@ -179,7 +187,12 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 status: factory.reservationStatusType.ReservationConfirmed
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
-            'performance checkins ticket_type ticket_ttts_extension'
+            {
+                performance: 1,
+                checkins: 1,
+                ticket_type: 1,
+                ticket_ttts_extension: 1
+            }
         );
         debug(reservations.length, 'reservations found.');
 
