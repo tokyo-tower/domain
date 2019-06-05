@@ -23,8 +23,7 @@ export interface ISearchResult {
 export type ISearchOperation<T> = (
     performanceRepo: repository.Performance,
     performanceAvailabilityRepo: repository.itemAvailability.Performance,
-    seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
-    exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
+    seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer
 ) => Promise<T>;
 
 /**
@@ -38,8 +37,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
     return async (
         performanceRepo: repository.Performance,
         performanceAvailabilityRepo: repository.itemAvailability.Performance,
-        seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
-        exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
+        seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer
     ) => {
         // 作品件数取得
         const filmIds = await performanceRepo.distinct('film.id', searchConditions);
@@ -75,7 +73,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 offerAvailabilities = await seatReservationOfferAvailabilityRepo.findByPerformance(performance.id);
                 debug('offerAvailabilities:', offerAvailabilities);
 
-                ticketTypes = await exhibitionEventOfferRepo.findByEventId(performance.id);
+                ticketTypes = performance.ticket_type_group.ticket_types;
 
                 // 本来、この時点で券種ごとに在庫を取得しているので情報としては十分だが、
                 // 以前の仕様との互換性を保つために、車椅子の在庫フィールドだけ特別に作成する
@@ -164,8 +162,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         reservationRepo: repository.Reservation,
         performanceAvailabilityRepo: repository.itemAvailability.Performance,
         seatReservationOfferAvailabilityRepo: repository.itemAvailability.SeatReservationOffer,
-        performanceWithAggregationRepo: repository.PerformanceWithAggregation,
-        exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
+        performanceWithAggregationRepo: repository.PerformanceWithAggregation
     ) => {
         const performances = await performanceRepo.search(
             searchConditions,
@@ -175,14 +172,12 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                 start_date: 1,
                 end_date: 1,
                 duration: 1,
+                ticket_type_group: 1,
                 tour_number: 1,
                 ttts_extension: 1
             }
         );
         debug(performances.length, 'performances found.');
-
-        // 販売情報を取得
-        const offersByEvent = await exhibitionEventOfferRepo.findAll();
 
         // 予約情報取得
         const reservations = await reservationRepo.search(
@@ -215,7 +210,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         await Promise.all(performances.map(async (performance) => {
             try {
                 const reservations4performance = reservations.filter((r) => r.performance === performance.id);
-                let offers = offersByEvent[performance.id];
+                let offers = performance.ticket_type_group.ticket_types;
                 if (offers === undefined) {
                     offers = [];
                 }

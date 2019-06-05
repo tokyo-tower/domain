@@ -12,7 +12,6 @@ import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
 import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
-import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReportService from './service/report';
@@ -65,7 +64,6 @@ export namespace service {
     export import admin = AdminService;
     export import itemAvailability = ItemAvailabilityService;
     export import notification = NotificationService;
-    export import offer = OfferService;
     export import order = OrderService;
     export import performance = PerformanceService;
     export import report = ReportService;

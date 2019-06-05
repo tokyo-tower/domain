@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - GMO通知コレクションを削除
 - SendGridイベントコレクションを削除
 - パフォーマンスデータから不要な項目を削除
+- jsdoc削除
+- 一時イベントオファーリポジトリを削除
 
 ### Fixed
 
