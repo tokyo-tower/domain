@@ -144,6 +144,13 @@ export class MongoRepository {
      */
     public async saveIfNotExists(performance: factory.performance.IPerformance) {
         const update: any = {
+            doorTime: performance.doorTime,
+            startDate: performance.startDate,
+            endDate: performance.endDate,
+            duration: performance.duration,
+            superEvent: performance.superEvent,
+            location: performance.location,
+            tourNumber: performance.tourNumber,
             film: performance.film,
             theater: performance.theater,
             screen: performance.screen,
@@ -151,6 +158,13 @@ export class MongoRepository {
         };
 
         const setOnInsert = performance;
+        delete setOnInsert.doorTime;
+        delete setOnInsert.startDate;
+        delete setOnInsert.endDate;
+        delete setOnInsert.duration;
+        delete setOnInsert.superEvent;
+        delete setOnInsert.location;
+        delete setOnInsert.tourNumber;
         delete setOnInsert.film;
         delete setOnInsert.theater;
         delete setOnInsert.screen;
