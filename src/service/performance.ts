@@ -9,6 +9,11 @@ import * as repository from '../repository';
 
 const debug = createDebug('ttts-domain:service');
 
+const MAXIMUM_ATTENDEE_CAPACITY = (process.env.MAXIMUM_ATTENDEE_CAPACITY !== undefined)
+    ? Number(process.env.MAXIMUM_ATTENDEE_CAPACITY)
+    // tslint:disable-next-line:no-magic-numbers
+    : 41;
+
 export interface ISearchResult {
     performances: factory.performance.IPerformanceWithAvailability[];
     numberOfPerformances: number;
@@ -99,7 +104,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
                 // tslint:disable-next-line:no-suspicious-comment
                 // TODO 値補充
-                maximumAttendeeCapacity: 0,
+                maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
                 // tslint:disable-next-line:no-magic-numbers
                 remainingAttendeeCapacity: parseInt(performanceAvailabilities[performance.id], 10),
                 remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
@@ -163,14 +168,13 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
         exhibitionEventOfferRepo: repository.offer.ExhibitionEvent
     ) => {
         const performances = await performanceRepo.search(
-            { ...searchConditions, canceled: false },
+            searchConditions,
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
                 door_time: 1,
                 start_date: 1,
                 end_date: 1,
                 duration: 1,
-                screen: 1,
                 tour_number: 1,
                 ttts_extension: 1
             }
@@ -257,7 +261,7 @@ export function aggregateCounts(searchConditions: factory.performance.ISearchCon
                     startDate: performance.start_date,
                     endDate: performance.end_date,
                     duration: performance.duration,
-                    maximumAttendeeCapacity: performance.screen.sections.reduce((a, b) => a + b.seats.length, 0),
+                    maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
                     remainingAttendeeCapacity: remainingAttendeeCapacity,
                     remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
                     tourNumber: performance.tour_number,

@@ -1,14 +1,10 @@
-import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as redis from 'redis';
 
 import * as factory from '@motionpicture/ttts-factory';
 
-const debug = createDebug('ttts-domain:repository');
-
 /**
  * レート制限キーインターフェース
- * @interface
  */
 export interface IRateLimitKey {
     ticketTypeCategory: factory.ticketTypeCategory;
@@ -17,8 +13,7 @@ export interface IRateLimitKey {
 }
 
 /**
- * 券種カテゴリーに対するレート制限レポジトリー
- * @class respoitory.rateLimit:ticketTypeCategory
+ * 券種カテゴリーに対するレート制限リポジトリ
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'ticketTypeCategoryRateLimit';
@@ -44,13 +39,11 @@ export class RedisRepository {
         return new Promise<number>((resolve, reject) => {
             const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
             const ttl = moment(ratelimitKey.performanceStartDate).add(ratelimitKey.unitInSeconds, 'seconds').diff(moment(), 'seconds');
-            debug('locking...', key, ttl);
 
             this.redisClient.multi()
-                .setnx(key, holder, debug)
-                .expire(key, ttl, debug)
+                .setnx(key, holder)
+                .expire(key, ttl)
                 .exec((err, results) => {
-                    debug('results:', results);
                     if (err !== null) {
                         reject(err);
                     } else {
@@ -74,8 +67,7 @@ export class RedisRepository {
         return new Promise<void>((resolve, reject) => {
             const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
 
-            this.redisClient.del(key, (err, results) => {
-                debug('results:', results);
+            this.redisClient.del(key, (err, _) => {
                 if (err !== null) {
                     reject(err);
                 } else {
@@ -91,10 +83,8 @@ export class RedisRepository {
     public async getHolder(ratelimitKey: IRateLimitKey): Promise<string | null> {
         return new Promise<string | null>((resolve, reject) => {
             const key = RedisRepository.CREATE_REDIS_KEY(ratelimitKey);
-            debug('getting', key);
 
             this.redisClient.get(key, (err, result) => {
-                debug('result:', err, result);
                 if (err !== null) {
                     reject(err);
                 } else {

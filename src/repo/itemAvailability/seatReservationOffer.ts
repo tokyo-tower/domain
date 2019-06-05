@@ -1,11 +1,7 @@
-import * as createDebug from 'debug';
 import * as redis from 'redis';
 
-const debug = createDebug('ttts-domain:repository');
-
 /**
- * 座席予約オファーの在庫状況リポジトリー
- * @class respoitory.itemAvailability.seatReservationOffer
+ * 座席予約オファーの在庫状況リポジトリ
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'seatReservationOfferAvailability';
@@ -23,12 +19,10 @@ export class RedisRepository {
             const ttl = 1800;
             const key = `${RedisRepository.KEY_PREFIX}${performanceId}`;
 
-            debug('saving seatReservationOffer availability...', performanceId, ticketTypeId, availableNum);
             this.redisClient.multi()
                 .hset(key, ticketTypeId, availableNum.toString())
                 .expire(key, ttl)
-                .exec((err, results) => {
-                    debug('results:', results);
+                .exec((err, _) => {
                     if (err !== null) {
                         reject(err);
                     } else {
@@ -46,7 +40,6 @@ export class RedisRepository {
             const key = `${RedisRepository.KEY_PREFIX}${performanceId}`;
 
             this.redisClient.hget(key, ticketTypeId, (err, result) => {
-                debug('seatResevationOffer availability found.', err, result);
                 if (err !== null) {
                     reject(err);
                 } else {
@@ -65,7 +58,6 @@ export class RedisRepository {
             const key = `${RedisRepository.KEY_PREFIX}${performanceId}`;
 
             this.redisClient.hgetall(key, (err, result) => {
-                debug('seatResevationOffer availability found.', err, result);
                 if (err !== null) {
                     reject(err);
                 } else {
