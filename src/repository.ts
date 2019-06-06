@@ -6,6 +6,7 @@ import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize'
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
+import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
 import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as OrderRepo } from './repo/order';
@@ -44,6 +45,11 @@ export namespace action {
         export class SeatReservation extends SeatReservationAuthorizeActionRepo { }
     }
 }
+
+/**
+ * 集計データ付きイベントリポジトリ
+ */
+export class EventWithAggregation extends EventWithAggregationRepo { }
 
 export namespace itemAvailability {
     /**

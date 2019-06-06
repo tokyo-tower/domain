@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 - 予約サービスを追加
+- イベント予約集計タスクを追加
+- 新しい集計つき一時イベントリポジトリを追加
 
 ### Changed
 

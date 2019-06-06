@@ -9,7 +9,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { RedisRepository as StockRepo } from '../repo/stock';
-// import { MongoRepository as TaskRepo } from '../repo/task';
+import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('ttts-domain:service');
 
@@ -19,8 +19,8 @@ const debug = createDebug('ttts-domain:service');
 export function cancelReservation(params: { id: string }) {
     return async (repos: {
         reservation: ReservationRepo;
-        // task: TaskRepo;
         stock: StockRepo;
+        task: TaskRepo;
         ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const reservation = await repos.reservation.findById(params);
@@ -60,16 +60,18 @@ export function cancelReservation(params: { id: string }) {
         }));
         debug(reservation.stocks.length, 'stock(s) returned in stock.');
 
-        // const aggregateTask: factory.task.aggregateScreeningEvent.IAttributes = {
-        //     project: actionAttributesList[0].project,
-        //     name: factory.taskName.AggregateScreeningEvent,
-        //     status: factory.taskStatus.Ready,
-        //     runsAt: new Date(), // なるはやで実行
-        //     remainingNumberOfTries: 10,
-        //     numberOfTried: 0,
-        //     executionResults: [],
-        //     data: actionAttributesList[0].object.reservationFor
-        // };
-        // await repos.task.save(aggregateTask);
+        const task: factory.task.aggregateEventReservations.IAttributes = {
+            name: factory.taskName.AggregateEventReservations,
+            status: factory.taskStatus.Ready,
+            runsAt: new Date(),
+            remainingNumberOfTries: 3,
+            lastTriedAt: null,
+            numberOfTried: 0,
+            executionResults: [],
+            data: {
+                id: reservation.performance
+            }
+        };
+        await repos.task.save(task);
     };
 }

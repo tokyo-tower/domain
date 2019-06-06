@@ -9,8 +9,10 @@ import * as redis from 'redis';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from '../repo/aggregateSale';
+import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
+import { RedisRepository as CheckinGateRepo } from '../repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { RedisRepository as StockRepo } from '../repo/stock';
@@ -30,6 +32,19 @@ export function sendEmailNotification(
 ): IOperation<void> {
     return async (__: mongoose.Connection) => {
         await NotificationService.sendEmail(data.emailMessage)();
+    };
+}
+
+export function aggregateEventReservations(data: factory.task.aggregateEventReservations.IData): IOperation<void> {
+    return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
+        await AggregateService.aggregateEventReservations(data)({
+            checkinGate: new CheckinGateRepo(redisClient),
+            eventWithAggregation: new EventWithAggregationRepo(redisClient),
+            performance: new PerformanceRepo(connection),
+            reservation: new ReservationRepo(connection),
+            stock: new StockRepo(redisClient),
+            ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(redisClient)
+        });
     };
 }
 
@@ -68,7 +83,8 @@ export function settleSeatReservation(
     return async (connection: mongoose.Connection) => {
         await StockService.transferSeatReservation(data.transactionId)(
             new TransactionRepo(connection),
-            new ReservationRepo(connection)
+            new ReservationRepo(connection),
+            new TaskRepo(connection)
         );
     };
 }

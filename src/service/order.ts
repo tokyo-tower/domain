@@ -71,7 +71,7 @@ export function processReturn(returnOrderTransactionId: string) {
         await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
 
         await cancelReservations(returnOrderTransactionId)(
-            reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo
+            reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
         );
 
         // 注文を返品済ステータスに変更
@@ -106,7 +106,8 @@ export function cancelReservations(returnOrderTransactionId: string) {
         reservationRepo: ReservationRepo,
         stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        taskRepo: TaskRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -125,6 +126,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
             await ReserveService.cancelReservation(reservation)({
                 reservation: reservationRepo,
                 stock: stockRepo,
+                task: taskRepo,
                 ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
             });
         }));

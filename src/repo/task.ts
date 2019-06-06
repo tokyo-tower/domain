@@ -80,7 +80,7 @@ export class MongoRepository {
             (doc) => <factory.task.ITask>doc.toObject()
         );
     }
-    public async executeOneByName(taskName: factory.taskName): Promise<factory.task.ITask> {
+    public async executeOneByName(taskName: factory.taskName): Promise<factory.task.ITask | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {
                 status: factory.taskStatus.Ready,
@@ -99,7 +99,8 @@ export class MongoRepository {
         ).sort(sortOrder4executionOfTasks).exec();
 
         if (doc === null) {
-            throw new factory.errors.NotFound('executable task');
+            // tslint:disable-next-line:no-null-keyword
+            return null;
         }
 
         return <factory.task.ITask>doc.toObject();

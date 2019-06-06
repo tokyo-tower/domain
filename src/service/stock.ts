@@ -13,6 +13,7 @@ import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/a
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { RedisRepository as StockRepo } from '../repo/stock';
+import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
@@ -84,13 +85,28 @@ export function cancelSeatReservationAuth(transactionId: string) {
  * @param {string} transactionId 取引ID
  */
 export function transferSeatReservation(transactionId: string) {
-    return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo) => {
+    return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo, taskRepo: TaskRepo) => {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
         const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
 
         await Promise.all(eventReservations.map(async (eventReservation) => {
             /// 予約データを作成する
             await reservationRepo.saveEventReservation(eventReservation);
+
+            // 集計タスク作成
+            const task: factory.task.aggregateEventReservations.IAttributes = {
+                name: factory.taskName.AggregateEventReservations,
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(),
+                remainingNumberOfTries: 3,
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: {
+                    id: eventReservation.performance
+                }
+            };
+            await taskRepo.save(task);
         }));
     };
 }
