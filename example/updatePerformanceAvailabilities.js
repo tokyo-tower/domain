@@ -4,24 +4,27 @@
  */
 
 const ttts = require('../lib/index');
+const moment = require('moment');
 
 ttts.mongoose.connect(process.env.MONGOLAB_URI, { useMongoClient: true });
 
 const redisClient = ttts.redis.createClient(
-    parseInt(process.env.TEST_REDIS_PORT, 10),
-    process.env.TEST_REDIS_HOST,
+    Number(process.env.REDIS_PORT),
+    process.env.REDIS_HOST,
     {
-        password: process.env.TEST_REDIS_KEY,
-        tls: { servername: process.env.TEST_REDIS_HOST }
+        password: process.env.REDIS_KEY,
+        tls: { servername: process.env.REDIS_HOST }
     });
 
-ttts.service.itemAvailability.updatePerformanceAvailabilities(90, 3600)(
-    new ttts.repository.Stock(ttts.mongoose.connection),
+ttts.service.itemAvailability.updatePerformanceAvailabilities({
+    startFrom: moment().toDate(),
+    startThrough: moment().add(3, 'days').toDate(),
+    ttl: 3600
+})(
+    new ttts.repository.Stock(redisClient),
     new ttts.repository.Performance(ttts.mongoose.connection),
     new ttts.repository.itemAvailability.Performance(redisClient)
 ).catch((err) => {
     console.error(err);
 }).then(() => {
-    ttts.mongoose.disconnect();
-    redisClient.quit();
 });
