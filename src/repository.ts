@@ -7,11 +7,9 @@ import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
-import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
-import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
-import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
+import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { MongoRepository as ProjectRepo } from './repo/project';
@@ -51,18 +49,6 @@ export namespace action {
  */
 export class EventWithAggregation extends EventWithAggregationRepo { }
 
-export namespace itemAvailability {
-    /**
-     * パフォーマンス在庫状況リポジトリ
-     */
-    // tslint:disable-next-line:no-shadowed-variable
-    export class Performance extends PerformanceAvailabilityRepo { }
-    /**
-     * 座席予約オファー在庫状況リポジトリ
-     */
-    export class SeatReservationOffer extends SeatReservationOfferAvailabilityRepo { }
-}
-
 export namespace rateLimit {
     /**
      * 券種カテゴリーレート制限リポジトリ
@@ -90,10 +76,6 @@ export class PaymentNo extends PaymentNoRepo { }
  * パフォーマンスリポジトリ
  */
 export class Performance extends PerformanceRepo { }
-/**
- * 集計データ付きパフォーマンスリポジトリ
- */
-export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
 /**
  * 会員リポジトリ
  */

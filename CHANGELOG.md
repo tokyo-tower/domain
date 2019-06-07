@@ -32,6 +32,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - パフォーマンスデータから不要な項目を削除
 - jsdoc削除
 - 一時イベントオファーリポジトリを削除
+- パフォーマンス残席数リポジトリを削除
+- オファーごとのパフォーマンス残席数リポジトリを削除
 
 ### Fixed
 
