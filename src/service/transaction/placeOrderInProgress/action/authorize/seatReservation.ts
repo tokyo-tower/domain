@@ -11,6 +11,7 @@ import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo'
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
 import { RedisRepository as StockRepo } from '../../../../../repo/stock';
+import { MongoRepository as TaskRepo } from '../../../../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
@@ -21,14 +22,16 @@ export type ICreateOpetaiton<T> = (
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    stockRepo: StockRepo
+    stockRepo: StockRepo,
+    taskRepo: TaskRepo
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    stockRepo: StockRepo
+    stockRepo: StockRepo,
+    taskRepo: TaskRepo
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (
@@ -40,7 +43,6 @@ export type IValidateOperation<T> = (
  * 供給情報の有効性の確認などを行う。
  * この処理次第で、どのような供給情報を受け入れられるかが決定するので、とても大事な処理です。
  * バグ、不足等あれば、随時更新することが望ましい。
- * @function
  */
 function validateOffers(
     performance: factory.performance.IPerformanceWithDetails,
@@ -74,13 +76,6 @@ function validateOffers(
 /**
  * 座席を仮予約する
  * 承認アクションオブジェクトが返却されます。
- * @export
- * @function
- * @memberof service.transaction.placeOrderInProgress.action.authorize.seatReservation
- * @param {string} agentId 取引主体ID
- * @param {string} transactionId 取引ID
- * @param {string} eventIdentifier イベント識別子
- * @param {factory.offer.ISeatReservationOffer[]} offers 供給情報
  */
 // tslint:disable-next-line:max-func-body-length
 export function create(
@@ -96,7 +91,8 @@ export function create(
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         paymentNoRepo: PaymentNoRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        stockRepo: StockRepo
+        stockRepo: StockRepo,
+        taskRepo: TaskRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
 
@@ -210,6 +206,24 @@ export function create(
             throw error;
         }
 
+        try {
+            // 集計タスク作成
+            const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
+                name: factory.taskName.AggregateEventReservations,
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(),
+                remainingNumberOfTries: 3,
+                // tslint:disable-next-line:no-null-keyword
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: { id: performance.id }
+            };
+            await taskRepo.save(aggregateTask);
+        } catch (error) {
+            // no op
+        }
+
         // アクションを完了
         debug('ending authorize action...');
 
@@ -304,7 +318,7 @@ function reserveTemporarilyByOffer(
             ticket_type: offer.ticket_type,
             ticket_type_name: offer.ticket_type_name,
             ticket_type_charge: offer.ticket_type_charge,
-            charge: getCharge(offer.ticket_type_charge, 0),
+            charge: Number(offer.ticket_type_charge),
             watcher_name: offer.watcher_name,
             ticket_cancel_charge: offer.ticket_cancel_charge,
             ticket_ttts_extension: offer.ticket_ttts_extension,
@@ -315,34 +329,7 @@ function reserveTemporarilyByOffer(
 }
 
 /**
- * 座席単体の料金を算出する
- */
-function getCharge(
-    ticketTypeCharge: number,
-    seatGradeAdditionalCharge: number
-): number {
-    let charge = 0;
-
-    if (ticketTypeCharge !== undefined) {
-        charge += ticketTypeCharge;
-
-        // 座席グレード分加算
-        if (seatGradeAdditionalCharge > 0) {
-            charge += seatGradeAdditionalCharge;
-        }
-    }
-
-    return charge;
-}
-
-/**
  * 座席予約承認アクションをキャンセルする
- * @export
- * @function
- * @memberof service.transaction.placeOrderInProgress.action.authorize.seatReservation
- * @param agentId アクション主体ID
- * @param transactionId 取引ID
- * @param actionId アクションID
  */
 export function cancel(
     agentId: string,
@@ -353,7 +340,8 @@ export function cancel(
         transactionRepo: TransactionRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        stockRepo: StockRepo
+        stockRepo: StockRepo,
+        taskRepo: TaskRepo
     ) => {
         try {
             const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
@@ -390,6 +378,20 @@ export function cancel(
                     }
                 }
             }));
+
+            // 集計タスク作成
+            const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
+                name: factory.taskName.AggregateEventReservations,
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(),
+                remainingNumberOfTries: 3,
+                // tslint:disable-next-line:no-null-keyword
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: { id: performance.id }
+            };
+            await taskRepo.save(aggregateTask);
         } catch (error) {
             // no op
         }
@@ -398,7 +400,6 @@ export function cancel(
 
 /**
  * 仮予約データから在庫確保を取り消す
- * @param {factory.action.authorize.seatReservation.ITmpReservation[]} tmpReservations 仮予約リスト
  */
 function removeTmpReservations(
     tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[],
