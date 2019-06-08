@@ -58,11 +58,11 @@ export function cancelSeatReservation(
     data: factory.task.cancelSeatReservation.IData
 ): IOperation<void> {
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
-        const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(connection);
-        const stockRepo = new StockRepo(redisClient);
-        const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
         await StockService.cancelSeatReservationAuth(data.transactionId)(
-            seatReservationAuthorizeActionRepo, stockRepo, ticketTypeCategoryRateLimitRepo
+            new SeatReservationAuthorizeActionRepo(connection),
+            new StockRepo(redisClient),
+            new TicketTypeCategoryRateLimitRepo(redisClient),
+            new TaskRepo(connection)
         );
     };
 }
