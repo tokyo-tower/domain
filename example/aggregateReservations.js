@@ -13,12 +13,11 @@ async function main() {
     });
 
     await ttts.service.aggregate.aggregateEventReservations({
-        id: '190607001001010900'
+        id: '190610001001010900'
     })({
         checkinGate: new ttts.repository.place.CheckinGate(redisClient),
         eventWithAggregation: new ttts.repository.EventWithAggregation(redisClient),
         performance: new ttts.repository.Performance(ttts.mongoose.connection),
-        performanceWithAggregation: new ttts.repository.PerformanceWithAggregation(redisClient),
         reservation: new ttts.repository.Reservation(ttts.mongoose.connection),
         stock: new ttts.repository.Stock(redisClient),
         ticketTypeCategoryRateLimit: new ttts.repository.rateLimit.TicketTypeCategory(redisClient)
