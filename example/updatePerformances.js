@@ -5,7 +5,7 @@ async function main() {
 
     const performanceRepo = new ttts.repository.Performance(ttts.mongoose.connection);
     await performanceRepo.performanceModel.update(
-        { day: { $gt: '20190904' } },
+        { day: { $gt: '20190905' } },
         { canceled: false },
         { multi: true }
     ).exec();

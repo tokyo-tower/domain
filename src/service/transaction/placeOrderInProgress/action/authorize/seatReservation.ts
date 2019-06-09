@@ -21,6 +21,8 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     // tslint:disable-next-line:no-magic-numbers
     : 6;
 
+const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
@@ -71,7 +73,9 @@ function validateOffers(
                     ticket_type_charge: ticketType.charge,
                     ticket_cancel_charge: ticketType.cancel_charge,
                     ticket_ttts_extension: ticketType.ttts_extension,
-                    rate_limit_unit_in_seconds: ticketType.rate_limit_unit_in_seconds
+                    rate_limit_unit_in_seconds: (ticketType.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
+                        ? WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+                        : 0
                 }
             };
         });
@@ -300,8 +304,8 @@ function reserveTemporarilyByOffer(
                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
                 );
 
-                // 車椅子確保分が一般座席になければ車椅子は0(同伴者考慮)
-                if (availableNormalSeatsCount < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS + 1) {
+                // 車椅子確保分が一般座席になければ車椅子は0
+                if (availableNormalSeatsCount < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS) {
                     availableSeats = [];
                 }
             } else {
