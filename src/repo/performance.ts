@@ -20,10 +20,6 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
-        if (params.canceled !== undefined) {
-            andConditions.push({ canceled: params.canceled });
-        }
-
         if (Array.isArray(params.days)) {
             andConditions.push({ day: { $in: params.days } });
         }

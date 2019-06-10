@@ -44,7 +44,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
 
         const performances = await performanceRepo.search({
             ...searchConditions,
-            canceled: false,
             // tslint:disable-next-line:no-magic-numbers
             limit: (searchConditions.limit !== undefined) ? searchConditions.limit : 1000,
             page: (searchConditions.page !== undefined) ? searchConditions.page : 1,
