@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- 集計イベントリポジトリに削除メソッドを追加
-
 ### Changed
 
 ### Deprecated
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v14.1.0 - 2019-06-10
+
+### Added
+
+- 集計イベントリポジトリに削除メソッドを追加
 
 ## v14.0.0 - 2019-06-10
 
