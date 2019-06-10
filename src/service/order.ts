@@ -1,8 +1,6 @@
 /**
  * 注文サービス
- * @namespace service.order
  */
-
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as Email from 'email-templates';
@@ -17,12 +15,13 @@ import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as factory from '@motionpicture/ttts-factory';
 
+import * as ReserveService from './reserve';
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
@@ -72,7 +71,7 @@ export function processReturn(returnOrderTransactionId: string) {
         await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
 
         await cancelReservations(returnOrderTransactionId)(
-            reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo
+            reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
         );
 
         // 注文を返品済ステータスに変更
@@ -107,7 +106,8 @@ export function cancelReservations(returnOrderTransactionId: string) {
         reservationRepo: ReservationRepo,
         stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        taskRepo: TaskRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -123,44 +123,12 @@ export function cancelReservations(returnOrderTransactionId: string) {
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
 
         await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
-            // 車椅子の流入制限解放
-            if (
-                reservation.status === factory.reservationStatusType.ReservationConfirmed
-                && reservation.rate_limit_unit_in_seconds > 0
-            ) {
-                debug('resetting wheelchair rate limit...');
-                const performanceStartDate = moment(reservation.performance_start_date).toDate();
-                const rateLimitKey = {
-                    performanceStartDate: performanceStartDate,
-                    ticketTypeCategory: reservation.ticket_ttts_extension.category,
-                    unitInSeconds: reservation.rate_limit_unit_in_seconds
-                };
-                await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
-                debug('wheelchair rate limit reset.');
-            }
-
-            // 予約をキャンセル
-            debug('canceling a reservation...', reservation.qr_str);
-            await reservationRepo.reservationModel.findOneAndUpdate(
-                { qr_str: reservation.qr_str },
-                { status: factory.reservationStatusType.ReservationCancelled }
-            ).exec();
-
-            // 在庫を空きに(在庫IDに対して、元の状態に戻す)
-            debug(`making ${reservation.stocks.length} stocks available...`);
-            await Promise.all(reservation.stocks.map(async (stock) => {
-                await stockRepo.stockModel.findOneAndUpdate(
-                    {
-                        _id: stock.id,
-                        availability: stock.availability_after,
-                        holder: stock.holder // 対象取引に保持されている
-                    },
-                    {
-                        $set: { availability: stock.availability_before },
-                        $unset: { holder: 1 }
-                    }
-                ).exec();
-            }));
+            await ReserveService.cancelReservation(reservation)({
+                reservation: reservationRepo,
+                stock: stockRepo,
+                task: taskRepo,
+                ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
+            });
         }));
     };
 }
@@ -340,8 +308,8 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                 ).exec();
 
                 // パフォーマンスに返品済数を連携
-                await performanceRepo.performanceModel.findByIdAndUpdate(
-                    placeOrderTransactionResult.eventReservations[0].performance,
+                await performanceRepo.updateOne(
+                    { _id: placeOrderTransactionResult.eventReservations[0].performance },
                     {
                         $inc: {
                             'ttts_extension.refunded_count': 1,
@@ -349,10 +317,10 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                         },
                         'ttts_extension.refund_update_at': new Date()
                     }
-                ).exec();
+                );
 
                 // すべて返金完了したら、返金ステータス変更
-                await performanceRepo.performanceModel.findOneAndUpdate(
+                await performanceRepo.updateOne(
                     {
                         _id: placeOrderTransactionResult.eventReservations[0].performance,
                         'ttts_extension.unrefunded_count': 0
@@ -361,7 +329,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                         'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
                         'ttts_extension.refund_update_at': new Date()
                     }
-                ).exec();
+                );
             } else {
                 debug('changing amount...', orderId);
                 const changeTranResult = await GMO.services.credit.changeTran({
@@ -423,13 +391,13 @@ export function returnAllByPerformance(
 export function processReturnAllByPerformance(agentId: string, performanceId: string) {
     return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
-        const reservations = await reservationRepo.reservationModel.find(
+        const reservations = await reservationRepo.search(
             {
                 status: factory.reservationStatusType.ReservationConfirmed,
                 performance: performanceId,
                 purchaser_group: factory.person.Group.Customer
             }
-        ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
+        );
 
         // 入場履歴なしの取引IDを取り出す
         let transactionIds = reservations.map((r) => r.transaction);
@@ -439,15 +407,15 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         debug('confirming returnOrderTransactions...', transactionIds);
 
         // パフォーマンスに返金対対象数を追加する
-        await performanceRepo.performanceModel.findByIdAndUpdate(
-            performanceId,
+        await performanceRepo.updateOne(
+            { _id: performanceId },
             {
                 'ttts_extension.refunded_count': 0, // 返金済数は最初0
                 'ttts_extension.unrefunded_count': transactionIds.length, // 未返金数をセット
                 'ttts_extension.refund_status': factory.performance.RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }
-        ).exec();
+        );
 
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {

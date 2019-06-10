@@ -57,7 +57,7 @@ describe('executeOneByName()', () => {
         sandbox.verify();
     });
 
-    it('存在しなければ、NotFoundエラーとなるはず', async () => {
+    it('存在しなければ、nullが返却されるはず', async () => {
         const taskName = ttts.factory.taskName.SettleCreditCard;
 
         const repository = new ttts.repository.Task(ttts.mongoose.connection);
@@ -65,8 +65,8 @@ describe('executeOneByName()', () => {
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
 
-        const result = await repository.executeOneByName(taskName).catch((err) => err);
-        assert(result instanceof ttts.factory.errors.NotFound);
+        const result = await repository.executeOneByName(taskName);
+        assert(result === null);
         sandbox.verify();
     });
 });

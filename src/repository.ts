@@ -6,21 +6,17 @@ import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize'
 import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
-import { MongoRepository as GMONotificationRepo } from './repo/gmoNotification';
-import { RedisRepository as PerformanceAvailabilityRepo } from './repo/itemAvailability/performance';
-import { RedisRepository as SeatReservationOfferAvailabilityRepo } from './repo/itemAvailability/seatReservationOffer';
-import { RedisRepository as ExhibitionEventOffer } from './repo/offer/exhibitionEvent';
+import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
-import { MongoRepository as PerformanceRepo, RedisRepository as PerformanceWithAggregationRepo } from './repo/performance';
+import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { MongoRepository as ProjectRepo } from './repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as SellerRepo } from './repo/seller';
-import { MongoRepository as SendGridEventRepo } from './repo/sendGridEvent';
-import { MongoRepository as StockRepo } from './repo/stock';
+import { RedisRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
 import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
@@ -48,35 +44,16 @@ export namespace action {
     }
 }
 
-export namespace itemAvailability {
-    /**
-     * パフォーマンス在庫状況リポジトリ
-     */
-    // tslint:disable-next-line:no-shadowed-variable
-    export class Performance extends PerformanceAvailabilityRepo { }
-    /**
-     * 座席予約オファー在庫状況リポジトリ
-     */
-    export class SeatReservationOffer extends SeatReservationOfferAvailabilityRepo { }
-}
-
 /**
- * GMO通知リポジトリ
+ * 集計データ付きイベントリポジトリ
  */
-export class GMONotification extends GMONotificationRepo { }
+export class EventWithAggregation extends EventWithAggregationRepo { }
 
 export namespace rateLimit {
     /**
      * 券種カテゴリーレート制限リポジトリ
      */
     export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
-}
-
-export namespace offer {
-    /**
-     * 展示イベントの販売情報リポジトリ
-     */
-    export class ExhibitionEvent extends ExhibitionEventOffer { }
 }
 
 /**
@@ -100,10 +77,6 @@ export class PaymentNo extends PaymentNoRepo { }
  */
 export class Performance extends PerformanceRepo { }
 /**
- * 集計データ付きパフォーマンスリポジトリ
- */
-export class PerformanceWithAggregation extends PerformanceWithAggregationRepo { }
-/**
  * 会員リポジトリ
  */
 export class Person extends PersonRepo { }
@@ -119,10 +92,6 @@ export class Reservation extends ReservationRepo { }
  * 販売者リポジトリ
  */
 export class Seller extends SellerRepo { }
-/**
- * SendGridイベントリポジトリ
- */
-export class SendGridEvent extends SendGridEventRepo { }
 /**
  * 在庫リポジトリ
  */

@@ -566,9 +566,7 @@ async function placeOrderTransactions2reservationDatas(
     // 取引で作成された予約データを取得
     debug('finding reservations...');
     const orderNumbers = transactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.orderNumber);
-    const reservations = await reservationRepo.reservationModel.find(
-        { order_number: { $in: orderNumbers } }
-    ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
+    const reservations = await reservationRepo.search({ orderNumbers: orderNumbers });
     debug(`${reservations.length} reservations found.`);
 
     // 予約情報をセット
@@ -801,9 +799,7 @@ async function returnOrderTransactions2cancelDatas(
     // 取引で作成された予約データを取得
     const placeOrderTransactions = transactions.map((t) => t.object.transaction);
     const orderNumbers = placeOrderTransactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.orderNumber);
-    const reservations = await reservationRepo.reservationModel.find(
-        { order_number: { $in: orderNumbers } }
-    ).exec().then((docs) => docs.map((doc) => <factory.reservation.event.IReservation>doc.toObject()));
+    const reservations = await reservationRepo.search({ orderNumbers: orderNumbers });
     debug(`${reservations.length} reservations found.`);
 
     const datas: IData[] = [];

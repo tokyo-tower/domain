@@ -18,6 +18,8 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 
 const debug = createDebug('ttts-domain:service');
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
@@ -434,6 +436,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         const unitPriceSpec:
             factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>
             = {
+            project: project,
             typeOf: <factory.chevre.priceSpecificationType.UnitPriceSpecification>
                 factory.chevre.priceSpecificationType.UnitPriceSpecification,
             price: tmpReservation.charge,
@@ -447,6 +450,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         };
 
         const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
+            project: project,
             typeOf: <factory.chevre.priceSpecificationType.CompoundPriceSpecification>
                 factory.chevre.priceSpecificationType.CompoundPriceSpecification,
             priceCurrency: factory.priceCurrency.JPY,
@@ -475,7 +479,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             totalPrice: compoundPriceSpec,
             priceCurrency: factory.priceCurrency.JPY,
             ticketedSeat: {
-                seatSection: 'Default',
+                seatSection: '',
                 seatNumber: tmpReservation.seat_code,
                 seatRow: '',
                 seatingType: <any>{},
@@ -483,6 +487,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             },
             underName: underName,
             ticketType: {
+                project: project,
                 name: tmpReservation.ticket_type_name,
                 description: { en: '', ja: '' },
                 alternateName: tmpReservation.ticket_type_name,
@@ -493,21 +498,22 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 additionalProperty: [],
                 // category: {},
                 // color: '',
+                identifier: tmpReservation.ticket_type,
                 id: tmpReservation.ticket_type
             }
         };
 
         const reservationFor: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> = {
+            project: project,
             typeOf: factory.chevre.eventType.ScreeningEvent,
             id: performance.id,
             name: performance.film.name,
-            eventStatus: (performance.canceled)
-                ? factory.chevre.eventStatusType.EventCancelled
-                : factory.chevre.eventStatusType.EventScheduled,
+            eventStatus: factory.chevre.eventStatusType.EventScheduled,
             doorTime: moment(performance.door_time).toDate(),
             startDate: moment(performance.start_date).toDate(),
             endDate: moment(performance.end_date).toDate(),
             superEvent: {
+                project: project,
                 typeOf: factory.chevre.eventType.ScreeningEventSeries,
                 id: '',
                 eventStatus: factory.chevre.eventStatusType.EventScheduled,
@@ -516,11 +522,14 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 videoFormat: [],
                 soundFormat: [],
                 workPerformed: {
+                    project: project,
                     typeOf: factory.chevre.creativeWorkType.Movie,
                     identifier: performance.film.id,
+                    id: performance.film.id,
                     name: performance.film.name.ja
                 },
                 location: {
+                    project: project,
                     typeOf: factory.chevre.placeType.MovieTheater,
                     id: performance.theater.id,
                     branchCode: performance.theater.id,
@@ -530,11 +539,14 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             },
             workPerformed: {
+                project: project,
                 typeOf: factory.chevre.creativeWorkType.Movie,
                 identifier: performance.film.id,
+                id: performance.film.id,
                 name: performance.film.name.ja
             },
             location: {
+                project: project,
                 typeOf: factory.chevre.placeType.ScreeningRoom,
                 branchCode: performance.screen.id,
                 name: performance.screen.name
@@ -556,6 +568,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         };
 
         return {
+            project: project,
             typeOf: factory.reservationType.EventReservation,
 
             additionalTicketText: '',
@@ -603,7 +616,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             performance_end_date: performance.end_date,
             performance_door_time: performance.door_time,
             performance_ttts_extension: performance.ttts_extension,
-            performance_canceled: performance.canceled,
+            performance_canceled: false,
 
             theater: performance.theater.id,
             theater_name: performance.theater.name,
@@ -614,8 +627,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             film: performance.film.id,
             film_name: performance.film.name,
-            film_is_mx4d: performance.film.is_mx4d,
-            film_copyright: performance.film.copyright,
+            film_is_mx4d: false,
+            film_copyright: '',
 
             purchaser_name: purchaserName,
             purchaser_last_name: customerContact.last_name,

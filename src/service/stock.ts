@@ -1,9 +1,6 @@
 /**
- * stock service
  * 在庫の管理に対して責任を負うサービス
- * @namespace service.stock
  */
-
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
@@ -12,23 +9,21 @@ import * as factory from '@motionpicture/ttts-factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
+import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
 
 /**
- * 資産承認解除(在庫ステータス変更)
- * @export
- * @function
- * @memberof service.stock
- * @param {string} transactionId 取引ID
+ * 仮予約承認取消
  */
 export function cancelSeatReservationAuth(transactionId: string) {
     return async (
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         stockRepo: StockRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo
+        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        taskRepo: TaskRepo
     ) => {
         // 座席仮予約アクションを取得
         const authorizeActions: factory.action.authorize.seatReservation.IAction[] =
@@ -37,28 +32,30 @@ export function cancelSeatReservationAuth(transactionId: string) {
 
         await Promise.all(authorizeActions.map(async (action) => {
             debug('calling deleteTmpReserve...', action);
+
+            const performance = action.object.performance;
+            const section = performance.screen.sections[0];
+
             // 在庫を元の状態に戻す
-            // stock_availability_afterからstock_availability_beforeに戻せばよいはず
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
                 await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                    await stockRepo.stockModel.findOneAndUpdate(
-                        {
-                            _id: stock.id,
-                            availability: stock.availability_after,
-                            holder: stock.holder // 対象取引に保持されている
-                        },
-                        {
-                            $set: { availability: stock.availability_before },
-                            $unset: { holder: 1 }
+                    const lockKey = {
+                        eventId: performance.id,
+                        offer: {
+                            seatNumber: stock.seat_code,
+                            seatSection: section.code
                         }
-                    ).exec();
+                    };
+                    const holder = await stockRepo.getHolder(lockKey);
+                    if (holder === stock.holder) {
+                        await stockRepo.unlock(lockKey);
+                    }
                 }));
 
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     debug('resetting wheelchair rate limit...');
-                    const performance = action.object.performance;
                     const performanceStartDate = moment(`${performance.start_date}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
@@ -69,25 +66,50 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     debug('wheelchair rate limit reset.');
                 }
             }));
+
+            // 集計タスク作成
+            const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
+                name: factory.taskName.AggregateEventReservations,
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(),
+                remainingNumberOfTries: 3,
+                // tslint:disable-next-line:no-null-keyword
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: { id: performance.id }
+            };
+            await taskRepo.save(aggregateTask);
         }));
     };
 }
 
 /**
- * 資産移動(予約データ作成)
- * @export
- * @function
- * @memberof service.stock
- * @param {string} transactionId 取引ID
+ * 仮予約→本予約
  */
 export function transferSeatReservation(transactionId: string) {
-    return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo) => {
+    return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo, taskRepo: TaskRepo) => {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
         const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
 
         await Promise.all(eventReservations.map(async (eventReservation) => {
             /// 予約データを作成する
             await reservationRepo.saveEventReservation(eventReservation);
+
+            // 集計タスク作成
+            const task: factory.task.aggregateEventReservations.IAttributes = {
+                name: factory.taskName.AggregateEventReservations,
+                status: factory.taskStatus.Ready,
+                runsAt: new Date(),
+                remainingNumberOfTries: 3,
+                lastTriedAt: null,
+                numberOfTried: 0,
+                executionResults: [],
+                data: {
+                    id: eventReservation.performance
+                }
+            };
+            await taskRepo.save(task);
         }));
     };
 }

@@ -1,23 +1,18 @@
 /**
- * TTTSドメインモジュール
+ * index module
  */
 import * as GMO from '@motionpicture/gmo-service';
 import * as AWS from 'aws-sdk';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import * as Models from './repo/mongoose';
-
-import * as CommonUtil from './util/common';
-
 import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
-import * as ItemAvailabilityService from './service/itemAvailability';
 import * as NotificationService from './service/notification';
-import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReportService from './service/report';
+import * as ReserveService from './service/reserve';
 import * as SalesService from './service/sales';
 import * as StockService from './service/stock';
 import * as TaskService from './service/task';
@@ -29,14 +24,10 @@ import * as UtilService from './service/util';
 import * as factory from '@motionpicture/ttts-factory';
 import * as repository from './repository';
 
-/**
- * MongoDBクライアント`mongoose`
- * @example
- * var promise = ttts.mongoose.connect('mongodb://localhost/myapp', {
- *     useMongoClient: true
- * });
- */
 (<any>mongoose).Promise = global.Promise;
+/**
+ * MongoDBクライアント
+ */
 export import mongoose = mongoose;
 
 /**
@@ -58,19 +49,13 @@ export import GMO = GMO;
  */
 export import AWS = AWS;
 
-export {
-    Models,
-    CommonUtil
-};
-
 export namespace service {
     export import admin = AdminService;
-    export import itemAvailability = ItemAvailabilityService;
     export import notification = NotificationService;
-    export import offer = OfferService;
     export import order = OrderService;
     export import performance = PerformanceService;
     export import report = ReportService;
+    export import reserve = ReserveService;
     export import aggregate = AggregateService;
     export import sales = SalesService;
     export import stock = StockService;

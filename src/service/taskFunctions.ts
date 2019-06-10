@@ -9,11 +9,13 @@ import * as redis from 'redis';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from '../repo/aggregateSale';
+import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
+import { RedisRepository as CheckinGateRepo } from '../repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as StockRepo } from '../repo/stock';
+import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -33,6 +35,19 @@ export function sendEmailNotification(
     };
 }
 
+export function aggregateEventReservations(data: factory.task.aggregateEventReservations.IData): IOperation<void> {
+    return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
+        await AggregateService.aggregateEventReservations(data)({
+            checkinGate: new CheckinGateRepo(redisClient),
+            eventWithAggregation: new EventWithAggregationRepo(redisClient),
+            performance: new PerformanceRepo(connection),
+            reservation: new ReservationRepo(connection),
+            stock: new StockRepo(redisClient),
+            ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(redisClient)
+        });
+    };
+}
+
 export function triggerWebhook(data: factory.task.triggerWebhook.IData): IOperation<void> {
     return async (_: mongoose.Connection) => {
         await NotificationService.triggerWebhook(data)();
@@ -43,11 +58,11 @@ export function cancelSeatReservation(
     data: factory.task.cancelSeatReservation.IData
 ): IOperation<void> {
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
-        const seatReservationAuthorizeActionRepo = new SeatReservationAuthorizeActionRepo(connection);
-        const stockRepo = new StockRepo(connection);
-        const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(redisClient);
         await StockService.cancelSeatReservationAuth(data.transactionId)(
-            seatReservationAuthorizeActionRepo, stockRepo, ticketTypeCategoryRateLimitRepo
+            new SeatReservationAuthorizeActionRepo(connection),
+            new StockRepo(redisClient),
+            new TicketTypeCategoryRateLimitRepo(redisClient),
+            new TaskRepo(connection)
         );
     };
 }
@@ -68,7 +83,8 @@ export function settleSeatReservation(
     return async (connection: mongoose.Connection) => {
         await StockService.transferSeatReservation(data.transactionId)(
             new TransactionRepo(connection),
-            new ReservationRepo(connection)
+            new ReservationRepo(connection),
+            new TaskRepo(connection)
         );
     };
 }
@@ -100,7 +116,7 @@ export function returnOrder(
         await OrderService.processReturn(data.transactionId)(
             new PerformanceRepo(connection),
             new ReservationRepo(connection),
-            new StockRepo(connection),
+            new StockRepo(redisClient),
             new TransactionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection),
