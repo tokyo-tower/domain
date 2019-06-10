@@ -71,4 +71,22 @@ export class RedisRepository {
             });
         });
     }
+
+    /**
+     * イベントIDからフィールドを削除する
+     */
+    public async deleteByIds(params: { ids: string[] }): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const key = RedisRepository.KEY_PREFIX;
+
+            this.redisClient.hdel(key, params.ids, (err, _) => {
+                if (err !== null) {
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+
 }
