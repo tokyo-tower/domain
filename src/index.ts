@@ -1,12 +1,10 @@
 /**
- * TTTSドメインモジュール
+ * index module
  */
 import * as GMO from '@motionpicture/gmo-service';
 import * as AWS from 'aws-sdk';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
-
-import * as CommonUtil from './util/common';
 
 import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
@@ -26,14 +24,10 @@ import * as UtilService from './service/util';
 import * as factory from '@motionpicture/ttts-factory';
 import * as repository from './repository';
 
-/**
- * MongoDBクライアント`mongoose`
- * @example
- * var promise = ttts.mongoose.connect('mongodb://localhost/myapp', {
- *     useMongoClient: true
- * });
- */
 (<any>mongoose).Promise = global.Promise;
+/**
+ * MongoDBクライアント
+ */
 export import mongoose = mongoose;
 
 /**
@@ -54,10 +48,6 @@ export import GMO = GMO;
  * AWS SDK
  */
 export import AWS = AWS;
-
-export {
-    CommonUtil
-};
 
 export namespace service {
     export import admin = AdminService;
