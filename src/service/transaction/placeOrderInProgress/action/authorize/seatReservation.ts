@@ -63,14 +63,19 @@ function validateOffers(
                 throw new factory.errors.NotFound('offers', 'Ticket type not found.');
             }
 
+            const unitPriceSpec = ticketType.priceSpecification;
+            if (unitPriceSpec === undefined) {
+                throw new factory.errors.NotFound('Unit Price Specification');
+            }
+
             return {
                 ...offer,
                 ...{
-                    price: ticketType.charge,
+                    price: unitPriceSpec.price,
                     priceCurrency: factory.priceCurrency.JPY,
                     ticket_type: ticketType.id,
                     ticket_type_name: ticketType.name,
-                    ticket_type_charge: ticketType.charge,
+                    ticket_type_charge: unitPriceSpec.price,
                     ticket_cancel_charge: ticketType.cancel_charge,
                     ticket_ttts_extension: ticketType.ttts_extension,
                     rate_limit_unit_in_seconds: (ticketType.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)

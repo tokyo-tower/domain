@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 券種のchargeをpriceSpecificationに置換
+
 ### Deprecated
 
 ### Removed
