@@ -76,20 +76,24 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
                 remainingAttendeeCapacity: (eventWithAggregation !== undefined)
                     ? eventWithAggregation.remainingAttendeeCapacity
-                    : <any>undefined,
+                    : undefined,
                 remainingAttendeeCapacityForWheelchair: (eventWithAggregation !== undefined)
                     ? eventWithAggregation.remainingAttendeeCapacityForWheelchair
-                    : <any>undefined,
+                    : undefined,
                 ticketTypes: ticketTypes.map((ticketType) => {
                     const offerAggregation = (eventWithAggregation !== undefined && eventWithAggregation.offers !== undefined)
                         ? eventWithAggregation.offers.find((o) => o.id === ticketType.id)
                         : undefined;
 
+                    const unitPriceSpec = ticketType.priceSpecification;
+
                     return {
                         ...ticketType,
+                        // POSに対するAPI互換性維持のため、charge属性追加
+                        charge: (unitPriceSpec !== undefined) ? unitPriceSpec.price : undefined,
                         remainingAttendeeCapacity: (offerAggregation !== undefined)
                             ? offerAggregation.remainingAttendeeCapacity
-                            : <any>undefined
+                            : undefined
                     };
                 }),
                 extension: performance.ttts_extension,
