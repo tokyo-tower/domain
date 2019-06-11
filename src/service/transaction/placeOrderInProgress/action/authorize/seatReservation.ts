@@ -274,7 +274,7 @@ function reserveTemporarilyByOffer(
 
             // まず利用可能な座席は全座席
             let availableSeats = section.seats;
-            debug('all availableSeats:', availableSeats);
+            debug(availableSeats.length, 'seats exist');
 
             // 全車椅子座席
             const wheelChairSeats = availableSeats.filter(
@@ -322,7 +322,7 @@ function reserveTemporarilyByOffer(
                     availableSeats = availableSeats.slice(0, -(WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS * unavailableWheelChairSeatCount));
                 }
             }
-            debug('availableSeats:', availableSeats);
+            debug(availableSeats.length, 'availableSeats exist');
 
             // 1つ空席を選択
             const availableSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
