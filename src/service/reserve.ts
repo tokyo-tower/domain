@@ -46,13 +46,15 @@ export function cancelReservation(params: { id: string }) {
                 const extraSeatNumbers = JSON.parse(extraSeatNumbersProperty.value);
 
                 // このイベントの予約から余分確保分を検索
-                extraReservations = await repos.reservation.search({
-                    typeOf: factory.reservationType.EventReservation,
-                    reservationFor: { id: reservation.reservationFor.id },
-                    reservedTicket: {
-                        ticketedSeat: { seatNumbers: extraSeatNumbers }
-                    }
-                });
+                if (Array.isArray(extraSeatNumbers) && extraSeatNumbers.length > 0) {
+                    extraReservations = await repos.reservation.search({
+                        typeOf: factory.reservationType.EventReservation,
+                        reservationFor: { id: reservation.reservationFor.id },
+                        reservedTicket: {
+                            ticketedSeat: { seatNumbers: extraSeatNumbers }
+                        }
+                    });
+                }
             }
         }
 

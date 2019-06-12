@@ -265,6 +265,116 @@ export function create(
     };
 }
 
+// async function selectSeatNumbers(params: {
+//     performance: factory.performance.IPerformanceWithDetails;
+//     offers: factory.offer.seatReservation.IOffer[];
+// }) {
+//     // tslint:disable-next-line:max-func-body-length
+//     return async (repos: {
+//         stock: StockRepo;
+//     }): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> => {
+//         const acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[] = [];
+//         const selectedSeatNumbers: string[] = [];
+
+//         try {
+//             const section = params.performance.screen.sections[0];
+
+//             const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: performance.id });
+//             const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
+//             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
+
+//             // tslint:disable-next-line:max-func-body-length
+//             params.offers.forEach((offer) => {
+//                 // まず利用可能な座席は全座席
+//                 let availableSeats = section.seats;
+//                 let availableSeatsForAdditionalStocks = section.seats;
+//                 debug(availableSeats.length, 'seats exist');
+
+//                 // 全車椅子座席
+//                 const wheelChairSeats = availableSeats.filter(
+//                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
+//                 );
+
+//                 // 確保済の車椅子座席
+//                 const unavailableWheelChairSeatCount = wheelChairSeats.filter(
+//                     (s) => unavailableSeatNumbers.indexOf(s.code) >= 0
+//                 ).length;
+//                 debug(unavailableWheelChairSeatCount, 'wheelChair seats unavailable');
+
+//                 // 未確保の座席に絞る
+//                 availableSeats = availableSeats.filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+//                 availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
+//                     (s) => unavailableSeatNumbers.indexOf(s.code) < 0
+//                 );
+
+//                 // 車椅子予約の場合、車椅子座席に絞る
+//                 // 一般予約は、車椅子座席でも予約可能
+//                 const isWheelChairOffer = offer.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair;
+//                 if (isWheelChairOffer) {
+//                     // 車椅子予約の場合、車椅子タイプ座席のみ
+//                     availableSeats = availableSeats.filter(
+//                         (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
+//                     );
+
+//                     // 余分確保は一般座席から
+//                     availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
+//                         (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+//                     );
+
+//                     // 車椅子確保分が一般座席になければ車椅子は0
+//                     if (availableSeatsForAdditionalStocks.length < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS) {
+//                         availableSeats = [];
+//                     }
+//                 } else {
+//                     // 確保済の車椅子座席があり、かつ一般座席予約の場合、空席から余分確保分を除く
+//                     availableSeats = availableSeats.filter(
+//                         (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+//                     );
+
+//                     // 余分確保なし
+//                     availableSeatsForAdditionalStocks = [];
+//                 }
+//                 debug(availableSeats.length, 'availableSeats exist');
+
+//                 // 1つ空席を選択
+//                 const selectedSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+//                 debug('selectedSeat:', selectedSeat);
+
+//                 // 余分確保分を選択
+//                 const selectedSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.slice(0, WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS);
+
+//                 // 空席があれば確保
+//                 if (selectedSeat !== undefined) {
+//                     acceptedOffers.push({
+//                         seat_code: selectedSeat.code,
+//                         ticket_type: offer.ticket_type,
+//                         watcher_name: offer.watcher_name
+//                     });
+//                     selectedSeatNumbers.push(selectedSeat.code);
+
+//                     selectedSeatsForAdditionalStocks.forEach((s) => {
+//                         acceptedOffers.push({
+//                             seat_code: s.code,
+//                             ticket_type: offer.ticket_type,
+//                             watcher_name: offer.watcher_name,
+//                             additionalProperty: [{
+//                                 name: 'extra',
+//                                 value: '1'
+//                             }]
+//                         });
+//                         selectedSeatNumbers.push(selectedSeat.code);
+//                     });
+//                 }
+//             });
+//         } catch (error) {
+//             // no op
+//             debug(error);
+//         }
+
+//         return acceptedOffers;
+//     };
+// }
+
 /**
  * 1offerの仮予約を実行する
  */
@@ -367,10 +477,12 @@ function reserveTemporarilyByOffer(
 
                 tmpReservations.push({
                     transaction: transactionId,
-                    additionalProperty: [{
-                        name: 'extraSeatNumbers',
-                        value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
-                    }],
+                    additionalProperty: (selectedSeatsForAdditionalStocks.length > 0)
+                        ? [{
+                            name: 'extraSeatNumbers',
+                            value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
+                        }]
+                        : [],
                     status_after: factory.reservationStatusType.ReservationConfirmed,
                     seat_code: selectedSeat.code,
                     seat_grade_name: {
