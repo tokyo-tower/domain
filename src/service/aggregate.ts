@@ -53,6 +53,7 @@ export function aggregateEventReservations(params: {
         // 予約情報取得
         const reservations = await repos.reservation.search(
             {
+                typeOf: factory.reservationType.EventReservation,
                 performance: performance.id,
                 status: factory.reservationStatusType.ReservationConfirmed
             },

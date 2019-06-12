@@ -200,6 +200,27 @@ schema.index(
     { name: 'findAndSortReservations' }
 );
 
+// 予約管理アプリケーションでの新しい予約検索
+schema.index(
+    {
+        reservationStatus: 1,
+        'reservationFor.startDate': 1,
+        reservationNumber: 1,
+        'reservedTicket.ticketType.id': 1,
+        'reservedTicket.ticketedSeat.seatNumber': 1
+    },
+    {
+        name: 'searchOnStaffApplication',
+        partialFilterExpression: {
+            reservationStatus: { $exists: true },
+            'reservationFor.startDate': { $exists: true },
+            reservationNumber: { $exists: true },
+            'reservedTicket.ticketType.id': { $exists: true },
+            'reservedTicket.ticketedSeat.seatNumber': { $exists: true }
+        }
+    }
+);
+
 // backendでのレポートダウンロード時に使用
 schema.index(
     { order_number: 1 }
@@ -211,6 +232,26 @@ schema.index(
 schema.index(
     { purchased_at: 1 },
     { name: 'searchByPurchasedAt' }
+);
+
+schema.index(
+    { reservationNumber: 1, modifiedTime: -1 },
+    { name: 'searchByReservationNumber-v2' }
+);
+
+schema.index(
+    { reservationStatus: 1, modifiedTime: -1 },
+    { name: 'searchByReservationStatus-v2' }
+);
+
+schema.index(
+    { 'reservationFor.startDate': 1, modifiedTime: -1 },
+    {
+        name: 'searchByReservationForStartDate-v2',
+        partialFilterExpression: {
+            'reservationFor.startDate': { $exists: true }
+        }
+    }
 );
 
 export default mongoose.model('Reservation', schema)

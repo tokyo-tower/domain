@@ -21,6 +21,80 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray(params.reservationStatuses)) {
+            andConditions.push({
+                reservationStatus: { $in: params.reservationStatuses }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (Array.isArray(params.reservationNumbers)) {
+            andConditions.push({
+                reservationNumber: {
+                    $in: params.reservationNumbers
+                }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.reservationFor !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservationFor.id !== undefined) {
+                andConditions.push(
+                    {
+                        'reservationFor.id': {
+                            $exists: true,
+                            $eq: params.reservationFor.id
+                        }
+                    }
+                );
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.reservationFor.ids)) {
+                andConditions.push(
+                    {
+                        'reservationFor.id': {
+                            $exists: true,
+                            $in: params.reservationFor.ids
+                        }
+                    }
+                );
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservationFor.startFrom instanceof Date) {
+                andConditions.push(
+                    {
+                        'reservationFor.startDate': {
+                            $exists: true,
+                            $gte: params.reservationFor.startFrom
+                        }
+                    }
+                );
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservationFor.startThrough instanceof Date) {
+                andConditions.push(
+                    {
+                        'reservationFor.startDate': {
+                            $exists: true,
+                            $lt: params.reservationFor.startThrough
+                        }
+                    }
+                );
+            }
+        }
+
         if (Array.isArray(params.ids)) {
             andConditions.push({ _id: { $in: params.ids } });
         }
