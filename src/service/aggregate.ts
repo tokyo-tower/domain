@@ -55,7 +55,10 @@ export function aggregateEventReservations(params: {
             {
                 typeOf: factory.reservationType.EventReservation,
                 performance: performance.id,
-                status: factory.reservationStatusType.ReservationConfirmed
+                status: factory.reservationStatusType.ReservationConfirmed,
+                additionalProperty: {
+                    $nin: [{ name: 'extra', value: '1' }]
+                }
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
@@ -166,22 +169,12 @@ function aggregateRemainingAttendeeCapacity(params: {
             const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
-            // 確保済の車椅子座席
-            const unavailableWheelChairSeatCount = wheelChairSeats.filter(
-                (s) => unavailableSeatNumbers.indexOf(s.code) >= 0
-            ).length;
-
             remainingAttendeeCapacity = normalSeats.filter(
                 (s) => unavailableSeatNumbers.indexOf(s.code) < 0
             ).length;
             remainingAttendeeCapacityForWheelchair = wheelChairSeats.filter(
                 (s) => unavailableSeatNumbers.indexOf(s.code) < 0
             ).length;
-
-            // 車椅子の確保分を考慮(現状車椅子在庫は1のケースのみ)
-            if (unavailableWheelChairSeatCount > 0) {
-                remainingAttendeeCapacity -= WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS;
-            }
 
             // 車椅子確保分が一般座席になければ車椅子は0(同伴者考慮)
             if (remainingAttendeeCapacity < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS + 1) {

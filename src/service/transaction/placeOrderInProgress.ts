@@ -295,6 +295,18 @@ export function confirm(params: {
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
             transaction.result.eventReservations
+                // 余分確保を除く
+                .filter((r) => {
+                    // 余分確保分を除く
+                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    if (r.additionalProperty !== undefined) {
+                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    }
+
+                    return r.additionalProperty === undefined
+                        || extraProperty === undefined
+                        || extraProperty.value !== '1';
+                })
                 .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
                 .map((r) => r.id)
         );
@@ -571,6 +583,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             project: project,
             typeOf: factory.reservationType.EventReservation,
 
+            additionalProperty: tmpReservation.additionalProperty,
+
             additionalTicketText: '',
             bookingTime: now.toDate(),
             modifiedTime: now.toDate(),
@@ -579,7 +593,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             priceCurrency: factory.priceCurrency.JPY,
             reservationFor: reservationFor,
             reservationNumber: tmpReservation.payment_no,
-            reservationStatus: tmpReservation.status_after,
+            reservationStatus: factory.reservationStatusType.ReservationConfirmed,
             reservedTicket: reservedTicket,
             underName: underName,
             checkedIn: false,
@@ -590,7 +604,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             transaction: transaction.id,
             order_number: orderNumber,
             stocks: tmpReservation.stocks,
-            status: tmpReservation.status_after,
+            status: factory.reservationStatusType.ReservationConfirmed,
 
             seat_code: tmpReservation.seat_code,
             seat_grade_name: tmpReservation.seat_grade_name,

@@ -11,10 +11,14 @@ async function main() {
             // performance_day: '20190612',
             // performanceStartFrom: moment().add(-1, 'week').toDate(),
             reservationFor: {
-                startFrom: moment('2019-06-12T00:00:00+0900').toDate(),
-                startThrough: moment('2019-06-13T00:00:00+0900').toDate(),
+                startFrom: moment('2019-06-11T00:00:00+0900').toDate(),
+                startThrough: moment('2019-06-12T00:00:00+0900').toDate(),
             },
-            reservationNumbers: ['200300'],
+            additionalProperty: {
+                // $in: [{ name: 'extra', value: '1' }]
+                $nin: [{ name: 'extra', value: '1' }]
+            },
+            // reservationNumbers: ['200300'],
             // sort: {
             //     performance_day: 1,
             //     performance_start_time: 1,

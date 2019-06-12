@@ -13,7 +13,7 @@ async function main() {
     });
 
     await ttts.service.aggregate.aggregateEventReservations({
-        id: '190610001001010900'
+        id: '190613001001011500'
     })({
         checkinGate: new ttts.repository.place.CheckinGate(redisClient),
         eventWithAggregation: new ttts.repository.EventWithAggregation(redisClient),

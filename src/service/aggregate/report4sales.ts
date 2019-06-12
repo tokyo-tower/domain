@@ -568,7 +568,10 @@ async function placeOrderTransactions2reservationDatas(
     const orderNumbers = transactions.map((t) => (<factory.transaction.placeOrder.IResult>t.result).order.orderNumber);
     const reservations = await reservationRepo.search({
         typeOf: factory.reservationType.EventReservation,
-        orderNumbers: orderNumbers
+        orderNumbers: orderNumbers,
+        additionalProperty: {
+            $nin: [{ name: 'extra', value: '1' }]
+        }
     });
     debug(`${reservations.length} reservations found.`);
 

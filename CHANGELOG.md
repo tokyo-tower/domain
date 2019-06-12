@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 予約検索条件を拡張
+- 予約に追加特性を追加
+- 車椅子の余分確保分を予約として作成するように調整
 
 ### Deprecated
 

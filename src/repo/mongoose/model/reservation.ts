@@ -245,6 +245,26 @@ schema.index(
 );
 
 schema.index(
+    { additionalProperty: 1, modifiedTime: -1 },
+    {
+        name: 'searchByAdditionalProperty',
+        partialFilterExpression: {
+            additionalProperty: { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'reservationFor.id': 1, modifiedTime: -1 },
+    {
+        name: 'searchByReservationForId-v2',
+        partialFilterExpression: {
+            'reservationFor.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'reservationFor.startDate': 1, modifiedTime: -1 },
     {
         name: 'searchByReservationForStartDate-v2',

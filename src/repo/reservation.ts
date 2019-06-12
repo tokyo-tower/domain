@@ -23,6 +23,27 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.additionalProperty !== undefined) {
+            if (Array.isArray(params.additionalProperty.$in)) {
+                andConditions.push({
+                    additionalProperty: {
+                        $exists: true,
+                        $in: params.additionalProperty.$in
+                    }
+                });
+            }
+
+            if (Array.isArray(params.additionalProperty.$nin)) {
+                andConditions.push({
+                    additionalProperty: {
+                        $nin: params.additionalProperty.$nin
+                    }
+                });
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (Array.isArray(params.reservationStatuses)) {
             andConditions.push({
                 reservationStatus: { $in: params.reservationStatuses }
