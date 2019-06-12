@@ -194,9 +194,7 @@ export function create(
                 });
             debug(tmpReservationsWithoutExtra.length, 'tmp reservation(s) created without extra');
 
-            const numberOfHoldStock = tmpReservationsWithoutExtra.reduce((a, b) => a + b.stocks.length, 0);
-            const requiredNumberOfStocks = offers.length;
-            if (numberOfHoldStock < requiredNumberOfStocks) {
+            if (tmpReservationsWithoutExtra.length < offers.length) {
                 throw new factory.errors.AlreadyInUse('action.object', ['offers'], 'No available seats.');
             }
         } catch (error) {
@@ -270,7 +268,6 @@ export function create(
 /**
  * 1offerの仮予約を実行する
  */
-// tslint:disable-next-line:max-func-body-length
 function reserveTemporarilyByOffer(
     transactionId: string,
     paymentNo: string,
@@ -281,7 +278,6 @@ function reserveTemporarilyByOffer(
     return async (repos: {
         stock: StockRepo;
     }): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> => {
-        const holdStocks: factory.reservation.event.IStock[] = [];
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         try {
@@ -369,17 +365,8 @@ function reserveTemporarilyByOffer(
                 });
                 debug('locked:', selectedSeat.code);
 
-                // 更新エラー(対象データなし):次のseatへ
-                holdStocks.push({
-                    seat_code: selectedSeat.code,
-                    holder: transactionId
-                });
-
                 tmpReservations.push({
-                    stocks: [{
-                        seat_code: selectedSeat.code,
-                        holder: transactionId
-                    }],
+                    transaction: transactionId,
                     additionalProperty: [{
                         name: 'extraSeatNumbers',
                         value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
@@ -404,10 +391,7 @@ function reserveTemporarilyByOffer(
 
                 selectedSeatsForAdditionalStocks.forEach((s) => {
                     tmpReservations.push({
-                        stocks: [{
-                            seat_code: s.code,
-                            holder: transactionId
-                        }],
+                        transaction: transactionId,
                         additionalProperty: [{
                             name: 'extra',
                             value: '1'
@@ -526,23 +510,21 @@ function removeTmpReservations(
     }) => {
         const section = performance.screen.sections[0];
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
-            await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                try {
-                    const lockKey = {
-                        eventId: performance.id,
-                        offer: {
-                            seatNumber: stock.seat_code,
-                            seatSection: section.code
-                        }
-                    };
-                    const holder = await repos.stock.getHolder(lockKey);
-                    if (holder === stock.holder) {
-                        await repos.stock.unlock(lockKey);
+            try {
+                const lockKey = {
+                    eventId: performance.id,
+                    offer: {
+                        seatNumber: tmpReservation.seat_code,
+                        seatSection: section.code
                     }
-                } catch (error) {
-                    // no op
+                };
+                const holder = await repos.stock.getHolder(lockKey);
+                if (holder === tmpReservation.transaction) {
+                    await repos.stock.unlock(lockKey);
                 }
-            }));
+            } catch (error) {
+                // no op
+            }
         }));
     };
 }

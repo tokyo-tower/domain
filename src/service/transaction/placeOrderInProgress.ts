@@ -603,7 +603,6 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             qr_str: qrStr,
             transaction: transaction.id,
             order_number: orderNumber,
-            stocks: tmpReservation.stocks,
             status: factory.reservationStatusType.ReservationConfirmed,
 
             seat_code: tmpReservation.seat_code,
