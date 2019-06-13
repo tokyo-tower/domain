@@ -50,6 +50,7 @@ export function cancelReservation(params: { id: string }) {
                     extraReservations = await repos.reservation.search({
                         typeOf: factory.reservationType.EventReservation,
                         reservationFor: { id: reservation.reservationFor.id },
+                        reservationNumbers: [reservation.reservationNumber],
                         reservedTicket: {
                             ticketedSeat: { seatNumbers: extraSeatNumbers }
                         }

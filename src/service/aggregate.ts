@@ -194,11 +194,6 @@ function aggregateRemainingAttendeeCapacity(params: {
                     remainingAttendeeCapacityForWheelchair = 0;
                 }
             }
-
-            // 車椅子券種の場合、同伴者必須を考慮して、そもそもremainingAttendeeCapacityが0であれば0
-            if (remainingAttendeeCapacity < 1) {
-                remainingAttendeeCapacityForWheelchair = 0;
-            }
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error(error);
