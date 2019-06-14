@@ -521,6 +521,8 @@ function reserveTemporarilyByOffer(
                 debug('locked:', selectedSeat.code);
 
                 tmpReservations.push({
+                    reservationNumber: paymentNo,
+                    additionalTicketText: offer.watcher_name,
                     reservedTicket: {
                         typeOf: 'Ticket',
                         priceCurrency: factory.priceCurrency.JPY,
@@ -558,13 +560,24 @@ function reserveTemporarilyByOffer(
                             id: offer.ticket_type
                         }
                     },
-                    transaction: transactionId,
                     additionalProperty: (selectedSeatsForAdditionalStocks.length > 0)
-                        ? [{
-                            name: 'extraSeatNumbers',
-                            value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
-                        }]
-                        : [],
+                        ? [
+                            {
+                                name: 'extraSeatNumbers',
+                                value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
+                            },
+                            {
+                                name: 'transaction',
+                                value: transactionId
+                            }
+                        ]
+                        : [
+                            {
+                                name: 'transaction',
+                                value: transactionId
+                            }
+                        ],
+                    transaction: transactionId,
                     status_after: factory.reservationStatusType.ReservationConfirmed,
                     seat_code: selectedSeat.code,
                     seat_grade_name: {
@@ -585,6 +598,8 @@ function reserveTemporarilyByOffer(
 
                 selectedSeatsForAdditionalStocks.forEach((s) => {
                     tmpReservations.push({
+                        reservationNumber: paymentNo,
+                        additionalTicketText: offer.watcher_name,
                         reservedTicket: {
                             typeOf: 'Ticket',
                             priceCurrency: factory.priceCurrency.JPY,
@@ -622,11 +637,17 @@ function reserveTemporarilyByOffer(
                                 id: offer.ticket_type
                             }
                         },
+                        additionalProperty: [
+                            {
+                                name: 'extra',
+                                value: '1'
+                            },
+                            {
+                                name: 'transaction',
+                                value: transactionId
+                            }
+                        ],
                         transaction: transactionId,
-                        additionalProperty: [{
-                            name: 'extra',
-                            value: '1'
-                        }],
                         status_after: factory.reservationStatusType.ReservationConfirmed,
                         seat_code: s.code,
                         seat_grade_name: {
