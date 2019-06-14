@@ -14,12 +14,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
-- 売上集計サービスから不要なソースコードを削除
-- 認証mongooseモデルを削除
-
 ### Fixed
 
 ### Security
+
+## v15.0.2 - 2019-06-14
+
+### Removed
+
+- 売上集計サービスから不要なソースコードを削除
+- 認証mongooseモデルを削除
 
 ## v15.0.1 - 2019-06-14
 
