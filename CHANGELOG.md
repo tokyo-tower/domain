@@ -16,9 +16,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
-- 売上レポート対象から車椅子余分確保分予約を除外
-
 ### Security
+
+## v15.0.1 - 2019-06-14
+
+### Fixed
+
+- 売上レポート対象から車椅子余分確保分予約を除外
 
 ## v15.0.0 - 2019-06-14
 
