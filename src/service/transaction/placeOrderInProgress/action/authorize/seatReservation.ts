@@ -23,6 +23,8 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
@@ -519,6 +521,43 @@ function reserveTemporarilyByOffer(
                 debug('locked:', selectedSeat.code);
 
                 tmpReservations.push({
+                    reservedTicket: {
+                        typeOf: 'Ticket',
+                        priceCurrency: factory.priceCurrency.JPY,
+                        ticketedSeat: {
+                            seatSection: '',
+                            seatNumber: selectedSeat.code,
+                            seatRow: '',
+                            seatingType: <any>selectedSeat.seatingType,
+                            typeOf: factory.chevre.placeType.Seat
+                        },
+                        ticketType: {
+                            project: project,
+                            name: offer.ticket_type_name,
+                            description: { en: '', ja: '' },
+                            alternateName: offer.ticket_type_name,
+                            typeOf: 'Offer',
+                            priceCurrency: factory.priceCurrency.JPY,
+                            availability: factory.chevre.itemAvailability.InStock,
+                            priceSpecification: {
+                                project: project,
+                                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                priceCurrency: factory.priceCurrency.JPY,
+                                valueAddedTaxIncluded: true,
+                                price: offer.ticket_type_charge,
+                                referenceQuantity: {
+                                    typeOf: 'QuantitativeValue',
+                                    value: 1,
+                                    unitCode: factory.chevre.unitCode.C62
+                                }
+                            },
+                            additionalProperty: [],
+                            // category: {},
+                            // color: '',
+                            identifier: offer.ticket_type,
+                            id: offer.ticket_type
+                        }
+                    },
                     transaction: transactionId,
                     additionalProperty: (selectedSeatsForAdditionalStocks.length > 0)
                         ? [{
@@ -546,6 +585,43 @@ function reserveTemporarilyByOffer(
 
                 selectedSeatsForAdditionalStocks.forEach((s) => {
                     tmpReservations.push({
+                        reservedTicket: {
+                            typeOf: 'Ticket',
+                            priceCurrency: factory.priceCurrency.JPY,
+                            ticketedSeat: {
+                                seatSection: '',
+                                seatNumber: s.code,
+                                seatRow: '',
+                                seatingType: <any>s.seatingType,
+                                typeOf: factory.chevre.placeType.Seat
+                            },
+                            ticketType: {
+                                project: project,
+                                name: offer.ticket_type_name,
+                                description: { en: '', ja: '' },
+                                alternateName: offer.ticket_type_name,
+                                typeOf: 'Offer',
+                                priceCurrency: factory.priceCurrency.JPY,
+                                availability: factory.chevre.itemAvailability.InStock,
+                                priceSpecification: {
+                                    project: project,
+                                    typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                    priceCurrency: factory.priceCurrency.JPY,
+                                    valueAddedTaxIncluded: true,
+                                    price: 0,
+                                    referenceQuantity: {
+                                        typeOf: 'QuantitativeValue',
+                                        value: 1,
+                                        unitCode: factory.chevre.unitCode.C62
+                                    }
+                                },
+                                additionalProperty: [],
+                                // category: {},
+                                // color: '',
+                                identifier: offer.ticket_type,
+                                id: offer.ticket_type
+                            }
+                        },
                         transaction: transactionId,
                         additionalProperty: [{
                             name: 'extra',
