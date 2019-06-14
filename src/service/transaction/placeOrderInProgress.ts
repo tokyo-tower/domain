@@ -478,7 +478,20 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             givenName: customerContact.first_name,
             email: customerContact.email,
             telephone: customerContact.telephone,
-            identifier: [{ name: 'orderNumber', value: orderNumber }]
+            gender: customerContact.gender,
+            identifier: [
+                { name: 'age', value: customerContact.age },
+                { name: 'orderNumber', value: orderNumber },
+                { name: 'gmoOrderId', value: gmoOrderId },
+                ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
+                ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
+                    ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
+                    : [],
+                ...(transaction.object.paymentMethod !== undefined)
+                    ? [{ name: 'paymentMethod', value: transaction.object.paymentMethod }]
+                    : []
+            ],
+            ...{ address: customerContact.address }
         };
 
         const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
@@ -585,7 +598,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
             additionalProperty: tmpReservation.additionalProperty,
 
-            additionalTicketText: '',
+            additionalTicketText: tmpReservation.watcher_name,
             bookingTime: now.toDate(),
             modifiedTime: now.toDate(),
             numSeats: 1,

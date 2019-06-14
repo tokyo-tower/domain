@@ -273,6 +273,76 @@ schema.index(
     }
 );
 
+schema.index(
+    { 'underName.email': 1, modifiedTime: -1 },
+    {
+        name: 'searchByUnderNameEmail',
+        partialFilterExpression: {
+            'underName.email': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'underName.name': 1, modifiedTime: -1 },
+    {
+        name: 'searchByUnderNameName',
+        partialFilterExpression: {
+            'underName.name': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'underName.familyName': 1, modifiedTime: -1 },
+    {
+        name: 'searchByUnderNameFamilyName',
+        partialFilterExpression: {
+            'underName.familyName': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'underName.givenName': 1, modifiedTime: -1 },
+    {
+        name: 'searchByUnderNameGivenName',
+        partialFilterExpression: {
+            'underName.givenName': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'underName.telephone': 1, modifiedTime: -1 },
+    {
+        name: 'searchByUnderNameTelephone',
+        partialFilterExpression: {
+            'underName.telephone': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'underName.identifier': 1, modifiedTime: -1 },
+    {
+        name: 'searchByUnderNameIdentifier',
+        partialFilterExpression: {
+            'underName.identifier': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { additionalTicketText: 1, modifiedTime: -1 },
+    {
+        name: 'searchByAdditionalTicketText',
+        partialFilterExpression: {
+            additionalTicketText: { $exists: true }
+        }
+    }
+);
+
 export default mongoose.model('Reservation', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

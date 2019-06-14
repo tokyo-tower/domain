@@ -62,6 +62,16 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.reservationNumber !== undefined) {
+            andConditions.push({
+                reservationNumber: {
+                    $regex: new RegExp(params.reservationNumber, 'i')
+                }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (params.reservationFor !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
@@ -114,6 +124,98 @@ export class MongoRepository {
                     }
                 );
             }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.underName !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.underName.id !== undefined) {
+                andConditions.push({
+                    'underName.id': {
+                        $exists: true,
+                        $regex: new RegExp(params.underName.id, 'i')
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.underName.email !== undefined) {
+                andConditions.push({
+                    'underName.email': {
+                        $exists: true,
+                        $regex: new RegExp(params.underName.email, 'i')
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.underName.name !== undefined) {
+                andConditions.push({
+                    'underName.name': {
+                        $exists: true,
+                        $regex: new RegExp(params.underName.name, 'i')
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.underName.telephone !== undefined) {
+                andConditions.push({
+                    'underName.telephone': {
+                        $exists: true,
+                        $regex: new RegExp(params.underName.telephone, 'i')
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.underName.givenName !== undefined) {
+                andConditions.push({
+                    'underName.givenName': {
+                        $exists: true,
+                        $regex: new RegExp(params.underName.givenName, 'i')
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.underName.familyName !== undefined) {
+                andConditions.push({
+                    'underName.familyName': {
+                        $exists: true,
+                        $regex: new RegExp(params.underName.familyName, 'i')
+                    }
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(params.underName.identifiers)) {
+                andConditions.push({
+                    'underName.identifier': {
+                        $exists: true,
+                        $in: params.underName.identifiers
+                    }
+                });
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.additionalTicketText !== undefined) {
+            andConditions.push({
+                additionalTicketText: {
+                    $exists: true,
+                    $regex: new RegExp(params.additionalTicketText, 'i')
+                }
+            });
         }
 
         if (Array.isArray(params.ids)) {
