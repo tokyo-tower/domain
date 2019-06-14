@@ -180,14 +180,29 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
         const datas: IData[] = [];
         if (params.transaction.endDate !== undefined) {
             const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
-            datas.push(...transactionResult.eventReservations.map((r) => {
-                return reservation2data(
-                    r,
-                    transactionResult.order.price,
-                    <Date>params.transaction.endDate,
-                    AggregateUnit.SalesByEndDate
-                );
-            }));
+
+            datas.push(
+                ...transactionResult.eventReservations
+                    .filter((r) => {
+                        // 余分確保分を除く
+                        let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                        if (r.additionalProperty !== undefined) {
+                            extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                        }
+
+                        return r.additionalProperty === undefined
+                            || extraProperty === undefined
+                            || extraProperty.value !== '1';
+                    })
+                    .map((r) => {
+                        return reservation2data(
+                            r,
+                            transactionResult.order.price,
+                            <Date>params.transaction.endDate,
+                            AggregateUnit.SalesByEndDate
+                        );
+                    })
+            );
         }
         debug('creating', datas.length, 'datas...');
 
@@ -210,7 +225,18 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
         // 取引からキャンセル予約情報取得
         const placeOrderTransaction = params.transaction.object.transaction;
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
-        const eventReservations = placeOrderTransactionResult.eventReservations;
+        const eventReservations = placeOrderTransactionResult.eventReservations.filter((r) => {
+            // 余分確保分を除く
+            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            if (r.additionalProperty !== undefined) {
+                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            }
+
+            return r.additionalProperty === undefined
+                || extraProperty === undefined
+                || extraProperty.value !== '1';
+        });
+
         for (const r of eventReservations) {
             // 座席分のキャンセルデータ
             datas.push({
