@@ -393,6 +393,7 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = await reservationRepo.search(
             {
+                typeOf: factory.reservationType.EventReservation,
                 status: factory.reservationStatusType.ReservationConfirmed,
                 performance: performanceId,
                 purchaser_group: factory.person.Group.Customer

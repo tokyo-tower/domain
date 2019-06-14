@@ -40,19 +40,17 @@ export function cancelSeatReservationAuth(transactionId: string) {
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
-                await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                    const lockKey = {
-                        eventId: performance.id,
-                        offer: {
-                            seatNumber: stock.seat_code,
-                            seatSection: section.code
-                        }
-                    };
-                    const holder = await stockRepo.getHolder(lockKey);
-                    if (holder === stock.holder) {
-                        await stockRepo.unlock(lockKey);
+                const lockKey = {
+                    eventId: performance.id,
+                    offer: {
+                        seatNumber: tmpReservation.seat_code,
+                        seatSection: section.code
                     }
-                }));
+                };
+                const holder = await stockRepo.getHolder(lockKey);
+                if (holder === tmpReservation.transaction) {
+                    await stockRepo.unlock(lockKey);
+                }
 
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     debug('resetting wheelchair rate limit...');

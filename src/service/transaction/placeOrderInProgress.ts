@@ -295,6 +295,18 @@ export function confirm(params: {
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
             transaction.result.eventReservations
+                // 余分確保を除く
+                .filter((r) => {
+                    // 余分確保分を除く
+                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    if (r.additionalProperty !== undefined) {
+                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    }
+
+                    return r.additionalProperty === undefined
+                        || extraProperty === undefined
+                        || extraProperty.value !== '1';
+                })
                 .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
                 .map((r) => r.id)
         );
@@ -466,7 +478,20 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             givenName: customerContact.first_name,
             email: customerContact.email,
             telephone: customerContact.telephone,
-            identifier: [{ name: 'orderNumber', value: orderNumber }]
+            gender: customerContact.gender,
+            identifier: [
+                { name: 'age', value: customerContact.age },
+                { name: 'orderNumber', value: orderNumber },
+                { name: 'gmoOrderId', value: gmoOrderId },
+                ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
+                ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
+                    ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
+                    : [],
+                ...(transaction.object.paymentMethod !== undefined)
+                    ? [{ name: 'paymentMethod', value: transaction.object.paymentMethod }]
+                    : []
+            ],
+            ...{ address: customerContact.address }
         };
 
         const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
@@ -571,7 +596,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             project: project,
             typeOf: factory.reservationType.EventReservation,
 
-            additionalTicketText: '',
+            additionalProperty: tmpReservation.additionalProperty,
+
+            additionalTicketText: tmpReservation.watcher_name,
             bookingTime: now.toDate(),
             modifiedTime: now.toDate(),
             numSeats: 1,
@@ -579,7 +606,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             priceCurrency: factory.priceCurrency.JPY,
             reservationFor: reservationFor,
             reservationNumber: tmpReservation.payment_no,
-            reservationStatus: tmpReservation.status_after,
+            reservationStatus: factory.reservationStatusType.ReservationConfirmed,
             reservedTicket: reservedTicket,
             underName: underName,
             checkedIn: false,
@@ -589,8 +616,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             qr_str: qrStr,
             transaction: transaction.id,
             order_number: orderNumber,
-            stocks: tmpReservation.stocks,
-            status: tmpReservation.status_after,
+            status: factory.reservationStatusType.ReservationConfirmed,
 
             seat_code: tmpReservation.seat_code,
             seat_grade_name: tmpReservation.seat_grade_name,

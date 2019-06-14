@@ -23,6 +23,8 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
@@ -46,10 +48,7 @@ export type IValidateOperation<T> = (
 ) => Promise<T>;
 
 /**
- * 座席予約に対する承認アクションを開始する前の処理
- * 供給情報の有効性の確認などを行う。
- * この処理次第で、どのような供給情報を受け入れられるかが決定するので、とても大事な処理です。
- * バグ、不足等あれば、随時更新することが望ましい。
+ * オファーのバリデーション
  */
 function validateOffers(
     performance: factory.performance.IPerformanceWithDetails,
@@ -138,6 +137,8 @@ export function create(
 
         // 在庫から仮予約
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+        let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+
         const performanceStartDate = moment(performance.start_date).toDate();
 
         try {
@@ -164,10 +165,19 @@ export function create(
             }));
 
             // 仮予約作成(直列実行すること)
+            // まず座席を自動選択
+            // offers = await selectSeatNumbers({
+            //     performance: performance,
+            //     offers: offers
+            // })({ stock: stockRepo });
+
+            // tmpReservations = await reserveTemporarilyByOffers(transaction.id, paymentNo, performance, offers)({
+            //     stock: stockRepo
+            // });
             for (const offer of offers) {
                 try {
                     tmpReservations.push(
-                        await reserveTemporarilyByOffer(transaction.id, paymentNo, performance, offer)({
+                        ...await reserveTemporarilyByOffer(transaction.id, paymentNo, performance, offer)({
                             stock: stockRepo
                         })
                     );
@@ -175,12 +185,24 @@ export function create(
                     // no op
                 }
             }
-            debug(tmpReservations.length, 'tmp reservation(s) created.');
+            debug(tmpReservations.length, 'tmp reservation(s) created');
 
             // 予約枚数が指定枚数に達しなかった場合エラー
-            const numberOfHoldStock = tmpReservations.reduce((a, b) => a + b.stocks.length, 0);
-            const requiredNumberOfStocks = offers.length;
-            if (numberOfHoldStock < requiredNumberOfStocks) {
+            tmpReservationsWithoutExtra = tmpReservations
+                .filter((r) => {
+                    // 余分確保分を除く
+                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    if (r.additionalProperty !== undefined) {
+                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    }
+
+                    return r.additionalProperty === undefined
+                        || extraProperty === undefined
+                        || extraProperty.value !== '1';
+                });
+            debug(tmpReservationsWithoutExtra.length, 'tmp reservation(s) created without extra');
+
+            if (tmpReservationsWithoutExtra.length < offers.length) {
                 throw new factory.errors.AlreadyInUse('action.object', ['offers'], 'No available seats.');
             }
         } catch (error) {
@@ -239,24 +261,180 @@ export function create(
         }
 
         // アクションを完了
-        debug('ending authorize action...');
-
         return seatReservationAuthorizeActionRepo.complete(
             action.id,
             {
-                price: tmpReservations
-                    .filter((r) => r.status_after === factory.reservationStatusType.ReservationConfirmed)
-                    .reduce((a, b) => a + b.charge, 0),
+                price: tmpReservations.reduce((a, b) => a + b.charge, 0),
                 tmpReservations: tmpReservations
             }
         );
     };
 }
 
+// function selectSeatNumbers(params: {
+//     performance: factory.performance.IPerformanceWithDetails;
+//     offers: factory.offer.seatReservation.IOffer[];
+// }) {
+//     return async (repos: {
+//         stock: StockRepo;
+//     }): Promise<factory.offer.seatReservation.IOffer[]> => {
+//         const acceptedOffers: factory.offer.seatReservation.IOffer[] = [];
+//         const selectedSeatNumbers: string[] = [];
+
+//         const section = params.performance.screen.sections[0];
+
+//         const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: params.performance.id });
+//         const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
+//         debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
+
+//         // tslint:disable-next-line:max-func-body-length
+//         params.offers.forEach((offer) => {
+//             // まず利用可能な座席は全座席
+//             let availableSeats = section.seats;
+//             let availableSeatsForAdditionalStocks = section.seats;
+//             debug(availableSeats.length, 'seats exist');
+
+//             // 未確保の座席に絞る & 選択済の座席を除く
+//             availableSeats = availableSeats
+//                 .filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0)
+//                 .filter((s) => selectedSeatNumbers.indexOf(s.code) < 0);
+//             availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks
+//                 .filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0)
+//                 .filter((s) => selectedSeatNumbers.indexOf(s.code) < 0);
+
+//             // 車椅子予約の場合、車椅子座席に絞る
+//             const isWheelChairOffer = offer.ticket_ttts_extension.category === factory.ticketTypeCategory.Wheelchair;
+//             if (isWheelChairOffer) {
+//                 // 車椅子予約の場合、車椅子タイプ座席のみ
+//                 availableSeats = availableSeats.filter(
+//                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
+//                 );
+
+//                 // 余分確保は一般座席から
+//                 availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
+//                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+//                 );
+
+//                 // 車椅子確保分が一般座席になければ車椅子は0
+//                 if (availableSeatsForAdditionalStocks.length < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS) {
+//                     availableSeats = [];
+//                 }
+//             } else {
+//                 availableSeats = availableSeats.filter(
+//                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+//                 );
+
+//                 // 余分確保なし
+//                 availableSeatsForAdditionalStocks = [];
+//             }
+//             debug(availableSeats.length, 'availableSeats exist');
+
+//             // 1つ空席を選択
+//             const selectedSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+//             debug('selectedSeat:', selectedSeat);
+
+//             // 余分確保分を選択
+//             const selectedSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.slice(0, WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS);
+
+//             // 空席があれば確保
+//             if (selectedSeat !== undefined) {
+//                 acceptedOffers.push({
+//                     ...offer,
+//                     seat_code: selectedSeat.code,
+//                     additionalProperty: (selectedSeatsForAdditionalStocks.length > 0)
+//                         ? [{
+//                             name: 'extraSeatNumbers',
+//                             value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
+//                         }]
+//                         : [],
+//                 });
+//                 selectedSeatNumbers.push(selectedSeat.code);
+
+//                 selectedSeatsForAdditionalStocks.forEach((s) => {
+//                     acceptedOffers.push({
+//                         ...offer,
+//                         ticket_type_charge: 0, // charge=0に自動変換
+//                         seat_code: s.code,
+//                         additionalProperty: [{
+//                             name: 'extra',
+//                             value: '1'
+//                         }]
+//                     });
+//                     selectedSeatNumbers.push(selectedSeat.code);
+//                 });
+//             }
+//         });
+
+//         return acceptedOffers;
+//     };
+// }
+
+// function reserveTemporarilyByOffers(
+//     transactionId: string,
+//     paymentNo: string,
+//     performance: factory.performance.IPerformanceWithDetails,
+//     offers: factory.offer.seatReservation.IOffer[]
+// ) {
+//     return async (repos: {
+//         stock: StockRepo;
+//     }): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> => {
+//         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+
+//         try {
+//             const section = performance.screen.sections[0];
+
+//             debug('locking...');
+//             await repos.stock.lock({
+//                 eventId: performance.id,
+//                 offers: offers.map((o) => {
+//                     return {
+//                         seatSection: section.code,
+//                         seatNumber: <string>o.seat_code
+//                     };
+//                 }),
+//                 expires: moment(performance.end_date).add(1, 'month').toDate(),
+//                 holder: transactionId
+//             });
+//             debug('locked');
+
+//             offers.forEach((offer) => {
+//                 tmpReservations.push({
+//                     transaction: transactionId,
+//                     additionalProperty: offer.additionalProperty,
+//                     status_after: factory.reservationStatusType.ReservationConfirmed,
+//                     seat_code: <string>offer.seat_code,
+//                     seat_grade_name: {
+//                         en: 'Normal Seat',
+//                         ja: 'ノーマルシート'
+//                     },
+//                     seat_grade_additional_charge: 0,
+//                     ticket_type: offer.ticket_type,
+//                     ticket_type_name: offer.ticket_type_name,
+//                     ticket_type_charge: offer.ticket_type_charge,
+//                     charge: Number(offer.ticket_type_charge),
+//                     watcher_name: offer.watcher_name,
+//                     ticket_cancel_charge: offer.ticket_cancel_charge,
+//                     ticket_ttts_extension: offer.ticket_ttts_extension,
+//                     rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
+//                     payment_no: paymentNo
+//                 });
+//             });
+//         } catch (error) {
+//             // no op
+//             debug(error);
+//         }
+
+//         if (tmpReservations.length <= 0) {
+//             throw new Error('Available stock not found.');
+//         }
+
+//         return tmpReservations;
+//     };
+// }
+
 /**
  * 1offerの仮予約を実行する
  */
-// tslint:disable-next-line:max-func-body-length
 function reserveTemporarilyByOffer(
     transactionId: string,
     paymentNo: string,
@@ -266,39 +444,24 @@ function reserveTemporarilyByOffer(
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         stock: StockRepo;
-    }): Promise<factory.action.authorize.seatReservation.ITmpReservation> => {
-        const holdStocks: factory.reservation.event.IStock[] = [];
+    }): Promise<factory.action.authorize.seatReservation.ITmpReservation[]> => {
+        const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         try {
             const section = performance.screen.sections[0];
 
             // まず利用可能な座席は全座席
             let availableSeats = section.seats;
+            let availableSeatsForAdditionalStocks = section.seats;
             debug(availableSeats.length, 'seats exist');
-
-            // 全車椅子座席
-            const wheelChairSeats = availableSeats.filter(
-                (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
-            );
 
             const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: performance.id });
             const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
-            // 確保済の車椅子座席
-            const unavailableWheelChairSeatCount = wheelChairSeats.filter(
-                (s) => unavailableSeatNumbers.indexOf(s.code) >= 0
-            ).length;
-            debug(unavailableWheelChairSeatCount, 'wheelChair seats unavailable');
-
-            // 一般空席数
-            const availableNormalSeatsCount = availableSeats.filter(
-                (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
-                    && unavailableSeatNumbers.indexOf(s.code) < 0
-            ).length;
-
             // 未確保の座席に絞る
             availableSeats = availableSeats.filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+            availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
 
             // 車椅子予約の場合、車椅子座席に絞る
             // 一般予約は、車椅子座席でも予約可能
@@ -309,46 +472,199 @@ function reserveTemporarilyByOffer(
                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
                 );
 
+                // 余分確保は一般座席から
+                availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
+                    (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+                );
+
                 // 車椅子確保分が一般座席になければ車椅子は0
-                if (availableNormalSeatsCount < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS) {
+                if (availableSeatsForAdditionalStocks.length < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS) {
                     availableSeats = [];
                 }
             } else {
-                // 確保済の車椅子座席があり、かつ一般座席予約の場合、空席から余分確保分を除く
                 availableSeats = availableSeats.filter(
                     (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
                 );
-                if (unavailableWheelChairSeatCount > 0) {
-                    availableSeats = availableSeats.slice(0, -(WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS * unavailableWheelChairSeatCount));
-                }
+
+                // 余分確保なし
+                availableSeatsForAdditionalStocks = [];
             }
             debug(availableSeats.length, 'availableSeats exist');
 
             // 1つ空席を選択
-            const availableSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
-            debug('availableSeat:', availableSeat);
+            const selectedSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+            debug('selectedSeat:', selectedSeat);
+
+            // 余分確保分を選択
+            const selectedSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.slice(0, WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS);
 
             // 空席があれば確保
-            if (availableSeat !== undefined) {
-                debug('locking...', availableSeat.code);
+            if (selectedSeat !== undefined) {
+                debug('locking...', selectedSeat.code);
                 await repos.stock.lock({
                     eventId: performance.id,
-                    offers: [{
-                        seatSection: section.code,
-                        seatNumber: availableSeat.code
-                    }],
+                    offers: [
+                        {
+                            seatSection: section.code,
+                            seatNumber: selectedSeat.code
+                        },
+                        ...selectedSeatsForAdditionalStocks.map((s) => {
+                            return {
+                                seatSection: section.code,
+                                seatNumber: s.code
+                            };
+                        })
+                    ],
                     expires: moment(performance.end_date).add(1, 'month').toDate(),
                     holder: transactionId
                 });
-                debug('locked:', availableSeat.code);
+                debug('locked:', selectedSeat.code);
 
-                // 更新エラー(対象データなし):次のseatへ
-                holdStocks.push({
-                    id: `${performance.id}-${availableSeat.code}`,
-                    seat_code: availableSeat.code,
-                    availability_before: factory.itemAvailability.InStock,
-                    availability_after: factory.itemAvailability.OutOfStock,
-                    holder: transactionId
+                tmpReservations.push({
+                    reservationNumber: paymentNo,
+                    additionalTicketText: offer.watcher_name,
+                    reservedTicket: {
+                        typeOf: 'Ticket',
+                        priceCurrency: factory.priceCurrency.JPY,
+                        ticketedSeat: {
+                            seatSection: '',
+                            seatNumber: selectedSeat.code,
+                            seatRow: '',
+                            seatingType: <any>selectedSeat.seatingType,
+                            typeOf: factory.chevre.placeType.Seat
+                        },
+                        ticketType: {
+                            project: project,
+                            name: offer.ticket_type_name,
+                            description: { en: '', ja: '' },
+                            alternateName: offer.ticket_type_name,
+                            typeOf: 'Offer',
+                            priceCurrency: factory.priceCurrency.JPY,
+                            availability: factory.chevre.itemAvailability.InStock,
+                            priceSpecification: {
+                                project: project,
+                                typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                priceCurrency: factory.priceCurrency.JPY,
+                                valueAddedTaxIncluded: true,
+                                price: offer.ticket_type_charge,
+                                referenceQuantity: {
+                                    typeOf: 'QuantitativeValue',
+                                    value: 1,
+                                    unitCode: factory.chevre.unitCode.C62
+                                }
+                            },
+                            additionalProperty: [],
+                            // category: {},
+                            // color: '',
+                            identifier: offer.ticket_type,
+                            id: offer.ticket_type
+                        }
+                    },
+                    additionalProperty: (selectedSeatsForAdditionalStocks.length > 0)
+                        ? [
+                            {
+                                name: 'extraSeatNumbers',
+                                value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
+                            },
+                            {
+                                name: 'transaction',
+                                value: transactionId
+                            }
+                        ]
+                        : [
+                            {
+                                name: 'transaction',
+                                value: transactionId
+                            }
+                        ],
+                    transaction: transactionId,
+                    status_after: factory.reservationStatusType.ReservationConfirmed,
+                    seat_code: selectedSeat.code,
+                    seat_grade_name: {
+                        en: 'Normal Seat',
+                        ja: 'ノーマルシート'
+                    },
+                    seat_grade_additional_charge: 0,
+                    ticket_type: offer.ticket_type,
+                    ticket_type_name: offer.ticket_type_name,
+                    ticket_type_charge: offer.ticket_type_charge,
+                    charge: Number(offer.ticket_type_charge),
+                    watcher_name: offer.watcher_name,
+                    ticket_cancel_charge: offer.ticket_cancel_charge,
+                    ticket_ttts_extension: offer.ticket_ttts_extension,
+                    rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
+                    payment_no: paymentNo
+                });
+
+                selectedSeatsForAdditionalStocks.forEach((s) => {
+                    tmpReservations.push({
+                        reservationNumber: paymentNo,
+                        additionalTicketText: offer.watcher_name,
+                        reservedTicket: {
+                            typeOf: 'Ticket',
+                            priceCurrency: factory.priceCurrency.JPY,
+                            ticketedSeat: {
+                                seatSection: '',
+                                seatNumber: s.code,
+                                seatRow: '',
+                                seatingType: <any>s.seatingType,
+                                typeOf: factory.chevre.placeType.Seat
+                            },
+                            ticketType: {
+                                project: project,
+                                name: offer.ticket_type_name,
+                                description: { en: '', ja: '' },
+                                alternateName: offer.ticket_type_name,
+                                typeOf: 'Offer',
+                                priceCurrency: factory.priceCurrency.JPY,
+                                availability: factory.chevre.itemAvailability.InStock,
+                                priceSpecification: {
+                                    project: project,
+                                    typeOf: factory.chevre.priceSpecificationType.UnitPriceSpecification,
+                                    priceCurrency: factory.priceCurrency.JPY,
+                                    valueAddedTaxIncluded: true,
+                                    price: 0,
+                                    referenceQuantity: {
+                                        typeOf: 'QuantitativeValue',
+                                        value: 1,
+                                        unitCode: factory.chevre.unitCode.C62
+                                    }
+                                },
+                                additionalProperty: [],
+                                // category: {},
+                                // color: '',
+                                identifier: offer.ticket_type,
+                                id: offer.ticket_type
+                            }
+                        },
+                        additionalProperty: [
+                            {
+                                name: 'extra',
+                                value: '1'
+                            },
+                            {
+                                name: 'transaction',
+                                value: transactionId
+                            }
+                        ],
+                        transaction: transactionId,
+                        status_after: factory.reservationStatusType.ReservationConfirmed,
+                        seat_code: s.code,
+                        seat_grade_name: {
+                            en: 'Normal Seat',
+                            ja: 'ノーマルシート'
+                        },
+                        seat_grade_additional_charge: 0,
+                        ticket_type: offer.ticket_type,
+                        ticket_type_name: offer.ticket_type_name,
+                        ticket_type_charge: offer.ticket_type_charge,
+                        charge: 0,
+                        watcher_name: offer.watcher_name,
+                        ticket_cancel_charge: offer.ticket_cancel_charge,
+                        ticket_ttts_extension: offer.ticket_ttts_extension,
+                        rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
+                        payment_no: paymentNo
+                    });
                 });
             }
         } catch (error) {
@@ -356,36 +672,11 @@ function reserveTemporarilyByOffer(
             debug(error);
         }
 
-        if (holdStocks.length <= 0) {
-            throw new Error('Available stock not found.');
+        if (tmpReservations.length <= 0) {
+            throw new factory.errors.NotFound('Available Stock');
         }
 
-        // ひとつでも在庫確保があれば仮予約オブジェクトを作成
-        const seatCode = holdStocks[0].seat_code;
-        const seatInfo = performance.screen.sections[0].seats.find((seat) => (seat.code === seatCode));
-        if (seatInfo === undefined) {
-            throw new factory.errors.NotFound('Seat code', 'Seat code does not exist in the screen.');
-        }
-
-        return {
-            stocks: holdStocks,
-            status_after: factory.reservationStatusType.ReservationConfirmed,
-            seat_code: seatCode,
-            seat_grade_name: {
-                en: 'Normal Seat',
-                ja: 'ノーマルシート'
-            },
-            seat_grade_additional_charge: 0,
-            ticket_type: offer.ticket_type,
-            ticket_type_name: offer.ticket_type_name,
-            ticket_type_charge: offer.ticket_type_charge,
-            charge: Number(offer.ticket_type_charge),
-            watcher_name: offer.watcher_name,
-            ticket_cancel_charge: offer.ticket_cancel_charge,
-            ticket_ttts_extension: offer.ticket_ttts_extension,
-            rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
-            payment_no: paymentNo
-        };
+        return tmpReservations;
     };
 }
 
@@ -471,23 +762,21 @@ function removeTmpReservations(
     }) => {
         const section = performance.screen.sections[0];
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
-            await Promise.all(tmpReservation.stocks.map(async (stock) => {
-                try {
-                    const lockKey = {
-                        eventId: performance.id,
-                        offer: {
-                            seatNumber: stock.seat_code,
-                            seatSection: section.code
-                        }
-                    };
-                    const holder = await repos.stock.getHolder(lockKey);
-                    if (holder === stock.holder) {
-                        await repos.stock.unlock(lockKey);
+            try {
+                const lockKey = {
+                    eventId: performance.id,
+                    offer: {
+                        seatNumber: tmpReservation.seat_code,
+                        seatSection: section.code
                     }
-                } catch (error) {
-                    // no op
+                };
+                const holder = await repos.stock.getHolder(lockKey);
+                if (holder === tmpReservation.transaction) {
+                    await repos.stock.unlock(lockKey);
                 }
-            }));
+            } catch (error) {
+                // no op
+            }
         }));
     };
 }

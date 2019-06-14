@@ -24,6 +24,7 @@ export function cancelReservation(params: { id: string }) {
         ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const reservation = await repos.reservation.findById(params);
+        let extraReservations: factory.reservation.event.IReservation[] = [];
 
         // 券種による流入制限解放
         if (
@@ -38,27 +39,43 @@ export function cancelReservation(params: { id: string }) {
             debug('rate limit reset.');
         }
 
-        await repos.reservation.cancel({ id: reservation.id });
+        // 車椅子余分確保があればそちらもキャンセル
+        if (reservation.additionalProperty !== undefined) {
+            const extraSeatNumbersProperty = reservation.additionalProperty.find((p) => p.name === 'extraSeatNumbers');
+            if (extraSeatNumbersProperty !== undefined) {
+                const extraSeatNumbers = JSON.parse(extraSeatNumbersProperty.value);
 
-        // 在庫を空きに(在庫IDに対して、元の状態に戻す)
-        await Promise.all(reservation.stocks.map(async (stock) => {
+                // このイベントの予約から余分確保分を検索
+                if (Array.isArray(extraSeatNumbers) && extraSeatNumbers.length > 0) {
+                    extraReservations = await repos.reservation.search({
+                        typeOf: factory.reservationType.EventReservation,
+                        reservationFor: { id: reservation.reservationFor.id },
+                        reservationNumbers: [reservation.reservationNumber],
+                        reservedTicket: {
+                            ticketedSeat: { seatNumbers: extraSeatNumbers }
+                        }
+                    });
+                }
+            }
+        }
+
+        const targetReservations = [reservation, ...extraReservations];
+
+        await Promise.all(targetReservations.map(async (r) => {
+            await repos.reservation.cancel({ id: r.id });
+
             const lockKey = {
                 eventId: reservation.performance,
                 offer: {
-                    seatNumber: stock.seat_code,
+                    seatNumber: r.seat_code,
                     seatSection: ''
                 }
             };
-            debug('checking stock...', stock, lockKey);
             const holder = await repos.stock.getHolder(lockKey);
-            debug('holder:', holder);
-            if (holder === stock.holder) {
-                debug('unlocking...', lockKey);
+            if (holder === r.transaction) {
                 await repos.stock.unlock(lockKey);
-                debug('unlocked', lockKey);
             }
         }));
-        debug(reservation.stocks.length, 'stock(s) returned in stock.');
 
         const task: factory.task.aggregateEventReservations.IAttributes = {
             name: factory.taskName.AggregateEventReservations,

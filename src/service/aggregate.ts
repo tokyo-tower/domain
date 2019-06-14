@@ -53,8 +53,12 @@ export function aggregateEventReservations(params: {
         // 予約情報取得
         const reservations = await repos.reservation.search(
             {
+                typeOf: factory.reservationType.EventReservation,
                 performance: performance.id,
-                status: factory.reservationStatusType.ReservationConfirmed
+                status: factory.reservationStatusType.ReservationConfirmed,
+                additionalProperty: {
+                    $nin: [{ name: 'extra', value: '1' }]
+                }
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
@@ -165,22 +169,12 @@ function aggregateRemainingAttendeeCapacity(params: {
             const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
-            // 確保済の車椅子座席
-            const unavailableWheelChairSeatCount = wheelChairSeats.filter(
-                (s) => unavailableSeatNumbers.indexOf(s.code) >= 0
-            ).length;
-
             remainingAttendeeCapacity = normalSeats.filter(
                 (s) => unavailableSeatNumbers.indexOf(s.code) < 0
             ).length;
             remainingAttendeeCapacityForWheelchair = wheelChairSeats.filter(
                 (s) => unavailableSeatNumbers.indexOf(s.code) < 0
             ).length;
-
-            // 車椅子の確保分を考慮(現状車椅子在庫は1のケースのみ)
-            if (unavailableWheelChairSeatCount > 0) {
-                remainingAttendeeCapacity -= WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS;
-            }
 
             // 車椅子確保分が一般座席になければ車椅子は0(同伴者考慮)
             if (remainingAttendeeCapacity < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS + 1) {
@@ -199,11 +193,6 @@ function aggregateRemainingAttendeeCapacity(params: {
                 if (rateLimitHolder !== null) {
                     remainingAttendeeCapacityForWheelchair = 0;
                 }
-            }
-
-            // 車椅子券種の場合、同伴者必須を考慮して、そもそもremainingAttendeeCapacityが0であれば0
-            if (remainingAttendeeCapacity < 1) {
-                remainingAttendeeCapacityForWheelchair = 0;
             }
         } catch (error) {
             // tslint:disable-next-line:no-console
