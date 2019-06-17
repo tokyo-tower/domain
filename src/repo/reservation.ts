@@ -197,6 +197,36 @@ export class MongoRepository {
 
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
+            if (params.underName.identifier !== undefined) {
+                if (Array.isArray(params.underName.identifier.$and)) {
+                    andConditions.push({
+                        'underName.identifier': {
+                            $exists: true,
+                            $and: params.underName.identifier.$and
+                        }
+                    });
+                }
+
+                if (Array.isArray(params.underName.identifier.$in)) {
+                    andConditions.push({
+                        'underName.identifier': {
+                            $exists: true,
+                            $in: params.underName.identifier.$in
+                        }
+                    });
+                }
+
+                if (Array.isArray(params.underName.identifier.$nin)) {
+                    andConditions.push({
+                        'underName.identifier': {
+                            $nin: params.underName.identifier.$nin
+                        }
+                    });
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
             if (Array.isArray(params.underName.identifiers)) {
                 andConditions.push({
                     'underName.identifier': {
