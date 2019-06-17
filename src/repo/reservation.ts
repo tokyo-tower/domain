@@ -198,11 +198,11 @@ export class MongoRepository {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
             if (params.underName.identifier !== undefined) {
-                if (Array.isArray(params.underName.identifier.$and)) {
+                if (Array.isArray(params.underName.identifier.$all)) {
                     andConditions.push({
                         'underName.identifier': {
                             $exists: true,
-                            $and: params.underName.identifier.$and
+                            $all: params.underName.identifier.$all
                         }
                     });
                 }
