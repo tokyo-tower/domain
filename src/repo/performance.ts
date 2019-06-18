@@ -142,6 +142,7 @@ export class MongoRepository {
             duration: performance.duration,
             superEvent: performance.superEvent,
             location: performance.location,
+            additionalProperty: performance.additionalProperty,
             tourNumber: performance.tourNumber,
             film: performance.film,
             theater: performance.theater,
@@ -156,6 +157,7 @@ export class MongoRepository {
         delete setOnInsert.duration;
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
+        delete setOnInsert.additionalProperty;
         delete setOnInsert.tourNumber;
         delete setOnInsert.film;
         delete setOnInsert.theater;

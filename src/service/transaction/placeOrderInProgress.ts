@@ -589,7 +589,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 }
             },
             checkInCount: 0,
-            attendeeCount: 0
+            attendeeCount: 0,
+            additionalProperty: performance.additionalProperty
         };
 
         return {
