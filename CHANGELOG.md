@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v15.3.0 - 2019-06-19
+
+### Changed
+
+- 予約者識別子に値追加
+
 ## v15.2.0 - 2019-06-18
 
 ### Changed
