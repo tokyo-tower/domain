@@ -482,6 +482,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             identifier: [
                 { name: 'age', value: customerContact.age },
                 { name: 'orderNumber', value: orderNumber },
+                { name: 'transaction', value: transaction.id },
                 { name: 'gmoOrderId', value: gmoOrderId },
                 ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
                 ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
