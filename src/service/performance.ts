@@ -60,7 +60,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         const eventsWithAggregation = await eventWithAggregationRepo.findAll();
         debug(eventsWithAggregation.length, 'eventsWithAggregation found.');
 
-        const data: factory.performance.IPerformanceWithAvailability[] = await Promise.all(performances.map(async (performance) => {
+        const data: factory.performance.IPerformanceWithAvailability[] = performances.map((performance) => {
             const ticketTypes: factory.offer.seatReservation.ITicketType[] = performance.ticket_type_group.ticket_types;
             const eventWithAggregation = eventsWithAggregation.find((e) => e.id === performance.id);
 
@@ -97,6 +97,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                     };
                 }),
                 extension: performance.ttts_extension,
+                additionalProperty: performance.additionalProperty,
                 attributes: {
                     day: performance.day,
                     open_time: performance.open_time,
@@ -134,7 +135,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                     ev_service_status: performance.ttts_extension.ev_service_status
                 }
             };
-        }));
+        });
 
         return {
             performances: data,
