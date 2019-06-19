@@ -75,7 +75,7 @@ function validateOffers(
                     ticket_type: ticketType.id,
                     ticket_type_name: ticketType.name,
                     ticket_type_charge: unitPriceSpec.price,
-                    ticket_cancel_charge: ticketType.cancel_charge,
+                    // ticket_cancel_charge: ticketType.cancel_charge,
                     ticket_ttts_extension: ticketType.ttts_extension,
                     rate_limit_unit_in_seconds: (ticketType.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
                         ? WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
@@ -590,7 +590,7 @@ function reserveTemporarilyByOffer(
                     ticket_type_charge: offer.ticket_type_charge,
                     charge: Number(offer.ticket_type_charge),
                     watcher_name: offer.watcher_name,
-                    ticket_cancel_charge: offer.ticket_cancel_charge,
+                    // ticket_cancel_charge: offer.ticket_cancel_charge,
                     ticket_ttts_extension: offer.ticket_ttts_extension,
                     rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
                     payment_no: paymentNo
@@ -660,7 +660,7 @@ function reserveTemporarilyByOffer(
                         ticket_type_charge: offer.ticket_type_charge,
                         charge: 0,
                         watcher_name: offer.watcher_name,
-                        ticket_cancel_charge: offer.ticket_cancel_charge,
+                        // ticket_cancel_charge: offer.ticket_cancel_charge,
                         ticket_ttts_extension: offer.ticket_ttts_extension,
                         rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds,
                         payment_no: paymentNo
