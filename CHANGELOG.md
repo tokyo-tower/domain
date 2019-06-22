@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v16.0.0 - 2019-06-22
+
+### Removed
+
+- 券種からキャンセルチャージ属性を削除
+
 ## v15.4.0 - 2019-06-19
 
 ### Changed
