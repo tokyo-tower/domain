@@ -274,6 +274,16 @@ schema.index(
 );
 
 schema.index(
+    { 'reservationFor.endDate': 1, modifiedTime: -1 },
+    {
+        name: 'searchByReservationForEndDate',
+        partialFilterExpression: {
+            'reservationFor.endDate': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'underName.email': 1, modifiedTime: -1 },
     {
         name: 'searchByUnderNameEmail',

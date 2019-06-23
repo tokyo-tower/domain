@@ -124,6 +124,32 @@ export class MongoRepository {
                     }
                 );
             }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if ((<any>params.reservationFor).endFrom instanceof Date) {
+                andConditions.push(
+                    {
+                        'reservationFor.endDate': {
+                            $exists: true,
+                            $gte: (<any>params.reservationFor).endFrom
+                        }
+                    }
+                );
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if ((<any>params.reservationFor).endThrough instanceof Date) {
+                andConditions.push(
+                    {
+                        'reservationFor.endDate': {
+                            $exists: true,
+                            $lt: (<any>params.reservationFor).endThrough
+                        }
+                    }
+                );
+            }
         }
 
         // tslint:disable-next-line:no-single-line-block-comment
