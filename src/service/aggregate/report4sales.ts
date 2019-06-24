@@ -339,19 +339,19 @@ function reservation2data(
         payment_seat_index: r.payment_seat_index.toString(),
         performance: {
             id: r.performance,
-            startDay: r.performance_day,
-            startTime: r.performance_start_time
+            startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
+            startTime: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('HHmm')
         },
         theater: {
-            name: r.theater_name.ja
+            name: r.reservationFor.superEvent.location.name.ja
         },
         screen: {
-            id: r.screen,
-            name: r.screen_name.ja
+            id: r.reservationFor.location.branchCode,
+            name: r.reservationFor.location.name.ja
         },
         film: {
-            id: r.film,
-            name: r.film_name.ja
+            id: r.reservationFor.superEvent.id,
+            name: r.reservationFor.superEvent.name.ja
         },
         seat: {
             code: r.seat_code,
@@ -359,7 +359,7 @@ function reservation2data(
             gradeAdditionalCharge: r.seat_grade_additional_charge.toString()
         },
         ticketType: {
-            name: r.ticket_type_name.ja,
+            name: r.reservedTicket.ticketType.name.ja,
             // リリース当初の間違ったマスターデータをカバーするため
             csvCode: (r.ticket_ttts_extension.csv_code === '0000000000231') ? '10031' : r.ticket_ttts_extension.csv_code,
             charge: r.charge.toString()

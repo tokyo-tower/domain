@@ -4,6 +4,7 @@
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as json2csv from 'json2csv';
+import * as moment from 'moment';
 
 import { MongoRepository as TaskRepository } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -321,10 +322,14 @@ export function transaction2report(transaction: factory.transaction.placeOrder.I
         const reservations = transaction.result.eventReservations.filter(
             (r) => r.status === factory.reservationStatusType.ReservationConfirmed
         );
-        const ticketsStr = reservations.map(
-            // tslint:disable-next-line:max-line-length
-            (r) => `${r.seat_code} ${r.ticket_type_name.ja} ￥${r.ticket_type_charge} [${r.qr_str}]`
-        ).join('\n');
+        const ticketsStr = reservations.map((r) => {
+            let price = 0;
+            if (r.reservedTicket.ticketType.priceSpecification !== undefined) {
+                price = r.reservedTicket.ticketType.priceSpecification.price;
+            }
+
+            return `${r.seat_code} ${r.reservedTicket.ticketType.name.ja} ￥${price} [${r.id}]`;
+        }).join('\n');
 
         return {
             id: transaction.id,
@@ -337,12 +342,17 @@ export function transaction2report(transaction: factory.transaction.placeOrder.I
                 telephone: reservations[0].purchaser_tel,
                 group: reservations[0].purchaser_group
             },
-            eventName: reservations[0].film_name.ja,
-            eventStartDate: reservations[0].performance_start_date.toISOString(),
-            eventEndDate: reservations[0].performance_end_date.toISOString(),
+            eventName: (reservations[0].reservationFor.superEvent !== undefined
+                && reservations[0].reservationFor.superEvent.name !== undefined)
+                ? reservations[0].reservationFor.superEvent.name.ja
+                : '',
+            eventStartDate: moment(reservations[0].reservationFor.startDate).toISOString(),
+            eventEndDate: moment(reservations[0].reservationFor.endDate).toISOString(),
             superEventLocationBranchCode: '',
-            superEventLocation: reservations[0].theater_name.ja,
-            eventLocation: reservations[0].screen_name.ja,
+            superEventLocation: reservations[0].reservationFor.superEvent.location.name.ja,
+            eventLocation: (reservations[0].reservationFor.location !== undefined)
+                ? reservations[0].reservationFor.location.name.ja
+                : '',
             reservedTickets: ticketsStr,
             orderNumber: order.orderNumber,
             confirmationNumber: order.confirmationNumber.toString(),

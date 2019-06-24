@@ -54,18 +54,18 @@ export function aggregateEventReservations(params: {
         const reservations = await repos.reservation.search(
             {
                 typeOf: factory.reservationType.EventReservation,
-                performance: performance.id,
-                status: factory.reservationStatusType.ReservationConfirmed,
+                reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
+                reservationFor: { id: performance.id },
                 additionalProperty: {
                     $nin: [{ name: 'extra', value: '1' }]
                 }
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
-                performance: 1,
                 checkins: 1,
-                ticket_type: 1,
-                ticket_ttts_extension: 1
+                ticket_ttts_extension: 1,
+                reservationFor: 1,
+                reservedTicket: 1
             }
         );
         debug(reservations.length, 'reservations found');
@@ -95,7 +95,7 @@ export function aggregateEventReservations(params: {
                     remainingAttendeeCapacity: (offer.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
                         ? remainingAttendeeCapacityForWheelchair
                         : remainingAttendeeCapacity,
-                    reservationCount: reservations.filter((r) => r.ticket_type === offer.id).length
+                    reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
                 };
             }));
 
@@ -225,7 +225,7 @@ function aggregateCheckinCount(
                 .map((c) => {
                     return {
                         ...c,
-                        ticketType: b.ticket_type,
+                        ticketType: b.reservedTicket.ticketType.id,
                         ticketCategory: b.ticket_ttts_extension.category
                     };
                 });

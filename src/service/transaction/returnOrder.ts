@@ -76,7 +76,7 @@ export function confirm(params: {
 
         // 検証
         if (!params.forcibly) {
-            validateRequest(now, transactionResult.eventReservations[0].performance_start_date);
+            validateRequest(now, transactionResult.eventReservations[0].reservationFor.startDate);
         }
 
         const endDate = new Date();

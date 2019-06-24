@@ -33,7 +33,7 @@ export function cancelReservation(params: { id: string }) {
         ) {
             await repos.ticketTypeCategoryRateLimit.unlock({
                 ticketTypeCategory: reservation.ticket_ttts_extension.category,
-                performanceStartDate: moment(reservation.performance_start_date).toDate(),
+                performanceStartDate: moment(reservation.reservationFor.startDate).toDate(),
                 unitInSeconds: reservation.rate_limit_unit_in_seconds
             });
             debug('rate limit reset.');

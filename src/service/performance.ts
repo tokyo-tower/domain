@@ -170,7 +170,7 @@ export async function aggregateCheckinCount(
                 .map((c) => {
                     return {
                         ...c,
-                        ticketType: b.ticket_type,
+                        ticketType: b.reservedTicket.ticketType.id,
                         ticketCategory: b.ticket_ttts_extension.category
                     };
                 });

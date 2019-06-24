@@ -394,8 +394,8 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         const reservations = await reservationRepo.search(
             {
                 typeOf: factory.reservationType.EventReservation,
-                status: factory.reservationStatusType.ReservationConfirmed,
-                performance: performanceId,
+                reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
+                reservationFor: { id: performanceId },
                 purchaser_group: factory.person.Group.Customer
             }
         );
@@ -469,15 +469,15 @@ async function createEmailMessage4sellerReason(
     } = {};
     transactionResult.eventReservations.forEach((r) => {
         // チケットタイプごとにチケット情報セット
-        if (ticketInfos[r.ticket_type] === undefined) {
-            ticketInfos[r.ticket_type] = {
-                name: r.ticket_type_name,
+        if (ticketInfos[r.reservedTicket.ticketType.id] === undefined) {
+            ticketInfos[r.reservedTicket.ticketType.id] = {
+                name: r.reservedTicket.ticketType.name,
                 charge: `\\${numeral(r.charge).format('0,0')}`,
                 count: 0
             };
         }
 
-        ticketInfos[r.ticket_type].count += 1;
+        ticketInfos[r.reservedTicket.ticketType.id].count += 1;
     });
     // 券種ごとの表示情報編集 (sort順を変えないよう同期Loop:"for of")
     const ticketInfoJa = Object.keys(ticketInfos).map((ticketTypeId) => {
@@ -495,8 +495,8 @@ async function createEmailMessage4sellerReason(
         purchaserNameJa: `${reservation.purchaser_last_name} ${reservation.purchaser_first_name}`,
         purchaserNameEn: reservation.purchaser_name,
         paymentNo: reservation.payment_no,
-        day: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('YYYY/MM/DD'),
-        startTime: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('HH:mm'),
+        day: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'),
+        startTime: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('HH:mm'),
         amount: numeral(transactionResult.order.price).format('0,0'),
         numberOfReservations: transactionResult.eventReservations.length,
         ticketInfoJa,
