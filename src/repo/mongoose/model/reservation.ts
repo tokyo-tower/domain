@@ -234,6 +234,11 @@ schema.index(
 );
 
 schema.index(
+    { modifiedTime: -1 },
+    { name: 'searchByModifiedTime-v2' }
+);
+
+schema.index(
     { reservationNumber: 1, modifiedTime: -1 },
     { name: 'searchByReservationNumber-v2' }
 );
