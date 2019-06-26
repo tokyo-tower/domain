@@ -276,7 +276,14 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
         const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
-        const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
+        const reservation = placeOrderTransactionResult.eventReservations[0];
+        let orderId = (<any>reservation).gmo_order_id; // 互換性維持のため
+        if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
+            const orderIdProperty = reservation.underName.identifier.find((p) => p.name === 'gmoOrderId');
+            if (orderIdProperty !== undefined) {
+                orderId = orderIdProperty.value;
+            }
+        }
 
         // 取引状態参照
         const searchTradeResult = await GMO.services.credit.searchTrade({
@@ -309,7 +316,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
                 // パフォーマンスに返品済数を連携
                 await performanceRepo.updateOne(
-                    { _id: placeOrderTransactionResult.eventReservations[0].performance },
+                    { _id: placeOrderTransactionResult.eventReservations[0].reservationFor.id },
                     {
                         $inc: {
                             'ttts_extension.refunded_count': 1,
@@ -322,7 +329,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                 // すべて返金完了したら、返金ステータス変更
                 await performanceRepo.updateOne(
                     {
-                        _id: placeOrderTransactionResult.eventReservations[0].performance,
+                        _id: placeOrderTransactionResult.eventReservations[0].reservationFor.id,
                         'ttts_extension.unrefunded_count': 0
                     },
                     {
@@ -401,8 +408,29 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         );
 
         // 入場履歴なしの取引IDを取り出す
-        let transactionIds = reservations.map((r) => r.transaction);
-        const transactionsIdsWithCheckins = reservations.filter((r) => (r.checkins.length > 0)).map((r) => r.transaction);
+        let transactionIds = reservations.map((r) => {
+            let transactionId = (<any>r).transaction; // 互換性維持のため
+            if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
+                if (transactionProperty !== undefined) {
+                    transactionId = transactionProperty.value;
+                }
+            }
+
+            return transactionId;
+        });
+        const transactionsIdsWithCheckins = reservations.filter((r) => (r.checkins.length > 0))
+            .map((r) => {
+                let transactionId = (<any>r).transaction; // 互換性維持のため
+                if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                    const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
+                    if (transactionProperty !== undefined) {
+                        transactionId = transactionProperty.value;
+                    }
+                }
+
+                return transactionId;
+            });
         debug(transactionIds, transactionsIdsWithCheckins);
         transactionIds = uniq(difference(transactionIds, transactionsIdsWithCheckins));
         debug('confirming returnOrderTransactions...', transactionIds);
@@ -443,6 +471,7 @@ async function createEmailMessage4sellerReason(
     placeOrderTransaction: factory.transaction.placeOrder.ITransaction
 ): Promise<factory.creativeWork.message.email.IAttributes> {
     const transactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
+    const order = transactionResult.order;
     const reservation = transactionResult.eventReservations[0];
 
     const email = new Email({
@@ -468,11 +497,15 @@ async function createEmailMessage4sellerReason(
         };
     } = {};
     transactionResult.eventReservations.forEach((r) => {
+        const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+            ? r.reservedTicket.ticketType.priceSpecification.price
+            : 0;
+
         // チケットタイプごとにチケット情報セット
         if (ticketInfos[r.reservedTicket.ticketType.id] === undefined) {
             ticketInfos[r.reservedTicket.ticketType.id] = {
                 name: r.reservedTicket.ticketType.name,
-                charge: `\\${numeral(r.charge).format('0,0')}`,
+                charge: `\\${numeral(unitPrice).format('0,0')}`,
                 count: 0
             };
         }
@@ -492,9 +525,9 @@ async function createEmailMessage4sellerReason(
     }).join('\n');
 
     const message = await email.render('returnOrderBySeller', {
-        purchaserNameJa: `${reservation.purchaser_last_name} ${reservation.purchaser_first_name}`,
-        purchaserNameEn: reservation.purchaser_name,
-        paymentNo: reservation.payment_no,
+        purchaserNameJa: `${order.customer.familyName} ${order.customer.givenName}`,
+        purchaserNameEn: order.customer.name,
+        paymentNo: reservation.reservationNumber,
         day: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'),
         startTime: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('HH:mm'),
         amount: numeral(transactionResult.order.price).format('0,0'),
@@ -510,8 +543,8 @@ async function createEmailMessage4sellerReason(
             email: 'noreply@tokyotower.co.jp'
         },
         toRecipient: {
-            name: reservation.purchaser_name,
-            email: reservation.purchaser_email
+            name: order.customer.name,
+            email: order.customer.email
         },
         about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Tower Top Deck Tour)',
         text: message

@@ -521,7 +521,10 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 priceCurrency: factory.priceCurrency.JPY,
                 availability: factory.chevre.itemAvailability.InStock,
                 priceSpecification: unitPriceSpec,
-                additionalProperty: [],
+                additionalProperty: [
+                    { name: 'category', value: tmpReservation.ticket_ttts_extension.category },
+                    { name: 'csvCode', value: tmpReservation.ticket_ttts_extension.csv_code }
+                ],
                 // category: {},
                 // color: '',
                 identifier: tmpReservation.ticket_type,
@@ -598,7 +601,10 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             project: project,
             typeOf: factory.reservationType.EventReservation,
 
-            additionalProperty: tmpReservation.additionalProperty,
+            additionalProperty: [
+                ...(Array.isArray(tmpReservation.additionalProperty)) ? tmpReservation.additionalProperty : [],
+                { name: 'paymentSeatIndex', value: index.toString() }
+            ],
 
             additionalTicketText: tmpReservation.watcher_name,
             bookingTime: now.toDate(),
@@ -624,10 +630,6 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             seat_grade_name: tmpReservation.seat_grade_name,
             seat_grade_additional_charge: tmpReservation.seat_grade_additional_charge,
 
-            // ticket_type: tmpReservation.ticket_type,
-            // ticket_type_name: tmpReservation.ticket_type_name,
-            // ticket_type_charge: tmpReservation.ticket_type_charge,
-            // ticket_cancel_charge: tmpReservation.ticket_cancel_charge,
             ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
             rate_limit_unit_in_seconds: tmpReservation.rate_limit_unit_in_seconds,
 
@@ -636,27 +638,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             purchaser_group: purchaserGroup,
 
             performance: performance.id,
-            // performance_day: performance.day,
-            // performance_open_time: performance.open_time,
-            // performance_start_time: performance.start_time,
-            // performance_end_time: performance.end_time,
-            // performance_start_date: performance.start_date,
-            // performance_end_date: performance.end_date,
-            // performance_door_time: performance.door_time,
             performance_ttts_extension: performance.ttts_extension,
-            // performance_canceled: false,
-
-            // theater: performance.theater.id,
-            // theater_name: performance.theater.name,
-            // theater_address: performance.theater.address,
-
-            // screen: performance.screen.id,
-            // screen_name: performance.screen.name,
-
-            // film: performance.film.id,
-            // film_name: performance.film.name,
-            // film_is_mx4d: false,
-            // film_copyright: '',
 
             purchaser_name: purchaserName,
             purchaser_last_name: customerContact.last_name,
@@ -702,7 +684,16 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     }];
     const price = eventReservations
         .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
-        .reduce((a, b) => a + b.charge, 0);
+        .reduce(
+            (a, b) => {
+                const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
+                    ? b.reservedTicket.ticketType.priceSpecification.price
+                    : 0;
+
+                return a + unitPrice;
+            },
+            0
+        );
 
     const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
@@ -724,9 +715,13 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             },
             customer: customer,
             acceptedOffers: eventReservations.map((r) => {
+                const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+                    ? r.reservedTicket.ticketType.priceSpecification.price
+                    : 0;
+
                 return {
                     itemOffered: r,
-                    price: r.charge,
+                    price: unitPrice,
                     priceCurrency: factory.priceCurrency.JPY,
                     seller: {
                         typeOf: transaction.seller.typeOf,
@@ -734,7 +729,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                     }
                 };
             }),
-            confirmationNumber: eventReservations[0].payment_no,
+            confirmationNumber: eventReservations[0].reservationNumber,
             orderNumber: orderNumber,
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
@@ -746,7 +741,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             isGift: false,
             orderInquiryKey: {
                 performanceDay: performance.day,
-                paymentNo: eventReservations[0].payment_no,
+                paymentNo: eventReservations[0].reservationNumber,
                 // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
                 // tslint:disable-next-line:no-magic-numbers
                 telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁

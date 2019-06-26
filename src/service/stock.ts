@@ -104,7 +104,7 @@ export function transferSeatReservation(transactionId: string) {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    id: eventReservation.performance
+                    id: eventReservation.reservationFor.id
                 }
             };
             await taskRepo.save(task);

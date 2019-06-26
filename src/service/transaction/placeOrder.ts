@@ -328,7 +328,8 @@ export function transaction2report(transaction: factory.transaction.placeOrder.I
                 price = r.reservedTicket.ticketType.priceSpecification.price;
             }
 
-            return `${r.seat_code} ${r.reservedTicket.ticketType.name.ja} ￥${price} [${r.id}]`;
+            // tslint:disable-next-line:max-line-length
+            return `${(r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : 'No seat'} ${r.reservedTicket.ticketType.name.ja} ￥${price} [${r.id}]`;
         }).join('\n');
 
         return {
@@ -337,9 +338,9 @@ export function transaction2report(transaction: factory.transaction.placeOrder.I
             startDate: (transaction.startDate !== undefined) ? transaction.startDate.toISOString() : '',
             endDate: (transaction.endDate !== undefined) ? transaction.endDate.toISOString() : '',
             customer: {
-                name: reservations[0].purchaser_name,
-                email: reservations[0].purchaser_email,
-                telephone: reservations[0].purchaser_tel,
+                name: order.customer.name,
+                email: order.customer.email,
+                telephone: (order.customer.telephone !== undefined) ? order.customer.telephone : '',
                 group: reservations[0].purchaser_group
             },
             eventName: (reservations[0].reservationFor.superEvent !== undefined

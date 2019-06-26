@@ -217,6 +217,16 @@ function aggregateCheckinCount(
     // 全予約の入場履歴をマージ
     const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
         (a, b) => {
+            let ticketTypeCategory = ((<any>b).ticket_ttts_extension !== undefined)
+                ? (<any>b).ticket_ttts_extension.category
+                : ''; // 互換性維持のため
+            if (Array.isArray(b.reservedTicket.ticketType.additionalProperty)) {
+                const categoryProperty = b.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                if (categoryProperty !== undefined) {
+                    ticketTypeCategory = categoryProperty.value;
+                }
+            }
+
             // 同一ポイントでの重複チェックインを除外
             // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
             const checkinWheres = b.checkins.map((c) => c.where);
@@ -226,7 +236,7 @@ function aggregateCheckinCount(
                     return {
                         ...c,
                         ticketType: b.reservedTicket.ticketType.id,
-                        ticketCategory: b.ticket_ttts_extension.category
+                        ticketCategory: ticketTypeCategory
                     };
                 });
 

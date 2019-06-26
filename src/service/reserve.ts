@@ -13,6 +13,8 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('ttts-domain:service');
 
+const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
 /**
  * 予約をキャンセルする
  */
@@ -26,15 +28,25 @@ export function cancelReservation(params: { id: string }) {
         const reservation = await repos.reservation.findById(params);
         let extraReservations: factory.reservation.event.IReservation[] = [];
 
+        let ticketTypeCategory = ((<any>reservation).ticket_ttts_extension !== undefined)
+            ? (<any>reservation).ticket_ttts_extension.category
+            : ''; // 互換性維持のため
+        if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
+            const categoryProperty = reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+            if (categoryProperty !== undefined) {
+                ticketTypeCategory = categoryProperty.value;
+            }
+        }
+
         // 券種による流入制限解放
         if (
             reservation.status === factory.reservationStatusType.ReservationConfirmed
-            && reservation.rate_limit_unit_in_seconds > 0
+            && ticketTypeCategory === factory.ticketTypeCategory.Wheelchair
         ) {
             await repos.ticketTypeCategoryRateLimit.unlock({
-                ticketTypeCategory: reservation.ticket_ttts_extension.category,
+                ticketTypeCategory: ticketTypeCategory,
                 performanceStartDate: moment(reservation.reservationFor.startDate).toDate(),
-                unitInSeconds: reservation.rate_limit_unit_in_seconds
+                unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
             });
             debug('rate limit reset.');
         }
@@ -64,16 +76,25 @@ export function cancelReservation(params: { id: string }) {
         await Promise.all(targetReservations.map(async (r) => {
             await repos.reservation.cancel({ id: r.id });
 
-            const lockKey = {
-                eventId: reservation.performance,
-                offer: {
-                    seatNumber: r.seat_code,
-                    seatSection: ''
+            if (r.reservedTicket.ticketedSeat !== undefined) {
+                const lockKey = {
+                    eventId: reservation.reservationFor.id,
+                    offer: {
+                        seatNumber: r.reservedTicket.ticketedSeat.seatNumber,
+                        seatSection: r.reservedTicket.ticketedSeat.seatSection
+                    }
+                };
+                const holder = await repos.stock.getHolder(lockKey);
+                let transactionId = (<any>r).transaction; // 互換性維持のため
+                if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                    const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
+                    if (transactionProperty !== undefined) {
+                        transactionId = transactionProperty.value;
+                    }
                 }
-            };
-            const holder = await repos.stock.getHolder(lockKey);
-            if (holder === r.transaction) {
-                await repos.stock.unlock(lockKey);
+                if (holder === transactionId) {
+                    await repos.stock.unlock(lockKey);
+                }
             }
         }));
 
@@ -86,7 +107,7 @@ export function cancelReservation(params: { id: string }) {
             numberOfTried: 0,
             executionResults: [],
             data: {
-                id: reservation.performance
+                id: reservation.reservationFor.id
             }
         };
         await repos.task.save(task);

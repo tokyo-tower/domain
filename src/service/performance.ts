@@ -151,55 +151,55 @@ export function search(searchConditions: factory.performance.ISearchConditions):
  * @param reservations 予約リスト
  * @param offers 販売情報リスト
  */
-export async function aggregateCheckinCount(
-    checkinGates: factory.place.checkinGate.IPlace[],
-    reservations: factory.reservation.event.IReservation[],
-    offers: factory.offer.seatReservation.ITicketType[]
-): Promise<{
-    checkinCount: number;
-    checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
-}> {
-    // 全予約の入場履歴をマージ
-    const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
-        (a, b) => {
-            // 同一ポイントでの重複チェックインを除外
-            // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
-            const checkinWheres = b.checkins.map((c) => c.where);
-            const uniqueCheckins = b.checkins
-                .filter((c, pos) => checkinWheres.indexOf(c.where) === pos)
-                .map((c) => {
-                    return {
-                        ...c,
-                        ticketType: b.reservedTicket.ticketType.id,
-                        ticketCategory: b.ticket_ttts_extension.category
-                    };
-                });
+// export async function aggregateCheckinCount(
+//     checkinGates: factory.place.checkinGate.IPlace[],
+//     reservations: factory.reservation.event.IReservation[],
+//     offers: factory.offer.seatReservation.ITicketType[]
+// ): Promise<{
+//     checkinCount: number;
+//     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
+// }> {
+//     // 全予約の入場履歴をマージ
+//     const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
+//         (a, b) => {
+//             // 同一ポイントでの重複チェックインを除外
+//             // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
+//             const checkinWheres = b.checkins.map((c) => c.where);
+//             const uniqueCheckins = b.checkins
+//                 .filter((c, pos) => checkinWheres.indexOf(c.where) === pos)
+//                 .map((c) => {
+//                     return {
+//                         ...c,
+//                         ticketType: b.reservedTicket.ticketType.id,
+//                         ticketCategory: b.ticket_ttts_extension.category
+//                     };
+//                 });
 
-            return [...a, ...uniqueCheckins];
-        },
-        []
-    );
+//             return [...a, ...uniqueCheckins];
+//         },
+//         []
+//     );
 
-    // 入場ゲートごとに、券種ごとの入場者数を算出する
-    const checkinCountsByWhere = checkinGates.map((checkinGate) => {
-        // この入場ゲートの入場履歴
-        const uniqueCheckins4where = allUniqueCheckins.filter((c) => c.where === checkinGate.identifier);
+//     // 入場ゲートごとに、券種ごとの入場者数を算出する
+//     const checkinCountsByWhere = checkinGates.map((checkinGate) => {
+//         // この入場ゲートの入場履歴
+//         const uniqueCheckins4where = allUniqueCheckins.filter((c) => c.where === checkinGate.identifier);
 
-        return {
-            where: checkinGate.identifier,
-            checkinCountsByTicketType: offers.map((offer) => {
-                return {
-                    ticketType: offer.id,
-                    ticketCategory: offer.ttts_extension.category,
-                    // この券種の入場履歴数を集計
-                    count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
-                };
-            })
-        };
-    });
+//         return {
+//             where: checkinGate.identifier,
+//             checkinCountsByTicketType: offers.map((offer) => {
+//                 return {
+//                     ticketType: offer.id,
+//                     ticketCategory: offer.ttts_extension.category,
+//                     // この券種の入場履歴数を集計
+//                     count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
+//                 };
+//             })
+//         };
+//     });
 
-    return {
-        checkinCount: allUniqueCheckins.length,
-        checkinCountsByWhere: checkinCountsByWhere
-    };
-}
+//     return {
+//         checkinCount: allUniqueCheckins.length,
+//         checkinCountsByWhere: checkinCountsByWhere
+//     };
+// }
