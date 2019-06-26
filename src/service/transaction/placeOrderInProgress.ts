@@ -621,53 +621,10 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             attended: false,
 
             id: qrStr,
-            qr_str: qrStr,
-            transaction: transaction.id,
-            order_number: orderNumber,
             status: factory.reservationStatusType.ReservationConfirmed,
 
-            seat_code: tmpReservation.seat_code,
-            seat_grade_name: tmpReservation.seat_grade_name,
-            seat_grade_additional_charge: tmpReservation.seat_grade_additional_charge,
-
             ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
-            rate_limit_unit_in_seconds: tmpReservation.rate_limit_unit_in_seconds,
-
-            charge: tmpReservation.charge,
-            payment_no: tmpReservation.payment_no,
             purchaser_group: purchaserGroup,
-
-            performance: performance.id,
-            performance_ttts_extension: performance.ttts_extension,
-
-            purchaser_name: purchaserName,
-            purchaser_last_name: customerContact.last_name,
-            purchaser_first_name: customerContact.first_name,
-            purchaser_email: customerContact.email,
-            purchaser_international_tel: '',
-            purchaser_tel: customerContact.tel,
-            purchaser_age: customerContact.age,
-            purchaser_address: customerContact.address,
-            purchaser_gender: customerContact.gender,
-
-            // 会員の場合は値を入れる
-            owner_username: (transaction.agent.memberOf !== undefined) ? transaction.agent.memberOf.membershipNumber : undefined,
-            owner_name: (transaction.agent.memberOf !== undefined) ? purchaserName : undefined,
-            owner_last_name: (transaction.agent.memberOf !== undefined) ? customerContact.last_name : undefined,
-            owner_first_name: (transaction.agent.memberOf !== undefined) ? customerContact.first_name : undefined,
-            owner_email: (transaction.agent.memberOf !== undefined) ? customerContact.email : undefined,
-            owner_group: (transaction.agent.memberOf !== undefined) ? purchaserGroup : undefined,
-
-            payment_method: <factory.paymentMethodType>transaction.object.paymentMethod,
-
-            watcher_name: tmpReservation.watcher_name,
-            watcher_name_updated_at: now.toDate(),
-
-            purchased_at: now.toDate(),
-
-            // クレジット決済
-            gmo_order_id: gmoOrderId,
-
             payment_seat_index: index,
 
             checkins: [],
