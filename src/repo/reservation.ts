@@ -169,6 +169,87 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.reservedTicket !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservedTicket.ticketType !== undefined) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketType.ids)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketType.id': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketType.ids
+                            }
+                        }
+                    );
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (params.reservedTicket.ticketType.category !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(params.reservedTicket.ticketType.category.ids)) {
+                        andConditions.push(
+                            {
+                                'reservedTicket.ticketType.category.id': {
+                                    $exists: true,
+                                    $in: params.reservedTicket.ticketType.category.ids
+                                }
+                            }
+                        );
+                    }
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservedTicket.ticketedSeat !== undefined) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketedSeat.seatNumbers)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketedSeat.seatNumber': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketedSeat.seatNumbers
+                            }
+                        }
+                    );
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketedSeat.seatRows)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketedSeat.seatRow': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketedSeat.seatRows
+                            }
+                        }
+                    );
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketedSeat.seatSections)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketedSeat.seatSection': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketedSeat.seatSections
+                            }
+                        }
+                    );
+                }
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (params.underName !== undefined) {
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */

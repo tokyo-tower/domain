@@ -1,6 +1,5 @@
 import * as mongoose from 'mongoose';
 
-import Performance from './performance';
 import multilingualString from './schemaTypes/multilingualString';
 import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
 import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
@@ -22,28 +21,6 @@ const performanceExtentedSchema = new mongoose.Schema(
 const schema = new mongoose.Schema(
     {
         _id: String,
-        transaction: {
-            type: String,
-            required: true
-        },
-        order_number: {
-            type: String,
-            required: true
-        },
-        performance: {
-            type: String,
-            ref: Performance.modelName,
-            required: true
-        },
-        seat_code: {
-            type: String,
-            required: true
-        },
-        status: {
-            type: String,
-            required: true
-        },
-
         performance_day: String,
         performance_open_time: String,
         performance_start_time: String,
@@ -51,10 +28,6 @@ const schema = new mongoose.Schema(
         performance_start_date: Date,
         performance_end_date: Date,
         performance_door_time: Date,
-        performance_canceled: {
-            type: Boolean,
-            default: false
-        },
         performance_ttts_extension: performanceExtentedSchema,
 
         theater: String,
@@ -270,6 +243,16 @@ schema.index(
         name: 'searchByReservationForEndDate',
         partialFilterExpression: {
             'reservationFor.endDate': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'reservedTicket.ticketedSeat.seatNumber': 1, modifiedTime: -1 },
+    {
+        name: 'searchByReservedTicketTicketedSeatSeatNumber',
+        partialFilterExpression: {
+            'reservedTicket.ticketedSeat.seatNumber': { $exists: true }
         }
     }
 );
