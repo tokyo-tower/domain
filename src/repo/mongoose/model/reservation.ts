@@ -21,11 +21,7 @@ const performanceExtentedSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
-        _id: String, // qr_strに等しい
-        qr_str: {
-            type: String,
-            required: true
-        },
+        _id: String,
         transaction: {
             type: String,
             required: true
@@ -167,16 +163,6 @@ const schema = new mongoose.Schema(
 
 schema.index(
     { performance_day: 1, status: 1 }
-);
-
-// 予約のQR文字列はグローバルユニーク
-schema.index(
-    {
-        qr_str: 1
-    },
-    {
-        unique: true
-    }
 );
 
 // 予約検索

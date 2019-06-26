@@ -442,7 +442,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     // 予約データを作成
     // tslint:disable-next-line:max-func-body-length
     const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
-        const qrStr = `${orderNumber}-${index}`;
+        const id = `${orderNumber}-${index}`;
         const purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
 
         const unitPriceSpec:
@@ -620,7 +620,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             checkedIn: false,
             attended: false,
 
-            id: qrStr,
+            id: id,
             status: factory.reservationStatusType.ReservationConfirmed,
 
             ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
