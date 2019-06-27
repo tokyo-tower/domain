@@ -10,12 +10,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 予約の入場以外の全属性をChevre化
+
 ### Deprecated
 
 ### Removed
 
 - 券種からキャンセルチャージ属性を削除
-- 予約インターフェースから不要な属性を削除
 - 予約検索条件インターフェースから不要な属性を削除
 
 ### Fixed

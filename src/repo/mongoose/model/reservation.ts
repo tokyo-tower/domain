@@ -125,6 +125,7 @@ const schema = new mongoose.Schema(
         id: true,
         read: 'primaryPreferred',
         safe: safe,
+        strict: false,
         timestamps: {
             createdAt: 'created_at',
             updatedAt: 'updated_at'

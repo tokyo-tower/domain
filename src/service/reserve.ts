@@ -39,10 +39,7 @@ export function cancelReservation(params: { id: string }) {
         }
 
         // 券種による流入制限解放
-        if (
-            reservation.status === factory.reservationStatusType.ReservationConfirmed
-            && ticketTypeCategory === factory.ticketTypeCategory.Wheelchair
-        ) {
+        if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
             await repos.ticketTypeCategoryRateLimit.unlock({
                 ticketTypeCategory: ticketTypeCategory,
                 performanceStartDate: moment(reservation.reservationFor.startDate).toDate(),
