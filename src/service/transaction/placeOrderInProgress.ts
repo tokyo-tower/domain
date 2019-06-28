@@ -409,7 +409,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
 }
 
 /**
- * 確定以外の全情報を確定するプロセスprocessAllExceptConfirm
+ * 注文取引結果を作成する
  */
 // tslint:disable-next-line:max-func-body-length
 export function createResult(transaction: factory.transaction.placeOrder.ITransaction): factory.transaction.placeOrder.IResult {
@@ -422,10 +422,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
-    debug('tmpReservations:', tmpReservations);
     const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
-    const now = moment();
+    const orderDate = new Date();
 
     if (transaction.object.paymentMethod === undefined) {
         throw new Error('PaymentMethod undefined.');
@@ -434,203 +433,20 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     // 注文番号を作成
     // tslint:disable-next-line:no-magic-numbers
     const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].reservationNumber}`;
-
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
 
     // 予約データを作成
-    // tslint:disable-next-line:max-func-body-length
-    const eventReservations: factory.reservation.event.IReservation[] = tmpReservations.map((tmpReservation, index) => {
-        const id = `${orderNumber}-${index}`;
-        const purchaserName = `${customerContact.first_name} ${customerContact.last_name}`;
-
-        const unitPriceSpec:
-            factory.chevre.priceSpecification.IPriceSpecification<factory.chevre.priceSpecificationType.UnitPriceSpecification>
-            = {
-            project: project,
-            typeOf: <factory.chevre.priceSpecificationType.UnitPriceSpecification>
-                factory.chevre.priceSpecificationType.UnitPriceSpecification,
-            price: tmpReservation.charge,
-            priceCurrency: factory.priceCurrency.JPY,
-            valueAddedTaxIncluded: true,
-            referenceQuantity: {
-                typeOf: <'QuantitativeValue'>'QuantitativeValue',
-                value: 1,
-                unitCode: factory.chevre.unitCode.C62
-            }
-        };
-
-        const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
-            project: project,
-            typeOf: <factory.chevre.priceSpecificationType.CompoundPriceSpecification>
-                factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-            priceCurrency: factory.priceCurrency.JPY,
-            valueAddedTaxIncluded: true,
-            priceComponent: [unitPriceSpec]
-        };
-
-        const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
-            typeOf: factory.personType.Person,
-            // id: transaction.agent.id,
-            name: purchaserName,
-            familyName: customerContact.last_name,
-            givenName: customerContact.first_name,
-            email: customerContact.email,
-            telephone: customerContact.telephone,
-            gender: customerContact.gender,
-            identifier: [
-                { name: 'age', value: customerContact.age },
-                { name: 'orderNumber', value: orderNumber },
-                { name: 'transaction', value: transaction.id },
-                { name: 'gmoOrderId', value: gmoOrderId },
-                ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
-                ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
-                    ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
-                    : [],
-                ...(transaction.object.paymentMethod !== undefined)
-                    ? [{ name: 'paymentMethod', value: transaction.object.paymentMethod }]
-                    : []
-            ],
-            ...{ address: customerContact.address }
-        };
-
-        const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
-            typeOf: 'Ticket',
-            dateIssued: now.toDate(),
-            issuedBy: {
-                typeOf: transaction.seller.typeOf,
-                name: transaction.seller.name
-            },
-            totalPrice: compoundPriceSpec,
-            priceCurrency: factory.priceCurrency.JPY,
-            ticketedSeat: {
-                seatSection: '',
-                seatNumber: tmpReservation.seat_code,
-                seatRow: '',
-                seatingType: <any>{},
-                typeOf: factory.chevre.placeType.Seat
-            },
-            underName: underName,
-            ticketType: {
-                project: project,
-                name: tmpReservation.ticket_type_name,
-                description: { en: '', ja: '' },
-                alternateName: tmpReservation.ticket_type_name,
-                typeOf: 'Offer',
-                priceCurrency: factory.priceCurrency.JPY,
-                availability: factory.chevre.itemAvailability.InStock,
-                priceSpecification: unitPriceSpec,
-                additionalProperty: [
-                    ...(Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty))
-                        ? tmpReservation.reservedTicket.ticketType.additionalProperty
-                        : []
-                    // { name: 'category', value: tmpReservation.ticket_ttts_extension.category },
-                    // { name: 'csvCode', value: tmpReservation.ticket_ttts_extension.csv_code }
-                ],
-                // category: {},
-                // color: '',
-                identifier: tmpReservation.ticket_type,
-                id: tmpReservation.ticket_type
-            }
-        };
-
-        const reservationFor: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> = {
-            project: project,
-            typeOf: factory.chevre.eventType.ScreeningEvent,
-            id: performance.id,
-            name: performance.film.name,
-            eventStatus: factory.chevre.eventStatusType.EventScheduled,
-            doorTime: moment(performance.door_time).toDate(),
-            startDate: moment(performance.start_date).toDate(),
-            endDate: moment(performance.end_date).toDate(),
-            superEvent: {
-                project: project,
-                typeOf: factory.chevre.eventType.ScreeningEventSeries,
-                id: '',
-                eventStatus: factory.chevre.eventStatusType.EventScheduled,
-                kanaName: '',
-                name: performance.film.name,
-                videoFormat: [],
-                soundFormat: [],
-                workPerformed: {
-                    project: project,
-                    typeOf: factory.chevre.creativeWorkType.Movie,
-                    identifier: performance.film.id,
-                    id: performance.film.id,
-                    name: performance.film.name.ja
-                },
-                location: {
-                    project: project,
-                    typeOf: factory.chevre.placeType.MovieTheater,
-                    id: performance.theater.id,
-                    branchCode: performance.theater.id,
-                    name: performance.theater.name,
-                    kanaName: ''
-                }
-
-            },
-            workPerformed: {
-                project: project,
-                typeOf: factory.chevre.creativeWorkType.Movie,
-                identifier: performance.film.id,
-                id: performance.film.id,
-                name: performance.film.name.ja
-            },
-            location: {
-                project: project,
-                typeOf: factory.chevre.placeType.ScreeningRoom,
-                branchCode: performance.screen.id,
-                name: performance.screen.name
-            },
-            offers: <any>{
-                typeOf: 'Offer',
-                id: performance.ticket_type_group.id,
-                name: performance.ticket_type_group.name,
-                itemOffered: {
-                    serviceType: {
-                        typeOf: 'ServiceType',
-                        id: '',
-                        name: ''
-                    }
-                }
-            },
-            checkInCount: 0,
-            attendeeCount: 0,
-            additionalProperty: performance.additionalProperty
-        };
-
-        return {
-            project: project,
-            typeOf: factory.reservationType.EventReservation,
-
-            additionalProperty: [
-                ...(Array.isArray(tmpReservation.additionalProperty)) ? tmpReservation.additionalProperty : [],
-                { name: 'paymentSeatIndex', value: index.toString() }
-            ],
-
-            additionalTicketText: tmpReservation.additionalTicketText,
-            bookingTime: now.toDate(),
-            modifiedTime: now.toDate(),
-            numSeats: 1,
-            price: compoundPriceSpec,
-            priceCurrency: factory.priceCurrency.JPY,
-            reservationFor: reservationFor,
-            reservationNumber: tmpReservation.reservationNumber,
-            reservationStatus: factory.reservationStatusType.ReservationConfirmed,
-            reservedTicket: reservedTicket,
-            underName: underName,
-            checkedIn: false,
-            attended: false,
-
-            id: id,
-
-            checkins: []
-
-            // status: factory.reservationStatusType.ReservationConfirmed,
-            // ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
-            // purchaser_group: purchaserGroup,
-            // payment_seat_index: index,
-            // transaction_agent: transaction.agent
-        };
+    const eventReservations = tmpReservations.map((tmpReservation, index) => {
+        return temporaryReservation2confirmed({
+            tmpReservation: tmpReservation,
+            event: performance,
+            transaction: transaction,
+            orderNumber: orderNumber,
+            gmoOrderId: gmoOrderId,
+            paymentSeatIndex: index.toString(),
+            customerContact: customerContact,
+            bookingTime: orderDate
+        });
     });
 
     const paymentMethods = [{
@@ -640,6 +456,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : '',
         additionalProperty: []
     }];
+
     const price = eventReservations
         .reduce(
             (a, b) => {
@@ -694,7 +511,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             discounts: [],
             url: '',
             orderStatus: factory.orderStatus.OrderDelivered,
-            orderDate: now.toDate(),
+            orderDate: orderDate,
             isGift: false,
             orderInquiryKey: {
                 performanceDay: performance.day,
@@ -706,5 +523,171 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         },
         eventReservations,
         printToken: ''
+    };
+}
+
+/**
+ * 仮予約から確定予約を生成する
+ */
+// tslint:disable-next-line:max-func-body-length
+function temporaryReservation2confirmed(params: {
+    tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
+    event: factory.performance.IPerformanceWithDetails;
+    transaction: factory.transaction.placeOrder.ITransaction;
+    orderNumber: string;
+    gmoOrderId: string;
+    paymentSeatIndex: string;
+    customerContact: factory.transaction.placeOrder.ICustomerContact;
+    bookingTime: Date;
+}): factory.reservation.event.IReservation {
+    const transaction = params.transaction;
+    const customerContact = params.customerContact;
+    const performance = params.event;
+
+    const id = `${params.orderNumber}-${params.paymentSeatIndex}`;
+
+    const unitPriceSpec = params.tmpReservation.reservedTicket.ticketType.priceSpecification;
+
+    const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
+        project: project,
+        typeOf: <factory.chevre.priceSpecificationType.CompoundPriceSpecification>
+            factory.chevre.priceSpecificationType.CompoundPriceSpecification,
+        priceCurrency: factory.priceCurrency.JPY,
+        valueAddedTaxIncluded: true,
+        priceComponent: [
+            ...(unitPriceSpec !== undefined) ? [unitPriceSpec] : []
+        ]
+    };
+
+    const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
+        typeOf: factory.personType.Person,
+        id: params.transaction.agent.id,
+        name: `${customerContact.first_name} ${customerContact.last_name}`,
+        familyName: customerContact.last_name,
+        givenName: customerContact.first_name,
+        email: customerContact.email,
+        telephone: customerContact.telephone,
+        gender: customerContact.gender,
+        identifier: [
+            { name: 'age', value: customerContact.age },
+            { name: 'orderNumber', value: params.orderNumber },
+            { name: 'transaction', value: transaction.id },
+            { name: 'gmoOrderId', value: params.gmoOrderId },
+            ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
+            ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
+                ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
+                : [],
+            ...(transaction.object.paymentMethod !== undefined)
+                ? [{ name: 'paymentMethod', value: transaction.object.paymentMethod }]
+                : []
+        ],
+        ...{ address: customerContact.address }
+    };
+
+    const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
+        typeOf: 'Ticket',
+        dateIssued: params.bookingTime,
+        issuedBy: {
+            typeOf: transaction.seller.typeOf,
+            name: transaction.seller.name
+        },
+        totalPrice: compoundPriceSpec,
+        priceCurrency: factory.priceCurrency.JPY,
+        ticketedSeat: params.tmpReservation.reservedTicket.ticketedSeat,
+        underName: underName,
+        ticketType: params.tmpReservation.reservedTicket.ticketType
+    };
+
+    const reservationFor: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> = {
+        project: project,
+        typeOf: factory.chevre.eventType.ScreeningEvent,
+        id: performance.id,
+        name: performance.film.name,
+        eventStatus: factory.chevre.eventStatusType.EventScheduled,
+        doorTime: moment(performance.door_time).toDate(),
+        startDate: moment(performance.start_date).toDate(),
+        endDate: moment(performance.end_date).toDate(),
+        superEvent: {
+            project: project,
+            typeOf: factory.chevre.eventType.ScreeningEventSeries,
+            id: '',
+            eventStatus: factory.chevre.eventStatusType.EventScheduled,
+            kanaName: '',
+            name: performance.film.name,
+            videoFormat: [],
+            soundFormat: [],
+            workPerformed: {
+                project: project,
+                typeOf: factory.chevre.creativeWorkType.Movie,
+                identifier: performance.film.id,
+                id: performance.film.id,
+                name: performance.film.name.ja
+            },
+            location: {
+                project: project,
+                typeOf: factory.chevre.placeType.MovieTheater,
+                id: performance.theater.id,
+                branchCode: performance.theater.id,
+                name: performance.theater.name,
+                kanaName: ''
+            }
+
+        },
+        workPerformed: {
+            project: project,
+            typeOf: factory.chevre.creativeWorkType.Movie,
+            identifier: performance.film.id,
+            id: performance.film.id,
+            name: performance.film.name.ja
+        },
+        location: {
+            project: project,
+            typeOf: factory.chevre.placeType.ScreeningRoom,
+            branchCode: performance.screen.id,
+            name: performance.screen.name
+        },
+        offers: <any>{
+            typeOf: 'Offer',
+            id: performance.ticket_type_group.id,
+            name: performance.ticket_type_group.name,
+            itemOffered: {
+                serviceType: {
+                    typeOf: 'ServiceType',
+                    id: '',
+                    name: ''
+                }
+            }
+        },
+        checkInCount: 0,
+        attendeeCount: 0,
+        additionalProperty: performance.additionalProperty
+    };
+
+    return {
+        project: project,
+        typeOf: factory.reservationType.EventReservation,
+
+        additionalProperty: [
+            ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
+            { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
+        ],
+
+        additionalTicketText: params.tmpReservation.additionalTicketText,
+        bookingTime: params.bookingTime,
+        modifiedTime: params.bookingTime,
+        numSeats: 1,
+        price: compoundPriceSpec,
+        priceCurrency: factory.priceCurrency.JPY,
+        reservationFor: reservationFor,
+        reservationNumber: params.tmpReservation.reservationNumber,
+        reservationStatus: factory.reservationStatusType.ReservationConfirmed,
+        reservedTicket: reservedTicket,
+        underName: underName,
+        checkedIn: false,
+        attended: false,
+
+        id: id,
+
+        checkins: []
     };
 }
