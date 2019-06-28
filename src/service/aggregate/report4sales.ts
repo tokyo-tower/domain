@@ -385,7 +385,7 @@ function reservation2data(
         }
     }
 
-    let paymentSeatIndex = (<any>r).payment_seat_index.toString(); // 互換性維持のため
+    let paymentSeatIndex: string = ((<any>r).payment_seat_index !== undefined) ? (<any>r).payment_seat_index.toString() : ''; // 互換性維持のため
     if (Array.isArray(r.additionalProperty)) {
         const paymentSeatIndexProperty = r.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
         if (paymentSeatIndexProperty !== undefined) {
