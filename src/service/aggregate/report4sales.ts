@@ -180,7 +180,8 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
                             r,
                             transactionResult.order,
                             <Date>params.transaction.endDate,
-                            AggregateUnit.SalesByEndDate
+                            AggregateUnit.SalesByEndDate,
+                            params.transaction.object.purchaser_group
                         );
                     })
             );
@@ -225,10 +226,11 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                     r,
                     placeOrderTransactionResult.order,
                     <Date>params.transaction.endDate,
-                    AggregateUnit.SalesByEndDate
+                    AggregateUnit.SalesByEndDate,
+                    placeOrderTransaction.object.purchaser_group
                 ),
                 reservationStatus: Status4csv.Cancelled,
-                status_sort: `${r.status}_1`,
+                status_sort: `${r.reservationStatus}_1`,
                 cancellationFee: params.transaction.object.cancellationFee,
                 orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
             });
@@ -240,7 +242,8 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                         r,
                         placeOrderTransactionResult.order,
                         <Date>params.transaction.endDate,
-                        AggregateUnit.SalesByEndDate
+                        AggregateUnit.SalesByEndDate,
+                        placeOrderTransaction.object.purchaser_group
                     ),
                     seat: {
                         code: '',
@@ -254,7 +257,7 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                     },
                     payment_seat_index: '',
                     reservationStatus: Status4csv.CancellationFee,
-                    status_sort: `${r.status}_2`,
+                    status_sort: `${r.reservationStatus}_2`,
                     cancellationFee: params.transaction.object.cancellationFee,
                     price: params.transaction.object.cancellationFee.toString(),
                     orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
@@ -335,7 +338,8 @@ function reservation2data(
     r: factory.reservation.event.IReservation,
     order: factory.order.IOrder,
     targetDate: Date,
-    aggregateUnit: AggregateUnit
+    aggregateUnit: AggregateUnit,
+    purchaserGroup: factory.person.Group
 ): IData {
     const underName = r.underName;
     let age = '';
@@ -421,9 +425,9 @@ function reservation2data(
             charge: unitPrice.toString()
         },
         customer: {
-            group: (purchaserGroupStrings[r.purchaser_group] !== undefined)
-                ? purchaserGroupStrings[r.purchaser_group]
-                : r.purchaser_group,
+            group: (purchaserGroupStrings[purchaserGroup] !== undefined)
+                ? purchaserGroupStrings[purchaserGroup]
+                : purchaserGroup,
             givenName: (underName !== undefined && underName.givenName !== undefined) ? underName.givenName : '',
             familyName: (underName !== undefined && underName.familyName !== undefined) ? underName.familyName : '',
             email: (underName !== undefined && underName.email !== undefined) ? underName.email : '',
@@ -438,7 +442,7 @@ function reservation2data(
         checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
         checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when).format('YYYY/MM/DD HH:mm:ss') : '',
         reservationStatus: Status4csv.Reserved,
-        status_sort: r.status,
+        status_sort: String(r.reservationStatus),
         price: order.price.toString(),
         cancellationFee: 0,
         date_bucket: targetDate,

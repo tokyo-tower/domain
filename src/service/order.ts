@@ -363,7 +363,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
  * パフォーマンス指定で全注文を返品する
  */
 export function returnAllByPerformance(
-    agentId: string, performanceId: string
+    agentId: string, performanceId: string, clientIds: string[]
 ): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
     return async (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => {
         // パフォーマンス情報取得
@@ -387,7 +387,8 @@ export function returnAllByPerformance(
             executionResults: [],
             data: {
                 agentId: agentId,
-                performanceId: performanceId
+                performanceId: performanceId,
+                clientIds: clientIds
             }
         });
 
@@ -395,17 +396,23 @@ export function returnAllByPerformance(
     };
 }
 
-export function processReturnAllByPerformance(agentId: string, performanceId: string) {
+export function processReturnAllByPerformance(agentId: string, performanceId: string, clientIds: string[]) {
     return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
-        const reservations = await reservationRepo.search(
-            {
-                typeOf: factory.reservationType.EventReservation,
-                reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
-                reservationFor: { id: performanceId },
-                purchaser_group: factory.person.Group.Customer
-            }
-        );
+        const reservations = (clientIds.length > 0)
+            ? await reservationRepo.search(
+                {
+                    typeOf: factory.reservationType.EventReservation,
+                    reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
+                    reservationFor: { id: performanceId },
+                    underName: {
+                        identifiers: clientIds.map((clientId) => {
+                            return { name: 'clientId', value: clientId };
+                        })
+                    }
+                }
+            )
+            : [];
 
         // 入場履歴なしの取引IDを取り出す
         let transactionIds = reservations.map((r) => {

@@ -52,12 +52,20 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     await stockRepo.unlock(lockKey);
                 }
 
+                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
+                    const categoryProperty = tmpReservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                    if (categoryProperty !== undefined) {
+                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                    }
+                }
+
                 if (tmpReservation.rate_limit_unit_in_seconds > 0) {
                     debug('resetting wheelchair rate limit...');
                     const performanceStartDate = moment(`${performance.start_date}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
-                        ticketTypeCategory: tmpReservation.ticket_ttts_extension.category,
+                        ticketTypeCategory: ticketTypeCategory,
                         unitInSeconds: tmpReservation.rate_limit_unit_in_seconds
                     };
                     await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);

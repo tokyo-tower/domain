@@ -36,6 +36,7 @@ export {
 /**
  * 特定のイベントに関する集計を行う
  */
+// tslint:disable-next-line:max-func-body-length
 export function aggregateEventReservations(params: {
     id: string;
 }) {
@@ -90,9 +91,17 @@ export function aggregateEventReservations(params: {
 
             // オファーごとの集計
             const offersAggregation = await Promise.all(offers.map(async (offer) => {
+                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                if (Array.isArray(offer.additionalProperty)) {
+                    const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
+                    if (categoryProperty !== undefined) {
+                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                    }
+                }
+
                 return {
                     id: offer.id,
-                    remainingAttendeeCapacity: (offer.ttts_extension.category === factory.ticketTypeCategory.Wheelchair)
+                    remainingAttendeeCapacity: (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair)
                         ? remainingAttendeeCapacityForWheelchair
                         : remainingAttendeeCapacity,
                     reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
@@ -253,9 +262,17 @@ function aggregateCheckinCount(
         return {
             where: checkinGate.identifier,
             checkinCountsByTicketType: offers.map((offer) => {
+                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                if (Array.isArray(offer.additionalProperty)) {
+                    const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
+                    if (categoryProperty !== undefined) {
+                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                    }
+                }
+
                 return {
                     ticketType: offer.id,
-                    ticketCategory: offer.ttts_extension.category,
+                    ticketCategory: ticketTypeCategory,
                     // この券種の入場履歴数を集計
                     count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
                 };

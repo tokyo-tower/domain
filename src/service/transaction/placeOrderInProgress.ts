@@ -307,7 +307,6 @@ export function confirm(params: {
                         || extraProperty === undefined
                         || extraProperty.value !== '1';
                 })
-                .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
                 .map((r) => r.id)
         );
         debug('printToken created.', printToken);
@@ -434,10 +433,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
 
     // 注文番号を作成
     // tslint:disable-next-line:no-magic-numbers
-    const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].payment_no}`;
+    const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].reservationNumber}`;
 
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
-    const purchaserGroup = transaction.object.purchaser_group;
 
     // 予約データを作成
     // tslint:disable-next-line:max-func-body-length
@@ -522,8 +520,11 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 availability: factory.chevre.itemAvailability.InStock,
                 priceSpecification: unitPriceSpec,
                 additionalProperty: [
-                    { name: 'category', value: tmpReservation.ticket_ttts_extension.category },
-                    { name: 'csvCode', value: tmpReservation.ticket_ttts_extension.csv_code }
+                    ...(Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty))
+                        ? tmpReservation.reservedTicket.ticketType.additionalProperty
+                        : []
+                    // { name: 'category', value: tmpReservation.ticket_ttts_extension.category },
+                    // { name: 'csvCode', value: tmpReservation.ticket_ttts_extension.csv_code }
                 ],
                 // category: {},
                 // color: '',
@@ -606,14 +607,14 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                 { name: 'paymentSeatIndex', value: index.toString() }
             ],
 
-            additionalTicketText: tmpReservation.watcher_name,
+            additionalTicketText: tmpReservation.additionalTicketText,
             bookingTime: now.toDate(),
             modifiedTime: now.toDate(),
             numSeats: 1,
             price: compoundPriceSpec,
             priceCurrency: factory.priceCurrency.JPY,
             reservationFor: reservationFor,
-            reservationNumber: tmpReservation.payment_no,
+            reservationNumber: tmpReservation.reservationNumber,
             reservationStatus: factory.reservationStatusType.ReservationConfirmed,
             reservedTicket: reservedTicket,
             underName: underName,
@@ -621,14 +622,14 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             attended: false,
 
             id: id,
-            status: factory.reservationStatusType.ReservationConfirmed,
 
-            ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
-            purchaser_group: purchaserGroup,
-            payment_seat_index: index,
+            checkins: []
 
-            checkins: [],
-            transaction_agent: transaction.agent
+            // status: factory.reservationStatusType.ReservationConfirmed,
+            // ticket_ttts_extension: tmpReservation.ticket_ttts_extension,
+            // purchaser_group: purchaserGroup,
+            // payment_seat_index: index,
+            // transaction_agent: transaction.agent
         };
     });
 
@@ -640,7 +641,6 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         additionalProperty: []
     }];
     const price = eventReservations
-        .filter((r) => r.status === factory.reservationStatusType.ReservationConfirmed)
         .reduce(
             (a, b) => {
                 const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
