@@ -3,6 +3,7 @@
  */
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
+import * as moment from 'moment-timezone';
 
 import * as repository from '../repository';
 
@@ -64,13 +65,21 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             const ticketTypes: factory.offer.seatReservation.ITicketType[] = performance.ticket_type_group.ticket_types;
             const eventWithAggregation = eventsWithAggregation.find((e) => e.id === performance.id);
 
+            let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
+            if (performance.additionalProperty !== undefined) {
+                const tourNumberProperty = performance.additionalProperty.find((p) => p.name === 'tourNumber');
+                if (tourNumberProperty !== undefined) {
+                    tourNumber = tourNumberProperty.value;
+                }
+            }
+
             return {
                 id: performance.id,
-                doorTime: performance.door_time,
-                startDate: performance.start_date,
-                endDate: performance.end_date,
+                doorTime: performance.doorTime,
+                startDate: performance.startDate,
+                endDate: performance.endDate,
                 duration: performance.duration,
-                tourNumber: performance.tour_number,
+                tourNumber: tourNumber,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
                 maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
@@ -99,12 +108,12 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 extension: performance.ttts_extension,
                 additionalProperty: performance.additionalProperty,
                 attributes: {
-                    day: performance.day,
-                    open_time: performance.open_time,
-                    start_time: performance.start_time,
-                    end_time: performance.end_time,
-                    start_date: performance.start_date,
-                    end_date: performance.end_date,
+                    day: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
+                    open_time: moment(performance.doorTime).tz('Asia/Tokyo').format('HHmm'),
+                    start_time: moment(performance.startDate).tz('Asia/Tokyo').format('HHmm'),
+                    end_time: moment(performance.endDate).tz('Asia/Tokyo').format('HHmm'),
+                    start_date: performance.startDate,
+                    end_date: performance.endDate,
                     // tslint:disable-next-line:no-magic-numbers
                     seat_status: (eventWithAggregation !== undefined)
                         ? eventWithAggregation.remainingAttendeeCapacity
@@ -128,7 +137,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                             }
                         };
                     }),
-                    tour_number: performance.ttts_extension.tour_number,
+                    tour_number: tourNumber,
                     online_sales_status: performance.ttts_extension.online_sales_status,
                     refunded_count: performance.ttts_extension.refunded_count,
                     refund_status: performance.ttts_extension.refund_status,
