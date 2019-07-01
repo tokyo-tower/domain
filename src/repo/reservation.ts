@@ -478,13 +478,15 @@ export class MongoRepository {
             { _id: params.id },
             {
                 reservationStatus: factory.reservationStatusType.ReservationCancelled,
-                status: factory.reservationStatusType.ReservationCancelled
+                status: factory.reservationStatusType.ReservationCancelled,
+                modifiedTime: new Date()
             }
         ).exec();
     }
 
     /**
      * 入場
+     * Chevreでいうところのattend
      */
     public async checkIn(params: {
         id: string;
@@ -492,7 +494,13 @@ export class MongoRepository {
     }): Promise<IReservation> {
         const doc = await this.reservationModel.findByIdAndUpdate(
             params.id,
-            { $push: { checkins: params.checkin } },
+            {
+                $push: { checkins: params.checkin },
+                $set: {
+                    checkedIn: true,
+                    modifiedTime: new Date()
+                }
+            },
             { new: true }
         )
             .exec();
@@ -528,22 +536,22 @@ export class MongoRepository {
     /**
      * 鑑賞者更新
      */
-    public async updateWatcher(
-        conditions: {
-            _id: string;
-            status?: factory.reservationStatusType;
-        },
-        update: {
-            watcher_name?: string;
-            watcher_name_updated_at?: Date;
-        }
-    ): Promise<IReservation | null> {
-        const doc = await this.reservationModel.findOneAndUpdate(
-            conditions,
-            update,
-            { new: true }
-        ).exec();
+    // public async updateWatcher(
+    //     conditions: {
+    //         _id: string;
+    //         status?: factory.reservationStatusType;
+    //     },
+    //     update: {
+    //         watcher_name?: string;
+    //         watcher_name_updated_at?: Date;
+    //     }
+    // ): Promise<IReservation | null> {
+    //     const doc = await this.reservationModel.findOneAndUpdate(
+    //         conditions,
+    //         update,
+    //         { new: true }
+    //     ).exec();
 
-        return (doc !== null) ? doc.toObject() : null;
-    }
+    //     return (doc !== null) ? doc.toObject() : null;
+    // }
 }

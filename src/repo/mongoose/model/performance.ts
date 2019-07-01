@@ -88,6 +88,31 @@ schema.index(
     { name: 'searchPerformances-v2' }
 );
 
+schema.index(
+    { startDate: 1 },
+    { name: 'searchByStartDate' }
+);
+
+schema.index(
+    { typeOf: 1, startDate: 1 },
+    { name: 'searchByTypeOf' }
+);
+
+schema.index(
+    { eventStatus: 1, startDate: 1 },
+    { name: 'searchByEventStatus' }
+);
+
+schema.index(
+    { name: 1, startDate: 1 },
+    { name: 'searchByName' }
+);
+
+schema.index(
+    { endDate: 1, startDate: 1 },
+    { name: 'searchByEndDate' }
+);
+
 export default mongoose.model('Performance', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment
