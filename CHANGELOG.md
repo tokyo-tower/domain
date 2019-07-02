@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文取引結果からeventReservationsを削除(order.acceptedOffersへ移行)
 - 仮予約インターフェースからrate_limit_unit_in_secondsを削除
 - 仮予約インターフェースから座席グレードを削除
+- パフォーマンスインターフェースから非推奨属性を削除
 
 ### Fixed
 

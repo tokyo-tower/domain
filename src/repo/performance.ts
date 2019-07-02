@@ -143,10 +143,10 @@ export class MongoRepository {
             superEvent: performance.superEvent,
             location: performance.location,
             additionalProperty: performance.additionalProperty,
-            tourNumber: performance.tourNumber,
-            film: performance.film,
-            theater: performance.theater,
-            screen: performance.screen,
+            tourNumber: (<any>performance).tourNumber,
+            film: (<any>performance).film,
+            theater: (<any>performance).theater,
+            screen: (<any>performance).screen,
             ticket_type_group: performance.ticket_type_group
         };
 
@@ -158,11 +158,11 @@ export class MongoRepository {
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        delete setOnInsert.tourNumber;
-        delete setOnInsert.film;
-        delete setOnInsert.theater;
-        delete setOnInsert.screen;
-        delete setOnInsert.ticket_type_group;
+        delete (<any>setOnInsert).tourNumber;
+        delete (<any>setOnInsert).film;
+        delete (<any>setOnInsert).theater;
+        delete (<any>setOnInsert).screen;
+        delete (<any>setOnInsert).ticket_type_group;
 
         await this.performanceModel.findByIdAndUpdate(
             performance.id,

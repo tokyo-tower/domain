@@ -5,7 +5,7 @@ import * as factory from '@motionpicture/ttts-factory';
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
@@ -308,7 +308,7 @@ export function confirm(params: {
                         || extraProperty === undefined
                         || extraProperty.value !== '1';
                 })
-                .map((r) => r.id)
+                .map((o) => o.itemOffered.id)
         );
         debug('printToken created.', printToken);
         transaction.result.printToken = printToken;
@@ -432,8 +432,8 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     }
 
     // 注文番号を作成
-    // tslint:disable-next-line:no-magic-numbers
-    const orderNumber = `TT-${performance.day.slice(-6)}-${tmpReservations[0].reservationNumber}`;
+    const performanceDay = moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD');
+    const orderNumber = `TT-${performanceDay}-${tmpReservations[0].reservationNumber}`;
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
 
     // 予約データを作成
@@ -515,14 +515,13 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             orderDate: orderDate,
             isGift: false,
             orderInquiryKey: {
-                performanceDay: performance.day,
+                performanceDay: performanceDay,
                 paymentNo: eventReservations[0].reservationNumber,
                 // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
                 // tslint:disable-next-line:no-magic-numbers
                 telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
             }
         },
-        eventReservations,
         printToken: ''
     };
 }
@@ -603,33 +602,33 @@ function temporaryReservation2confirmed(params: {
         project: project,
         typeOf: factory.chevre.eventType.ScreeningEvent,
         id: performance.id,
-        name: performance.film.name,
+        name: performance.superEvent.name,
         eventStatus: factory.chevre.eventStatusType.EventScheduled,
-        doorTime: moment(performance.door_time).toDate(),
-        startDate: moment(performance.start_date).toDate(),
-        endDate: moment(performance.end_date).toDate(),
+        doorTime: moment(performance.doorTime).toDate(),
+        startDate: moment(performance.startDate).toDate(),
+        endDate: moment(performance.endDate).toDate(),
         superEvent: {
             project: project,
             typeOf: factory.chevre.eventType.ScreeningEventSeries,
             id: '',
             eventStatus: factory.chevre.eventStatusType.EventScheduled,
             kanaName: '',
-            name: performance.film.name,
+            name: performance.superEvent.name,
             videoFormat: [],
             soundFormat: [],
             workPerformed: {
                 project: project,
                 typeOf: factory.chevre.creativeWorkType.Movie,
-                identifier: performance.film.id,
-                id: performance.film.id,
-                name: performance.film.name.ja
+                identifier: performance.superEvent.id,
+                id: performance.superEvent.id,
+                name: performance.superEvent.name.ja
             },
             location: {
                 project: project,
                 typeOf: factory.chevre.placeType.MovieTheater,
-                id: performance.theater.id,
-                branchCode: performance.theater.id,
-                name: performance.theater.name,
+                id: performance.superEvent.location.id,
+                branchCode: performance.superEvent.location.branchCode,
+                name: performance.superEvent.location.name,
                 kanaName: ''
             }
 
@@ -637,15 +636,15 @@ function temporaryReservation2confirmed(params: {
         workPerformed: {
             project: project,
             typeOf: factory.chevre.creativeWorkType.Movie,
-            identifier: performance.film.id,
-            id: performance.film.id,
-            name: performance.film.name.ja
+            identifier: performance.superEvent.id,
+            id: performance.superEvent.id,
+            name: performance.superEvent.name.ja
         },
         location: {
             project: project,
             typeOf: factory.chevre.placeType.ScreeningRoom,
-            branchCode: performance.screen.id,
-            name: performance.screen.name
+            branchCode: performance.location.branchCode,
+            name: performance.location.name
         },
         offers: <any>{
             typeOf: 'Offer',

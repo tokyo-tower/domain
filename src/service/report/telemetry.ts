@@ -572,7 +572,7 @@ function createSellerFlow(
                 (action) => action.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation
             );
 
-            return moment(seatReservation.object.performance.start_date).diff(moment(transaction.endDate), 'milliseconds');
+            return moment(seatReservation.object.performance.startDate).diff(moment(transaction.endDate), 'milliseconds');
         });
         const totalTimeLeftUntilEventInMilliseconds = timesLeftUntilEvent.reduce((a, b) => a + b, 0);
         const maxTimeLeftUntilEventInMilliseconds = timesLeftUntilEvent.reduce((a, b) => Math.max(a, b), 0);

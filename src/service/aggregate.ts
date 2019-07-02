@@ -40,6 +40,7 @@ export {
 export function aggregateEventReservations(params: {
     id: string;
 }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         checkinGate: repository.place.CheckinGate;
         eventWithAggregation: repository.EventWithAggregation;
@@ -111,13 +112,20 @@ export function aggregateEventReservations(params: {
             // 入場数の集計を行う
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
 
+            let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
+            if (performance.additionalProperty !== undefined) {
+                const tourNumberProperty = performance.additionalProperty.find((p) => p.name === 'tourNumber');
+                if (tourNumberProperty !== undefined) {
+                    tourNumber = tourNumberProperty.value;
+                }
+            }
+
             aggregation = {
                 id: performance.id,
-                doorTime: performance.door_time,
-                startDate: performance.start_date,
-                endDate: performance.end_date,
+                doorTime: performance.doorTime,
+                startDate: performance.startDate,
+                endDate: performance.endDate,
                 duration: performance.duration,
-                tourNumber: performance.tour_number,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
                 maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
@@ -132,7 +140,8 @@ export function aggregateEventReservations(params: {
                     };
                 }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere,
-                offers: offersAggregation
+                offers: offersAggregation,
+                ...{ tourNumber: tourNumber } // 互換性維持のため
             };
 
             debug('aggregated!', aggregation);
@@ -160,7 +169,7 @@ function aggregateRemainingAttendeeCapacity(params: {
         let remainingAttendeeCapacityForWheelchair = 1;
 
         try {
-            const section = params.performance.screen.sections[0];
+            const section = params.performance.location.sections[0];
 
             // まず利用可能な座席は全座席
             const availableSeats = section.seats;
@@ -194,7 +203,7 @@ function aggregateRemainingAttendeeCapacity(params: {
             let rateLimitHolder: string | null;
             if (WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS > 0) {
                 rateLimitHolder = await repos.ticketTypeCategoryRateLimit.getHolder({
-                    performanceStartDate: moment(params.performance.start_date).toDate(),
+                    performanceStartDate: moment(params.performance.startDate).toDate(),
                     ticketTypeCategory: factory.ticketTypeCategory.Wheelchair,
                     unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                 });

@@ -36,7 +36,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
             debug('calling deleteTmpReserve...', action);
 
             const performance = action.object.performance;
-            const section = performance.screen.sections[0];
+            const section = performance.location.sections[0];
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
@@ -64,7 +64,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
 
                 if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                     debug('resetting wheelchair rate limit...');
-                    const performanceStartDate = moment(`${performance.start_date}`).toDate();
+                    const performanceStartDate = moment(`${performance.startDate}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
                         ticketTypeCategory: ticketTypeCategory,

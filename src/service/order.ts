@@ -374,7 +374,7 @@ export function returnAllByPerformance(
 
         // 終了済かどうか
         const now = moment();
-        const endDate = moment(performance.end_date);
+        const endDate = moment(performance.endDate);
         debug(now, endDate);
         if (endDate >= now) {
             throw new Error('上映が終了していないので返品処理を実行できません。');

@@ -67,14 +67,6 @@ function validateOffers(
                 throw new factory.errors.NotFound('Unit Price Specification');
             }
 
-            let ticketTypeCategory = factory.ticketTypeCategory.Normal;
-            if (Array.isArray(ticketType.additionalProperty)) {
-                const categoryProperty = ticketType.additionalProperty.find((p) => p.name === 'category');
-                if (categoryProperty !== undefined) {
-                    ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
-                }
-            }
-
             return {
                 ...offer,
                 additionalProperty: ticketType.additionalProperty,
@@ -141,11 +133,11 @@ export function create(
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
         let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
-        const performanceStartDate = moment(performance.start_date).toDate();
+        const performanceStartDate = moment(performance.startDate).toDate();
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-            const reservationNumber = await paymentNoRepo.publish(moment(performance.start_date).tz('Asia/Tokyo').format('YYYYMMDD'));
+            const reservationNumber = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
 
             // 在庫をおさえると、座席コードが決定する
             debug('finding available seats...');
@@ -305,7 +297,7 @@ function reserveTemporarilyByOffer(
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         try {
-            const section = performance.screen.sections[0];
+            const section = performance.location.sections[0];
 
             // まず利用可能な座席は全座席
             let availableSeats = section.seats;
@@ -380,7 +372,7 @@ function reserveTemporarilyByOffer(
                             };
                         })
                     ],
-                    expires: moment(performance.end_date).add(1, 'month').toDate(),
+                    expires: moment(performance.endDate).add(1, 'month').toDate(),
                     holder: transactionId
                 });
                 debug('locked:', selectedSeat.code);
@@ -559,7 +551,7 @@ export function cancel(
             await removeTmpReservations(actionResult.tmpReservations, performance)({ stock: stockRepo });
 
             // レート制限があれば解除
-            const performanceStartDate = moment(performance.start_date).toDate();
+            const performanceStartDate = moment(performance.startDate).toDate();
             await Promise.all(actionResult.tmpReservations.map(async (tmpReservation) => {
                 let ticketTypeCategory = factory.ticketTypeCategory.Normal;
                 if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
@@ -613,7 +605,7 @@ function removeTmpReservations(
     return async (repos: {
         stock: StockRepo;
     }) => {
-        const section = performance.screen.sections[0];
+        const section = performance.location.sections[0];
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
             try {
                 const lockKey = {
