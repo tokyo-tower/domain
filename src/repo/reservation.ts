@@ -498,6 +498,7 @@ export class MongoRepository {
                 $push: { checkins: params.checkin },
                 $set: {
                     checkedIn: true,
+                    attended: true,
                     modifiedTime: new Date()
                 }
             },

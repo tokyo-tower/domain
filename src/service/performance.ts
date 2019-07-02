@@ -50,10 +50,11 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             page: (searchConditions.page !== undefined) ? searchConditions.page : 1,
             sort: (searchConditions.sort !== undefined)
                 ? searchConditions.sort
-                : {
-                    day: 1,
-                    start_time: 1
-                }
+                : { startDate: 1 }
+            // : {
+            //     day: 1,
+            //     start_time: 1
+            // }
         });
         debug('performances found.', performances);
 

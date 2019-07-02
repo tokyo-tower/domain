@@ -1,3 +1,4 @@
+import * as moment from 'moment-timezone';
 import { Connection } from 'mongoose';
 
 import * as factory from '@motionpicture/ttts-factory';
@@ -24,10 +25,6 @@ export class MongoRepository {
             andConditions.push({ day: { $in: params.days } });
         }
 
-        if (params.day !== undefined) {
-            andConditions.push({ day: params.day });
-        }
-
         if (Array.isArray(params.startTimes)) {
             andConditions.push({ start_time: { $in: params.startTimes } });
         }
@@ -36,15 +33,25 @@ export class MongoRepository {
             andConditions.push({ _id: params.performanceId });
         }
 
+        if (params.day !== undefined) {
+            andConditions.push({
+                startDate: {
+                    $gte: moment(`${params.day}T00:00:00+09:00`, 'YYYYMMDDTHH:mm:ssZ').toDate(),
+                    $lt: moment(`${params.day}T00:00:00+09:00`, 'YYYYMMDDTHH:mm:ssZ').add(1, 'day').toDate()
+                }
+            });
+            // andConditions.push({ day: params.day });
+        }
+
         // 開始日時条件
         if (params.startFrom !== undefined) {
             andConditions.push({
-                start_date: { $gte: params.startFrom }
+                startDate: { $gte: params.startFrom }
             });
         }
         if (params.startThrough !== undefined) {
             andConditions.push({
-                start_date: { $lt: params.startThrough }
+                startDate: { $lt: params.startThrough }
             });
         }
 
