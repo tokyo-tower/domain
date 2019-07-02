@@ -444,11 +444,6 @@ function reserveTemporarilyByOffer(
                         ],
                     transaction: transactionId,
                     seat_code: selectedSeat.code,
-                    seat_grade_name: {
-                        en: 'Normal Seat',
-                        ja: 'ノーマルシート'
-                    },
-                    seat_grade_additional_charge: 0,
                     ticket_type: offer.ticket_type,
                     ticket_type_name: offer.ticket_type_name,
                     ticket_type_charge: offer.ticket_type_charge,
@@ -509,11 +504,6 @@ function reserveTemporarilyByOffer(
                         ],
                         transaction: transactionId,
                         seat_code: s.code,
-                        seat_grade_name: {
-                            en: 'Normal Seat',
-                            ja: 'ノーマルシート'
-                        },
-                        seat_grade_additional_charge: 0,
                         ticket_type: offer.ticket_type,
                         ticket_type_name: offer.ticket_type_name,
                         ticket_type_charge: offer.ticket_type_charge,

@@ -163,8 +163,9 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
             const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
 
             datas.push(
-                ...transactionResult.eventReservations
-                    .filter((r) => {
+                ...transactionResult.order.acceptedOffers
+                    .filter((o) => {
+                        const r = o.itemOffered;
                         // 余分確保分を除く
                         let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
                         if (r.additionalProperty !== undefined) {
@@ -175,9 +176,9 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
                             || extraProperty === undefined
                             || extraProperty.value !== '1';
                     })
-                    .map((r) => {
+                    .map((o) => {
                         return reservation2data(
-                            r,
+                            o.itemOffered,
                             transactionResult.order,
                             <Date>params.transaction.endDate,
                             AggregateUnit.SalesByEndDate,
@@ -207,19 +208,22 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
         // 取引からキャンセル予約情報取得
         const placeOrderTransaction = params.transaction.object.transaction;
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
-        const eventReservations = placeOrderTransactionResult.eventReservations.filter((r) => {
-            // 余分確保分を除く
-            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (r.additionalProperty !== undefined) {
-                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            }
+        const reservations = placeOrderTransactionResult.order.acceptedOffers
+            .filter((o) => {
+                const r = o.itemOffered;
+                // 余分確保分を除く
+                let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                if (r.additionalProperty !== undefined) {
+                    extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                }
 
-            return r.additionalProperty === undefined
-                || extraProperty === undefined
-                || extraProperty.value !== '1';
-        });
+                return r.additionalProperty === undefined
+                    || extraProperty === undefined
+                    || extraProperty.value !== '1';
+            })
+            .map((o) => o.itemOffered);
 
-        eventReservations.forEach((r, reservationIndex) => {
+        reservations.forEach((r, reservationIndex) => {
             // 座席分のキャンセルデータ
             datas.push({
                 ...reservation2data(
