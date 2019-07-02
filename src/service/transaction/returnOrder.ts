@@ -77,7 +77,7 @@ export function confirm(params: {
 
         // 検証
         if (!params.forcibly) {
-            validateRequest(now, transactionResult.eventReservations[0].reservationFor.startDate);
+            validateRequest(now, transactionResult.order.acceptedOffers[0].itemOffered.reservationFor.startDate);
         }
 
         const endDate = new Date();

@@ -294,9 +294,10 @@ export function confirm(params: {
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
-            transaction.result.eventReservations
+            transaction.result.order.acceptedOffers
                 // 余分確保を除く
-                .filter((r) => {
+                .filter((o) => {
+                    const r = o.itemOffered;
                     // 余分確保分を除く
                     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
                     if (r.additionalProperty !== undefined) {

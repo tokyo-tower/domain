@@ -122,7 +122,9 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
 
-        await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
+        await Promise.all(placeOrderTransactionResult.order.acceptedOffers.map(async (o) => {
+            const reservation = o.itemOffered;
+
             await ReserveService.cancelReservation(reservation)({
                 reservation: reservationRepo,
                 stock: stockRepo,
@@ -276,7 +278,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
         const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
-        const reservation = placeOrderTransactionResult.eventReservations[0];
+        const reservation = placeOrderTransactionResult.order.acceptedOffers[0].itemOffered;
         let orderId = (<any>reservation).gmo_order_id; // 互換性維持のため
         if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
             const orderIdProperty = reservation.underName.identifier.find((p) => p.name === 'gmoOrderId');
@@ -316,7 +318,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
                 // パフォーマンスに返品済数を連携
                 await performanceRepo.updateOne(
-                    { _id: placeOrderTransactionResult.eventReservations[0].reservationFor.id },
+                    { _id: placeOrderTransactionResult.order.acceptedOffers[0].itemOffered.reservationFor.id },
                     {
                         $inc: {
                             'ttts_extension.refunded_count': 1,
@@ -329,7 +331,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                 // すべて返金完了したら、返金ステータス変更
                 await performanceRepo.updateOne(
                     {
-                        _id: placeOrderTransactionResult.eventReservations[0].reservationFor.id,
+                        _id: placeOrderTransactionResult.order.acceptedOffers[0].itemOffered.reservationFor.id,
                         'ttts_extension.unrefunded_count': 0
                     },
                     {
@@ -479,7 +481,7 @@ async function createEmailMessage4sellerReason(
 ): Promise<factory.creativeWork.message.email.IAttributes> {
     const transactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
     const order = transactionResult.order;
-    const reservation = transactionResult.eventReservations[0];
+    const reservation = transactionResult.order.acceptedOffers[0].itemOffered;
 
     const email = new Email({
         views: { root: `${__dirname}/../../emails` },
@@ -503,7 +505,8 @@ async function createEmailMessage4sellerReason(
             count: number;
         };
     } = {};
-    transactionResult.eventReservations.forEach((r) => {
+    transactionResult.order.acceptedOffers.forEach((o) => {
+        const r = o.itemOffered;
         const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
             ? r.reservedTicket.ticketType.priceSpecification.price
             : 0;
@@ -538,7 +541,7 @@ async function createEmailMessage4sellerReason(
         day: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'),
         startTime: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('HH:mm'),
         amount: numeral(transactionResult.order.price).format('0,0'),
-        numberOfReservations: transactionResult.eventReservations.length,
+        numberOfReservations: transactionResult.order.acceptedOffers.length,
         ticketInfoJa,
         ticketInfoEn
     });

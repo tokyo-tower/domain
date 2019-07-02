@@ -319,7 +319,7 @@ export interface ITransactionReport {
 export function transaction2report(transaction: factory.transaction.placeOrder.ITransaction): ITransactionReport {
     if (transaction.result !== undefined) {
         const order = transaction.result.order;
-        const reservations = transaction.result.eventReservations;
+        const reservations = transaction.result.order.acceptedOffers.map((o) => o.itemOffered);
         const ticketsStr = reservations.map((r) => {
             let price = 0;
             if (r.reservedTicket.ticketType.priceSpecification !== undefined) {

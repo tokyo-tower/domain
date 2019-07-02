@@ -96,11 +96,12 @@ export function cancelSeatReservationAuth(transactionId: string) {
 export function transferSeatReservation(transactionId: string) {
     return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo, taskRepo: TaskRepo) => {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
-        const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
+        const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
+            .map((o) => o.itemOffered);
 
-        await Promise.all(eventReservations.map(async (eventReservation) => {
+        await Promise.all(reservations.map(async (reservation) => {
             /// 予約データを作成する
-            await reservationRepo.saveEventReservation(eventReservation);
+            await reservationRepo.saveEventReservation(reservation);
 
             // 集計タスク作成
             const task: factory.task.aggregateEventReservations.IAttributes = {
@@ -112,7 +113,7 @@ export function transferSeatReservation(transactionId: string) {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    id: eventReservation.reservationFor.id
+                    id: reservation.reservationFor.id
                 }
             };
             await taskRepo.save(task);
