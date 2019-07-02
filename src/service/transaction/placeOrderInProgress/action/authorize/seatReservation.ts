@@ -82,10 +82,7 @@ function validateOffers(
                 priceCurrency: factory.priceCurrency.JPY,
                 ticket_type: ticketType.id,
                 ticket_type_name: <any>ticketType.name,
-                ticket_type_charge: unitPriceSpec.price,
-                rate_limit_unit_in_seconds: (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair)
-                    ? WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                    : 0
+                ticket_type_charge: unitPriceSpec.price
             };
         });
     };
@@ -163,13 +160,13 @@ export function create(
                     }
                 }
 
-                if (offer.rate_limit_unit_in_seconds > 0) {
+                if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                     // 車椅子レート制限枠確保(取引IDを保持者に指定)
                     await ticketTypeCategoryRateLimitRepo.lock(
                         {
                             performanceStartDate: performanceStartDate,
                             ticketTypeCategory: ticketTypeCategory,
-                            unitInSeconds: offer.rate_limit_unit_in_seconds
+                            unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                         },
                         transaction.id
                     );
@@ -241,11 +238,11 @@ export function create(
                         }
                     }
 
-                    if (offer.rate_limit_unit_in_seconds > 0) {
+                    if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                         const rateLimitKey = {
                             performanceStartDate: performanceStartDate,
                             ticketTypeCategory: ticketTypeCategory,
-                            unitInSeconds: offer.rate_limit_unit_in_seconds
+                            unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                         };
                         const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                         if (holder === transaction.id) {
@@ -456,8 +453,7 @@ function reserveTemporarilyByOffer(
                     ticket_type_name: offer.ticket_type_name,
                     ticket_type_charge: offer.ticket_type_charge,
                     charge: Number(offer.ticket_type_charge),
-                    watcher_name: offer.watcher_name,
-                    rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds
+                    watcher_name: offer.watcher_name
                 });
 
                 selectedSeatsForAdditionalStocks.forEach((s) => {
@@ -522,8 +518,7 @@ function reserveTemporarilyByOffer(
                         ticket_type_name: offer.ticket_type_name,
                         ticket_type_charge: offer.ticket_type_charge,
                         charge: 0,
-                        watcher_name: offer.watcher_name,
-                        rate_limit_unit_in_seconds: offer.rate_limit_unit_in_seconds
+                        watcher_name: offer.watcher_name
                     });
                 });
             }
@@ -584,11 +579,11 @@ export function cancel(
                     }
                 }
 
-                if (tmpReservation.rate_limit_unit_in_seconds > 0) {
+                if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
                         ticketTypeCategory: ticketTypeCategory,
-                        unitInSeconds: tmpReservation.rate_limit_unit_in_seconds
+                        unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                     };
                     const holder = await ticketTypeCategoryRateLimitRepo.getHolder(rateLimitKey);
                     if (holder === transaction.id) {

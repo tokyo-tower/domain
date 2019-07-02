@@ -15,6 +15,8 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
 
+const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
 /**
  * 仮予約承認取消
  */
@@ -60,13 +62,13 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     }
                 }
 
-                if (tmpReservation.rate_limit_unit_in_seconds > 0) {
+                if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                     debug('resetting wheelchair rate limit...');
                     const performanceStartDate = moment(`${performance.start_date}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
                         ticketTypeCategory: ticketTypeCategory,
-                        unitInSeconds: tmpReservation.rate_limit_unit_in_seconds
+                        unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                     };
                     await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
                     debug('wheelchair rate limit reset.');
