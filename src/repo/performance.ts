@@ -139,7 +139,6 @@ export class MongoRepository {
 
     /**
      * まだなければ保管する
-     * @param {factory.performance.IPerformance} performance
      */
     public async saveIfNotExists(performance: factory.performance.IPerformance) {
         const update: any = {
@@ -150,10 +149,6 @@ export class MongoRepository {
             superEvent: performance.superEvent,
             location: performance.location,
             additionalProperty: performance.additionalProperty,
-            tourNumber: (<any>performance).tourNumber,
-            film: (<any>performance).film,
-            theater: (<any>performance).theater,
-            screen: (<any>performance).screen,
             ticket_type_group: performance.ticket_type_group
         };
 
@@ -165,11 +160,7 @@ export class MongoRepository {
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        delete (<any>setOnInsert).tourNumber;
-        delete (<any>setOnInsert).film;
-        delete (<any>setOnInsert).theater;
-        delete (<any>setOnInsert).screen;
-        delete (<any>setOnInsert).ticket_type_group;
+        delete setOnInsert.ticket_type_group;
 
         await this.performanceModel.findByIdAndUpdate(
             performance.id,
