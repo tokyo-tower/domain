@@ -432,8 +432,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     }
 
     // 注文番号を作成
-    const performanceDay = moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD');
-    const orderNumber = `TT-${performanceDay}-${tmpReservations[0].reservationNumber}`;
+    const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${tmpReservations[0].reservationNumber}`;
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
 
     // 予約データを作成
@@ -515,7 +514,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             orderDate: orderDate,
             isGift: false,
             orderInquiryKey: {
-                performanceDay: performanceDay,
+                performanceDay: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
                 paymentNo: eventReservations[0].reservationNumber,
                 // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
                 // tslint:disable-next-line:no-magic-numbers
