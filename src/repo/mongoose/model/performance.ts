@@ -113,6 +113,21 @@ schema.index(
     { name: 'searchByEndDate' }
 );
 
+schema.index(
+    { 'ttts_extension.online_sales_status': 1, startDate: 1 },
+    { name: 'searchByOnlineSalesStatus' }
+);
+
+schema.index(
+    { 'ttts_extension.online_sales_update_at': 1, startDate: 1 },
+    { name: 'searchByOnlineSalesUpdateAt' }
+);
+
+schema.index(
+    { 'ttts_extension.refund_status': 1, startDate: 1 },
+    { name: 'searchByRefundStatus' }
+);
+
 export default mongoose.model('Performance', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment
