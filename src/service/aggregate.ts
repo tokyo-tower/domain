@@ -188,10 +188,10 @@ function aggregateRemainingAttendeeCapacity(params: {
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
             remainingAttendeeCapacity = normalSeats.filter(
-                (s) => unavailableSeatNumbers.indexOf(s.code) < 0
+                (s) => unavailableSeatNumbers.indexOf(s.branchCode) < 0
             ).length;
             remainingAttendeeCapacityForWheelchair = wheelChairSeats.filter(
-                (s) => unavailableSeatNumbers.indexOf(s.code) < 0
+                (s) => unavailableSeatNumbers.indexOf(s.branchCode) < 0
             ).length;
 
             // 車椅子確保分が一般座席になければ車椅子は0(同伴者考慮)

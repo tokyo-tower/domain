@@ -309,8 +309,10 @@ function reserveTemporarilyByOffer(
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
             // 未確保の座席に絞る
-            availableSeats = availableSeats.filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
-            availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+            availableSeats = availableSeats.filter((s) => unavailableSeatNumbers.indexOf(s.branchCode) < 0);
+            availableSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.filter(
+                (s) => unavailableSeatNumbers.indexOf(s.branchCode) < 0
+            );
 
             // 車椅子予約の場合、車椅子座席に絞る
             // 一般予約は、車椅子座席でも予約可能
@@ -349,7 +351,7 @@ function reserveTemporarilyByOffer(
             debug(availableSeats.length, 'availableSeats exist');
 
             // 1つ空席を選択
-            const selectedSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.code) < 0);
+            const selectedSeat = availableSeats.find((s) => unavailableSeatNumbers.indexOf(s.branchCode) < 0);
             debug('selectedSeat:', selectedSeat);
 
             // 余分確保分を選択
@@ -357,25 +359,25 @@ function reserveTemporarilyByOffer(
 
             // 空席があれば確保
             if (selectedSeat !== undefined) {
-                debug('locking...', selectedSeat.code);
+                debug('locking...', selectedSeat.branchCode);
                 await repos.stock.lock({
                     eventId: performance.id,
                     offers: [
                         {
-                            seatSection: section.code,
-                            seatNumber: selectedSeat.code
+                            seatSection: section.branchCode,
+                            seatNumber: selectedSeat.branchCode
                         },
                         ...selectedSeatsForAdditionalStocks.map((s) => {
                             return {
-                                seatSection: section.code,
-                                seatNumber: s.code
+                                seatSection: section.branchCode,
+                                seatNumber: s.branchCode
                             };
                         })
                     ],
                     expires: moment(performance.endDate).add(1, 'month').toDate(),
                     holder: transactionId
                 });
-                debug('locked:', selectedSeat.code);
+                debug('locked:', selectedSeat.branchCode);
 
                 tmpReservations.push({
                     reservationNumber: paymentNo,
@@ -385,7 +387,7 @@ function reserveTemporarilyByOffer(
                         priceCurrency: factory.priceCurrency.JPY,
                         ticketedSeat: {
                             seatSection: '',
-                            seatNumber: selectedSeat.code,
+                            seatNumber: selectedSeat.branchCode,
                             seatRow: '',
                             seatingType: <any>selectedSeat.seatingType,
                             typeOf: factory.chevre.placeType.Seat
@@ -421,7 +423,7 @@ function reserveTemporarilyByOffer(
                         ? [
                             {
                                 name: 'extraSeatNumbers',
-                                value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.code))
+                                value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.branchCode))
                             },
                             {
                                 name: 'transaction',
@@ -435,7 +437,7 @@ function reserveTemporarilyByOffer(
                             }
                         ],
                     transaction: transactionId,
-                    seat_code: selectedSeat.code,
+                    seat_code: selectedSeat.branchCode,
                     ticket_type: offer.ticket_type,
                     ticket_type_name: offer.ticket_type_name,
                     ticket_type_charge: offer.ticket_type_charge,
@@ -452,7 +454,7 @@ function reserveTemporarilyByOffer(
                             priceCurrency: factory.priceCurrency.JPY,
                             ticketedSeat: {
                                 seatSection: '',
-                                seatNumber: s.code,
+                                seatNumber: s.branchCode,
                                 seatRow: '',
                                 seatingType: <any>s.seatingType,
                                 typeOf: factory.chevre.placeType.Seat
@@ -495,7 +497,7 @@ function reserveTemporarilyByOffer(
                             }
                         ],
                         transaction: transactionId,
-                        seat_code: s.code,
+                        seat_code: s.branchCode,
                         ticket_type: offer.ticket_type,
                         ticket_type_name: offer.ticket_type_name,
                         ticket_type_charge: offer.ticket_type_charge,
@@ -612,7 +614,7 @@ function removeTmpReservations(
                     eventId: performance.id,
                     offer: {
                         seatNumber: tmpReservation.seat_code,
-                        seatSection: section.code
+                        seatSection: section.branchCode
                     }
                 };
                 const holder = await repos.stock.getHolder(lockKey);

@@ -46,7 +46,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     eventId: performance.id,
                     offer: {
                         seatNumber: tmpReservation.seat_code,
-                        seatSection: section.code
+                        seatSection: section.branchCode
                     }
                 };
                 const holder = await stockRepo.getHolder(lockKey);
