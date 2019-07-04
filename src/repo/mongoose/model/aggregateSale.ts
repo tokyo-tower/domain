@@ -3,7 +3,6 @@ import * as mongoose from 'mongoose';
 // import Film from './film';
 // import Performance from './performance';
 // import multilingualString from './schemaTypes/multilingualString';
-// import ticketCancelCharge from './schemaTypes/ticketCancelCharge';
 // import tttsExtensionTicketType from './schemaTypes/tttsExtensionTicketType';
 // import Screen from './screen';
 // import Theater from './theater';

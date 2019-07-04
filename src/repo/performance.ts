@@ -1,4 +1,3 @@
-import * as moment from 'moment-timezone';
 import { Connection } from 'mongoose';
 
 import * as factory from '@motionpicture/ttts-factory';
@@ -20,28 +19,6 @@ export class MongoRepository {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
-
-        if (Array.isArray(params.days)) {
-            andConditions.push({ day: { $in: params.days } });
-        }
-
-        if (Array.isArray(params.startTimes)) {
-            andConditions.push({ start_time: { $in: params.startTimes } });
-        }
-
-        if (params.performanceId !== undefined) {
-            andConditions.push({ _id: params.performanceId });
-        }
-
-        if (params.day !== undefined) {
-            andConditions.push({
-                startDate: {
-                    $gte: moment(`${params.day}T00:00:00+09:00`, 'YYYYMMDDTHH:mm:ssZ').toDate(),
-                    $lt: moment(`${params.day}T00:00:00+09:00`, 'YYYYMMDDTHH:mm:ssZ').add(1, 'day').toDate()
-                }
-            });
-            // andConditions.push({ day: params.day });
-        }
 
         // 開始日時条件
         if (params.startFrom !== undefined) {

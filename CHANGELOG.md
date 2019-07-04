@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 券種インターフェースをChevre化
 - 予約変更時に更新日時を連携
 - パフォーマンスを開始日時で検索時にstartDateを参照するように調整
+- パフォーマンス検索条件をChevre化
 
 ### Deprecated
 
@@ -25,6 +26,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 仮予約インターフェースからrate_limit_unit_in_secondsを削除
 - 仮予約インターフェースから座席グレードを削除
 - パフォーマンスインターフェースから非推奨属性を削除
+- レポートサービスを廃止
 
 ### Fixed
 
