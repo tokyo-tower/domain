@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 仮予約インターフェースから座席グレードを削除
 - パフォーマンスインターフェースから非推奨属性を削除
 - レポートサービスを廃止
+- 測定データリポジトリを削除
 
 ### Fixed
 
