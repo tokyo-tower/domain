@@ -20,6 +20,12 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
+        if (Array.isArray((<any>params).ids)) {
+            andConditions.push({
+                _id: { $in: (<any>params).ids }
+            });
+        }
+
         // 開始日時条件
         if (params.startFrom !== undefined) {
             andConditions.push({

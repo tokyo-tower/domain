@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- パフォーマンス検索条件にIDを追加
+
 ### Changed
 
 ### Deprecated
