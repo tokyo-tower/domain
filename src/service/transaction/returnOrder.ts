@@ -67,6 +67,7 @@ export function confirm(params: {
         });
 
         const transactionResult = <factory.transaction.placeOrder.IResult>transaction.result;
+        const order = transactionResult.order;
         const creditCardSales = transactionResult.creditCardSales;
 
         // クレジットカード決済の場合、取引状態が実売上でなければまだ返品できない
@@ -76,12 +77,11 @@ export function confirm(params: {
 
         // 検証
         if (!params.forcibly) {
-            validateRequest(now, transactionResult.eventReservations[0].performance_start_date);
+            validateRequest(now, transactionResult.order.acceptedOffers[0].itemOffered.reservationFor.startDate);
         }
 
         const endDate = new Date();
-        const eventReservations = transactionResult.eventReservations;
-        const cancelName = `${eventReservations[0].purchaser_last_name} ${eventReservations[0].purchaser_first_name}`;
+        const cancelName = `${order.customer.familyName} ${order.customer.givenName}`;
         const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
             typeOf: factory.transactionType.ReturnOrder,
             status: factory.transactionStatusType.Confirmed,

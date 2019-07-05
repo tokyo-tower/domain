@@ -163,8 +163,9 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
             const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
 
             datas.push(
-                ...transactionResult.eventReservations
-                    .filter((r) => {
+                ...transactionResult.order.acceptedOffers
+                    .filter((o) => {
+                        const r = o.itemOffered;
                         // 余分確保分を除く
                         let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
                         if (r.additionalProperty !== undefined) {
@@ -175,12 +176,13 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
                             || extraProperty === undefined
                             || extraProperty.value !== '1';
                     })
-                    .map((r) => {
+                    .map((o) => {
                         return reservation2data(
-                            r,
-                            transactionResult.order.price,
+                            o.itemOffered,
+                            transactionResult.order,
                             <Date>params.transaction.endDate,
-                            AggregateUnit.SalesByEndDate
+                            AggregateUnit.SalesByEndDate,
+                            params.transaction.object.purchaser_group
                         );
                     })
             );
@@ -206,41 +208,46 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
         // 取引からキャンセル予約情報取得
         const placeOrderTransaction = params.transaction.object.transaction;
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
-        const eventReservations = placeOrderTransactionResult.eventReservations.filter((r) => {
-            // 余分確保分を除く
-            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (r.additionalProperty !== undefined) {
-                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            }
+        const reservations = placeOrderTransactionResult.order.acceptedOffers
+            .filter((o) => {
+                const r = o.itemOffered;
+                // 余分確保分を除く
+                let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                if (r.additionalProperty !== undefined) {
+                    extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                }
 
-            return r.additionalProperty === undefined
-                || extraProperty === undefined
-                || extraProperty.value !== '1';
-        });
+                return r.additionalProperty === undefined
+                    || extraProperty === undefined
+                    || extraProperty.value !== '1';
+            })
+            .map((o) => o.itemOffered);
 
-        for (const r of eventReservations) {
+        reservations.forEach((r, reservationIndex) => {
             // 座席分のキャンセルデータ
             datas.push({
                 ...reservation2data(
                     r,
-                    placeOrderTransactionResult.order.price,
+                    placeOrderTransactionResult.order,
                     <Date>params.transaction.endDate,
-                    AggregateUnit.SalesByEndDate
+                    AggregateUnit.SalesByEndDate,
+                    placeOrderTransaction.object.purchaser_group
                 ),
                 reservationStatus: Status4csv.Cancelled,
-                status_sort: `${r.status}_1`,
+                status_sort: `${r.reservationStatus}_1`,
                 cancellationFee: params.transaction.object.cancellationFee,
                 orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
             });
 
             // 購入分のキャンセル料データ
-            if (r.payment_seat_index === 0) {
+            if (reservationIndex === 0) {
                 datas.push({
                     ...reservation2data(
                         r,
-                        placeOrderTransactionResult.order.price,
+                        placeOrderTransactionResult.order,
                         <Date>params.transaction.endDate,
-                        AggregateUnit.SalesByEndDate
+                        AggregateUnit.SalesByEndDate,
+                        placeOrderTransaction.object.purchaser_group
                     ),
                     seat: {
                         code: '',
@@ -254,13 +261,13 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                     },
                     payment_seat_index: '',
                     reservationStatus: Status4csv.CancellationFee,
-                    status_sort: `${r.status}_2`,
+                    status_sort: `${r.reservationStatus}_2`,
                     cancellationFee: params.transaction.object.cancellationFee,
                     price: params.transaction.object.cancellationFee.toString(),
                     orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
                 });
             }
-        }
+        });
 
         debug('creating', datas.length, 'datas...');
 
@@ -301,11 +308,19 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
+        let paymentSeatIndex = (<any>params.reservation).payment_seat_index; // 互換性維持のため
+        if (Array.isArray(params.reservation.additionalProperty)) {
+            const paymentSeatIndexProperty = params.reservation.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
+            if (paymentSeatIndexProperty !== undefined) {
+                paymentSeatIndex = paymentSeatIndexProperty.value;
+            }
+        }
+
         const result = await aggregateSaleRepo.aggregateSaleModel.update(
             {
-                'performance.id': params.reservation.performance,
-                payment_no: params.reservation.payment_no,
-                payment_seat_index: params.reservation.payment_seat_index
+                'performance.id': params.reservation.reservationFor.id,
+                payment_no: params.reservation.reservationNumber,
+                payment_seat_index: paymentSeatIndex
             },
             {
                 checkedin: params.reservation.checkins.length > 0 ? 'TRUE' : 'FALSE',
@@ -322,68 +337,117 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
 /**
  * 予約データをcsvデータ型に変換する
  */
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 function reservation2data(
     r: factory.reservation.event.IReservation,
-    orderPrice: number,
+    order: factory.order.IOrder,
     targetDate: Date,
-    aggregateUnit: AggregateUnit
+    aggregateUnit: AggregateUnit,
+    purchaserGroup: factory.person.Group
 ): IData {
+    const underName = r.underName;
+    let age = '';
+    if (underName !== undefined && Array.isArray(underName.identifier)) {
+        const ageProperty = underName.identifier.find((p) => p.name === 'age');
+        if (ageProperty !== undefined) {
+            age = ageProperty.value;
+        }
+    }
+
+    let username = '';
+    if (underName !== undefined && Array.isArray(underName.identifier)) {
+        const usernameProperty = underName.identifier.find((p) => p.name === 'username');
+        if (usernameProperty !== undefined) {
+            username = usernameProperty.value;
+        }
+    }
+
+    let paymentMethod = '';
+    if (underName !== undefined && Array.isArray(underName.identifier)) {
+        const paymentMethodProperty = underName.identifier.find((p) => p.name === 'paymentMethod');
+        if (paymentMethodProperty !== undefined) {
+            paymentMethod = paymentMethodProperty.value;
+        }
+    }
+
     // 客層取得 (購入者居住国：2桁、年代：2桁、性別：1桁)
-    const locale = (r.purchaser_address !== undefined) ? r.purchaser_address : '';
-    const age = (r.purchaser_age !== undefined) ? r.purchaser_age : '';
-    const gender = (r.purchaser_gender !== undefined) ? r.purchaser_gender : '';
+    const locale = (underName !== undefined && (<any>underName).address !== undefined) ? String((<any>underName).address) : '';
+    const gender = (underName !== undefined && underName.gender !== undefined) ? underName.gender : '';
     const customerSegment = (locale !== '' ? locale : '__') + (age !== '' ? age : '__') + (gender !== '' ? gender : '_');
 
+    const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+        ? r.reservedTicket.ticketType.priceSpecification.price
+        : 0;
+
+    let csvCode = ((<any>r).ticket_ttts_extension !== undefined)
+        ? (<any>r).ticket_ttts_extension.csv_code
+        : ''; // 互換性維持のため
+    if (Array.isArray(r.reservedTicket.ticketType.additionalProperty)) {
+        const csvCodeProperty = r.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'csvCode');
+        if (csvCodeProperty !== undefined) {
+            csvCode = csvCodeProperty.value;
+        }
+    }
+
+    let paymentSeatIndex: string = ((<any>r).payment_seat_index !== undefined) ? (<any>r).payment_seat_index.toString() : ''; // 互換性維持のため
+    if (Array.isArray(r.additionalProperty)) {
+        const paymentSeatIndexProperty = r.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
+        if (paymentSeatIndexProperty !== undefined) {
+            paymentSeatIndex = paymentSeatIndexProperty.value;
+        }
+    }
+
     return {
-        payment_no: r.payment_no,
-        payment_seat_index: r.payment_seat_index.toString(),
+        payment_no: r.reservationNumber,
+        payment_seat_index: paymentSeatIndex,
         performance: {
-            id: r.performance,
-            startDay: r.performance_day,
-            startTime: r.performance_start_time
+            id: r.reservationFor.id,
+            startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
+            startTime: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('HHmm')
         },
         theater: {
-            name: r.theater_name.ja
+            name: r.reservationFor.superEvent.location.name.ja
         },
         screen: {
-            id: r.screen,
-            name: r.screen_name.ja
+            id: r.reservationFor.location.branchCode,
+            name: r.reservationFor.location.name.ja
         },
         film: {
-            id: r.film,
-            name: r.film_name.ja
+            id: r.reservationFor.superEvent.id,
+            name: r.reservationFor.superEvent.name.ja
         },
         seat: {
-            code: r.seat_code,
-            gradeName: r.seat_grade_name.ja,
-            gradeAdditionalCharge: r.seat_grade_additional_charge.toString()
+            code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : '',
+            gradeName: 'ノーマルシート',
+            gradeAdditionalCharge: '0'
         },
         ticketType: {
-            name: r.ticket_type_name.ja,
+            name: r.reservedTicket.ticketType.name.ja,
             // リリース当初の間違ったマスターデータをカバーするため
-            csvCode: (r.ticket_ttts_extension.csv_code === '0000000000231') ? '10031' : r.ticket_ttts_extension.csv_code,
-            charge: r.charge.toString()
+            // csvCode: (r.ticket_ttts_extension.csv_code === '0000000000231') ? '10031' : r.ticket_ttts_extension.csv_code,
+            csvCode: (csvCode === '0000000000231') ? '10031' : csvCode,
+            charge: unitPrice.toString()
         },
         customer: {
-            group: (purchaserGroupStrings[r.purchaser_group] !== undefined)
-                ? purchaserGroupStrings[r.purchaser_group]
-                : r.purchaser_group,
-            givenName: r.purchaser_first_name,
-            familyName: r.purchaser_last_name,
-            email: r.purchaser_email,
-            telephone: r.purchaser_tel,
+            group: (purchaserGroupStrings[purchaserGroup] !== undefined)
+                ? purchaserGroupStrings[purchaserGroup]
+                : purchaserGroup,
+            givenName: (underName !== undefined && underName.givenName !== undefined) ? underName.givenName : '',
+            familyName: (underName !== undefined && underName.familyName !== undefined) ? underName.familyName : '',
+            email: (underName !== undefined && underName.email !== undefined) ? underName.email : '',
+            telephone: (underName !== undefined && underName.telephone !== undefined) ? underName.telephone : '',
             segment: customerSegment,
-            username: (r.owner_username !== undefined) ? r.owner_username : ''
+            username: username
         },
-        orderDate: moment(r.purchased_at).format('YYYY/MM/DD HH:mm:ss'),
-        paymentMethod: (paymentMethodStrings[r.payment_method] !== undefined)
-            ? paymentMethodStrings[r.payment_method]
-            : r.payment_method,
+        orderDate: moment(order.orderDate).format('YYYY/MM/DD HH:mm:ss'),
+        paymentMethod: (paymentMethodStrings[paymentMethod] !== undefined)
+            ? paymentMethodStrings[paymentMethod]
+            : paymentMethod,
         checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
         checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when).format('YYYY/MM/DD HH:mm:ss') : '',
         reservationStatus: Status4csv.Reserved,
-        status_sort: r.status,
-        price: orderPrice.toString(),
+        status_sort: String(r.reservationStatus),
+        price: order.price.toString(),
         cancellationFee: 0,
         date_bucket: targetDate,
         aggregateUnit: aggregateUnit

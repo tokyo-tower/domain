@@ -18,7 +18,6 @@ import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as SellerRepo } from './repo/seller';
 import { RedisRepository as StockRepo } from './repo/stock';
 import { MongoRepository as TaskRepo } from './repo/task';
-import { MongoRepository as TelemetryRepo } from './repo/telemetry';
 import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
@@ -101,10 +100,6 @@ export class Stock extends StockRepo { }
  */
 export class Task extends TaskRepo { }
 /**
- * 測定データリポジトリ
- */
-export class Telemetry extends TelemetryRepo { }
-/**
  * トークンリポジトリ
  */
 export class Token extends TokenRepo { }
@@ -112,7 +107,3 @@ export class Token extends TokenRepo { }
  * 取引リポジトリ
  */
 export class Transaction extends TransactionRepo { }
-/**
- * 車椅子予約数リポジトリ
- */
-// export class WheelchairReservationCount extends WheelchairReservationCountRepo { }

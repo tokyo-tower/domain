@@ -122,7 +122,9 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
 
-        await Promise.all(placeOrderTransactionResult.eventReservations.map(async (reservation) => {
+        await Promise.all(placeOrderTransactionResult.order.acceptedOffers.map(async (o) => {
+            const reservation = o.itemOffered;
+
             await ReserveService.cancelReservation(reservation)({
                 reservation: reservationRepo,
                 stock: stockRepo,
@@ -276,7 +278,14 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
         const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
-        const orderId = placeOrderTransactionResult.eventReservations[0].gmo_order_id;
+        const reservation = placeOrderTransactionResult.order.acceptedOffers[0].itemOffered;
+        let orderId = (<any>reservation).gmo_order_id; // 互換性維持のため
+        if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
+            const orderIdProperty = reservation.underName.identifier.find((p) => p.name === 'gmoOrderId');
+            if (orderIdProperty !== undefined) {
+                orderId = orderIdProperty.value;
+            }
+        }
 
         // 取引状態参照
         const searchTradeResult = await GMO.services.credit.searchTrade({
@@ -309,7 +318,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
                 // パフォーマンスに返品済数を連携
                 await performanceRepo.updateOne(
-                    { _id: placeOrderTransactionResult.eventReservations[0].performance },
+                    { _id: placeOrderTransactionResult.order.acceptedOffers[0].itemOffered.reservationFor.id },
                     {
                         $inc: {
                             'ttts_extension.refunded_count': 1,
@@ -322,7 +331,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                 // すべて返金完了したら、返金ステータス変更
                 await performanceRepo.updateOne(
                     {
-                        _id: placeOrderTransactionResult.eventReservations[0].performance,
+                        _id: placeOrderTransactionResult.order.acceptedOffers[0].itemOffered.reservationFor.id,
                         'ttts_extension.unrefunded_count': 0
                     },
                     {
@@ -356,7 +365,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
  * パフォーマンス指定で全注文を返品する
  */
 export function returnAllByPerformance(
-    agentId: string, performanceId: string
+    agentId: string, performanceId: string, clientIds: string[]
 ): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
     return async (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => {
         // パフォーマンス情報取得
@@ -365,7 +374,7 @@ export function returnAllByPerformance(
 
         // 終了済かどうか
         const now = moment();
-        const endDate = moment(performance.end_date);
+        const endDate = moment(performance.endDate);
         debug(now, endDate);
         if (endDate >= now) {
             throw new Error('上映が終了していないので返品処理を実行できません。');
@@ -380,7 +389,8 @@ export function returnAllByPerformance(
             executionResults: [],
             data: {
                 agentId: agentId,
-                performanceId: performanceId
+                performanceId: performanceId,
+                clientIds: clientIds
             }
         });
 
@@ -388,21 +398,48 @@ export function returnAllByPerformance(
     };
 }
 
-export function processReturnAllByPerformance(agentId: string, performanceId: string) {
+export function processReturnAllByPerformance(agentId: string, performanceId: string, clientIds: string[]) {
     return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
-        const reservations = await reservationRepo.search(
-            {
-                typeOf: factory.reservationType.EventReservation,
-                status: factory.reservationStatusType.ReservationConfirmed,
-                performance: performanceId,
-                purchaser_group: factory.person.Group.Customer
-            }
-        );
+        const reservations = (clientIds.length > 0)
+            ? await reservationRepo.search(
+                {
+                    typeOf: factory.reservationType.EventReservation,
+                    reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
+                    reservationFor: { id: performanceId },
+                    underName: {
+                        identifiers: clientIds.map((clientId) => {
+                            return { name: 'clientId', value: clientId };
+                        })
+                    }
+                }
+            )
+            : [];
 
         // 入場履歴なしの取引IDを取り出す
-        let transactionIds = reservations.map((r) => r.transaction);
-        const transactionsIdsWithCheckins = reservations.filter((r) => (r.checkins.length > 0)).map((r) => r.transaction);
+        let transactionIds = reservations.map((r) => {
+            let transactionId = (<any>r).transaction; // 互換性維持のため
+            if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
+                if (transactionProperty !== undefined) {
+                    transactionId = transactionProperty.value;
+                }
+            }
+
+            return transactionId;
+        });
+        const transactionsIdsWithCheckins = reservations.filter((r) => (r.checkins.length > 0))
+            .map((r) => {
+                let transactionId = (<any>r).transaction; // 互換性維持のため
+                if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                    const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
+                    if (transactionProperty !== undefined) {
+                        transactionId = transactionProperty.value;
+                    }
+                }
+
+                return transactionId;
+            });
         debug(transactionIds, transactionsIdsWithCheckins);
         transactionIds = uniq(difference(transactionIds, transactionsIdsWithCheckins));
         debug('confirming returnOrderTransactions...', transactionIds);
@@ -443,7 +480,8 @@ async function createEmailMessage4sellerReason(
     placeOrderTransaction: factory.transaction.placeOrder.ITransaction
 ): Promise<factory.creativeWork.message.email.IAttributes> {
     const transactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
-    const reservation = transactionResult.eventReservations[0];
+    const order = transactionResult.order;
+    const reservation = transactionResult.order.acceptedOffers[0].itemOffered;
 
     const email = new Email({
         views: { root: `${__dirname}/../../emails` },
@@ -467,17 +505,22 @@ async function createEmailMessage4sellerReason(
             count: number;
         };
     } = {};
-    transactionResult.eventReservations.forEach((r) => {
+    transactionResult.order.acceptedOffers.forEach((o) => {
+        const r = o.itemOffered;
+        const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+            ? r.reservedTicket.ticketType.priceSpecification.price
+            : 0;
+
         // チケットタイプごとにチケット情報セット
-        if (ticketInfos[r.ticket_type] === undefined) {
-            ticketInfos[r.ticket_type] = {
-                name: r.ticket_type_name,
-                charge: `\\${numeral(r.charge).format('0,0')}`,
+        if (ticketInfos[r.reservedTicket.ticketType.id] === undefined) {
+            ticketInfos[r.reservedTicket.ticketType.id] = {
+                name: r.reservedTicket.ticketType.name,
+                charge: `\\${numeral(unitPrice).format('0,0')}`,
                 count: 0
             };
         }
 
-        ticketInfos[r.ticket_type].count += 1;
+        ticketInfos[r.reservedTicket.ticketType.id].count += 1;
     });
     // 券種ごとの表示情報編集 (sort順を変えないよう同期Loop:"for of")
     const ticketInfoJa = Object.keys(ticketInfos).map((ticketTypeId) => {
@@ -492,13 +535,13 @@ async function createEmailMessage4sellerReason(
     }).join('\n');
 
     const message = await email.render('returnOrderBySeller', {
-        purchaserNameJa: `${reservation.purchaser_last_name} ${reservation.purchaser_first_name}`,
-        purchaserNameEn: reservation.purchaser_name,
-        paymentNo: reservation.payment_no,
-        day: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('YYYY/MM/DD'),
-        startTime: moment(reservation.performance_start_date).tz('Asia/Tokyo').format('HH:mm'),
+        purchaserNameJa: `${order.customer.familyName} ${order.customer.givenName}`,
+        purchaserNameEn: order.customer.name,
+        paymentNo: reservation.reservationNumber,
+        day: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'),
+        startTime: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('HH:mm'),
         amount: numeral(transactionResult.order.price).format('0,0'),
-        numberOfReservations: transactionResult.eventReservations.length,
+        numberOfReservations: transactionResult.order.acceptedOffers.length,
         ticketInfoJa,
         ticketInfoEn
     });
@@ -510,8 +553,8 @@ async function createEmailMessage4sellerReason(
             email: 'noreply@tokyotower.co.jp'
         },
         toRecipient: {
-            name: reservation.purchaser_name,
-            email: reservation.purchaser_email
+            name: order.customer.name,
+            email: order.customer.email
         },
         about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Tower Top Deck Tour)',
         text: message

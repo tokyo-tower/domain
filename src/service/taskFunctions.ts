@@ -133,7 +133,7 @@ export function returnOrdersByPerformance(
         const reservationRepo = new ReservationRepo(connection);
         const transactionRepo = new TransactionRepo(connection);
 
-        await OrderService.processReturnAllByPerformance(data.agentId, data.performanceId)(
+        await OrderService.processReturnAllByPerformance(data.agentId, data.performanceId, data.clientIds)(
             performanceRepo, reservationRepo, transactionRepo
         );
     };

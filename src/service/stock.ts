@@ -15,6 +15,8 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
 
+const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
 /**
  * 仮予約承認取消
  */
@@ -34,7 +36,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
             debug('calling deleteTmpReserve...', action);
 
             const performance = action.object.performance;
-            const section = performance.screen.sections[0];
+            const section = performance.location.sections[0];
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
@@ -44,7 +46,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     eventId: performance.id,
                     offer: {
                         seatNumber: tmpReservation.seat_code,
-                        seatSection: section.code
+                        seatSection: section.branchCode
                     }
                 };
                 const holder = await stockRepo.getHolder(lockKey);
@@ -52,13 +54,21 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     await stockRepo.unlock(lockKey);
                 }
 
-                if (tmpReservation.rate_limit_unit_in_seconds > 0) {
+                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
+                    const categoryProperty = tmpReservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                    if (categoryProperty !== undefined) {
+                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                    }
+                }
+
+                if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                     debug('resetting wheelchair rate limit...');
-                    const performanceStartDate = moment(`${performance.start_date}`).toDate();
+                    const performanceStartDate = moment(`${performance.startDate}`).toDate();
                     const rateLimitKey = {
                         performanceStartDate: performanceStartDate,
-                        ticketTypeCategory: tmpReservation.ticket_ttts_extension.category,
-                        unitInSeconds: tmpReservation.rate_limit_unit_in_seconds
+                        ticketTypeCategory: ticketTypeCategory,
+                        unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                     };
                     await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
                     debug('wheelchair rate limit reset.');
@@ -88,11 +98,12 @@ export function cancelSeatReservationAuth(transactionId: string) {
 export function transferSeatReservation(transactionId: string) {
     return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo, taskRepo: TaskRepo) => {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
-        const eventReservations = (<factory.transaction.placeOrder.IResult>transaction.result).eventReservations;
+        const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
+            .map((o) => o.itemOffered);
 
-        await Promise.all(eventReservations.map(async (eventReservation) => {
+        await Promise.all(reservations.map(async (reservation) => {
             /// 予約データを作成する
-            await reservationRepo.saveEventReservation(eventReservation);
+            await reservationRepo.saveEventReservation(reservation);
 
             // 集計タスク作成
             const task: factory.task.aggregateEventReservations.IAttributes = {
@@ -104,7 +115,7 @@ export function transferSeatReservation(transactionId: string) {
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    id: eventReservation.performance
+                    id: reservation.reservationFor.id
                 }
             };
             await taskRepo.save(task);

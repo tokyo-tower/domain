@@ -20,31 +20,15 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
-        if (Array.isArray(params.days)) {
-            andConditions.push({ day: { $in: params.days } });
-        }
-
-        if (params.day !== undefined) {
-            andConditions.push({ day: params.day });
-        }
-
-        if (Array.isArray(params.startTimes)) {
-            andConditions.push({ start_time: { $in: params.startTimes } });
-        }
-
-        if (params.performanceId !== undefined) {
-            andConditions.push({ _id: params.performanceId });
-        }
-
         // 開始日時条件
         if (params.startFrom !== undefined) {
             andConditions.push({
-                start_date: { $gte: params.startFrom }
+                startDate: { $gte: params.startFrom }
             });
         }
         if (params.startThrough !== undefined) {
             andConditions.push({
-                start_date: { $lt: params.startThrough }
+                startDate: { $lt: params.startThrough }
             });
         }
 
@@ -132,7 +116,6 @@ export class MongoRepository {
 
     /**
      * まだなければ保管する
-     * @param {factory.performance.IPerformance} performance
      */
     public async saveIfNotExists(performance: factory.performance.IPerformance) {
         const update: any = {
@@ -143,10 +126,6 @@ export class MongoRepository {
             superEvent: performance.superEvent,
             location: performance.location,
             additionalProperty: performance.additionalProperty,
-            tourNumber: performance.tourNumber,
-            film: performance.film,
-            theater: performance.theater,
-            screen: performance.screen,
             ticket_type_group: performance.ticket_type_group
         };
 
@@ -158,10 +137,6 @@ export class MongoRepository {
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        delete setOnInsert.tourNumber;
-        delete setOnInsert.film;
-        delete setOnInsert.theater;
-        delete setOnInsert.screen;
         delete setOnInsert.ticket_type_group;
 
         await this.performanceModel.findByIdAndUpdate(

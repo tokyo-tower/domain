@@ -3,6 +3,7 @@
  */
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
+import * as moment from 'moment-timezone';
 
 import * as repository from '../repository';
 
@@ -49,10 +50,11 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             page: (searchConditions.page !== undefined) ? searchConditions.page : 1,
             sort: (searchConditions.sort !== undefined)
                 ? searchConditions.sort
-                : {
-                    day: 1,
-                    start_time: 1
-                }
+                : { startDate: 1 }
+            // : {
+            //     day: 1,
+            //     start_time: 1
+            // }
         });
         debug('performances found.', performances);
 
@@ -64,13 +66,21 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             const ticketTypes: factory.offer.seatReservation.ITicketType[] = performance.ticket_type_group.ticket_types;
             const eventWithAggregation = eventsWithAggregation.find((e) => e.id === performance.id);
 
+            let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
+            if (performance.additionalProperty !== undefined) {
+                const tourNumberProperty = performance.additionalProperty.find((p) => p.name === 'tourNumber');
+                if (tourNumberProperty !== undefined) {
+                    tourNumber = tourNumberProperty.value;
+                }
+            }
+
             return {
                 id: performance.id,
-                doorTime: performance.door_time,
-                startDate: performance.start_date,
-                endDate: performance.end_date,
+                doorTime: performance.doorTime,
+                startDate: performance.startDate,
+                endDate: performance.endDate,
                 duration: performance.duration,
-                tourNumber: performance.tour_number,
+                tourNumber: tourNumber,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
                 maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
@@ -99,12 +109,12 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 extension: performance.ttts_extension,
                 additionalProperty: performance.additionalProperty,
                 attributes: {
-                    day: performance.day,
-                    open_time: performance.open_time,
-                    start_time: performance.start_time,
-                    end_time: performance.end_time,
-                    start_date: performance.start_date,
-                    end_date: performance.end_date,
+                    day: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
+                    open_time: moment(performance.doorTime).tz('Asia/Tokyo').format('HHmm'),
+                    start_time: moment(performance.startDate).tz('Asia/Tokyo').format('HHmm'),
+                    end_time: moment(performance.endDate).tz('Asia/Tokyo').format('HHmm'),
+                    start_date: performance.startDate,
+                    end_date: performance.endDate,
                     // tslint:disable-next-line:no-magic-numbers
                     seat_status: (eventWithAggregation !== undefined)
                         ? eventWithAggregation.remainingAttendeeCapacity
@@ -128,7 +138,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                             }
                         };
                     }),
-                    tour_number: performance.ttts_extension.tour_number,
+                    tour_number: tourNumber,
                     online_sales_status: performance.ttts_extension.online_sales_status,
                     refunded_count: performance.ttts_extension.refunded_count,
                     refund_status: performance.ttts_extension.refund_status,
@@ -142,64 +152,5 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             numberOfPerformances: performancesCount,
             filmIds: filmIds
         };
-    };
-}
-
-/**
- * 入場数の集計を行う
- * @param checkinGates 入場ゲートリスト
- * @param reservations 予約リスト
- * @param offers 販売情報リスト
- */
-export async function aggregateCheckinCount(
-    checkinGates: factory.place.checkinGate.IPlace[],
-    reservations: factory.reservation.event.IReservation[],
-    offers: factory.offer.seatReservation.ITicketType[]
-): Promise<{
-    checkinCount: number;
-    checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
-}> {
-    // 全予約の入場履歴をマージ
-    const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
-        (a, b) => {
-            // 同一ポイントでの重複チェックインを除外
-            // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
-            const checkinWheres = b.checkins.map((c) => c.where);
-            const uniqueCheckins = b.checkins
-                .filter((c, pos) => checkinWheres.indexOf(c.where) === pos)
-                .map((c) => {
-                    return {
-                        ...c,
-                        ticketType: b.ticket_type,
-                        ticketCategory: b.ticket_ttts_extension.category
-                    };
-                });
-
-            return [...a, ...uniqueCheckins];
-        },
-        []
-    );
-
-    // 入場ゲートごとに、券種ごとの入場者数を算出する
-    const checkinCountsByWhere = checkinGates.map((checkinGate) => {
-        // この入場ゲートの入場履歴
-        const uniqueCheckins4where = allUniqueCheckins.filter((c) => c.where === checkinGate.identifier);
-
-        return {
-            where: checkinGate.identifier,
-            checkinCountsByTicketType: offers.map((offer) => {
-                return {
-                    ticketType: offer.id,
-                    ticketCategory: offer.ttts_extension.category,
-                    // この券種の入場履歴数を集計
-                    count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
-                };
-            })
-        };
-    });
-
-    return {
-        checkinCount: allUniqueCheckins.length,
-        checkinCountsByWhere: checkinCountsByWhere
     };
 }

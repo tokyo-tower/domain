@@ -44,6 +44,21 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
+        if (params.modifiedFrom !== undefined) {
+            andConditions.push({
+                modifiedTime: { $gte: params.modifiedFrom }
+            });
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.modifiedThrough !== undefined) {
+            andConditions.push({
+                modifiedTime: { $lte: params.modifiedThrough }
+            });
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
         if (Array.isArray(params.reservationStatuses)) {
             andConditions.push({
                 reservationStatus: { $in: params.reservationStatuses }
@@ -127,12 +142,12 @@ export class MongoRepository {
 
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if ((<any>params.reservationFor).endFrom instanceof Date) {
+            if (params.reservationFor.endFrom instanceof Date) {
                 andConditions.push(
                     {
                         'reservationFor.endDate': {
                             $exists: true,
-                            $gte: (<any>params.reservationFor).endFrom
+                            $gte: params.reservationFor.endFrom
                         }
                     }
                 );
@@ -140,15 +155,96 @@ export class MongoRepository {
 
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if ((<any>params.reservationFor).endThrough instanceof Date) {
+            if (params.reservationFor.endThrough instanceof Date) {
                 andConditions.push(
                     {
                         'reservationFor.endDate': {
                             $exists: true,
-                            $lt: (<any>params.reservationFor).endThrough
+                            $lt: params.reservationFor.endThrough
                         }
                     }
                 );
+            }
+        }
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (params.reservedTicket !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservedTicket.ticketType !== undefined) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketType.ids)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketType.id': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketType.ids
+                            }
+                        }
+                    );
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (params.reservedTicket.ticketType.category !== undefined) {
+                    // tslint:disable-next-line:no-single-line-block-comment
+                    /* istanbul ignore else */
+                    if (Array.isArray(params.reservedTicket.ticketType.category.ids)) {
+                        andConditions.push(
+                            {
+                                'reservedTicket.ticketType.category.id': {
+                                    $exists: true,
+                                    $in: params.reservedTicket.ticketType.category.ids
+                                }
+                            }
+                        );
+                    }
+                }
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (params.reservedTicket.ticketedSeat !== undefined) {
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketedSeat.seatNumbers)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketedSeat.seatNumber': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketedSeat.seatNumbers
+                            }
+                        }
+                    );
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketedSeat.seatRows)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketedSeat.seatRow': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketedSeat.seatRows
+                            }
+                        }
+                    );
+                }
+
+                // tslint:disable-next-line:no-single-line-block-comment
+                /* istanbul ignore else */
+                if (Array.isArray(params.reservedTicket.ticketedSeat.seatSections)) {
+                    andConditions.push(
+                        {
+                            'reservedTicket.ticketedSeat.seatSection': {
+                                $exists: true,
+                                $in: params.reservedTicket.ticketedSeat.seatSections
+                            }
+                        }
+                    );
+                }
             }
         }
 
@@ -282,111 +378,6 @@ export class MongoRepository {
             andConditions.push({ checkins: params.checkins });
         }
 
-        if (Array.isArray(params.orderNumbers)) {
-            andConditions.push({ order_number: { $in: params.orderNumbers } });
-        }
-
-        if (params.performance !== undefined) {
-            andConditions.push({ performance: params.performance });
-        }
-
-        if (Array.isArray(params.performances)) {
-            andConditions.push({ performance: { $in: params.performances } });
-        }
-
-        if (params.status !== undefined) {
-            andConditions.push({ status: params.status });
-
-        }
-
-        if (params.purchaser_group !== undefined) {
-            andConditions.push({ purchaser_group: params.purchaser_group });
-        }
-
-        if (params.performanceStartFrom instanceof Date) {
-            andConditions.push({
-                performance_start_date: {
-                    $gte: params.performanceStartFrom
-                }
-            });
-        }
-
-        if (params.performanceStartThrough instanceof Date) {
-            andConditions.push({
-                performance_start_date: {
-                    $lte: params.performanceStartThrough
-                }
-            });
-        }
-
-        if (params.performanceEndFrom instanceof Date) {
-            andConditions.push({
-                performance_end_date: {
-                    $gte: params.performanceEndFrom
-                }
-            });
-        }
-
-        if (params.performanceEndThrough instanceof Date) {
-            andConditions.push({
-                performance_end_date: {
-                    $lte: params.performanceEndThrough
-                }
-            });
-        }
-
-        // 来塔日
-        if (params.performance_day !== undefined) {
-            andConditions.push({ performance_day: params.performance_day });
-        }
-
-        // 開始時間
-        if (params.performanceStartTimeFrom !== undefined) {
-            andConditions.push({ performance_start_time: { $gte: params.performanceStartTimeFrom } });
-        }
-        if (params.performanceStartTimeTo !== undefined) {
-            andConditions.push({ performance_start_time: { $lte: params.performanceStartTimeTo } });
-        }
-
-        // 購入番号
-        if (params.payment_no !== undefined) {
-            andConditions.push({ payment_no: { $regex: `${params.payment_no}` } });
-        }
-
-        // アカウント
-        if (params.owner_username !== undefined) {
-            andConditions.push({ owner_username: params.owner_username });
-        }
-
-        if (params.transactionAgentId !== undefined) {
-            andConditions.push({ 'transaction_agent.id': params.transactionAgentId });
-        }
-
-        // 決済手段
-        if (params.paymentMethod !== undefined) {
-            andConditions.push({ payment_method: params.paymentMethod });
-        }
-
-        // 名前
-        if (params.purchaserLastName !== undefined) {
-            andConditions.push({ purchaser_last_name: new RegExp(params.purchaserLastName, 'i') }); // 大文字小文字区別しない
-        }
-        if (params.purchaserFirstName !== undefined) {
-            andConditions.push({ purchaser_first_name: new RegExp(params.purchaserFirstName, 'i') }); // 大文字小文字区別しない
-        }
-        // メアド
-        if (params.purchaserEmail !== undefined) {
-            andConditions.push({ purchaser_email: params.purchaserEmail });
-        }
-        // 電話番号
-        if (params.purchaserTel !== undefined) {
-            andConditions.push({ purchaser_tel: new RegExp(`${params.purchaserTel}$`) });
-        }
-        // メモ
-        if (params.watcherName !== undefined) {
-            andConditions.push({ watcher_name: new RegExp(params.watcherName, 'i') }); // 大文字小文字区別しない
-        }
-
         return andConditions;
     }
 
@@ -487,13 +478,15 @@ export class MongoRepository {
             { _id: params.id },
             {
                 reservationStatus: factory.reservationStatusType.ReservationCancelled,
-                status: factory.reservationStatusType.ReservationCancelled
+                status: factory.reservationStatusType.ReservationCancelled,
+                modifiedTime: new Date()
             }
         ).exec();
     }
 
     /**
      * 入場
+     * Chevreでいうところのattend
      */
     public async checkIn(params: {
         id: string;
@@ -501,7 +494,14 @@ export class MongoRepository {
     }): Promise<IReservation> {
         const doc = await this.reservationModel.findByIdAndUpdate(
             params.id,
-            { $push: { checkins: params.checkin } },
+            {
+                $push: { checkins: params.checkin },
+                $set: {
+                    checkedIn: true,
+                    attended: true,
+                    modifiedTime: new Date()
+                }
+            },
             { new: true }
         )
             .exec();
@@ -537,22 +537,22 @@ export class MongoRepository {
     /**
      * 鑑賞者更新
      */
-    public async updateWatcher(
-        conditions: {
-            _id: string;
-            status?: factory.reservationStatusType;
-        },
-        update: {
-            watcher_name?: string;
-            watcher_name_updated_at?: Date;
-        }
-    ): Promise<IReservation | null> {
-        const doc = await this.reservationModel.findOneAndUpdate(
-            conditions,
-            update,
-            { new: true }
-        ).exec();
+    // public async updateWatcher(
+    //     conditions: {
+    //         _id: string;
+    //         status?: factory.reservationStatusType;
+    //     },
+    //     update: {
+    //         watcher_name?: string;
+    //         watcher_name_updated_at?: Date;
+    //     }
+    // ): Promise<IReservation | null> {
+    //     const doc = await this.reservationModel.findOneAndUpdate(
+    //         conditions,
+    //         update,
+    //         { new: true }
+    //     ).exec();
 
-        return (doc !== null) ? doc.toObject() : null;
-    }
+    //     return (doc !== null) ? doc.toObject() : null;
+    // }
 }

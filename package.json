@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "@motionpicture/gmo-service": "^4.3.0",
-    "@motionpicture/ttts-factory": "4.0.0-alpha.0",
+    "@motionpicture/ttts-factory": "^6.0.0",
     "@sendgrid/mail": "^6.3.1",
     "@types/mongoose": "5.3.26",
     "@types/redis": "^2.8.8",
@@ -70,7 +70,7 @@
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-microsoft-contrib": "^6.0.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.5.2"
   },
   "engines": {
     "node": ">=6.9.1",
@@ -111,5 +111,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "16.1.0"
+  "version": "17.0.0"
 }
