@@ -10,13 +10,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v17.0.0 - 2019-07-05
+
+### Changed
+
 - 予約の入場以外の全属性をChevre化
 - 券種インターフェースをChevre化
 - 予約変更時に更新日時を連携
 - パフォーマンスを開始日時で検索時にstartDateを参照するように調整
 - パフォーマンス検索条件をChevre化
-
-### Deprecated
 
 ### Removed
 
@@ -28,10 +38,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - パフォーマンスインターフェースから非推奨属性を削除
 - レポートサービスを廃止
 - 測定データリポジトリを削除
-
-### Fixed
-
-### Security
 
 ## v16.1.0 - 2019-06-23
 
