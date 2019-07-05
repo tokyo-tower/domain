@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v17.1.0 - 2019-07-05
+
+### Added
+
+- パフォーマンス検索条件にIDを追加
+
 ## v17.0.0 - 2019-07-05
 
 ### Changed
