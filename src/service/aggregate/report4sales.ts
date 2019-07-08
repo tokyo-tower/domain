@@ -412,10 +412,15 @@ function reservation2data(
             id: r.reservationFor.location.branchCode,
             name: r.reservationFor.location.name.ja
         },
-        film: {
-            id: r.reservationFor.superEvent.id,
-            name: r.reservationFor.superEvent.name.ja
-        },
+        film: (r.reservationFor.superEvent.workPerformed !== undefined && r.reservationFor.superEvent.workPerformed !== null)
+            ? {
+                id: r.reservationFor.superEvent.workPerformed.identifier,
+                name: r.reservationFor.superEvent.workPerformed.name
+            }
+            : {
+                id: r.reservationFor.superEvent.id,
+                name: r.reservationFor.superEvent.name.ja
+            },
         seat: {
             code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : '',
             gradeName: 'ノーマルシート',
