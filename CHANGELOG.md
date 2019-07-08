@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v17.1.1 - 2019-07-08
+
+### Changed
+
+- Chevreからの作品コードの引き継ぎを調整
+
 ## v17.1.0 - 2019-07-05
 
 ### Added

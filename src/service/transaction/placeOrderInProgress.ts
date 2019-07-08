@@ -615,13 +615,15 @@ function temporaryReservation2confirmed(params: {
             name: performance.superEvent.name,
             videoFormat: [],
             soundFormat: [],
-            workPerformed: {
-                project: project,
-                typeOf: factory.chevre.creativeWorkType.Movie,
-                identifier: performance.superEvent.id,
-                id: performance.superEvent.id,
-                name: performance.superEvent.name.ja
-            },
+            workPerformed: (performance.superEvent.workPerformed !== undefined && performance.superEvent.workPerformed !== null)
+                ? performance.superEvent.workPerformed
+                : {
+                    project: project,
+                    typeOf: factory.chevre.creativeWorkType.Movie,
+                    identifier: performance.superEvent.id,
+                    id: performance.superEvent.id,
+                    name: performance.superEvent.name.ja
+                },
             location: {
                 project: project,
                 typeOf: factory.chevre.placeType.MovieTheater,
@@ -632,13 +634,15 @@ function temporaryReservation2confirmed(params: {
             }
 
         },
-        workPerformed: {
-            project: project,
-            typeOf: factory.chevre.creativeWorkType.Movie,
-            identifier: performance.superEvent.id,
-            id: performance.superEvent.id,
-            name: performance.superEvent.name.ja
-        },
+        workPerformed: (performance.superEvent.workPerformed !== undefined && performance.superEvent.workPerformed !== null)
+            ? performance.superEvent.workPerformed
+            : {
+                project: project,
+                typeOf: factory.chevre.creativeWorkType.Movie,
+                identifier: performance.superEvent.id,
+                id: performance.superEvent.id,
+                name: performance.superEvent.name.ja
+            },
         location: {
             project: project,
             typeOf: factory.chevre.placeType.ScreeningRoom,
