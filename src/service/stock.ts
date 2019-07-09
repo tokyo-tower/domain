@@ -1,6 +1,7 @@
 /**
  * 在庫の管理に対して責任を負うサービス
  */
+import * as chevre from '@chevre/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
@@ -13,9 +14,19 @@ import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
+import { credentials } from '../credentials';
+
 const debug = createDebug('ttts-domain:service');
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 /**
  * 仮予約承認取消
@@ -27,6 +38,11 @@ export function cancelSeatReservationAuth(transactionId: string) {
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo
     ) => {
+        const eventService = new chevre.service.Event({
+            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            auth: chevreAuthClient
+        });
+
         // 座席仮予約アクションを取得
         const authorizeActions: factory.action.authorize.seatReservation.IAction[] =
             await seatReservationAuthorizeActionRepo.findByTransactionId(transactionId)
@@ -36,7 +52,9 @@ export function cancelSeatReservationAuth(transactionId: string) {
             debug('calling deleteTmpReserve...', action);
 
             const performance = action.object.performance;
-            const section = performance.location.sections[0];
+
+            const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
+            const sectionOffer = screeningRoomSectionOffers[0];
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
@@ -46,7 +64,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                     eventId: performance.id,
                     offer: {
                         seatNumber: tmpReservation.seat_code,
-                        seatSection: section.branchCode
+                        seatSection: sectionOffer.branchCode
                     }
                 };
                 const holder = await stockRepo.getHolder(lockKey);

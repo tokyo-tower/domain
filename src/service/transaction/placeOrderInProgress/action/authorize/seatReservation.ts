@@ -1,6 +1,4 @@
-/**
- * 座席予約オファー承認サービス
- */
+import * as chevre from '@chevre/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
@@ -14,7 +12,17 @@ import { RedisRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TaskRepo } from '../../../../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
+import { credentials } from '../../../../../credentials';
+
 const debug = createDebug('ttts-domain:service');
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS !== undefined)
     ? Number(process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS)
@@ -297,11 +305,26 @@ function reserveTemporarilyByOffer(
         const tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         try {
-            const section = performance.location.sections[0];
+            const eventService = new chevre.service.Event({
+                endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+                auth: chevreAuthClient
+            });
+            const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
+            const sectionOffer = screeningRoomSectionOffers[0];
 
             // まず利用可能な座席は全座席
-            let availableSeats = section.seats;
-            let availableSeatsForAdditionalStocks = section.seats;
+            let availableSeats = sectionOffer.containsPlace.map((p) => {
+                return {
+                    branchCode: p.branchCode,
+                    seatingType: <factory.place.movieTheater.ISeatingType><unknown>p.seatingType
+                };
+            });
+            let availableSeatsForAdditionalStocks = sectionOffer.containsPlace.map((p) => {
+                return {
+                    branchCode: p.branchCode,
+                    seatingType: <factory.place.movieTheater.ISeatingType><unknown>p.seatingType
+                };
+            });
             debug(availableSeats.length, 'seats exist');
 
             const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: performance.id });
@@ -364,12 +387,12 @@ function reserveTemporarilyByOffer(
                     eventId: performance.id,
                     offers: [
                         {
-                            seatSection: section.branchCode,
+                            seatSection: sectionOffer.branchCode,
                             seatNumber: selectedSeat.branchCode
                         },
                         ...selectedSeatsForAdditionalStocks.map((s) => {
                             return {
-                                seatSection: section.branchCode,
+                                seatSection: sectionOffer.branchCode,
                                 seatNumber: s.branchCode
                             };
                         })
@@ -607,14 +630,19 @@ function removeTmpReservations(
     return async (repos: {
         stock: StockRepo;
     }) => {
-        const section = performance.location.sections[0];
+        const eventService = new chevre.service.Event({
+            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            auth: chevreAuthClient
+        });
+        const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
+        const sectionOffer = screeningRoomSectionOffers[0];
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
             try {
                 const lockKey = {
                     eventId: performance.id,
                     offer: {
                         seatNumber: tmpReservation.seat_code,
-                        seatSection: section.branchCode
+                        seatSection: sectionOffer.branchCode
                     }
                 };
                 const holder = await repos.stock.getHolder(lockKey);

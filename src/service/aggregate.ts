@@ -2,6 +2,7 @@
  * 集計サービス
  * このサービスは集計後の責任は負わないこと。
  */
+import * as chevre from '@chevre/api-nodejs-client';
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
@@ -9,6 +10,8 @@ import * as moment from 'moment';
 import * as repository from '../repository';
 
 import * as Report4SalesService from './aggregate/report4sales';
+
+import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
@@ -28,6 +31,14 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     : 6;
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export {
     Report4SalesService as report4sales
@@ -165,14 +176,25 @@ function aggregateRemainingAttendeeCapacity(params: {
         stock: repository.Stock;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
+        const eventService = new chevre.service.Event({
+            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            auth: chevreAuthClient
+        });
+
         let remainingAttendeeCapacity = MAXIMUM_ATTENDEE_CAPACITY;
         let remainingAttendeeCapacityForWheelchair = 1;
 
         try {
-            const section = params.performance.location.sections[0];
+            const screeningRoomSectionOffers = await eventService.searchOffers({ id: params.performance.id });
+            const sectionOffer = screeningRoomSectionOffers[0];
 
             // まず利用可能な座席は全座席
-            const availableSeats = section.seats;
+            const availableSeats = sectionOffer.containsPlace.map((p) => {
+                return {
+                    branchCode: p.branchCode,
+                    seatingType: <factory.place.movieTheater.ISeatingType><unknown>p.seatingType
+                };
+            });
 
             // 一般座席
             const normalSeats = availableSeats.filter(
