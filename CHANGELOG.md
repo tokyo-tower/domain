@@ -8,13 +8,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- オファーサービスを追加
+
 ### Changed
 
 - イベントの座席情報をChevreから取得するように変更
+- 複数座席の仮押さえを一度に実行するように変更
 
 ### Deprecated
 
 ### Removed
+
+- パフォーマンスインターフェースから券種情報を削除
 
 ### Fixed
 

@@ -86,22 +86,22 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 remainingAttendeeCapacityForWheelchair: (eventWithAggregation !== undefined)
                     ? eventWithAggregation.remainingAttendeeCapacityForWheelchair
                     : undefined,
-                ticketTypes: ticketTypes.map((ticketType) => {
-                    const offerAggregation = (eventWithAggregation !== undefined && eventWithAggregation.offers !== undefined)
-                        ? eventWithAggregation.offers.find((o) => o.id === ticketType.id)
-                        : undefined;
+                // ticketTypes: ticketTypes.map((ticketType) => {
+                //     const offerAggregation = (eventWithAggregation !== undefined && eventWithAggregation.offers !== undefined)
+                //         ? eventWithAggregation.offers.find((o) => o.id === ticketType.id)
+                //         : undefined;
 
-                    const unitPriceSpec = ticketType.priceSpecification;
+                //     const unitPriceSpec = ticketType.priceSpecification;
 
-                    return {
-                        ...ticketType,
-                        // POSに対するAPI互換性維持のため、charge属性追加
-                        charge: (unitPriceSpec !== undefined) ? unitPriceSpec.price : undefined,
-                        remainingAttendeeCapacity: (offerAggregation !== undefined)
-                            ? offerAggregation.remainingAttendeeCapacity
-                            : undefined
-                    };
-                }),
+                //     return {
+                //         ...ticketType,
+                //         // POSに対するAPI互換性維持のため、charge属性追加
+                //         charge: (unitPriceSpec !== undefined) ? unitPriceSpec.price : undefined,
+                //         remainingAttendeeCapacity: (offerAggregation !== undefined)
+                //             ? offerAggregation.remainingAttendeeCapacity
+                //             : undefined
+                //     };
+                // }),
                 extension: performance.ttts_extension,
                 additionalProperty: performance.additionalProperty,
                 attributes: {
