@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - パフォーマンスインターフェースから券種情報を削除
+- 仮予約インターフェースから冗長な属性を削除
 
 ### Fixed
 

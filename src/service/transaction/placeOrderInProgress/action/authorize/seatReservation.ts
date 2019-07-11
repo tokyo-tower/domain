@@ -180,7 +180,7 @@ function validateOffers(
                         typeOf: 'Ticket',
                         priceCurrency: factory.priceCurrency.JPY,
                         ticketedSeat: {
-                            seatSection: '',
+                            seatSection: sectionOffer.branchCode,
                             seatNumber: selectedSeat.branchCode,
                             seatRow: '',
                             seatingType: <any>selectedSeat.seatingType,
@@ -196,14 +196,14 @@ function validateOffers(
                                 value: JSON.stringify(selectedSeatsForAdditionalStocks.map((s) => s.branchCode))
                             }]
                             : []
-                    ],
-                    transaction: transactionId,
-                    seat_code: selectedSeat.branchCode,
-                    ticket_type: ticketType.id,
-                    ticket_type_name: <any>ticketType.name,
-                    ticket_type_charge: unitPriceSpec.price,
-                    charge: unitPriceSpec.price,
-                    watcher_name: offer.watcher_name
+                    ]
+                    // transaction: transactionId,
+                    // seat_code: selectedSeat.branchCode,
+                    // ticket_type: ticketType.id,
+                    // ticket_type_name: <any>ticketType.name,
+                    // ticket_type_charge: unitPriceSpec.price,
+                    // charge: unitPriceSpec.price,
+                    // watcher_name: offer.watcher_name
                 }
             });
 
@@ -223,7 +223,7 @@ function validateOffers(
                             typeOf: 'Ticket',
                             priceCurrency: factory.priceCurrency.JPY,
                             ticketedSeat: {
-                                seatSection: '',
+                                seatSection: sectionOffer.branchCode,
                                 seatNumber: s.branchCode,
                                 seatRow: '',
                                 seatingType: <any>s.seatingType,
@@ -240,14 +240,14 @@ function validateOffers(
                         additionalProperty: [
                             { name: 'extra', value: '1' },
                             { name: 'transaction', value: transactionId }
-                        ],
-                        transaction: transactionId,
-                        seat_code: s.branchCode,
-                        ticket_type: ticketType.id,
-                        ticket_type_name: <any>ticketType.name,
-                        ticket_type_charge: unitPriceSpec.price,
-                        charge: 0,
-                        watcher_name: offer.watcher_name
+                        ]
+                        // transaction: transactionId,
+                        // seat_code: s.branchCode,
+                        // ticket_type: ticketType.id,
+                        // ticket_type_name: <any>ticketType.name,
+                        // ticket_type_charge: unitPriceSpec.price,
+                        // charge: 0,
+                        // watcher_name: offer.watcher_name
                     }
                 });
             });
@@ -406,7 +406,7 @@ export function create(
 
             try {
                 // 仮予約があれば削除
-                await removeTmpReservations(tmpReservations, performance)({ stock: stockRepo });
+                await removeTmpReservations(transactionId, tmpReservations, performance)({ stock: stockRepo });
 
                 // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
                 await Promise.all(acceptedOffersWithSeatNumber.map(async (offer) => {
@@ -462,7 +462,15 @@ export function create(
         return seatReservationAuthorizeActionRepo.complete(
             action.id,
             {
-                price: tmpReservations.reduce((a, b) => a + b.charge, 0),
+                price: tmpReservations.reduce(
+                    (a, b) => {
+                        const unitPriceSpec = b.reservedTicket.ticketType.priceSpecification;
+                        const unitPrice = (unitPriceSpec !== undefined) ? unitPriceSpec.price : 0;
+
+                        return a + unitPrice;
+                    },
+                    0
+                ),
                 tmpReservations: tmpReservations
             }
         );
@@ -500,7 +508,7 @@ export function cancel(
 
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
-            await removeTmpReservations(actionResult.tmpReservations, performance)({ stock: stockRepo });
+            await removeTmpReservations(transactionId, actionResult.tmpReservations, performance)({ stock: stockRepo });
 
             // レート制限があれば解除
             const performanceStartDate = moment(performance.startDate).toDate();
@@ -551,30 +559,28 @@ export function cancel(
  * 仮予約データから在庫確保を取り消す
  */
 function removeTmpReservations(
+    transactionId: string,
     tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[],
     performance: factory.performance.IPerformanceWithDetails
 ) {
     return async (repos: {
         stock: StockRepo;
     }) => {
-        const eventService = new chevre.service.Event({
-            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
-            auth: chevreAuthClient
-        });
-        const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
-        const sectionOffer = screeningRoomSectionOffers[0];
         await Promise.all(tmpReservations.map(async (tmpReservation) => {
             try {
-                const lockKey = {
-                    eventId: performance.id,
-                    offer: {
-                        seatNumber: tmpReservation.seat_code,
-                        seatSection: sectionOffer.branchCode
+                const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
+                if (ticketedSeat !== undefined) {
+                    const lockKey = {
+                        eventId: performance.id,
+                        offer: {
+                            seatNumber: ticketedSeat.seatNumber,
+                            seatSection: ticketedSeat.seatSection
+                        }
+                    };
+                    const holder = await repos.stock.getHolder(lockKey);
+                    if (holder === transactionId) {
+                        await repos.stock.unlock(lockKey);
                     }
-                };
-                const holder = await repos.stock.getHolder(lockKey);
-                if (holder === tmpReservation.transaction) {
-                    await repos.stock.unlock(lockKey);
                 }
             } catch (error) {
                 // no op
