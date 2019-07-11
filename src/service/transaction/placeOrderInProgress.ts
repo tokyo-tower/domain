@@ -89,7 +89,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             }
 
             // スコープを判別
-            if (!validatePassport(passport, seller.identifier)) {
+            if (seller.identifier === undefined || !validatePassport(passport, seller.identifier)) {
                 throw new factory.errors.Argument('passportToken', 'Invalid passport.');
             }
         }
