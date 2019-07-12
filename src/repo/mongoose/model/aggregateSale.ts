@@ -122,6 +122,16 @@ schema.index(
     { name: 'searchByReservationStatus' }
 );
 
+schema.index(
+    { 'customer.group': 1, date_bucket: 1 },
+    {
+        name: 'searchByCustomerGroup',
+        partialFilterExpression: {
+            'customer.group': { $exists: true }
+        }
+    }
+);
+
 export default mongoose.model('AggregateSale', schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment

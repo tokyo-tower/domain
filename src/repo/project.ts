@@ -1,8 +1,6 @@
+import * as factory from '@motionpicture/ttts-factory';
 import { Connection, Model } from 'mongoose';
 import { modelName } from './mongoose/model/project';
-
-import * as factory from '@motionpicture/ttts-factory';
-// import * as factory from '../factory';
 
 /**
  * プロジェクトリポジトリ
@@ -14,7 +12,7 @@ export class MongoRepository {
         this.projectModel = connection.model(modelName);
     }
 
-    public static CREATE_MONGO_CONDITIONS(params: any) {
+    public static CREATE_MONGO_CONDITIONS(params: factory.project.ISearchConditions) {
         // MongoDB検索条件
         const andConditions: any[] = [];
 
@@ -55,7 +53,7 @@ export class MongoRepository {
             id: string;
         },
         projection?: any
-    ): Promise<any> {
+    ): Promise<factory.project.IProject> {
         const doc = await this.projectModel.findOne(
             { _id: conditions.id },
             {
@@ -73,7 +71,7 @@ export class MongoRepository {
         return doc.toObject();
     }
 
-    public async count(params: any): Promise<number> {
+    public async count(params: factory.project.ISearchConditions): Promise<number> {
         const conditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         return this.projectModel.countDocuments((conditions.length > 0) ? { $and: conditions } : {})
@@ -85,9 +83,9 @@ export class MongoRepository {
      * プロジェクト検索
      */
     public async search(
-        conditions: any,
+        conditions: factory.project.ISearchConditions,
         projection?: any
-    ): Promise<any[]> {
+    ): Promise<factory.project.IProject[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(conditions);
 
         const query = this.projectModel.find(

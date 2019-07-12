@@ -18,6 +18,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v18.0.0 - 2019-07-12
+
+### Added
+
+- オファーサービスを追加
+
+### Changed
+
+- イベントの座席情報をChevreから取得するように変更
+- 複数座席の仮押さえを一度に実行するように変更
+- 売上集計コレクションにインデックス追加
+
+### Removed
+
+- パフォーマンスインターフェースから券種情報を削除
+- 仮予約インターフェースから冗長な属性を削除
+
 ## v17.1.1 - 2019-07-08
 
 ### Changed

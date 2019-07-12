@@ -2,6 +2,7 @@
  * 集計サービス
  * このサービスは集計後の責任は負わないこと。
  */
+import * as chevre from '@chevre/api-nodejs-client';
 import * as factory from '@motionpicture/ttts-factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
@@ -10,6 +11,8 @@ import * as repository from '../repository';
 
 import * as Report4SalesService from './aggregate/report4sales';
 
+import { credentials } from '../credentials';
+
 const debug = createDebug('ttts-domain:service');
 
 const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
@@ -17,17 +20,20 @@ const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPI
     // tslint:disable-next-line:no-magic-numbers
     : 86400;
 
-const MAXIMUM_ATTENDEE_CAPACITY = (process.env.MAXIMUM_ATTENDEE_CAPACITY !== undefined)
-    ? Number(process.env.MAXIMUM_ATTENDEE_CAPACITY)
-    // tslint:disable-next-line:no-magic-numbers
-    : 41;
-
 const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS !== undefined)
     ? Number(process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS)
     // tslint:disable-next-line:no-magic-numbers
     : 6;
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export {
     Report4SalesService as report4sales
@@ -81,6 +87,7 @@ export function aggregateEventReservations(params: {
 
         try {
             const {
+                maximumAttendeeCapacity,
                 remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair
             } = await aggregateRemainingAttendeeCapacity({ performance: performance })(repos);
@@ -128,7 +135,7 @@ export function aggregateEventReservations(params: {
                 duration: performance.duration,
                 evServiceStatus: performance.ttts_extension.ev_service_status,
                 onlineSalesStatus: performance.ttts_extension.online_sales_status,
-                maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
+                maximumAttendeeCapacity: maximumAttendeeCapacity,
                 remainingAttendeeCapacity: remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
                 reservationCount: reservations.length,
@@ -165,14 +172,32 @@ function aggregateRemainingAttendeeCapacity(params: {
         stock: repository.Stock;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
-        let remainingAttendeeCapacity = MAXIMUM_ATTENDEE_CAPACITY;
+        const eventService = new chevre.service.Event({
+            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            auth: chevreAuthClient
+        });
+
+        const screeningRoomSectionOffers = await eventService.searchOffers({ id: params.performance.id });
+        const sectionOffer = screeningRoomSectionOffers[0];
+
+        // maximumAttendeeCapacityは一般座席数
+        const maximumAttendeeCapacity = sectionOffer.containsPlace.filter(
+            (p) => {
+                return p.seatingType !== undefined
+                    && <any>(p.seatingType.typeOf) === factory.place.movieTheater.SeatingType.Normal;
+            }
+        ).length;
+        let remainingAttendeeCapacity = maximumAttendeeCapacity;
         let remainingAttendeeCapacityForWheelchair = 1;
 
         try {
-            const section = params.performance.location.sections[0];
-
             // まず利用可能な座席は全座席
-            const availableSeats = section.seats;
+            const availableSeats = sectionOffer.containsPlace.map((p) => {
+                return {
+                    branchCode: p.branchCode,
+                    seatingType: <factory.place.movieTheater.ISeatingType><unknown>p.seatingType
+                };
+            });
 
             // 一般座席
             const normalSeats = availableSeats.filter(
@@ -217,7 +242,7 @@ function aggregateRemainingAttendeeCapacity(params: {
             console.error(error);
         }
 
-        return { remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
+        return { maximumAttendeeCapacity, remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
     };
 }
 

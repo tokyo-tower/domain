@@ -36,22 +36,24 @@ export function cancelSeatReservationAuth(transactionId: string) {
             debug('calling deleteTmpReserve...', action);
 
             const performance = action.object.performance;
-            const section = performance.location.sections[0];
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
-                const lockKey = {
-                    eventId: performance.id,
-                    offer: {
-                        seatNumber: tmpReservation.seat_code,
-                        seatSection: section.branchCode
+                const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
+                if (ticketedSeat !== undefined) {
+                    const lockKey = {
+                        eventId: performance.id,
+                        offer: {
+                            seatNumber: ticketedSeat.seatNumber,
+                            seatSection: ticketedSeat.seatSection
+                        }
+                    };
+                    const holder = await stockRepo.getHolder(lockKey);
+                    if (holder === transactionId) {
+                        await stockRepo.unlock(lockKey);
                     }
-                };
-                const holder = await stockRepo.getHolder(lockKey);
-                if (holder === tmpReservation.transaction) {
-                    await stockRepo.unlock(lockKey);
                 }
 
                 let ticketTypeCategory = factory.ticketTypeCategory.Normal;
