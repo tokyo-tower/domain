@@ -197,13 +197,6 @@ function validateOffers(
                             }]
                             : []
                     ]
-                    // transaction: transactionId,
-                    // seat_code: selectedSeat.branchCode,
-                    // ticket_type: ticketType.id,
-                    // ticket_type_name: <any>ticketType.name,
-                    // ticket_type_charge: unitPriceSpec.price,
-                    // charge: unitPriceSpec.price,
-                    // watcher_name: offer.watcher_name
                 }
             });
 
@@ -241,13 +234,6 @@ function validateOffers(
                             { name: 'extra', value: '1' },
                             { name: 'transaction', value: transactionId }
                         ]
-                        // transaction: transactionId,
-                        // seat_code: s.branchCode,
-                        // ticket_type: ticketType.id,
-                        // ticket_type_name: <any>ticketType.name,
-                        // ticket_type_charge: unitPriceSpec.price,
-                        // charge: 0,
-                        // watcher_name: offer.watcher_name
                     }
                 });
             });
