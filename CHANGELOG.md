@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - イベントの座席情報をChevreから取得するように変更
 - 複数座席の仮押さえを一度に実行するように変更
+- 売上集計コレクションにインデックス追加
 
 ### Deprecated
 
