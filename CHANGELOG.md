@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文確認番号を上映日と予約番号の組み合わせに変更
+
 ### Deprecated
 
 ### Removed

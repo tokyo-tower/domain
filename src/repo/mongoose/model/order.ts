@@ -278,6 +278,89 @@ schema.index(
         }
     }
 );
+
+schema.index(
+    { confirmationNumber: 1, orderDate: -1 },
+    {
+        name: 'searchOrdersByConfirmationNumberAndOrderDate',
+        partialFilterExpression: {
+            confirmationNumber: { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.typeOf': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerTypeOfAndOrderDate',
+        partialFilterExpression: {
+            'customer.typeOf': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.id': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerIdAndOrderDate',
+        partialFilterExpression: {
+            'customer.id': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.identifier': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerIdentifierAndOrderDate',
+        partialFilterExpression: {
+            'customer.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.memberOf.membershipNumber': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerMemberhipNumberAndOrderDate',
+        partialFilterExpression: {
+            'customer.memberOf.membershipNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.givenName': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerGivenNameAndOrderDate',
+        partialFilterExpression: {
+            'customer.givenName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.familyName': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerFamilyNameAndOrderDate',
+        partialFilterExpression: {
+            'customer.familyName': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.email': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerEmailAndOrderDate',
+        partialFilterExpression: {
+            'customer.email': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'customer.telephone': 1, orderDate: -1 },
+    {
+        name: 'searchByCustomerTelephoneAndOrderDate',
+        partialFilterExpression: {
+            'customer.telephone': { $exists: true }
+        }
+    }
+);
+
 schema.index(
     {
         'paymentMethods.typeOf': 1
