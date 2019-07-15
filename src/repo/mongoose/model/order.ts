@@ -123,74 +123,27 @@ schema.index(
         name: 'uniqueOrderNumber'
     }
 );
-
-// 会員情報で注文検索
 schema.index(
+    { 'seller.id': 1, orderDate: -1 },
     {
-        orderDate: 1,
-        'customer.memberOf.membershipNumber': 1,
-        'customer.memberOf.programName': 1
-    },
-    {
-        name: 'searchOrdersByProgramMembership',
-        partialFilterExpression: {
-            'customer.memberOf.membershipNumber': { $exists: true },
-            'customer.memberOf.programName': { $exists: true }
-        }
-    }
-);
-
-// 注文検索に使用
-schema.index(
-    {
-        'seller.id': 1
-    },
-    {
-        name: 'searchOrdersBySeller',
+        name: 'searchOrdersBySellerAndOrderDate',
         partialFilterExpression: {
             'seller.id': { $exists: true }
         }
     }
 );
-// 注文検索に使用
 schema.index(
-    {
-        orderNumber: 1,
-        orderStatus: 1,
-        orderDate: 1
-    },
-    {
-        name: 'searchOrders'
-    }
-);
-schema.index(
-    {
-        orderDate: 1
-    },
+    { orderDate: 1 },
     {
         name: 'searchOrdersByOrderDate'
     }
 );
 schema.index(
+    { orderStatus: 1, orderDate: -1 },
     {
-        orderStatus: 1
-    },
-    {
-        name: 'searchOrdersByOrderStatus'
+        name: 'searchOrdersByOrderStatusAndOrderDate'
     }
 );
-schema.index(
-    {
-        'acceptedOffers.itemOffered.reservationFor.id': 1
-    },
-    {
-        name: 'searchOrdersByReservedEvent',
-        partialFilterExpression: {
-            'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
-        }
-    }
-);
-
 schema.index(
     { confirmationNumber: 1, orderDate: -1 },
     {
@@ -274,121 +227,126 @@ schema.index(
 );
 
 schema.index(
+    { 'paymentMethods.accountId': 1, orderDate: -1 },
     {
-        'paymentMethods.typeOf': 1
-    },
+        name: 'searchByPaymentMethodsAccountId',
+        partialFilterExpression: {
+            'paymentMethods.accountId': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'paymentMethods.typeOf': 1, orderDate: -1 },
     {
-        name: 'searchByPaymentMethodType',
+        name: 'searchByPaymentMethodTypeAndOrderDate',
         partialFilterExpression: {
             'paymentMethods.typeOf': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'paymentMethods.paymentMethodId': 1, orderDate: -1 },
     {
-        'paymentMethods.paymentMethodId': 1
-    },
-    {
-        name: 'searchByPaymentMethodId',
+        name: 'searchByPaymentMethodIdAndOrderDate',
         partialFilterExpression: {
             'paymentMethods.paymentMethodId': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.id': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.id': 1
-    },
-    {
-        name: 'searchByItemOfferedId',
+        name: 'searchByItemOfferedIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.id': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationNumber': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.id': 1
-    },
+        name: 'searchByItemOfferedReservationNumberAndOrderDate',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationNumber': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.id': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForId',
+        name: 'searchByItemOfferedReservationForIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.id': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.identifier': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.name': 1
-    },
+        name: 'searchByItemOfferedReservationForIdentifierAndOrderDate',
+        partialFilterExpression: {
+            'acceptedOffers.itemOffered.reservationFor.identifier': { $exists: true }
+        }
+    }
+);
+schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.name': 1, orderDate: -1 },
     {
-        name: 'searchByItemOfferedReservationForName',
+        name: 'searchByItemOfferedReservationForNameAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.name': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.endDate': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.endDate': 1
-    },
-    {
-        name: 'searchByItemOfferedReservationForEndDate',
+        name: 'searchByItemOfferedReservationForEndDateAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.endDate': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.startDate': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.startDate': 1
-    },
-    {
-        name: 'searchByItemOfferedReservationForStartDate',
+        name: 'searchByItemOfferedReservationForStartDateAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.startDate': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.location.branchCode': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.location.branchCode': 1
-    },
-    {
-        name: 'searchByItemOfferedReservationForLocationBranchCode',
+        name: 'searchByItemOfferedReservationForLocationBranchCodeAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.location.branchCode': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.superEvent.id': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.superEvent.id': 1
-    },
-    {
-        name: 'searchByItemOfferedReservationForLocationSuperEventId',
+        name: 'searchByItemOfferedReservationForLocationSuperEventIdAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.superEvent.id': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': 1
-    },
-    {
-        name: 'searchByItemOfferedReservationForLocationSuperEventLocationBranchCode',
+        name: 'searchByItemOfferedReservationForLocationSuperEventLocationBranchCodeAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.superEvent.location.branchCode': { $exists: true }
         }
     }
 );
 schema.index(
+    { 'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': 1, orderDate: -1 },
     {
-        'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': 1
-    },
-    {
-        name: 'searchByItemOfferedReservationForLocationSuperEventWorkPerformedIdentifier',
+        name: 'searchByItemOfferedReservationForLocationSuperEventWorkPerformedIdentifierAndOrderDate',
         partialFilterExpression: {
             'acceptedOffers.itemOffered.reservationFor.superEvent.workPerformed.identifier': { $exists: true }
         }
