@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v18.1.0 - 2019-07-15
+
+### Changed
+
+- 注文確認番号を上映日と予約番号の組み合わせに変更
+- 注文コレクションのインデックス調整
+
 ## v18.0.0 - 2019-07-12
 
 ### Added

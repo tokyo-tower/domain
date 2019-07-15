@@ -478,6 +478,16 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         identifier: customerIdentifier
     };
 
+    const orderInquiryKey: factory.order.IOrderInquiryKey = {
+        performanceDay: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
+        paymentNo: eventReservations[0].reservationNumber,
+        // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
+        // tslint:disable-next-line:no-magic-numbers
+        telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
+    };
+
+    const confirmationNumber: string = `${orderInquiryKey.performanceDay}${orderInquiryKey.paymentNo}`;
+
     return {
         order: {
             typeOf: 'Order',
@@ -503,7 +513,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
                     }
                 };
             }),
-            confirmationNumber: eventReservations[0].reservationNumber,
+            confirmationNumber: confirmationNumber,
             orderNumber: orderNumber,
             price: price,
             priceCurrency: factory.priceCurrency.JPY,
@@ -513,13 +523,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             orderStatus: factory.orderStatus.OrderDelivered,
             orderDate: orderDate,
             isGift: false,
-            orderInquiryKey: {
-                performanceDay: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
-                paymentNo: eventReservations[0].reservationNumber,
-                // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
-                // tslint:disable-next-line:no-magic-numbers
-                telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
-            }
+            orderInquiryKey: orderInquiryKey
         },
         printToken: ''
     };
