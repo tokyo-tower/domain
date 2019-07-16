@@ -343,7 +343,11 @@ export class MongoRepository {
     /**
      * 注文照会キーで検索する
      */
-    public async findByOrderInquiryKey(orderInquiryKey: factory.order.IOrderInquiryKey) {
+    public async findByOrderInquiryKey(orderInquiryKey: {
+        performanceDay: string;
+        paymentNo: string;
+        telephone: string;
+    }) {
         const doc = await this.orderModel.findOne(
             {
                 'orderInquiryKey.performanceDay': orderInquiryKey.performanceDay,

@@ -431,8 +431,10 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         throw new Error('PaymentMethod undefined.');
     }
 
+    const paymentNo = tmpReservations[0].reservationNumber;
+
     // 注文番号を作成
-    const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${tmpReservations[0].reservationNumber}`;
+    const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
 
     // 予約データを作成
@@ -442,6 +444,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             event: performance,
             transaction: transaction,
             orderNumber: orderNumber,
+            paymentNo: paymentNo,
             gmoOrderId: gmoOrderId,
             paymentSeatIndex: index.toString(),
             customerContact: customerContact,
@@ -478,9 +481,9 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         identifier: customerIdentifier
     };
 
-    const orderInquiryKey: factory.order.IOrderInquiryKey = {
+    const orderInquiryKey = {
         performanceDay: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
-        paymentNo: eventReservations[0].reservationNumber,
+        paymentNo: paymentNo,
         // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
         // tslint:disable-next-line:no-magic-numbers
         telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
@@ -523,7 +526,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             orderStatus: factory.orderStatus.OrderDelivered,
             orderDate: orderDate,
             isGift: false,
-            orderInquiryKey: orderInquiryKey
+            ...{ orderInquiryKey: orderInquiryKey }
         },
         printToken: ''
     };
@@ -538,6 +541,7 @@ function temporaryReservation2confirmed(params: {
     event: factory.performance.IPerformanceWithDetails;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
+    paymentNo: string;
     gmoOrderId: string;
     paymentSeatIndex: string;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
@@ -574,6 +578,7 @@ function temporaryReservation2confirmed(params: {
         identifier: [
             { name: 'age', value: customerContact.age },
             { name: 'orderNumber', value: params.orderNumber },
+            { name: 'paymentNo', value: params.paymentNo },
             { name: 'transaction', value: transaction.id },
             { name: 'gmoOrderId', value: params.gmoOrderId },
             ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
