@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 予約検索条件の予約者に$elemMatchを追加
+
 ### Changed
 
 - 予約データに購入番号を追加
