@@ -242,7 +242,6 @@ export function setCustomerContact(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
         await transactionRepo.updateCustomerProfile({
             typeOf: transaction.typeOf,
             id: transaction.id,

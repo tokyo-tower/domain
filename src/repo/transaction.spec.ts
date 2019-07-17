@@ -111,43 +111,6 @@ describe('findPlaceOrderInProgressById()', () => {
     });
 });
 
-describe('setCustomerContactOnPlaceOrderInProgress()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('取引が存在すれば、エラーにならないはず', async () => {
-        const transactionId = 'transactionId';
-        const contact = {};
-
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
-
-        sandbox.mock(repository.transactionModel)
-            .expects('findOneAndUpdate').once()
-            .chain('exec')
-            .resolves(new repository.transactionModel());
-
-        const result = await repository.setCustomerContactOnPlaceOrderInProgress(transactionId, <any>contact);
-
-        assert.equal(result, undefined);
-        sandbox.verify();
-    });
-
-    it('取引が存在しなければ、NotFoundエラーになるはず', async () => {
-        const transactionId = 'transactionId';
-        const contact = {};
-
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
-
-        sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.setCustomerContactOnPlaceOrderInProgress(transactionId, <any>contact).catch((err) => err);
-        assert(result instanceof ttts.factory.errors.NotFound);
-        sandbox.verify();
-    });
-});
-
 describe('confirmPlaceOrder()', () => {
     afterEach(() => {
         sandbox.restore();

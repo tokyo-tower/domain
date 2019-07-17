@@ -111,46 +111,6 @@ enum AggregateUnit {
     SalesByEventStartDate = 'SalesByEventStartDate'
 }
 
-export type ReportType = 'sales' | 'salesByEventStartDate' | 'salesByAccount';
-
-export interface ISearchSalesConditions {
-    reportType: ReportType | null;
-    performanceDayFrom: string | null;
-    performanceDayTo: string | null;
-    // 登録日
-    eventStartFrom: string | null;
-    eventStartThrough: string | null;
-    // アカウント
-    owner_username: string | null;
-    // 時刻From
-    performanceStartHour1: string | null;
-    performanceStartMinute1: string | null;
-    // 時刻To
-    performanceStartHour2: string | null;
-    performanceStartMinute2: string | null;
-}
-
-/**
- * GMO売上健康診断レポートインターフェース
- */
-export interface IReportOfGMOSalesHealthCheck {
-    madeFrom: Date;
-    madeThrough: Date;
-    numberOfSales: number;
-    totalAmount: number;
-    totalAmountCurrency: factory.priceCurrency;
-    unhealthGMOSales: IUnhealthGMOSale[];
-}
-
-/**
- * 不健康なGMO売上インターフェース
- */
-export interface IUnhealthGMOSale {
-    orderId: string;
-    amount: number;
-    reason: string;
-}
-
 /**
  * 注文取引からレポートを作成する
  */
@@ -296,7 +256,7 @@ function saveReport(data: IData) {
             data,
             { new: true, upsert: true }
         ).exec();
-        debug('report created', report);
+        debug('report created', report._id);
     };
 }
 
@@ -445,7 +405,6 @@ function reservation2data(
         ticketType: {
             name: r.reservedTicket.ticketType.name.ja,
             // リリース当初の間違ったマスターデータをカバーするため
-            // csvCode: (r.ticket_ttts_extension.csv_code === '0000000000231') ? '10031' : r.ticket_ttts_extension.csv_code,
             csvCode: (csvCode === '0000000000231') ? '10031' : csvCode,
             charge: unitPrice.toString()
         },
