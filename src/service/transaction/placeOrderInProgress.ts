@@ -449,8 +449,6 @@ export function createResult(
         throw new Error('PaymentMethod undefined.');
     }
 
-    // const paymentNo = tmpReservations[0].reservationNumber;
-
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';

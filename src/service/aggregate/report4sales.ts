@@ -316,10 +316,18 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
             }
         }
 
+        let paymentNo = params.reservation.reservationNumber; // 互換性維持のため
+        if (params.reservation.underName !== undefined && Array.isArray(params.reservation.underName.identifier)) {
+            const paymentNoProperty = params.reservation.underName.identifier.find((p) => p.name === 'paymentNo');
+            if (paymentNoProperty !== undefined) {
+                paymentNo = paymentNoProperty.value;
+            }
+        }
+
         const result = await aggregateSaleRepo.aggregateSaleModel.update(
             {
                 'performance.id': params.reservation.reservationFor.id,
-                payment_no: params.reservation.reservationNumber,
+                payment_no: paymentNo,
                 payment_seat_index: paymentSeatIndex
             },
             {
@@ -397,8 +405,16 @@ function reservation2data(
         }
     }
 
+    let paymentNo = r.reservationNumber; // 互換性維持のため
+    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+        const paymentNoProperty = r.underName.identifier.find((p) => p.name === 'paymentNo');
+        if (paymentNoProperty !== undefined) {
+            paymentNo = paymentNoProperty.value;
+        }
+    }
+
     return {
-        payment_no: r.reservationNumber,
+        payment_no: paymentNo,
         payment_seat_index: paymentSeatIndex,
         performance: {
             id: r.reservationFor.id,
