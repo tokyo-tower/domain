@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v19.0.0 - 2019-07-17
+
+### Added
+
 - 予約検索条件の予約者に$elemMatchを追加
 
 ### Changed
@@ -15,16 +29,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 予約データに購入番号を追加
 - 予約番号と購入番号を分離
 - update packages
-
-### Deprecated
+- パッケージスコープをtokyotowerへ変更
 
 ### Removed
 
 - 注文照会キーを削除
-
-### Fixed
-
-### Security
 
 ## v18.1.0 - 2019-07-15
 

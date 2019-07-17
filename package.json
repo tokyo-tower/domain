@@ -91,7 +91,7 @@
     "example": "./example",
     "test": "./test"
   },
-  "name": "@motionpicture/ttts-domain",
+  "name": "@tokyotower/domain",
   "repository": {},
   "scripts": {
     "build": "tsc",
@@ -109,5 +109,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "18.1.0"
+  "version": "19.0.0"
 }
