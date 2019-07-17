@@ -1,6 +1,6 @@
 # 東京タワードメインモデル for Node.js
 
-[![CircleCI](https://circleci.com/gh/motionpicture/ttts-domain.svg?style=svg)](https://circleci.com/gh/motionpicture/ttts-domain)
+[![CircleCI](https://circleci.com/gh/tokyo-tower/domain.svg?style=svg)](https://circleci.com/gh/tokyo-tower/domain)
 
 Node.jsで使用するための東京タワーオンラインチケットシステムのドメインモデルパッケージです。
 
@@ -14,11 +14,11 @@ Node.jsで使用するための東京タワーオンラインチケットシス�
 ### Install
 
 ```shell
-npm install --save @motionpicture/ttts-domain
+npm install --save @tokyo-tower/domain
 ```
 
 ```Javascript
-var ttts = require("@motionpicture/ttts-domain");
+var ttts = require("@tokyo-tower/domain");
 ```
 
 * mongoose default connection
