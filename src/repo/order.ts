@@ -340,29 +340,6 @@ export class MongoRepository {
         return andConditions;
     }
 
-    /**
-     * 注文照会キーで検索する
-     */
-    public async findByOrderInquiryKey(orderInquiryKey: {
-        performanceDay: string;
-        paymentNo: string;
-        telephone: string;
-    }) {
-        const doc = await this.orderModel.findOne(
-            {
-                'orderInquiryKey.performanceDay': orderInquiryKey.performanceDay,
-                'orderInquiryKey.paymentNo': orderInquiryKey.paymentNo,
-                'orderInquiryKey.telephone': orderInquiryKey.telephone
-            }
-        ).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('order');
-        }
-
-        return <factory.order.IOrder>doc.toObject();
-    }
-
     public async save(order: factory.order.IOrder) {
         await this.orderModel.findOneAndUpdate(
             {
