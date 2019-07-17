@@ -35,7 +35,7 @@
         "no-misused-new": true,
         "no-null-keyword": false,
         "no-relative-imports": false,
-        "no-redundant-jsdoc": false,
+        "no-redundant-jsdoc": true,
         "no-unnecessary-initializer": true,
         "no-unsafe-any": false,
         "prefer-function-over-method": true,

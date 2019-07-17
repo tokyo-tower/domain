@@ -34,8 +34,8 @@ export type ILoginOperation<T> = () => Promise<T>;
 
 /**
  * 管理者としてログインする
- * @param {string} username ユーザーネーム
- * @param {string} password パスワード
+ * @param username ユーザーネーム
+ * @param password パスワード
  */
 export function login(
     accessKeyId: string,
@@ -95,7 +95,7 @@ export function login(
 
 /**
  * アクセストークンからユーザー情報を取得する
- * @param {string} accesssToken アクセストークン
+ * @param accesssToken アクセストークン
  */
 export function getUserByAccessToken(accesssToken: string) {
     return async () => {
@@ -130,9 +130,9 @@ export function getUserByAccessToken(accesssToken: string) {
 
 /**
  * 全ユーザーを検索する
- * @param {string} accessKeyId AWSアクセスキー
- * @param {string} secretAccessKey AWSアクセスシークレット
- * @param {string} userPoolId CognitoyユーザープールID
+ * @param accessKeyId AWSアクセスキー
+ * @param secretAccessKey AWSアクセスシークレット
+ * @param userPoolId CognitoyユーザープールID
  */
 export function findAll(
     accessKeyId: string,
@@ -188,10 +188,10 @@ export function findAll(
 
 /**
  * グループに所属する全ユーザーを検索する
- * @param {string} accessKeyId AWSアクセスキー
- * @param {string} secretAccessKey AWSアクセスシークレット
- * @param {string} userPoolId CognitoyユーザープールID
- * @param {string} groupName グループ名
+ * @param accessKeyId AWSアクセスキー
+ * @param secretAccessKey AWSアクセスシークレット
+ * @param userPoolId CognitoyユーザープールID
+ * @param groupName グループ名
  */
 export function findAllByGroup(
     accessKeyId: string,
@@ -251,10 +251,10 @@ export interface IGroup {
 
 /**
  * ユーザーネームからグループを取得する
- * @param {string} accessKeyId AWSアクセスキー
- * @param {string} secretAccessKey AWSアクセスシークレット
- * @param {string} userPoolId CognitoyユーザープールID
- * @param {string} username ユーザーネーム
+ * @param accessKeyId AWSアクセスキー
+ * @param secretAccessKey AWSアクセスシークレット
+ * @param userPoolId CognitoyユーザープールID
+ * @param username ユーザーネーム
  */
 export function getGroupsByUsername(
     accessKeyId: string,

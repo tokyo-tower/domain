@@ -266,38 +266,6 @@ schema.index(
     }
 );
 
-// 購入番号から照会の際に使用
-schema.index(
-    {
-        'result.order.orderInquiryKey.confirmationNumber': 1,
-        'result.order.orderInquiryKey.theaterCode': 1,
-        'result.order.orderInquiryKey.telephone': 1,
-        status: 1
-    },
-    {
-        name: 'orderInquiryKey',
-        partialFilterExpression: {
-            'result.order.orderInquiryKey.confirmationNumber': { $exists: true },
-            'result.order.orderInquiryKey.theaterCode': { $exists: true },
-            'result.order.orderInquiryKey.telephone': { $exists: true }
-        }
-    }
-);
-
-// LINEアシスタントでの取引照会に使用
-schema.index(
-    {
-        'result.order.orderInquiryKey.theaterCode': 1,
-        'result.order.orderInquiryKey.confirmationNumber': 1
-    },
-    {
-        partialFilterExpression: {
-            'result.order.orderInquiryKey.theaterCode': { $exists: true },
-            'result.order.orderInquiryKey.confirmationNumber': { $exists: true }
-        }
-    }
-);
-
 // 結果の注文番号はユニークなはず
 schema.index(
     {
@@ -376,26 +344,6 @@ schema.index(
         name: 'searchByResultEventReservationsPerformanceDay',
         partialFilterExpression: {
             'result.eventReservations.performance_day': { $exists: true }
-        }
-    }
-);
-
-schema.index(
-    { 'result.order.orderInquiryKey.paymentNo': 1, startDate: -1 },
-    {
-        name: 'searchByResultOrderOrderInquiryKeyPaymentNo',
-        partialFilterExpression: {
-            'result.order.orderInquiryKey.paymentNo': { $exists: true }
-        }
-    }
-);
-
-schema.index(
-    { 'result.order.orderInquiryKey.performanceDay': 1, startDate: -1 },
-    {
-        name: 'searchByResultOrderOrderInquiryKeyPerformanceDay',
-        partialFilterExpression: {
-            'result.order.orderInquiryKey.performanceDay': { $exists: true }
         }
     }
 );

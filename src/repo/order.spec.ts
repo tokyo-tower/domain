@@ -18,39 +18,6 @@ before(() => {
     sandbox = sinon.sandbox.create();
 });
 
-describe('findByOrderInquiryKey()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('注文が存在すれば、取得できるはず', async () => {
-        const orderInquiryKey = {};
-
-        const repository = new ttts.repository.Order(ttts.mongoose.connection);
-
-        sandbox.mock(repository.orderModel).expects('findOne').once()
-            .chain('exec').resolves(new repository.orderModel());
-
-        const result = await repository.findByOrderInquiryKey(<any>orderInquiryKey);
-
-        assert.notEqual(result, undefined);
-        sandbox.verify();
-    });
-
-    it('存在しなければ、NotFoundエラーとなるはず', async () => {
-        const orderInquiryKey = {};
-
-        const repository = new ttts.repository.Order(ttts.mongoose.connection);
-
-        sandbox.mock(repository.orderModel).expects('findOne').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.findByOrderInquiryKey(<any>orderInquiryKey).catch((err) => err);
-        assert(result instanceof ttts.factory.errors.NotFound);
-        sandbox.verify();
-    });
-});
-
 describe('save()', () => {
     afterEach(() => {
         sandbox.restore();

@@ -3,8 +3,6 @@ import { MongoRepository as AuthorizeActionRepository } from '../authorize';
 
 /**
  * 座席予約承認アクションレポジトリー
- * @export
- * @class
  */
 export class MongoRepository extends AuthorizeActionRepository {
     protected readonly purpose: string = factory.action.authorize.authorizeActionPurpose.SeatReservation;

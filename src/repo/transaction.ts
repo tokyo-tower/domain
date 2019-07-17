@@ -6,7 +6,6 @@ import TransactionModel from './mongoose/model/transaction';
 
 /**
  * transaction repository
- * @class
  */
 export class MongoRepository {
     public readonly transactionModel: typeof TransactionModel;
@@ -235,7 +234,7 @@ export class MongoRepository {
 
     /**
      * find placeOrder transaction by id
-     * @param {string} transactionId transaction id
+     * @param transactionId transaction id
      */
     public async findPlaceOrderById(transactionId: string): Promise<factory.transaction.placeOrder.ITransaction> {
         const doc = await this.transactionModel.findOne({
@@ -265,30 +264,6 @@ export class MongoRepository {
         }
 
         return <factory.transaction.placeOrder.ITransaction>doc.toObject();
-    }
-
-    /**
-     * 取引中の所有者プロフィールを変更する
-     * 匿名所有者として開始した場合のみ想定(匿名か会員に変更可能)
-     */
-    public async setCustomerContactOnPlaceOrderInProgress(
-        transactionId: string,
-        contact: factory.transaction.placeOrder.ICustomerContact
-    ): Promise<void> {
-        const doc = await this.transactionModel.findOneAndUpdate(
-            {
-                _id: transactionId,
-                typeOf: factory.transactionType.PlaceOrder,
-                status: factory.transactionStatusType.InProgress
-            },
-            {
-                'object.customerContact': contact
-            }
-        ).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
-        }
     }
 
     /**
@@ -322,10 +297,10 @@ export class MongoRepository {
     /**
      * confirm a placeOrder
      * 注文取引を確定する
-     * @param {string} transactionId transaction id
-     * @param {Date} endDate end date
-     * @param {factory.action.authorize.IAction[]} authorizeActions authorize actions
-     * @param {factory.transaction.placeOrder.IResult} result transaction result
+     * @param transactionId transaction id
+     * @param endDate end date
+     * @param authorizeActions authorize actions
+     * @param result transaction result
      */
     public async confirmPlaceOrder(
         transactionId: string,
@@ -376,7 +351,6 @@ export class MongoRepository {
     /**
      * タスクエクスポートリトライ
      * todo updatedAtを基準にしているが、タスクエクスポートトライ日時を持たせた方が安全か？
-     * @param {number} intervalInMinutes
      */
     public async reexportTasks(intervalInMinutes: number): Promise<void> {
         await this.transactionModel.findOneAndUpdate(

@@ -345,6 +345,16 @@ export class MongoRepository {
                         }
                     });
                 }
+
+                // 型未対応
+                if ((<any>params.underName.identifier).$elemMatch !== undefined) {
+                    andConditions.push({
+                        'underName.identifier': {
+                            $exists: true,
+                            $elemMatch: (<any>params.underName.identifier).$elemMatch
+                        }
+                    });
+                }
             }
 
             // tslint:disable-next-line:no-single-line-block-comment

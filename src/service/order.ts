@@ -537,7 +537,8 @@ async function createEmailMessage4sellerReason(
     const message = await email.render('returnOrderBySeller', {
         purchaserNameJa: `${order.customer.familyName} ${order.customer.givenName}`,
         purchaserNameEn: order.customer.name,
-        paymentNo: reservation.reservationNumber,
+        // tslint:disable-next-line:no-magic-numbers
+        paymentNo: order.confirmationNumber.slice(-6),
         day: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'),
         startTime: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('HH:mm'),
         amount: numeral(transactionResult.order.price).format('0,0'),

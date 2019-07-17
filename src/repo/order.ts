@@ -4,7 +4,6 @@ import OrderModel from './mongoose/model/order';
 
 /**
  * 注文レポジトリー
- * @class
  */
 export class MongoRepository {
     public readonly orderModel: typeof OrderModel;
@@ -338,25 +337,6 @@ export class MongoRepository {
         }
 
         return andConditions;
-    }
-
-    /**
-     * 注文照会キーで検索する
-     */
-    public async findByOrderInquiryKey(orderInquiryKey: factory.order.IOrderInquiryKey) {
-        const doc = await this.orderModel.findOne(
-            {
-                'orderInquiryKey.performanceDay': orderInquiryKey.performanceDay,
-                'orderInquiryKey.paymentNo': orderInquiryKey.paymentNo,
-                'orderInquiryKey.telephone': orderInquiryKey.telephone
-            }
-        ).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('order');
-        }
-
-        return <factory.order.IOrder>doc.toObject();
     }
 
     public async save(order: factory.order.IOrder) {

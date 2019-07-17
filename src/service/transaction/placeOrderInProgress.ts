@@ -9,6 +9,7 @@ import * as moment from 'moment-timezone';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
+import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
@@ -26,7 +27,8 @@ export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-    tokenRepo: TokenRepo
+    tokenRepo: TokenRepo,
+    paymentNoRepo: PaymentNoRepo
 ) => Promise<T>;
 
 /**
@@ -240,7 +242,6 @@ export function setCustomerContact(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        // await transactionRepo.setCustomerContactOnPlaceOrderInProgress(transactionId, customerContact);
         await transactionRepo.updateCustomerProfile({
             typeOf: transaction.typeOf,
             id: transaction.id,
@@ -254,6 +255,7 @@ export function setCustomerContact(
 /**
  * 取引確定
  */
+// tslint:disable-next-line:max-func-body-length
 export function confirm(params: {
     agentId: string;
     transactionId: string;
@@ -263,7 +265,8 @@ export function confirm(params: {
         transactionRepo: TransactionRepo,
         creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-        tokenRepo: TokenRepo
+        tokenRepo: TokenRepo,
+        paymentNoRepo: PaymentNoRepo
     ) => {
         const now = new Date();
         const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
@@ -289,8 +292,19 @@ export function confirm(params: {
             throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
         }
 
+        // 購入番号発行
+        const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction | undefined>
+            transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .find((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
+        if (seatReservationAuthorizeAction === undefined) {
+            throw new factory.errors.Argument('transactionId', 'Authorize seat reservation action not found');
+        }
+        const performance = seatReservationAuthorizeAction.object.performance;
+        const paymentNo = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
+
         // 結果作成
-        transaction.result = createResult(transaction);
+        transaction.result = createResult(paymentNo, transaction);
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
@@ -413,7 +427,10 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
  * 注文取引結果を作成する
  */
 // tslint:disable-next-line:max-func-body-length
-export function createResult(transaction: factory.transaction.placeOrder.ITransaction): factory.transaction.placeOrder.IResult {
+export function createResult(
+    paymentNo: string,
+    transaction: factory.transaction.placeOrder.ITransaction
+): factory.transaction.placeOrder.IResult {
     debug('creating result of transaction...', transaction.id);
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -432,7 +449,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
     }
 
     // 注文番号を作成
-    const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${tmpReservations[0].reservationNumber}`;
+    const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
 
     // 予約データを作成
@@ -442,6 +459,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             event: performance,
             transaction: transaction,
             orderNumber: orderNumber,
+            paymentNo: paymentNo,
             gmoOrderId: gmoOrderId,
             paymentSeatIndex: index.toString(),
             customerContact: customerContact,
@@ -478,15 +496,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
         identifier: customerIdentifier
     };
 
-    const orderInquiryKey: factory.order.IOrderInquiryKey = {
-        performanceDay: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
-        paymentNo: eventReservations[0].reservationNumber,
-        // 連絡先情報がないケースは、とりあえず固定で(電話番号で照会されることは現時点でない)
-        // tslint:disable-next-line:no-magic-numbers
-        telephone: (customerContact !== undefined) ? customerContact.tel.slice(-4) : '9999' // 電話番号下4桁
-    };
-
-    const confirmationNumber: string = `${orderInquiryKey.performanceDay}${orderInquiryKey.paymentNo}`;
+    const confirmationNumber: string = `${moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD')}${paymentNo}`;
 
     return {
         order: {
@@ -522,8 +532,7 @@ export function createResult(transaction: factory.transaction.placeOrder.ITransa
             url: '',
             orderStatus: factory.orderStatus.OrderDelivered,
             orderDate: orderDate,
-            isGift: false,
-            orderInquiryKey: orderInquiryKey
+            isGift: false
         },
         printToken: ''
     };
@@ -538,6 +547,7 @@ function temporaryReservation2confirmed(params: {
     event: factory.performance.IPerformanceWithDetails;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
+    paymentNo: string;
     gmoOrderId: string;
     paymentSeatIndex: string;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
@@ -574,6 +584,7 @@ function temporaryReservation2confirmed(params: {
         identifier: [
             { name: 'age', value: customerContact.age },
             { name: 'orderNumber', value: params.orderNumber },
+            { name: 'paymentNo', value: params.paymentNo },
             { name: 'transaction', value: transaction.id },
             { name: 'gmoOrderId', value: params.gmoOrderId },
             ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],

@@ -20,12 +20,7 @@ export const LINE_NOTIFY_URL = 'https://notify-api.line.me/api/notify';
  * send an email
  * Eメールを送信する
  * https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
- * @export
- * @function
- * @param {factory.creativeWork.message.email.ICreativeWork} emailMessage
- * @returns {Operation<void>}
  * @see https://sendgrid.com/docs/API_Reference/Web_API_v3/Mail/errors.html
- * @memberof service.notification
  */
 export function sendEmail(emailMessage: factory.creativeWork.message.email.ICreativeWork): Operation<void> {
     return async () => {
@@ -65,13 +60,6 @@ export function sendEmail(emailMessage: factory.creativeWork.message.email.ICrea
 /**
  * report to developers
  * 開発者に報告する
- * @export
- * @function
- * @param {EmailNotification} email
- * @returns {Operation<void>}
- * @memberof service.notification
- * @param {string} subject
- * @param {string} content
  * @see https://notify-bot.line.me/doc/ja/
  */
 export function report2developers(subject: string, content: string, imageThumbnail?: string, imageFullsize?: string): Operation<void> {
