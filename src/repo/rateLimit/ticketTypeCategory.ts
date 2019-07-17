@@ -60,8 +60,8 @@ export class RedisRepository {
 
     /**
      * カウントをリセットするカウントアップする
-     * @param {Date} now 現在日時
-     * @param {number} aggregationUnitInSeconds 集計単位(秒)
+     * @param now 現在日時
+     * @param aggregationUnitInSeconds 集計単位(秒)
      */
     public async unlock(ratelimitKey: IRateLimitKey) {
         return new Promise<void>((resolve, reject) => {

@@ -10,7 +10,6 @@ const debug = createDebug('ttts-domain:repository.sequence');
 
 /**
  * 採番レポジトリー
- * @class repository.PaymentNo
  */
 export class RedisRepository {
     /**
@@ -46,10 +45,10 @@ export class RedisRepository {
 
     /**
      * 頭を指定文字列で埋める
-     * @param {string} input 元の文字列
-     * @param {number} length 最終的な文字列の長さ
-     * @param {string} padString 埋める文字列
-     * @returns {string} 結果文字列
+     * @param input 元の文字列
+     * @param length 最終的な文字列の長さ
+     * @param padString 埋める文字列
+     * @returns 結果文字列
      */
     public static PAD(input: string, length: number, padString: string) {
         return (padString.repeat(length) + input).slice(-length);
@@ -57,7 +56,6 @@ export class RedisRepository {
 
     /**
      * チェックディジットを求める
-     * @param {string} source
      */
     public static GET_CHECK_DIGIT(source: string): number {
         if (source.length !== RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO) {
@@ -76,7 +74,6 @@ export class RedisRepository {
 
     /**
      * チェックディジットを求める2
-     * @param {string} source
      */
     // public static GET_CHECK_DIGIT2(source: string): number {
     //     if (source.length !== RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO) {
@@ -93,7 +90,6 @@ export class RedisRepository {
 
     /**
      * 購入番号の有効性をチェックする
-     * @param {string} paymentNo
      */
     public static VALIDATE(paymentNo: string): boolean {
         // if (paymentNo.length !== RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO + 2) {
@@ -118,8 +114,8 @@ export class RedisRepository {
 
     /**
      * 購入番号をデコードする
-     * @param {string} paymentNo 購入番号
-     * @returns {number} 連番
+     * @param paymentNo 購入番号
+     * @returns 連番
      */
     public static DECODE(paymentNo: string): number {
         // 購入番号から、並び替えられた連番を取り出し、元の連番に並び替えなおす
@@ -130,6 +126,7 @@ export class RedisRepository {
         const sortType = RedisRepository.SORT_TYPES_PAYMENT_NO[checkDigit];
         debug(checkDigit, strs, sortType);
 
+        // tslint:disable-next-line:prefer-array-literal
         const source = Array.from(Array(RedisRepository.MAX_LENGTH_OF_SEQUENCE_NO)).reduce(
             (a, __, weightNumber) => <string>a + strs.substr(sortType.indexOf(weightNumber), 1),
             ''
@@ -140,7 +137,7 @@ export class RedisRepository {
 
     /**
      * 購入番号を発行する
-     * @param {string} date 採番対象の日付
+     * @param date 採番対象の日付
      */
     public async publish(date: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {

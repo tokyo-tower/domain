@@ -7,7 +7,6 @@ const debug = createDebug('ttts-domain:repository');
 
 /**
  * Redis Cacheリポジトリー
- * @class
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'checkinGates';

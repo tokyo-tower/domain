@@ -15,11 +15,6 @@ export type ITaskAndTransactionOperation<T> = (taskRepo: TaskRepo, transactionRe
 
 /**
  * 予約キャンセル処理
- * @memberof inquiry
- * @function cancel
- * @param {Request} req
- * @param {Response} res
- * @returns {Promise<void>}
  */
 export function confirm(params: {
     /**
@@ -143,9 +138,6 @@ function validateRequest(now: Date, performanceStartDate: Date) {
 
 /**
  * 確定取引についてメールを送信する
- * @export
- * @function
- * @memberof service.transaction.returnOrder
  * @param transactionId 取引ID
  * @param emailMessageAttributes Eメールメッセージ属性
  */

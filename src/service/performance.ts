@@ -27,9 +27,8 @@ export type ISearchOperation<T> = (
 
 /**
  * 検索する
- * @param {ISearchConditions} searchConditions 検索条件
- * @return {ISearchOperation<ISearchResult>} 検索結果
- * @memberof service.performance
+ * @param searchConditions 検索条件
+ * @return 検索結果
  */
 export function search(searchConditions: factory.performance.ISearchConditions): ISearchOperation<ISearchResult> {
     // tslint:disable-next-line:max-func-body-length

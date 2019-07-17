@@ -4,7 +4,6 @@ import OrderModel from './mongoose/model/order';
 
 /**
  * 注文レポジトリー
- * @class
  */
 export class MongoRepository {
     public readonly orderModel: typeof OrderModel;

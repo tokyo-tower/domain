@@ -15,10 +15,7 @@ const debug = createDebug('ttts-domain:service');
 
 /**
  * クレジットカードオーソリ取消
- * @export
- * @function
- * @memberof service.sales
- * @param {string} transactionId 取引ID
+ * @param transactionId 取引ID
  */
 export function cancelCreditCardAuth(transactionId: string) {
     return async (creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo) => {
@@ -50,10 +47,7 @@ export function cancelCreditCardAuth(transactionId: string) {
 
 /**
  * クレジットカード売上確定
- * @export
- * @function
- * @memberof service.sales
- * @param {string} transactionId 取引ID
+ * @param transactionId 取引ID
  */
 export function settleCreditCardAuth(transactionId: string) {
     return async (transactionRepo: TransactionRepo) => {

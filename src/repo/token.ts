@@ -9,18 +9,15 @@ const SECRET = <string>process.env.TTTS_TOKEN_SECRET;
 
 /**
  * 印刷トークンインターフェース
- * @type
  */
 export type IPrintToken = string;
 /**
  * 印刷トークン対象(予約IDリスト)インターフェース
- * @type
  */
 export type IPrintObject = string[];
 
 /**
  * トークンリポジトリー
- * @class respoitory.token
  */
 export class RedisRepository {
     public static PRINT_TOKEN_KEY_PREFIX: string = 'token.print.';
@@ -32,8 +29,8 @@ export class RedisRepository {
 
     /**
      * 予約印刷トークンを発行する
-     * @param {string[]} reservationIds 予約IDリスト
-     * @returns {Promise<IPrintToken>} トークン
+     * @param reservationIds 予約IDリスト
+     * @returns トークン
      */
     public async createPrintToken(object: IPrintObject): Promise<IPrintToken> {
         return new Promise<IPrintToken>((resolve, reject) => {
@@ -70,8 +67,8 @@ export class RedisRepository {
 
     /**
      * 印刷トークンを検証する
-     * @param {IPrintToken} token トークン
-     * @returns {Promise<IPrintObject>} 予約IDリスト
+     * @param token トークン
+     * @returns 予約IDリスト
      */
     public async verifyPrintToken(token: IPrintToken): Promise<IPrintObject> {
         return new Promise<IPrintObject>((resolve, reject) => {
