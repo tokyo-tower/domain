@@ -5,7 +5,7 @@
  * @ignore
  */
 
-import { errors } from '@motionpicture/ttts-factory';
+import { errors } from '@tokyotower/factory';
 import { } from 'mocha';
 import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';

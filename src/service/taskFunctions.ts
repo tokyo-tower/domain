@@ -2,7 +2,7 @@
  * タスクファンクションサービス
  * タスク名ごとに、実行するファンクションをひとつずつ定義しています
  */
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 

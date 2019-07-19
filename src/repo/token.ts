@@ -2,7 +2,7 @@ import * as createDebug from 'debug';
 import * as jwt from 'jsonwebtoken';
 import * as redis from 'redis';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 const debug = createDebug('ttts-domain:repository');
 const SECRET = <string>process.env.TTTS_TOKEN_SECRET;

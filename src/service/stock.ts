@@ -4,7 +4,7 @@
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';

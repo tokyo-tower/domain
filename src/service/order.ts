@@ -19,7 +19,7 @@ import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 import * as ReserveService from './reserve';
 import * as ReturnOrderTransactionService from './transaction/returnOrder';

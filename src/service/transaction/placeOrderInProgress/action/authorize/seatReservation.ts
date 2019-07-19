@@ -2,7 +2,7 @@ import * as chevre from '@chevre/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
 import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';

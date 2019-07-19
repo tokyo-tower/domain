@@ -2,7 +2,7 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as redis from 'redis';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 const debug = createDebug('chevre-domain:repo');
 

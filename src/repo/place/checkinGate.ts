@@ -1,7 +1,7 @@
 import * as createDebug from 'debug';
 import * as redis from 'redis';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 const debug = createDebug('ttts-domain:repository');
 

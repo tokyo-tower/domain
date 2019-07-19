@@ -7,7 +7,7 @@
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 

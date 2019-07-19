@@ -1,4 +1,4 @@
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 import { Connection } from 'mongoose';
 
