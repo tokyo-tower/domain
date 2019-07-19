@@ -1,7 +1,7 @@
 import * as moment from 'moment';
 import * as redis from 'redis';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 /**
  * レート制限キーインターフェース

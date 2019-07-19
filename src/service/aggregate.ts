@@ -3,7 +3,7 @@
  * このサービスは集計後の責任は負わないこと。
  */
 import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 

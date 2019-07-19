@@ -1,5 +1,5 @@
 import * as chevre from '@chevre/api-nodejs-client';
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 // import * as createDebug from 'debug';
 
 // import { MongoRepository as EventRepo } from '../repo/event';

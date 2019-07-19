@@ -1,9 +1,9 @@
 /**
  * 通知サービス
  */
-import * as factory from '@motionpicture/ttts-factory';
 // tslint:disable-next-line:no-require-imports
 import sgMail = require('@sendgrid/mail');
+import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import { ACCEPTED, CREATED, NO_CONTENT, OK } from 'http-status';
 import * as request from 'request';

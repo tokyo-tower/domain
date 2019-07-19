@@ -1,4 +1,4 @@
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import * as AWS from 'aws-sdk';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 

@@ -4,7 +4,7 @@
  * @namespace service.admin
  */
 
-// import * as factory from '@motionpicture/ttts-factory';
+// import * as factory from '@tokyotower/factory';
 import * as AWS from 'aws-sdk';
 import * as crypto from 'crypto';
 import * as createDebug from 'debug';

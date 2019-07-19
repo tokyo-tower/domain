@@ -1,4 +1,4 @@
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import { Connection, Model } from 'mongoose';
 import { modelName } from './mongoose/model/project';
 

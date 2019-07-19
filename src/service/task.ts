@@ -9,7 +9,7 @@ import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 import { MongoRepository as TaskRepository } from '../repo/task';
 
 import * as NotificationService from './notification';

@@ -1,6 +1,6 @@
 import * as redis from 'redis';
 
-import * as factory from '@motionpicture/ttts-factory';
+import * as factory from '@tokyotower/factory';
 
 export type IEvent = factory.performance.IPerformanceWithAggregation;
 
