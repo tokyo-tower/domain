@@ -6,6 +6,7 @@ import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
+import { format } from 'util';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
@@ -557,7 +558,16 @@ function temporaryReservation2confirmed(params: {
     const customerContact = params.customerContact;
     const performance = params.event;
 
-    const id = `${params.orderNumber}-${params.paymentSeatIndex}`;
+    // tslint:disable-next-line:no-magic-numbers
+    const projectPrefix = project.id.slice(0, 3)
+        .toUpperCase();
+    const id = format(
+        '%s-%s-%s-%s',
+        projectPrefix,
+        moment(params.event.startDate).tz('Asia/Tokyo').format('YYMMDD'),
+        params.tmpReservation.reservationNumber,
+        params.paymentSeatIndex
+    );
 
     const unitPriceSpec = params.tmpReservation.reservedTicket.ticketType.priceSpecification;
 

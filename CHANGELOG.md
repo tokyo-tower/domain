@@ -10,9 +10,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 券種IDと券種コードを分離
+- 予約IDを購入番号と完全分離
+
 ### Deprecated
 
 ### Removed
+
+- 座席予約オファーインターフェースから冗長な属性を削除
 
 ### Fixed
 
