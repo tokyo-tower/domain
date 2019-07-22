@@ -15,7 +15,6 @@ import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as CheckinGateRepo } from '../repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -42,7 +41,6 @@ export function aggregateEventReservations(data: factory.task.aggregateEventRese
             eventWithAggregation: new EventWithAggregationRepo(redisClient),
             performance: new PerformanceRepo(connection),
             reservation: new ReservationRepo(connection),
-            stock: new StockRepo(redisClient),
             ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(redisClient)
         });
     };
@@ -60,7 +58,6 @@ export function cancelSeatReservation(
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
         await StockService.cancelSeatReservationAuth(data.transactionId)(
             new SeatReservationAuthorizeActionRepo(connection),
-            new StockRepo(redisClient),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection)
         );
@@ -116,7 +113,6 @@ export function returnOrder(
         await OrderService.processReturn(data.transactionId)(
             new PerformanceRepo(connection),
             new ReservationRepo(connection),
-            new StockRepo(redisClient),
             new TransactionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection),

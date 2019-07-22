@@ -15,7 +15,6 @@ import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -49,7 +48,6 @@ export function processReturn(returnOrderTransactionId: string) {
     return async (
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
-        stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
@@ -71,7 +69,7 @@ export function processReturn(returnOrderTransactionId: string) {
         await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
 
         await cancelReservations(returnOrderTransactionId)(
-            reservationRepo, stockRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
+            reservationRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
         );
 
         // 注文を返品済ステータスに変更
@@ -104,7 +102,6 @@ export function processReturn(returnOrderTransactionId: string) {
 export function cancelReservations(returnOrderTransactionId: string) {
     return async (
         reservationRepo: ReservationRepo,
-        stockRepo: StockRepo,
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo
@@ -127,7 +124,6 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
             await ReserveService.cancelReservation(reservation)({
                 reservation: reservationRepo,
-                stock: stockRepo,
                 task: taskRepo,
                 ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
             });

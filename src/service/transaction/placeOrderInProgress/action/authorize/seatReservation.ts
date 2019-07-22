@@ -1,4 +1,3 @@
-import * as chevre from '@chevre/api-nodejs-client';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
@@ -8,13 +7,15 @@ import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../
 import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
-import { RedisRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TaskRepo } from '../../../../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
+import * as chevre from '../../../../../chevre';
 import { credentials } from '../../../../../credentials';
 
 const debug = createDebug('ttts-domain:service');
+
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -37,7 +38,6 @@ export type ICreateOpetaiton<T> = (
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    stockRepo: StockRepo,
     taskRepo: TaskRepo
 ) => Promise<T>;
 
@@ -45,12 +45,10 @@ export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    stockRepo: StockRepo,
     taskRepo: TaskRepo
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (repos: {
-    stock: StockRepo;
 }) => Promise<T>;
 
 export type IAcceptedOfferWithSeatNumber = factory.offer.seatReservation.IOffer & {
@@ -67,8 +65,7 @@ function validateOffers(
     acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[],
     transactionId: string
 ): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
-    return async (repos: {
-        stock: StockRepo;
+    return async (_: {
     }) => {
         const acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[] = [];
 
@@ -80,7 +77,17 @@ function validateOffers(
         const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
         const sectionOffer = screeningRoomSectionOffers[0];
 
-        const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: performance.id });
+        const seats = sectionOffer.containsPlace;
+        const unavailableSeats = seats.filter((s) => {
+            return Array.isArray(s.offers)
+                && s.offers.length > 0
+                && s.offers[0].availability === chevre.factory.itemAvailability.OutOfStock;
+        }).map((s) => {
+            return {
+                seatSection: sectionOffer.branchCode,
+                seatNumber: s.branchCode
+            };
+        });
         const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
         debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
@@ -261,7 +268,6 @@ export function create(
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         paymentNoRepo: PaymentNoRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        stockRepo: StockRepo,
         taskRepo: TaskRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
@@ -276,7 +282,7 @@ export function create(
         const performance = await performanceRepo.findById(perfomanceId);
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({ stock: stockRepo });
+        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({});
 
         // 承認アクションを開始
         const action = await seatReservationAuthorizeActionRepo.start(
@@ -297,6 +303,7 @@ export function create(
         let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         const performanceStartDate = moment(performance.startDate).toDate();
+        let responseBody: any;
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
@@ -342,22 +349,56 @@ export function create(
 
             // 仮予約作成
             // 座席ロック
-            await stockRepo.lock({
-                eventId: performance.id,
-                offers: acceptedOffersWithSeatNumber.map((o) => {
-                    const ticketedSeat = o.itemOffered.reservedTicket.ticketedSeat;
-                    if (ticketedSeat === undefined) {
-                        throw new Error('ticketedSeat undefined');
-                    }
-
-                    return {
-                        seatSection: ticketedSeat.seatSection,
-                        seatNumber: ticketedSeat.seatNumber
-                    };
-                }),
-                expires: moment(performance.endDate).add(1, 'month').toDate(),
-                holder: transactionId
+            const reserveService = new chevre.service.transaction.Reserve({
+                endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+                auth: chevreAuthClient
             });
+            responseBody = await reserveService.start({
+                project: project,
+                typeOf: chevre.factory.transactionType.Reserve,
+                agent: {
+                    typeOf: transaction.agent.typeOf,
+                    name: transaction.agent.id
+                },
+                object: {
+                    event: {
+                        id: performance.id
+                    },
+                    acceptedOffer: acceptedOffersWithSeatNumber.map((o) => {
+                        const ticketedSeat = o.itemOffered.reservedTicket.ticketedSeat;
+                        if (ticketedSeat === undefined) {
+                            throw new Error('ticketedSeat undefined');
+                        }
+
+                        return {
+                            id: o.itemOffered.reservedTicket.ticketType.id,
+                            ticketedSeat: {
+                                typeOf: chevre.factory.placeType.Seat,
+                                seatSection: ticketedSeat.seatSection,
+                                seatNumber: ticketedSeat.seatNumber,
+                                seatRow: ''
+                            }
+                        };
+                    })
+                },
+                expires: moment(performance.endDate).add(1, 'month').toDate()
+            });
+            // await stockRepo.lock({
+            //     eventId: performance.id,
+            //     offers: acceptedOffersWithSeatNumber.map((o) => {
+            //         const ticketedSeat = o.itemOffered.reservedTicket.ticketedSeat;
+            //         if (ticketedSeat === undefined) {
+            //             throw new Error('ticketedSeat undefined');
+            //         }
+
+            //         return {
+            //             seatSection: ticketedSeat.seatSection,
+            //             seatNumber: ticketedSeat.seatNumber
+            //         };
+            //     }),
+            //     expires: moment(performance.endDate).add(1, 'month').toDate(),
+            //     holder: transactionId
+            // });
 
             tmpReservations = acceptedOffersWithSeatNumber.map((o) => {
                 return {
@@ -392,7 +433,7 @@ export function create(
 
             try {
                 // 仮予約があれば削除
-                await removeTmpReservations(transactionId, tmpReservations, performance)({ stock: stockRepo });
+                await removeTmpReservations(responseBody)({});
 
                 // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
                 await Promise.all(acceptedOffersWithSeatNumber.map(async (offer) => {
@@ -457,7 +498,10 @@ export function create(
                     },
                     0
                 ),
-                tmpReservations: tmpReservations
+                tmpReservations: tmpReservations,
+                ...{
+                    responseBody: responseBody
+                }
             }
         );
     };
@@ -475,7 +519,6 @@ export function cancel(
         transactionRepo: TransactionRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        stockRepo: StockRepo,
         taskRepo: TaskRepo
     ) => {
         try {
@@ -494,7 +537,7 @@ export function cancel(
 
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
-            await removeTmpReservations(transactionId, actionResult.tmpReservations, performance)({ stock: stockRepo });
+            await removeTmpReservations((<any>actionResult).responseBody)({});
 
             // レート制限があれば解除
             const performanceStartDate = moment(performance.startDate).toDate();
@@ -545,32 +588,35 @@ export function cancel(
  * 仮予約データから在庫確保を取り消す
  */
 function removeTmpReservations(
-    transactionId: string,
-    tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[],
-    performance: factory.performance.IPerformanceWithDetails
+    reserveTransaction: chevre.factory.transaction.ITransaction<chevre.factory.transactionType.Reserve>
 ) {
-    return async (repos: {
-        stock: StockRepo;
+    return async (_: {
     }) => {
-        await Promise.all(tmpReservations.map(async (tmpReservation) => {
-            try {
-                const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
-                if (ticketedSeat !== undefined) {
-                    const lockKey = {
-                        eventId: performance.id,
-                        offer: {
-                            seatNumber: ticketedSeat.seatNumber,
-                            seatSection: ticketedSeat.seatSection
-                        }
-                    };
-                    const holder = await repos.stock.getHolder(lockKey);
-                    if (holder === transactionId) {
-                        await repos.stock.unlock(lockKey);
-                    }
-                }
-            } catch (error) {
-                // no op
-            }
-        }));
+        const reserveService = new chevre.service.transaction.Reserve({
+            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            auth: chevreAuthClient
+        });
+
+        await reserveService.cancel({ id: reserveTransaction.id });
+        // await Promise.all(tmpReservations.map(async (tmpReservation) => {
+        //     try {
+        //         const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
+        //         if (ticketedSeat !== undefined) {
+        //             const lockKey = {
+        //                 eventId: performance.id,
+        //                 offer: {
+        //                     seatNumber: ticketedSeat.seatNumber,
+        //                     seatSection: ticketedSeat.seatSection
+        //                 }
+        //             };
+        //             const holder = await repos.stock.getHolder(lockKey);
+        //             if (holder === transactionId) {
+        //                 await repos.stock.unlock(lockKey);
+        //             }
+        //         }
+        //     } catch (error) {
+        //         // no op
+        //     }
+        // }));
     };
 }

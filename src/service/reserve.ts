@@ -8,7 +8,6 @@ import * as factory from '@tokyotower/factory';
 
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 const debug = createDebug('ttts-domain:service');
@@ -21,7 +20,6 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 export function cancelReservation(params: { id: string }) {
     return async (repos: {
         reservation: ReservationRepo;
-        stock: StockRepo;
         task: TaskRepo;
         ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {

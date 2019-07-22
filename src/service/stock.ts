@@ -9,13 +9,23 @@ import * as factory from '@tokyotower/factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
+
+import * as chevre from '../chevre';
+import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+
+const chevreAuthClient = new chevre.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 /**
  * 仮予約承認取消
@@ -23,7 +33,6 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 export function cancelSeatReservationAuth(transactionId: string) {
     return async (
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-        stockRepo: StockRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo
     ) => {
@@ -32,8 +41,16 @@ export function cancelSeatReservationAuth(transactionId: string) {
             await seatReservationAuthorizeActionRepo.findByTransactionId(transactionId)
                 .then((actions) => actions.filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus));
 
+        const reserveService = new chevre.service.transaction.Reserve({
+            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            auth: chevreAuthClient
+        });
+
         await Promise.all(authorizeActions.map(async (action) => {
-            debug('calling deleteTmpReserve...', action);
+            if (action.result !== undefined) {
+                const reserveTransaction = (<any>action.result).responseBody;
+                await reserveService.cancel({ id: reserveTransaction.id });
+            }
 
             const performance = action.object.performance;
 
@@ -41,24 +58,25 @@ export function cancelSeatReservationAuth(transactionId: string) {
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
-                const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
-                if (ticketedSeat !== undefined) {
-                    const lockKey = {
-                        eventId: performance.id,
-                        offer: {
-                            seatNumber: ticketedSeat.seatNumber,
-                            seatSection: ticketedSeat.seatSection
-                        }
-                    };
-                    const holder = await stockRepo.getHolder(lockKey);
-                    if (holder === transactionId) {
-                        await stockRepo.unlock(lockKey);
-                    }
-                }
+                // const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
+                // if (ticketedSeat !== undefined) {
+                //     const lockKey = {
+                //         eventId: performance.id,
+                //         offer: {
+                //             seatNumber: ticketedSeat.seatNumber,
+                //             seatSection: ticketedSeat.seatSection
+                //         }
+                //     };
+                //     const holder = await stockRepo.getHolder(lockKey);
+                //     if (holder === transactionId) {
+                //         await stockRepo.unlock(lockKey);
+                //     }
+                // }
 
                 let ticketTypeCategory = factory.ticketTypeCategory.Normal;
                 if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
-                    const categoryProperty = tmpReservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                    const categoryProperty =
+                        tmpReservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
                     if (categoryProperty !== undefined) {
                         ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
                     }
