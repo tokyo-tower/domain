@@ -7,6 +7,7 @@ import * as factory from '@tokyotower/factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
 import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
+import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
 import { RedisRepository as StockRepo } from '../../../../../repo/stock';
 import { MongoRepository as TaskRepo } from '../../../../../repo/task';
@@ -15,6 +16,8 @@ import { MongoRepository as TransactionRepo } from '../../../../../repo/transact
 import { credentials } from '../../../../../credentials';
 
 const debug = createDebug('ttts-domain:service');
+
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -38,7 +41,8 @@ export type ICreateOpetaiton<T> = (
     paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     stockRepo: StockRepo,
-    taskRepo: TaskRepo
+    taskRepo: TaskRepo,
+    projectRepo: ProjectRepo
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
@@ -50,6 +54,7 @@ export type ICancelOpetaiton<T> = (
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (repos: {
+    project: ProjectRepo;
     stock: StockRepo;
 }) => Promise<T>;
 
@@ -68,12 +73,21 @@ function validateOffers(
     transactionId: string
 ): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
     return async (repos: {
+        project: ProjectRepo;
         stock: StockRepo;
     }) => {
+        const projectDetails = await repos.project.findById({ id: project.id });
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (projectDetails.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         const acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[] = [];
 
         const eventService = new chevre.service.Event({
-            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            endpoint: projectDetails.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -285,7 +299,8 @@ export function create(
         paymentNoRepo: PaymentNoRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         stockRepo: StockRepo,
-        taskRepo: TaskRepo
+        taskRepo: TaskRepo,
+        projectRepo: ProjectRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
 
@@ -299,7 +314,10 @@ export function create(
         const performance = await performanceRepo.findById(perfomanceId);
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({ stock: stockRepo });
+        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({
+            project: projectRepo,
+            stock: stockRepo
+        });
 
         // 承認アクションを開始
         const action = await seatReservationAuthorizeActionRepo.start(

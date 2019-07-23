@@ -15,6 +15,8 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
     ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)
     // tslint:disable-next-line:no-magic-numbers
@@ -51,6 +53,7 @@ export function aggregateEventReservations(params: {
         checkinGate: repository.place.CheckinGate;
         eventWithAggregation: repository.EventWithAggregation;
         performance: repository.Performance;
+        project: repository.Project;
         reservation: repository.Reservation;
         stock: repository.Stock;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
@@ -90,7 +93,7 @@ export function aggregateEventReservations(params: {
                 maximumAttendeeCapacity,
                 remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair
-            } = await aggregateRemainingAttendeeCapacity({ performance: performance })(repos);
+            } = await aggregateRemainingAttendeeCapacity({ performance: performance, project: project })(repos);
 
             let offers = performance.ticket_type_group.ticket_types;
             if (offers === undefined) {
@@ -167,13 +170,23 @@ export function aggregateEventReservations(params: {
  */
 function aggregateRemainingAttendeeCapacity(params: {
     performance: factory.performance.IPerformanceWithDetails;
+    project: factory.project.IProject;
 }) {
     return async (repos: {
+        project: repository.Project;
         stock: repository.Stock;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
+        const projectDetails = await repos.project.findById({ id: params.project.id });
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (projectDetails.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         const eventService = new chevre.service.Event({
-            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            endpoint: projectDetails.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
 

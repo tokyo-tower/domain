@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 券種IDと券種コードを分離
 - 予約IDを購入番号と完全分離
+- Chevreエンドポイント設定をプロジェクトリポジトリを参照するように変更
 
 ### Deprecated
 
