@@ -39,7 +39,7 @@ ttts.mongoose.connect();
 | `CHEVRE_AUTHORIZE_SERVER_DOMAIN`  | true     |               | Chevre API Settings                       |
 | `CHEVRE_CLIENT_ID`                | true     |               | Chevre API Settings                       |
 | `CHEVRE_CLIENT_SECRET`            | true     |               | Chevre API Settings                       |
-| `CHEVRE_API_ENDPOINT`             | true     |               | Chevre API Settings                       |
+| `PROJECT_ID`                      | true     |               | Project ID                                |
 
 ## License
 

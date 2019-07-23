@@ -13,6 +13,7 @@ import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as CheckinGateRepo } from '../repo/place/checkinGate';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -40,6 +41,7 @@ export function aggregateEventReservations(data: factory.task.aggregateEventRese
             checkinGate: new CheckinGateRepo(redisClient),
             eventWithAggregation: new EventWithAggregationRepo(redisClient),
             performance: new PerformanceRepo(connection),
+            project: new ProjectRepo(connection),
             reservation: new ReservationRepo(connection),
             ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(redisClient)
         });

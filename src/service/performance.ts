@@ -89,9 +89,8 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                     const unitPriceSpec = ticketType.priceSpecification;
 
                     return {
-                        // ...ticketType,
                         name: ticketType.name,
-                        id: ticketType.id,
+                        id: ticketType.identifier, // POSに受け渡すのは券種IDでなく券種コードなので要注意
                         // POSに対するAPI互換性維持のため、charge属性追加
                         charge: (unitPriceSpec !== undefined) ? unitPriceSpec.price : undefined,
                         available_num: (offerAggregation !== undefined) ? offerAggregation.remainingAttendeeCapacity : undefined

@@ -6,6 +6,7 @@ import * as factory from '@tokyotower/factory';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
 import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
+import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as TaskRepo } from '../../../../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
@@ -38,7 +39,8 @@ export type ICreateOpetaiton<T> = (
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    taskRepo: TaskRepo
+    taskRepo: TaskRepo,
+    projectRepo: ProjectRepo
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
@@ -49,6 +51,7 @@ export type ICancelOpetaiton<T> = (
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (repos: {
+    project: ProjectRepo;
 }) => Promise<T>;
 
 export type IAcceptedOfferWithSeatNumber = factory.offer.seatReservation.IOffer & {
@@ -65,15 +68,28 @@ function validateOffers(
     acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[],
     transactionId: string
 ): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
-    return async (_: {
+    return async (repos: {
+        project: ProjectRepo;
     }) => {
+        const projectDetails = await repos.project.findById({ id: project.id });
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (projectDetails.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         const acceptedOffersWithSeatNumber: IAcceptedOfferWithSeatNumber[] = [];
 
-        // Chevreで全座席オファーを検索
         const eventService = new chevre.service.Event({
-            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            endpoint: projectDetails.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
+
+        // チケットオファー検索
+        const ticketOffers = await eventService.searchTicketOffers({ id: performance.id });
+
+        // Chevreで全座席オファーを検索
         const screeningRoomSectionOffers = await eventService.searchOffers({ id: performance.id });
         const sectionOffer = screeningRoomSectionOffers[0];
 
@@ -93,19 +109,27 @@ function validateOffers(
 
         // tslint:disable-next-line:max-func-body-length
         for (const offer of acceptedOffers) {
-            const ticketType = performance.ticket_type_group.ticket_types.find((t) => t.id === offer.ticket_type);
-            if (ticketType === undefined) {
+            // リクエストで指定されるのは、券種IDではなく券種コードなので要注意
+            const ticketOffer = ticketOffers.find((t) => t.identifier === offer.ticket_type);
+            if (ticketOffer === undefined) {
                 throw new factory.errors.NotFound('Offer', `Offer ${offer.ticket_type} not found`);
             }
-
-            const unitPriceSpec = ticketType.priceSpecification;
+            const unitPriceSpec =
+                <chevre.factory.priceSpecification.IPriceSpecification<chevre.factory.priceSpecificationType.UnitPriceSpecification>>
+                ticketOffer.priceSpecification.priceComponent.find((c) => {
+                    return c.typeOf === chevre.factory.priceSpecificationType.UnitPriceSpecification;
+                });
             if (unitPriceSpec === undefined) {
                 throw new factory.errors.NotFound('Unit Price Specification');
             }
+            const unitPrice = unitPriceSpec.price;
+            if (unitPrice === undefined) {
+                throw new factory.errors.NotFound('Unit Price');
+            }
 
             let ticketTypeCategory = factory.ticketTypeCategory.Normal;
-            if (Array.isArray(ticketType.additionalProperty)) {
-                const categoryProperty = ticketType.additionalProperty.find((p) => p.name === 'category');
+            if (Array.isArray(ticketOffer.additionalProperty)) {
+                const categoryProperty = ticketOffer.additionalProperty.find((p) => p.name === 'category');
                 if (categoryProperty !== undefined) {
                     ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
                 }
@@ -172,14 +196,25 @@ function validateOffers(
             const selectedSeatsForAdditionalStocks = availableSeatsForAdditionalStocks.slice(0, WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS);
             unavailableSeatNumbers.push(...selectedSeatsForAdditionalStocks.map((s) => s.branchCode));
 
+            const ticketType: chevre.factory.ticketType.ITicketType = {
+                project: ticketOffer.priceSpecification.project,
+                typeOf: ticketOffer.typeOf,
+                id: ticketOffer.id,
+                identifier: ticketOffer.identifier,
+                name: <any>ticketOffer.name,
+                priceSpecification: unitPriceSpec,
+                priceCurrency: ticketOffer.priceCurrency,
+                additionalProperty: ticketOffer.additionalProperty
+            };
+
             acceptedOffersWithSeatNumber.push({
                 ...offer,
-                additionalProperty: ticketType.additionalProperty,
-                price: unitPriceSpec.price,
+                additionalProperty: ticketOffer.additionalProperty,
+                price: unitPrice,
                 priceCurrency: factory.priceCurrency.JPY,
-                ticket_type: ticketType.id,
-                ticket_type_name: <any>ticketType.name,
-                ticket_type_charge: unitPriceSpec.price,
+                // ticket_type: ticketOffer.identifier,
+                // ticket_type_name: <any>ticketOffer.name,
+                // ticket_type_charge: unitPrice,
                 itemOffered: {
                     reservationNumber: '',
                     additionalTicketText: offer.watcher_name,
@@ -210,12 +245,12 @@ function validateOffers(
             selectedSeatsForAdditionalStocks.forEach((s) => {
                 acceptedOffersWithSeatNumber.push({
                     ...offer,
-                    additionalProperty: ticketType.additionalProperty,
-                    price: unitPriceSpec.price,
+                    additionalProperty: ticketOffer.additionalProperty,
+                    price: unitPrice,
                     priceCurrency: factory.priceCurrency.JPY,
-                    ticket_type: ticketType.id,
-                    ticket_type_name: <any>ticketType.name,
-                    ticket_type_charge: unitPriceSpec.price,
+                    // ticket_type: ticketOffer.identifier,
+                    // ticket_type_name: <any>ticketOffer.name,
+                    // ticket_type_charge: unitPrice,
                     itemOffered: {
                         reservationNumber: '',
                         additionalTicketText: offer.watcher_name,
@@ -268,7 +303,8 @@ export function create(
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         paymentNoRepo: PaymentNoRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo
+        taskRepo: TaskRepo,
+        projectRepo: ProjectRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
 
@@ -282,7 +318,9 @@ export function create(
         const performance = await performanceRepo.findById(perfomanceId);
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({});
+        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({
+            project: projectRepo
+        });
 
         // 承認アクションを開始
         const action = await seatReservationAuthorizeActionRepo.start(
