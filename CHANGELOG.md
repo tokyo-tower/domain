@@ -18,6 +18,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v20.0.0 - 2019-07-23
+
+### Changed
+
+- 券種IDと券種コードを分離
+- 予約IDを購入番号と完全分離
+- Chevreエンドポイント設定をプロジェクトリポジトリを参照するように変更
+
+### Removed
+
+- 座席予約オファーインターフェースから冗長な属性を削除
+
 ## v19.0.1 - 2019-07-19
 
 ### Changed
