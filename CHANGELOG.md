@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 座席の在庫管理をChevreへ移行
+- GMOサイト設定をプロジェクトリポジトリから参照するように変更
+- update @chevre/factory
 
 ### Deprecated
 
