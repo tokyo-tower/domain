@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v21.0.0 - 2019-07-24
+
+### Changed
+
+- GMOサイト設定をプロジェクトリポジトリから参照するように変更
+- update @chevre/factory
+
 ## v20.0.0 - 2019-07-23
 
 ### Changed
