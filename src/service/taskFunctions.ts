@@ -118,7 +118,8 @@ export function returnOrder(
             new TransactionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection),
-            new OrderRepo(connection)
+            new OrderRepo(connection),
+            new ProjectRepo(connection)
         );
     };
 }

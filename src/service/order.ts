@@ -13,6 +13,7 @@ import * as numeral from 'numeral';
 
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -51,7 +52,8 @@ export function processReturn(returnOrderTransactionId: string) {
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
-        orderRepo: OrderRepo
+        orderRepo: OrderRepo,
+        projectRepo: ProjectRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -69,7 +71,7 @@ export function processReturn(returnOrderTransactionId: string) {
         await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
 
         await cancelReservations(returnOrderTransactionId)(
-            reservationRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo
+            reservationRepo, transactionRepo, ticketTypeCategoryRateLimitRepo, taskRepo, projectRepo
         );
 
         // 注文を返品済ステータスに変更
@@ -104,7 +106,8 @@ export function cancelReservations(returnOrderTransactionId: string) {
         reservationRepo: ReservationRepo,
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo
+        taskRepo: TaskRepo,
+        projectRepo: ProjectRepo
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -123,6 +126,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
             const reservation = o.itemOffered;
 
             await ReserveService.cancelReservation(reservation)({
+                project: projectRepo,
                 reservation: reservationRepo,
                 task: taskRepo,
                 ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
