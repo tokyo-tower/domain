@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- GMOサイト設定をプロジェクトリポジトリから参照するように変更
+- update @chevre/factory
+
 ### Deprecated
 
 ### Removed

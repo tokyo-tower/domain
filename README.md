@@ -1,8 +1,6 @@
-# 東京タワードメインモデル for Node.js
+# Tokyo Tower Domain Library for Node.js
 
 [![CircleCI](https://circleci.com/gh/tokyo-tower/domain.svg?style=svg)](https://circleci.com/gh/tokyo-tower/domain)
-
-Node.jsで使用するための東京タワーオンラインチケットシステムのドメインモデルパッケージです。
 
 ## Table of contents
 
