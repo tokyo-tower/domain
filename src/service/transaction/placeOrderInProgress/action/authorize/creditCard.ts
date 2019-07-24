@@ -6,16 +6,20 @@ import * as createDebug from 'debug';
 
 import * as factory from '@tokyotower/factory';
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../../../../repo/action/authorize/creditCard';
+import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { MongoRepository as SellerRepo } from '../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type ICreateOperation<T> = (
     creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
     sellerRepo: SellerRepo,
     transactionRepo: TransactionRepo,
-    creditService: GMO.service.Credit
+    creditService: GMO.service.Credit,
+    projectRepo: ProjectRepo
 ) => Promise<T>;
 
 /**
@@ -42,8 +46,20 @@ export function create(
         creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
         sellerRepo: SellerRepo,
         transactionRepo: TransactionRepo,
-        creditService: GMO.service.Credit
+        creditService: GMO.service.Credit,
+        projectRepo: ProjectRepo
     ) => {
+        const projectDetails = await projectRepo.findById({ id: project.id });
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (projectDetails.settings.gmo === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
@@ -91,8 +107,8 @@ export function create(
                 accessPass: entryTranResult.accessPass,
                 orderId: orderId,
                 method: method,
-                siteId: <string>process.env.GMO_SITE_ID,
-                sitePass: <string>process.env.GMO_SITE_PASS,
+                siteId: projectDetails.settings.gmo.siteId,
+                sitePass: projectDetails.settings.gmo.sitePass,
                 cardNo: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>creditCard).cardNo,
                 cardPass: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>creditCard).cardPass,
                 expire: (<factory.paymentMethod.paymentCard.creditCard.IUncheckedCardRaw>creditCard).expire,
