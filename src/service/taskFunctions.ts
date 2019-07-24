@@ -16,7 +16,6 @@ import { RedisRepository as CheckinGateRepo } from '../repo/place/checkinGate';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { RedisRepository as StockRepo } from '../repo/stock';
 import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
@@ -44,7 +43,6 @@ export function aggregateEventReservations(data: factory.task.aggregateEventRese
             performance: new PerformanceRepo(connection),
             project: new ProjectRepo(connection),
             reservation: new ReservationRepo(connection),
-            stock: new StockRepo(redisClient),
             ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(redisClient)
         });
     };
@@ -62,9 +60,9 @@ export function cancelSeatReservation(
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
         await StockService.cancelSeatReservationAuth(data.transactionId)(
             new SeatReservationAuthorizeActionRepo(connection),
-            new StockRepo(redisClient),
             new TicketTypeCategoryRateLimitRepo(redisClient),
-            new TaskRepo(connection)
+            new TaskRepo(connection),
+            new ProjectRepo(connection)
         );
     };
 }
@@ -86,7 +84,8 @@ export function settleSeatReservation(
         await StockService.transferSeatReservation(data.transactionId)(
             new TransactionRepo(connection),
             new ReservationRepo(connection),
-            new TaskRepo(connection)
+            new TaskRepo(connection),
+            new ProjectRepo(connection)
         );
     };
 }
@@ -118,11 +117,11 @@ export function returnOrder(
         await OrderService.processReturn(data.transactionId)(
             new PerformanceRepo(connection),
             new ReservationRepo(connection),
-            new StockRepo(redisClient),
             new TransactionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection),
-            new OrderRepo(connection)
+            new OrderRepo(connection),
+            new ProjectRepo(connection)
         );
     };
 }

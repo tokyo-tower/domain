@@ -6,7 +6,7 @@ import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
-import { format } from 'util';
+// import { format } from 'util';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
@@ -440,7 +440,14 @@ export function createResult(
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
 
-    const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
+    const authorizeSeatReservationResult = <factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result;
+    const reserveTransaction = authorizeSeatReservationResult.responseBody;
+    if (reserveTransaction === undefined) {
+        throw new factory.errors.Argument('Transaction', 'Reserve Transaction undefined');
+    }
+
+    // const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
+    const tmpReservations = reserveTransaction.object.reservations;
     const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
@@ -544,7 +551,7 @@ export function createResult(
  */
 // tslint:disable-next-line:max-func-body-length
 function temporaryReservation2confirmed(params: {
-    tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
+    tmpReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
     event: factory.performance.IPerformanceWithDetails;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
@@ -559,15 +566,15 @@ function temporaryReservation2confirmed(params: {
     const performance = params.event;
 
     // tslint:disable-next-line:no-magic-numbers
-    const projectPrefix = project.id.slice(0, 3)
-        .toUpperCase();
-    const id = format(
-        '%s-%s-%s-%s',
-        projectPrefix,
-        moment(params.event.startDate).tz('Asia/Tokyo').format('YYMMDD'),
-        params.tmpReservation.reservationNumber,
-        params.paymentSeatIndex
-    );
+    // const projectPrefix = project.id.slice(0, 3)
+    //     .toUpperCase();
+    // const id = format(
+    //     '%s-%s-%s-%s',
+    //     projectPrefix,
+    //     moment(params.event.startDate).tz('Asia/Tokyo').format('YYMMDD'),
+    //     params.tmpReservation.reservationNumber,
+    //     params.paymentSeatIndex
+    // );
 
     const unitPriceSpec = params.tmpReservation.reservedTicket.ticketType.priceSpecification;
 
@@ -714,7 +721,7 @@ function temporaryReservation2confirmed(params: {
         checkedIn: false,
         attended: false,
 
-        id: id,
+        id: params.tmpReservation.id,
 
         checkins: []
     };

@@ -1,4 +1,3 @@
-import * as chevre from '@chevre/api-nodejs-client';
 import * as factory from '@tokyotower/factory';
 // import * as createDebug from 'debug';
 
@@ -6,6 +5,7 @@ import * as factory from '@tokyotower/factory';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { MongoRepository as SellerRepo } from '../repo/seller';
 
+import * as chevre from '../chevre';
 import { credentials } from '../credentials';
 
 // const debug = createDebug('ttts-domain:service');

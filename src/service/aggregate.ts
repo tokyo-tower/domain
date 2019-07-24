@@ -2,11 +2,11 @@
  * 集計サービス
  * このサービスは集計後の責任は負わないこと。
  */
-import * as chevre from '@chevre/api-nodejs-client';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
+import * as chevre from '../chevre';
 import * as repository from '../repository';
 
 import * as Report4SalesService from './aggregate/report4sales';
@@ -55,7 +55,6 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         project: repository.Project;
         reservation: repository.Reservation;
-        stock: repository.Stock;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const performance = await repos.performance.findById(params.id);
@@ -174,7 +173,6 @@ function aggregateRemainingAttendeeCapacity(params: {
 }) {
     return async (repos: {
         project: repository.Project;
-        stock: repository.Stock;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const projectDetails = await repos.project.findById({ id: params.project.id });
@@ -221,7 +219,18 @@ function aggregateRemainingAttendeeCapacity(params: {
                 (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
             );
 
-            const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: params.performance.id });
+            const seats = sectionOffer.containsPlace;
+            const unavailableSeats = seats.filter((s) => {
+                return Array.isArray(s.offers)
+                    && s.offers.length > 0
+                    && s.offers[0].availability === chevre.factory.itemAvailability.OutOfStock;
+            }).map((s) => {
+                return {
+                    seatSection: sectionOffer.branchCode,
+                    seatNumber: s.branchCode
+                };
+            });
+            // const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: params.performance.id });
             const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
