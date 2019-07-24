@@ -61,7 +61,8 @@ export function cancelSeatReservation(
         await StockService.cancelSeatReservationAuth(data.transactionId)(
             new SeatReservationAuthorizeActionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
-            new TaskRepo(connection)
+            new TaskRepo(connection),
+            new ProjectRepo(connection)
         );
     };
 }
@@ -83,7 +84,8 @@ export function settleSeatReservation(
         await StockService.transferSeatReservation(data.transactionId)(
             new TransactionRepo(connection),
             new ReservationRepo(connection),
-            new TaskRepo(connection)
+            new TaskRepo(connection),
+            new ProjectRepo(connection)
         );
     };
 }

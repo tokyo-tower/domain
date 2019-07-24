@@ -104,7 +104,7 @@ export function cancelReservation(params: { id: string }) {
                 agent: {
                     typeOf: '',
                     id: '',
-                    name: '',
+                    name: ''
                 },
                 object: {
                     reservation: { id: r.id }

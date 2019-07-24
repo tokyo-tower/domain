@@ -4,7 +4,7 @@ import * as moment from 'moment-timezone';
 import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
-import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
+// import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
@@ -37,7 +37,7 @@ export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-    paymentNoRepo: PaymentNoRepo,
+    // paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     taskRepo: TaskRepo,
     projectRepo: ProjectRepo
@@ -47,7 +47,8 @@ export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    taskRepo: TaskRepo
+    taskRepo: TaskRepo,
+    projectRepo: ProjectRepo
 ) => Promise<T>;
 
 export type IValidateOperation<T> = (repos: {
@@ -301,12 +302,20 @@ export function create(
         transactionRepo: TransactionRepo,
         performanceRepo: PerformanceRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-        paymentNoRepo: PaymentNoRepo,
+        // paymentNoRepo: PaymentNoRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
         projectRepo: ProjectRepo
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
+
+        const projectDetails = await projectRepo.findById({ id: project.id });
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (projectDetails.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
 
         const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
@@ -341,11 +350,12 @@ export function create(
         let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         const performanceStartDate = moment(performance.startDate).toDate();
-        let responseBody: any;
+        let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
+        let responseBody: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
 
         try {
             // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-            const reservationNumber = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
+            // const reservationNumber = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
 
             // 車椅子予約がある場合、レート制限
             await Promise.all(acceptedOffersWithSeatNumber
@@ -388,10 +398,11 @@ export function create(
             // 仮予約作成
             // 座席ロック
             const reserveService = new chevre.service.transaction.Reserve({
-                endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+                endpoint: projectDetails.settings.chevre.endpoint,
                 auth: chevreAuthClient
             });
-            responseBody = await reserveService.start({
+
+            requestBody = {
                 project: project,
                 typeOf: chevre.factory.transactionType.Reserve,
                 agent: {
@@ -420,7 +431,9 @@ export function create(
                     })
                 },
                 expires: moment(performance.endDate).add(1, 'month').toDate()
-            });
+            };
+
+            responseBody = await reserveService.start(requestBody);
             // await stockRepo.lock({
             //     eventId: performance.id,
             //     offers: acceptedOffersWithSeatNumber.map((o) => {
@@ -438,10 +451,24 @@ export function create(
             //     holder: transactionId
             // });
 
+            const reservations = responseBody.object.reservations;
             tmpReservations = acceptedOffersWithSeatNumber.map((o) => {
+                // 該当座席のChevre予約を検索
+                const chevreReservation = reservations.find((r) => {
+                    return r.reservedTicket.ticketedSeat !== undefined
+                        && o.itemOffered.reservedTicket.ticketedSeat !== undefined
+                        && r.reservedTicket.ticketedSeat.seatNumber === o.itemOffered.reservedTicket.ticketedSeat.seatNumber;
+                });
+
+                if (chevreReservation === undefined) {
+                    throw new factory.errors.ServiceUnavailable('Reservation not found for an accepted offer');
+                }
+
                 return {
+                    // ...chevreReservation,
                     ...o.itemOffered,
-                    reservationNumber: reservationNumber
+                    id: chevreReservation.id,
+                    reservationNumber: chevreReservation.reservationNumber
                 };
             });
             debug(tmpReservations.length, 'tmp reservation(s) created');
@@ -471,7 +498,9 @@ export function create(
 
             try {
                 // 仮予約があれば削除
-                await removeTmpReservations(responseBody)({});
+                if (responseBody !== undefined) {
+                    await removeTmpReservations(responseBody, projectDetails.settings.chevre.endpoint)({});
+                }
 
                 // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
                 await Promise.all(acceptedOffersWithSeatNumber.map(async (offer) => {
@@ -537,9 +566,8 @@ export function create(
                     0
                 ),
                 tmpReservations: tmpReservations,
-                ...{
-                    responseBody: responseBody
-                }
+                requestBody: requestBody,
+                responseBody: responseBody
             }
         );
     };
@@ -557,9 +585,18 @@ export function cancel(
         transactionRepo: TransactionRepo,
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo
+        taskRepo: TaskRepo,
+        projectRepo: ProjectRepo
     ) => {
         try {
+            const projectDetails = await projectRepo.findById({ id: project.id });
+            if (projectDetails.settings === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings undefined');
+            }
+            if (projectDetails.settings.chevre === undefined) {
+                throw new factory.errors.ServiceUnavailable('Project settings not found');
+            }
+
             const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
 
             if (transaction.agent.id !== agentId) {
@@ -575,7 +612,7 @@ export function cancel(
 
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
-            await removeTmpReservations((<any>actionResult).responseBody)({});
+            await removeTmpReservations((<any>actionResult).responseBody, projectDetails.settings.chevre.endpoint)({});
 
             // レート制限があれば解除
             const performanceStartDate = moment(performance.startDate).toDate();
@@ -626,12 +663,13 @@ export function cancel(
  * 仮予約データから在庫確保を取り消す
  */
 function removeTmpReservations(
-    reserveTransaction: chevre.factory.transaction.ITransaction<chevre.factory.transactionType.Reserve>
+    reserveTransaction: chevre.factory.transaction.ITransaction<chevre.factory.transactionType.Reserve>,
+    chevreEndpoint: string
 ) {
     return async (_: {
     }) => {
         const reserveService = new chevre.service.transaction.Reserve({
-            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            endpoint: chevreEndpoint,
             auth: chevreAuthClient
         });
 

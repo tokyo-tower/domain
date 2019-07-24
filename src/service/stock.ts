@@ -7,6 +7,7 @@ import * as moment from 'moment';
 import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
+import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 import { MongoRepository as TaskRepo } from '../repo/task';
@@ -16,6 +17,8 @@ import * as chevre from '../chevre';
 import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
+
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
@@ -34,15 +37,24 @@ export function cancelSeatReservationAuth(transactionId: string) {
     return async (
         seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo
+        taskRepo: TaskRepo,
+        projectRepo: ProjectRepo
     ) => {
+        const projectDetails = await projectRepo.findById({ id: project.id });
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (projectDetails.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         // 座席仮予約アクションを取得
         const authorizeActions: factory.action.authorize.seatReservation.IAction[] =
             await seatReservationAuthorizeActionRepo.findByTransactionId(transactionId)
                 .then((actions) => actions.filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus));
 
         const reserveService = new chevre.service.transaction.Reserve({
-            endpoint: <string>process.env.CHEVRE_API_ENDPOINT,
+            endpoint: projectDetails.settings.chevre.endpoint,
             auth: chevreAuthClient
         });
 
@@ -116,10 +128,61 @@ export function cancelSeatReservationAuth(transactionId: string) {
  * 仮予約→本予約
  */
 export function transferSeatReservation(transactionId: string) {
-    return async (transactionRepo: TransactionRepo, reservationRepo: ReservationRepo, taskRepo: TaskRepo) => {
+    return async (
+        transactionRepo: TransactionRepo,
+        reservationRepo: ReservationRepo,
+        taskRepo: TaskRepo,
+        projectRepo: ProjectRepo
+    ) => {
+        const projectDetails = await projectRepo.findById({ id: project.id });
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        if (projectDetails.settings.chevre === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
         const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
             .map((o) => o.itemOffered);
+
+        // 座席仮予約アクションを取得
+        const authorizeActions: factory.action.authorize.seatReservation.IAction[] = transaction.object.authorizeActions
+            .filter((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+        const reserveService = new chevre.service.transaction.Reserve({
+            endpoint: projectDetails.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        await Promise.all(authorizeActions.map(async (a) => {
+            if (a.result !== undefined) {
+                const reserveTransaction = a.result.responseBody;
+                if (reserveTransaction !== undefined) {
+                    // Chevre予約取引確定
+                    await reserveService.confirm({
+                        id: reserveTransaction.id,
+                        object: {
+                            reservations: reservations.map((r) => {
+                                // プロジェクト固有の値を連携
+                                return {
+                                    id: r.id,
+                                    additionalTicketText: r.additionalTicketText,
+                                    reservedTicket: {
+                                        issuedBy: r.reservedTicket.issuedBy,
+                                        ticketToken: r.reservedTicket.ticketToken,
+                                        underName: r.reservedTicket.underName
+                                    },
+                                    underName: r.underName,
+                                    additionalProperty: r.additionalProperty
+                                };
+                            })
+                        }
+                    });
+                }
+            }
+        }));
 
         await Promise.all(reservations.map(async (reservation) => {
             /// 予約データを作成する
