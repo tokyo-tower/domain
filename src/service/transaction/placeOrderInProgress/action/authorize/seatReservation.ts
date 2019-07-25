@@ -4,7 +4,6 @@ import * as moment from 'moment-timezone';
 import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
-// import { RedisRepository as PaymentNoRepo } from '../../../../../repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
@@ -37,7 +36,6 @@ export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
     seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-    // paymentNoRepo: PaymentNoRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     taskRepo: TaskRepo,
     projectRepo: ProjectRepo
@@ -51,9 +49,7 @@ export type ICancelOpetaiton<T> = (
     projectRepo: ProjectRepo
 ) => Promise<T>;
 
-export type IValidateOperation<T> = (repos: {
-    project: ProjectRepo;
-}) => Promise<T>;
+export type IValidateOperation<T> = () => Promise<T>;
 
 export type IAcceptedOfferWithSeatNumber = factory.offer.seatReservation.IOffer & {
     itemOffered: factory.action.authorize.seatReservation.ITmpReservation;
@@ -65,14 +61,12 @@ export type IAcceptedOfferWithSeatNumber = factory.offer.seatReservation.IOffer 
  */
 // tslint:disable-next-line:max-func-body-length
 function validateOffers(
+    projectDetails: factory.project.IProject,
     performance: factory.performance.IPerformanceWithDetails,
     acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[],
     transactionId: string
 ): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
-    return async (repos: {
-        project: ProjectRepo;
-    }) => {
-        const projectDetails = await repos.project.findById({ id: project.id });
+    return async () => {
         if (projectDetails.settings === undefined) {
             throw new factory.errors.ServiceUnavailable('Project settings undefined');
         }
@@ -323,9 +317,7 @@ export function create(
         const performance = await performanceRepo.findById(perfomanceId);
 
         // 供給情報の有効性を確認
-        const acceptedOffersWithSeatNumber = await validateOffers(performance, acceptedOffers, transactionId)({
-            project: projectRepo
-        });
+        const acceptedOffersWithSeatNumber = await validateOffers(projectDetails, performance, acceptedOffers, transactionId)();
 
         // 承認アクションを開始
         const action = await seatReservationAuthorizeActionRepo.start(
@@ -343,16 +335,12 @@ export function create(
 
         // 在庫から仮予約
         let tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
-        // let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         const performanceStartDate = moment(performance.startDate).toDate();
         let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
         let responseBody: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
 
         try {
-            // この時点でトークンに対して購入番号発行(上映日が決まれば購入番号を発行できる)
-            // const reservationNumber = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
-
             // 車椅子予約がある場合、レート制限
             await Promise.all(acceptedOffersWithSeatNumber
                 .filter((o) => {
@@ -391,8 +379,7 @@ export function create(
                 })
             );
 
-            // 仮予約作成
-            // 座席ロック
+            // Chevre仮予約
             const reserveService = new chevre.service.transaction.Reserve({
                 endpoint: projectDetails.settings.chevre.endpoint,
                 auth: chevreAuthClient
@@ -430,22 +417,6 @@ export function create(
             };
 
             responseBody = await reserveService.start(requestBody);
-            // await stockRepo.lock({
-            //     eventId: performance.id,
-            //     offers: acceptedOffersWithSeatNumber.map((o) => {
-            //         const ticketedSeat = o.itemOffered.reservedTicket.ticketedSeat;
-            //         if (ticketedSeat === undefined) {
-            //             throw new Error('ticketedSeat undefined');
-            //         }
-
-            //         return {
-            //             seatSection: ticketedSeat.seatSection,
-            //             seatNumber: ticketedSeat.seatNumber
-            //         };
-            //     }),
-            //     expires: moment(performance.endDate).add(1, 'month').toDate(),
-            //     holder: transactionId
-            // });
 
             const reservations = responseBody.object.reservations;
             tmpReservations = acceptedOffersWithSeatNumber.map((o) => {
@@ -461,29 +432,12 @@ export function create(
                 }
 
                 return {
-                    // ...chevreReservation,
                     ...o.itemOffered,
                     id: chevreReservation.id,
-                    reservationNumber: chevreReservation.reservationNumber,
-                    reservedTicket: chevreReservation.reservedTicket
+                    reservationNumber: chevreReservation.reservationNumber
                 };
             });
             debug(tmpReservations.length, 'tmp reservation(s) created');
-
-            // 予約枚数が指定枚数に達しなかった場合エラー
-            // tmpReservationsWithoutExtra = tmpReservations
-            //     .filter((r) => {
-            //         // 余分確保分を除く
-            //         let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            //         if (r.additionalProperty !== undefined) {
-            //             extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            //         }
-
-            //         return r.additionalProperty === undefined
-            //             || extraProperty === undefined
-            //             || extraProperty.value !== '1';
-            //     });
-            // debug(tmpReservationsWithoutExtra.length, 'tmp reservation(s) created without extra');
         } catch (error) {
             // actionにエラー結果を追加
             try {
@@ -499,7 +453,7 @@ export function create(
                     await removeTmpReservations(responseBody, projectDetails.settings.chevre.endpoint)({});
                 }
 
-                // 車椅子のレート制限カウント数が車椅子要求数以下であれば、このアクションのために枠確保済なので、それを解放
+                // 車椅子レート制限解放
                 await Promise.all(acceptedOffersWithSeatNumber.map(async (offer) => {
                     let ticketTypeCategory = factory.ticketTypeCategory.Normal;
                     if (Array.isArray(offer.additionalProperty)) {
@@ -550,23 +504,22 @@ export function create(
         }
 
         // アクションを完了
-        return seatReservationAuthorizeActionRepo.complete(
-            action.id,
-            {
-                price: tmpReservations.reduce(
-                    (a, b) => {
-                        const unitPriceSpec = b.reservedTicket.ticketType.priceSpecification;
-                        const unitPrice = (unitPriceSpec !== undefined) ? unitPriceSpec.price : 0;
+        const result: factory.action.authorize.seatReservation.IResult = {
+            price: tmpReservations.reduce(
+                (a, b) => {
+                    const unitPriceSpec = b.reservedTicket.ticketType.priceSpecification;
+                    const unitPrice = (unitPriceSpec !== undefined) ? unitPriceSpec.price : 0;
 
-                        return a + unitPrice;
-                    },
-                    0
-                ),
-                tmpReservations: tmpReservations,
-                requestBody: requestBody,
-                responseBody: responseBody
-            }
-        );
+                    return a + unitPrice;
+                },
+                0
+            ),
+            tmpReservations: tmpReservations,
+            requestBody: requestBody,
+            responseBody: responseBody
+        };
+
+        return seatReservationAuthorizeActionRepo.complete(action.id, result);
     };
 }
 
