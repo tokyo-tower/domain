@@ -16,7 +16,7 @@ async function main() {
             "reservationStatus": "ReservationConfirmed",
             "reservationFor.startDate": {
                 "$exists": true,
-                "$gte": moment("2019-07-23T15:00:00.000Z").toDate()
+                "$gte": moment("2019-07-20T15:00:00.000Z").toDate()
             }
             // modifiedTime: {
             //     $gte: moment().add(-3, 'months').toDate(),
@@ -39,28 +39,34 @@ async function main() {
 
     let i = 0;
     await cursor.eachAsync(async (doc) => {
-        i += 1;
         const reservation = doc.toObject();
 
-        const insertingDoc = {
-            ...reservation,
-            _id: reservation.id,
-            project: project,
-            createdAt: reservation.created_at,
-            updatedAt: reservation.updated_at
-        };
-        delete insertingDoc.checkins;
-        delete insertingDoc.created_at;
-        delete insertingDoc.updated_at;
-        delete insertingDoc.id;
+        if (reservation.id.slice(0, 4) === 'TTT-' || reservation.id.slice(0, 3) === 'TT-') {
+            i += 1;
+            const insertingDoc = {
+                ...reservation,
+                _id: reservation.id,
+                project: project,
+                createdAt: reservation.created_at,
+                updatedAt: reservation.updated_at
+            };
+            delete insertingDoc.checkins;
+            delete insertingDoc.created_at;
+            delete insertingDoc.updated_at;
+            delete insertingDoc.id;
 
-        // Insert some documents
-        try {
-            console.log('inserting', reservation.id);
-            await collection.insertOne(insertingDoc);
-            console.log(reservation.id, 'migrated');
-        } catch (error) {
-            console.error(reservation.id, error.message);
+            // Insert some documents
+            try {
+                console.log('inserting', reservation.id);
+                await collection.findOneAndReplace(
+                    { _id: insertingDoc._id },
+                    insertingDoc,
+                    { upsert: true }
+                );
+                console.log(reservation.id, 'migrated');
+            } catch (error) {
+                console.error(reservation.id, error.message);
+            }
         }
     });
 
