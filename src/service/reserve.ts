@@ -102,9 +102,9 @@ export function cancelReservation(params: { id: string }) {
                 project: project,
                 typeOf: factory.chevre.transactionType.CancelReservation,
                 agent: {
-                    typeOf: '',
-                    id: '',
-                    name: ''
+                    typeOf: factory.personType.Person,
+                    id: 'tokyotower',
+                    name: '@tokyotower/domain'
                 },
                 object: {
                     reservation: { id: r.id }
@@ -145,7 +145,8 @@ export function cancelReservation(params: { id: string }) {
         const task: factory.task.aggregateEventReservations.IAttributes = {
             name: factory.taskName.AggregateEventReservations,
             status: factory.taskStatus.Ready,
-            runsAt: new Date(),
+            // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
+            runsAt: moment().add(1, 'minute').toDate(),
             remainingNumberOfTries: 3,
             lastTriedAt: null,
             numberOfTried: 0,

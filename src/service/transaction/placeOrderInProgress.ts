@@ -446,8 +446,8 @@ export function createResult(
         throw new factory.errors.Argument('Transaction', 'Reserve Transaction undefined');
     }
 
-    // const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
-    const tmpReservations = reserveTransaction.object.reservations;
+    const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
+    // const tmpReservations = reserveTransaction.object.reservations;
     const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
@@ -551,7 +551,8 @@ export function createResult(
  */
 // tslint:disable-next-line:max-func-body-length
 function temporaryReservation2confirmed(params: {
-    tmpReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
+    tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
+    // tmpReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
     event: factory.performance.IPerformanceWithDetails;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;

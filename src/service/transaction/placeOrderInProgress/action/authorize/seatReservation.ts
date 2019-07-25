@@ -213,10 +213,8 @@ function validateOffers(
                 additionalProperty: ticketOffer.additionalProperty,
                 price: unitPrice,
                 priceCurrency: factory.priceCurrency.JPY,
-                // ticket_type: ticketOffer.identifier,
-                // ticket_type_name: <any>ticketOffer.name,
-                // ticket_type_charge: unitPrice,
                 itemOffered: {
+                    id: '',
                     reservationNumber: '',
                     additionalTicketText: offer.watcher_name,
                     reservedTicket: {
@@ -249,10 +247,8 @@ function validateOffers(
                     additionalProperty: ticketOffer.additionalProperty,
                     price: unitPrice,
                     priceCurrency: factory.priceCurrency.JPY,
-                    // ticket_type: ticketOffer.identifier,
-                    // ticket_type_name: <any>ticketOffer.name,
-                    // ticket_type_charge: unitPrice,
                     itemOffered: {
+                        id: '',
                         reservationNumber: '',
                         additionalTicketText: offer.watcher_name,
                         reservedTicket: {
@@ -347,7 +343,7 @@ export function create(
 
         // 在庫から仮予約
         let tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
-        let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
+        // let tmpReservationsWithoutExtra: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         const performanceStartDate = moment(performance.startDate).toDate();
         let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
@@ -468,25 +464,26 @@ export function create(
                     // ...chevreReservation,
                     ...o.itemOffered,
                     id: chevreReservation.id,
-                    reservationNumber: chevreReservation.reservationNumber
+                    reservationNumber: chevreReservation.reservationNumber,
+                    reservedTicket: chevreReservation.reservedTicket
                 };
             });
             debug(tmpReservations.length, 'tmp reservation(s) created');
 
             // 予約枚数が指定枚数に達しなかった場合エラー
-            tmpReservationsWithoutExtra = tmpReservations
-                .filter((r) => {
-                    // 余分確保分を除く
-                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    if (r.additionalProperty !== undefined) {
-                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                    }
+            // tmpReservationsWithoutExtra = tmpReservations
+            //     .filter((r) => {
+            //         // 余分確保分を除く
+            //         let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            //         if (r.additionalProperty !== undefined) {
+            //             extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            //         }
 
-                    return r.additionalProperty === undefined
-                        || extraProperty === undefined
-                        || extraProperty.value !== '1';
-                });
-            debug(tmpReservationsWithoutExtra.length, 'tmp reservation(s) created without extra');
+            //         return r.additionalProperty === undefined
+            //             || extraProperty === undefined
+            //             || extraProperty.value !== '1';
+            //     });
+            // debug(tmpReservationsWithoutExtra.length, 'tmp reservation(s) created without extra');
         } catch (error) {
             // actionにエラー結果を追加
             try {
