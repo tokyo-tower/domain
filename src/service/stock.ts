@@ -70,21 +70,6 @@ export function cancelSeatReservationAuth(transactionId: string) {
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
 
             await Promise.all(tmpReservations.map(async (tmpReservation) => {
-                // const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
-                // if (ticketedSeat !== undefined) {
-                //     const lockKey = {
-                //         eventId: performance.id,
-                //         offer: {
-                //             seatNumber: ticketedSeat.seatNumber,
-                //             seatSection: ticketedSeat.seatSection
-                //         }
-                //     };
-                //     const holder = await stockRepo.getHolder(lockKey);
-                //     if (holder === transactionId) {
-                //         await stockRepo.unlock(lockKey);
-                //     }
-                // }
-
                 let ticketTypeCategory = factory.ticketTypeCategory.Normal;
                 if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
                     const categoryProperty =
@@ -111,7 +96,9 @@ export function cancelSeatReservationAuth(transactionId: string) {
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
                 name: factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
-                runsAt: new Date(),
+                // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
+                // tslint:disable-next-line:no-magic-numbers
+                runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
                 // tslint:disable-next-line:no-null-keyword
                 lastTriedAt: null,

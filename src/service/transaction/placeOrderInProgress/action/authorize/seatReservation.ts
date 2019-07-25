@@ -434,7 +434,8 @@ export function create(
                 return {
                     ...o.itemOffered,
                     id: chevreReservation.id,
-                    reservationNumber: chevreReservation.reservationNumber
+                    reservationNumber: chevreReservation.reservationNumber,
+                    reservedTicket: chevreReservation.reservedTicket
                 };
             });
             debug(tmpReservations.length, 'tmp reservation(s) created');
@@ -450,7 +451,12 @@ export function create(
             try {
                 // 仮予約があれば削除
                 if (responseBody !== undefined) {
-                    await removeTmpReservations(responseBody, projectDetails.settings.chevre.endpoint)({});
+                    const reserveService = new chevre.service.transaction.Reserve({
+                        endpoint: projectDetails.settings.chevre.endpoint,
+                        auth: chevreAuthClient
+                    });
+
+                    await reserveService.cancel({ id: responseBody.id });
                 }
 
                 // 車椅子レート制限解放
@@ -490,7 +496,9 @@ export function create(
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
                 name: factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
-                runsAt: new Date(),
+                // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
+                // tslint:disable-next-line:no-magic-numbers
+                runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
                 // tslint:disable-next-line:no-null-keyword
                 lastTriedAt: null,
@@ -505,15 +513,27 @@ export function create(
 
         // アクションを完了
         const result: factory.action.authorize.seatReservation.IResult = {
-            price: tmpReservations.reduce(
-                (a, b) => {
-                    const unitPriceSpec = b.reservedTicket.ticketType.priceSpecification;
-                    const unitPrice = (unitPriceSpec !== undefined) ? unitPriceSpec.price : 0;
+            price: tmpReservations
+                .filter((r) => {
+                    // 余分確保分を除く
+                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    if (r.additionalProperty !== undefined) {
+                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    }
 
-                    return a + unitPrice;
-                },
-                0
-            ),
+                    return r.additionalProperty === undefined
+                        || extraProperty === undefined
+                        || extraProperty.value !== '1';
+                })
+                .reduce(
+                    (a, b) => {
+                        const unitPriceSpec = b.reservedTicket.ticketType.priceSpecification;
+                        const unitPrice = (unitPriceSpec !== undefined) ? unitPriceSpec.price : 0;
+
+                        return a + unitPrice;
+                    },
+                    0
+                ),
             tmpReservations: tmpReservations,
             requestBody: requestBody,
             responseBody: responseBody
@@ -562,7 +582,12 @@ export function cancel(
 
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
-            await removeTmpReservations((<any>actionResult).responseBody, projectDetails.settings.chevre.endpoint)({});
+            const reserveService = new chevre.service.transaction.Reserve({
+                endpoint: projectDetails.settings.chevre.endpoint,
+                auth: chevreAuthClient
+            });
+
+            await reserveService.cancel({ id: (<any>actionResult).responseBody.id });
 
             // レート制限があれば解除
             const performanceStartDate = moment(performance.startDate).toDate();
@@ -594,7 +619,9 @@ export function cancel(
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
                 name: factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
-                runsAt: new Date(),
+                // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
+                // tslint:disable-next-line:no-magic-numbers
+                runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
                 // tslint:disable-next-line:no-null-keyword
                 lastTriedAt: null,
@@ -606,43 +633,5 @@ export function cancel(
         } catch (error) {
             // no op
         }
-    };
-}
-
-/**
- * 仮予約データから在庫確保を取り消す
- */
-function removeTmpReservations(
-    reserveTransaction: chevre.factory.transaction.ITransaction<chevre.factory.transactionType.Reserve>,
-    chevreEndpoint: string
-) {
-    return async (_: {
-    }) => {
-        const reserveService = new chevre.service.transaction.Reserve({
-            endpoint: chevreEndpoint,
-            auth: chevreAuthClient
-        });
-
-        await reserveService.cancel({ id: reserveTransaction.id });
-        // await Promise.all(tmpReservations.map(async (tmpReservation) => {
-        //     try {
-        //         const ticketedSeat = tmpReservation.reservedTicket.ticketedSeat;
-        //         if (ticketedSeat !== undefined) {
-        //             const lockKey = {
-        //                 eventId: performance.id,
-        //                 offer: {
-        //                     seatNumber: ticketedSeat.seatNumber,
-        //                     seatSection: ticketedSeat.seatSection
-        //                 }
-        //             };
-        //             const holder = await repos.stock.getHolder(lockKey);
-        //             if (holder === transactionId) {
-        //                 await repos.stock.unlock(lockKey);
-        //             }
-        //         }
-        //     } catch (error) {
-        //         // no op
-        //     }
-        // }));
     };
 }

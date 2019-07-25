@@ -119,34 +119,14 @@ export function cancelReservation(params: { id: string }) {
 
             // 東京タワーDB側の予約もステータス変更
             await repos.reservation.cancel({ id: r.id });
-
-            // if (r.reservedTicket.ticketedSeat !== undefined) {
-            //     const lockKey = {
-            //         eventId: reservation.reservationFor.id,
-            //         offer: {
-            //             seatNumber: r.reservedTicket.ticketedSeat.seatNumber,
-            //             seatSection: r.reservedTicket.ticketedSeat.seatSection
-            //         }
-            //     };
-            //     const holder = await repos.stock.getHolder(lockKey);
-            //     let transactionId = (<any>r).transaction; // 互換性維持のため
-            //     if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-            //         const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
-            //         if (transactionProperty !== undefined) {
-            //             transactionId = transactionProperty.value;
-            //         }
-            //     }
-            //     if (holder === transactionId) {
-            //         await repos.stock.unlock(lockKey);
-            //     }
-            // }
         }));
 
         const task: factory.task.aggregateEventReservations.IAttributes = {
             name: factory.taskName.AggregateEventReservations,
             status: factory.taskStatus.Ready,
             // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
-            runsAt: moment().add(1, 'minute').toDate(),
+            // tslint:disable-next-line:no-magic-numbers
+            runsAt: moment().add(10, 'seconds').toDate(),
             remainingNumberOfTries: 3,
             lastTriedAt: null,
             numberOfTried: 0,
