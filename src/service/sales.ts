@@ -1,9 +1,7 @@
 /**
  * sales service
  * mainly handle transactions with GMO
- * @namespace service.sales
  */
-
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 

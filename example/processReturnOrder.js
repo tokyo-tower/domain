@@ -1,8 +1,6 @@
 /**
  * 注文返品プロセスサンプル
- * @ignore
  */
-
 const ttts = require('../lib/index');
 
 async function main() {

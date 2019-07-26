@@ -69,7 +69,6 @@ const makesOfferSchema = new mongoose.Schema(
 
 /**
  * 組織スキーマ
- * @ignore
  */
 const schema = new mongoose.Schema(
     {

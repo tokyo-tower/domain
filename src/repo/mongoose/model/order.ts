@@ -58,7 +58,6 @@ const orderInquiryKeySchema = new mongoose.Schema(
 
 /**
  * 注文スキーマ
- * @ignore
  */
 const schema = new mongoose.Schema(
     {
