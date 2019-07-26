@@ -50,7 +50,6 @@ const errorSchema = new mongoose.Schema(
 
 /**
  * 取引スキーマ
- * @ignore
  */
 const schema = new mongoose.Schema(
     {

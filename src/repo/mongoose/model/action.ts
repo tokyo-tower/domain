@@ -58,7 +58,6 @@ const purposeSchema = new mongoose.Schema(
 
 /**
  * アクションスキーマ
- * @ignore
  */
 const schema = new mongoose.Schema(
     {

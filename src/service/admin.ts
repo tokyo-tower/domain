@@ -1,9 +1,7 @@
 /**
  * 管理者サービス
  * 管理ユーザーをAmazon Cognitoで管理しているので、基本的にCognitoとの連携を担うサービス
- * @namespace service.admin
  */
-
 // import * as factory from '@tokyotower/factory';
 import * as AWS from 'aws-sdk';
 import * as crypto from 'crypto';

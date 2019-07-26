@@ -6,7 +6,6 @@ import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
-// import { format } from 'util';
 
 import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
 import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
@@ -96,19 +95,6 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 throw new factory.errors.Argument('passportToken', 'Invalid passport.');
             }
         }
-
-        // const agent: factory.transaction.placeOrder.IAgent = {
-        //     typeOf: factory.personType.Person,
-        //     id: params.agent.id,
-        //     url: ''
-        // };
-        // if (params.clientUser.username !== undefined) {
-        //     agent.memberOf = {
-        //         membershipNumber: params.agent.id,
-        //         programName: 'Amazon Cognito',
-        //         username: params.clientUser.username
-        //     };
-        // }
 
         // 新しい進行中取引を作成
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
@@ -566,17 +552,6 @@ function temporaryReservation2confirmed(params: {
     const customerContact = params.customerContact;
     const performance = params.event;
 
-    // tslint:disable-next-line:no-magic-numbers
-    // const projectPrefix = project.id.slice(0, 3)
-    //     .toUpperCase();
-    // const id = format(
-    //     '%s-%s-%s-%s',
-    //     projectPrefix,
-    //     moment(params.event.startDate).tz('Asia/Tokyo').format('YYMMDD'),
-    //     params.tmpReservation.reservationNumber,
-    //     params.paymentSeatIndex
-    // );
-
     const unitPriceSpec = params.tmpReservation.reservedTicket.ticketType.priceSpecification;
 
     const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
@@ -642,7 +617,7 @@ function temporaryReservation2confirmed(params: {
         superEvent: {
             project: project,
             typeOf: factory.chevre.eventType.ScreeningEventSeries,
-            id: '',
+            id: performance.superEvent.id,
             eventStatus: factory.chevre.eventStatusType.EventScheduled,
             kanaName: '',
             name: performance.superEvent.name,

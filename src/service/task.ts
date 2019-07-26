@@ -1,9 +1,7 @@
 /**
  * task service
  * タスクサービス
- * @namespace service/task
  */
-
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
