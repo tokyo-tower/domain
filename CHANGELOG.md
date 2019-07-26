@@ -10,17 +10,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 座席の在庫管理をChevreへ移行
-
 ### Deprecated
 
 ### Removed
 
-- 在庫リポジトリを削除
-
 ### Fixed
 
 ### Security
+
+## v22.0.0 - 2019-07-26
+
+### Changed
+
+- 座席の在庫管理をChevreへ移行
+
+### Removed
+
+- 在庫リポジトリを削除
 
 ## v21.0.0 - 2019-07-24
 
