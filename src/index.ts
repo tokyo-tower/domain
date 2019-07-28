@@ -22,6 +22,8 @@ import * as ReturnOrderTransactionService from './service/transaction/returnOrde
 import * as UtilService from './service/util';
 
 import * as factory from '@tokyotower/factory';
+
+import * as chevre from './chevre';
 import * as repository from './repository';
 
 (<any>mongoose).Promise = global.Promise;
@@ -43,6 +45,8 @@ export import mongoose = mongoose;
 export import redis = redis;
 
 export import GMO = GMO;
+
+export import chevre = chevre;
 
 /**
  * AWS SDK

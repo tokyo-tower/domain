@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v22.0.1 - 2019-07-28
+
+### Changed
+
+- update @chevre/factory
+- Chevre SDKをエクスポート
+
 ## v22.0.0 - 2019-07-26
 
 ### Changed
