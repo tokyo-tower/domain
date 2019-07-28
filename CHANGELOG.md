@@ -10,9 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @chevre/factory
-- Chevre SDKをエクスポート
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v22.0.1 - 2019-07-28
+
+### Changed
+
+- update @chevre/factory
+- Chevre SDKをエクスポート
 
 ## v22.0.0 - 2019-07-26
 
