@@ -7,8 +7,8 @@ async function main() {
     ttts.mongoose.connect(process.env.MONGOLAB_URI);
 
     await ttts.service.task.executeByName(ttts.factory.taskName.ReturnOrder)(
-        new ttts.repository.Task(ttts.mongoose.connection),
-        ttts.mongoose.connection
+        new ttts.repository.Task(mongoose.connection),
+        mongoose.connection
     );
 
     ttts.mongoose.disconnect();

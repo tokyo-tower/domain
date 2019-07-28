@@ -9,8 +9,8 @@ async function main() {
             event: { id: '190711001001010900' }
         }
     )({
-        project: new ttts.repository.Project(ttts.mongoose.connection),
-        seller: new ttts.repository.Seller(ttts.mongoose.connection)
+        project: new ttts.repository.Project(mongoose.connection),
+        seller: new ttts.repository.Seller(mongoose.connection)
     });
     console.log(ticketOffers);
     console.log(ticketOffers.length, 'ticketOffers found');

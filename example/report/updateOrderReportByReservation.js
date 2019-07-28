@@ -3,8 +3,8 @@ const ttts = require('../../');
 async function main() {
     await ttts.mongoose.connect(process.env.MONGOLAB_URI);
 
-    const reservationRepo = new ttts.repository.Reservation(ttts.mongoose.connection);
-    const aggregateSaleRepo = new ttts.repository.AggregateSale(ttts.mongoose.connection);
+    const reservationRepo = new ttts.repository.Reservation(mongoose.connection);
+    const aggregateSaleRepo = new ttts.repository.AggregateSale(mongoose.connection);
 
     const reservation = await reservationRepo.reservationModel.findById('TT-180301-302136-0').exec();
 

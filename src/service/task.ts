@@ -95,6 +95,12 @@ export function retry(intervalInMinutes: number): TaskOperation<void> {
 export function abort(intervalInMinutes: number): TaskOperation<void> {
     return async (taskRepository: TaskRepository) => {
         const abortedTask = await taskRepository.abortOne(intervalInMinutes);
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (abortedTask === null) {
+            return;
+        }
         debug('abortedTask found', abortedTask);
 
         // 開発者へ報告

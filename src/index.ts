@@ -3,7 +3,6 @@
  */
 import * as GMO from '@motionpicture/gmo-service';
 import * as AWS from 'aws-sdk';
-import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
 import * as AdminService from './service/admin';
@@ -25,12 +24,6 @@ import * as factory from '@tokyotower/factory';
 
 import * as chevre from './chevre';
 import * as repository from './repository';
-
-(<any>mongoose).Promise = global.Promise;
-/**
- * MongoDBクライアント
- */
-export import mongoose = mongoose;
 
 /**
  * Redis Cacheクライアント

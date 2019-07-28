@@ -1,11 +1,9 @@
 // tslint:disable:no-implicit-dependencies
-
 /**
- * creativeWork repository test
- * @ignore
+ * Order repository test
  */
-
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -26,7 +24,7 @@ describe('save()', () => {
     it('MongoDBの状態が正常であれば、保管できるはず', async () => {
         const order = {};
 
-        const repository = new ttts.repository.Order(ttts.mongoose.connection);
+        const repository = new ttts.repository.Order(mongoose.connection);
 
         sandbox.mock(repository.orderModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.orderModel());

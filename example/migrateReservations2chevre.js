@@ -10,7 +10,7 @@ const project = {
 async function main() {
     await ttts.mongoose.connect(process.env.MONGOLAB_URI, { autoIndex: false });
 
-    const reservationRepo = new ttts.repository.Reservation(ttts.mongoose.connection);
+    const reservationRepo = new ttts.repository.Reservation(mongoose.connection);
     const cursor = await reservationRepo.reservationModel.find(
         {
             "reservationStatus": "ReservationConfirmed",

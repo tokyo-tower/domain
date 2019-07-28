@@ -10,9 +10,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 中止タスクが存在しない場合に例外が投げられないように調整
+
 ### Deprecated
 
 ### Removed
+
+- mongooseのエクスポートを削除
 
 ### Fixed
 

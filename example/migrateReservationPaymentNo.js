@@ -4,7 +4,7 @@ const moment = require('moment-timezone');
 async function main() {
     await ttts.mongoose.connect(process.env.MONGOLAB_URI);
 
-    const reservationRepo = new ttts.repository.Reservation(ttts.mongoose.connection);
+    const reservationRepo = new ttts.repository.Reservation(mongoose.connection);
     const cursor = await reservationRepo.reservationModel.find(
         {
             // modifiedTime: {

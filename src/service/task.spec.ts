@@ -1,10 +1,8 @@
 // tslint:disable:no-implicit-dependencies
-
 /**
  * task service test
- * @ignore
  */
-
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as redis from 'redis-mock';
 import * as sinon from 'sinon';
@@ -30,12 +28,12 @@ describe('executeByName()', () => {
             data: { datakey: 'dataValue' },
             status: ttts.factory.taskStatus.Running
         };
-        const taskRepo = new ttts.repository.Task(ttts.mongoose.connection);
+        const taskRepo = new ttts.repository.Task(mongoose.connection);
         sandbox.mock(taskRepo).expects('executeOneByName').once().withArgs(task.name).resolves(task);
         sandbox.mock(TaskFunctionsService).expects(task.name).once().withArgs(task.data).returns(async () => Promise.resolve());
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, ttts.factory.taskStatus.Executed).resolves();
 
-        const result = await ttts.service.task.executeByName(task.name)(taskRepo, ttts.mongoose.connection, redis.createClient());
+        const result = await ttts.service.task.executeByName(task.name)(taskRepo, mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -43,13 +41,13 @@ describe('executeByName()', () => {
 
     it('未実行タスクが存在しなければ、実行されないはず', async () => {
         const taskName = ttts.factory.taskName.CreateOrder;
-        const taskRepo = new ttts.repository.Task(ttts.mongoose.connection);
+        const taskRepo = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(taskRepo).expects('executeOneByName').once()
             .withArgs(taskName).rejects(new ttts.factory.errors.NotFound('task'));
         sandbox.mock(ttts.service.task).expects('execute').never();
 
-        const result = await ttts.service.task.executeByName(taskName)(taskRepo, ttts.mongoose.connection, redis.createClient());
+        const result = await ttts.service.task.executeByName(taskName)(taskRepo, mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -63,7 +61,7 @@ describe('retry()', () => {
 
     it('repositoryの状態が正常であれば、エラーにならないはず', async () => {
         const INTERVAL = 10;
-        const taskRepo = new ttts.repository.Task(ttts.mongoose.connection);
+        const taskRepo = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(taskRepo).expects('retry').once()
             .withArgs(INTERVAL).resolves();
@@ -86,7 +84,7 @@ describe('abort()', () => {
             id: 'id',
             executionResults: [{ error: 'error' }]
         };
-        const taskRepo = new ttts.repository.Task(ttts.mongoose.connection);
+        const taskRepo = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(taskRepo).expects('abortOne').once().withArgs(INTERVAL).resolves(task);
         sandbox.mock(ttts.service.notification).expects('report2developers').once()
@@ -111,12 +109,12 @@ describe('execute()', () => {
             data: { datakey: 'dataValue' },
             status: ttts.factory.taskStatus.Running
         };
-        const taskRepo = new ttts.repository.Task(ttts.mongoose.connection);
+        const taskRepo = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(TaskFunctionsService).expects(task.name).once().withArgs(task.data).returns(async () => Promise.resolve());
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, ttts.factory.taskStatus.Executed).resolves();
 
-        const result = await ttts.service.task.execute(<any>task)(taskRepo, ttts.mongoose.connection, redis.createClient());
+        const result = await ttts.service.task.execute(<any>task)(taskRepo, mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();
@@ -129,11 +127,11 @@ describe('execute()', () => {
             data: { datakey: 'dataValue' },
             status: ttts.factory.taskStatus.Running
         };
-        const taskRepo = new ttts.repository.Task(ttts.mongoose.connection);
+        const taskRepo = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(taskRepo).expects('pushExecutionResultById').once().withArgs(task.id, task.status).resolves();
 
-        const result = await ttts.service.task.execute(<any>task)(taskRepo, ttts.mongoose.connection, redis.createClient());
+        const result = await ttts.service.task.execute(<any>task)(taskRepo, mongoose.connection, redis.createClient());
 
         assert.equal(result, undefined);
         sandbox.verify();

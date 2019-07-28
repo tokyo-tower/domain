@@ -1,11 +1,9 @@
 // tslint:disable:no-implicit-dependencies
-
 /**
  * transaction repository test
- * @ignore
  */
-
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -26,7 +24,7 @@ describe('startPlaceOrder()', () => {
     it('repositoryの状態が正常であれば、開始できるはず', async () => {
         const transaction = { id: 'id' };
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('create').once()
@@ -47,7 +45,7 @@ describe('findPlaceOrderById()', () => {
     it('取引が存在すれば、オブジェクトが返却されるはず', async () => {
         const transactionId = 'transactionId';
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('findOne').once()
@@ -63,7 +61,7 @@ describe('findPlaceOrderById()', () => {
     it('取引が存在しなければ、NotFoundエラーとなるはず', async () => {
         const transactionId = 'transactionId';
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('findOne').once()
@@ -84,7 +82,7 @@ describe('findPlaceOrderInProgressById()', () => {
     it('取引が存在すれば、オブジェクトが返却されるはず', async () => {
         const transactionId = 'transactionId';
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('findOne').once()
@@ -100,7 +98,7 @@ describe('findPlaceOrderInProgressById()', () => {
     it('取引が存在しなければ、NotFoundエラーとなるはず', async () => {
         const transactionId = 'transactionId';
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel).expects('findOne').once()
             .chain('exec').resolves(null);
@@ -123,7 +121,7 @@ describe('confirmPlaceOrder()', () => {
         const authorizeActions: any[] = [];
         const transactionResult = {};
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
         const doc = new repository.transactionModel();
 
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
@@ -141,7 +139,7 @@ describe('confirmPlaceOrder()', () => {
         const authorizeActions: any[] = [];
         const transactionResult = {};
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
@@ -161,7 +159,7 @@ describe('reexportTasks()', () => {
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('findOneAndUpdate').once()
@@ -183,7 +181,7 @@ describe('setTasksExportedById()', () => {
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
         const transactionId = 'transactionId';
 
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('findByIdAndUpdate').once().withArgs(transactionId)
@@ -203,7 +201,7 @@ describe('makeExpired()', () => {
     });
 
     it('MongoDBの状態が正常であれば、エラーにならないはず', async () => {
-        const repository = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repository = new ttts.repository.Transaction(mongoose.connection);
 
         sandbox.mock(repository.transactionModel)
             .expects('update').once()
@@ -225,7 +223,7 @@ describe('searchPlaceOrder()', () => {
     it('MongoDBの状態が正常であれば、配列を取得できるはず', async () => {
         const conditions = {};
 
-        const repo = new ttts.repository.Transaction(ttts.mongoose.connection);
+        const repo = new ttts.repository.Transaction(mongoose.connection);
         const docs = [new repo.transactionModel()];
 
         sandbox.mock(repo.transactionModel).expects('find').once()
