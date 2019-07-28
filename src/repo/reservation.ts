@@ -543,26 +543,4 @@ export class MongoRepository {
 
         return doc.toObject();
     }
-
-    /**
-     * 鑑賞者更新
-     */
-    // public async updateWatcher(
-    //     conditions: {
-    //         _id: string;
-    //         status?: factory.reservationStatusType;
-    //     },
-    //     update: {
-    //         watcher_name?: string;
-    //         watcher_name_updated_at?: Date;
-    //     }
-    // ): Promise<IReservation | null> {
-    //     const doc = await this.reservationModel.findOneAndUpdate(
-    //         conditions,
-    //         update,
-    //         { new: true }
-    //     ).exec();
-
-    //     return (doc !== null) ? doc.toObject() : null;
-    // }
 }
