@@ -52,8 +52,13 @@ export function cancelReservation(params: { id: string }) {
             auth: chevreAuthClient
         });
 
+        const reservationService = new chevre.service.Reservation({
+            endpoint: projectDetails.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
         const reservation = await repos.reservation.findById(params);
-        let extraReservations: factory.reservation.event.IReservation[] = [];
+        let extraReservations: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>[] = [];
 
         let ticketTypeCategory = ((<any>reservation).ticket_ttts_extension !== undefined)
             ? (<any>reservation).ticket_ttts_extension.category
@@ -83,7 +88,8 @@ export function cancelReservation(params: { id: string }) {
 
                 // このイベントの予約から余分確保分を検索
                 if (Array.isArray(extraSeatNumbers) && extraSeatNumbers.length > 0) {
-                    extraReservations = await repos.reservation.search({
+                    const searchExtraReservationsResult = await reservationService.search({
+                        limit: 100,
                         typeOf: factory.reservationType.EventReservation,
                         reservationFor: { id: reservation.reservationFor.id },
                         reservationNumbers: [reservation.reservationNumber],
@@ -91,6 +97,15 @@ export function cancelReservation(params: { id: string }) {
                             ticketedSeat: { seatNumbers: extraSeatNumbers }
                         }
                     });
+                    extraReservations = searchExtraReservationsResult.data;
+                    // extraReservations = await repos.reservation.search({
+                    //     typeOf: factory.reservationType.EventReservation,
+                    //     reservationFor: { id: reservation.reservationFor.id },
+                    //     reservationNumbers: [reservation.reservationNumber],
+                    //     reservedTicket: {
+                    //         ticketedSeat: { seatNumbers: extraSeatNumbers }
+                    //     }
+                    // });
                 }
             }
         }

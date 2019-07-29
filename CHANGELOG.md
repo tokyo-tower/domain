@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 中止タスクが存在しない場合に例外が投げられないように調整
+- 車椅子予約を含む注文データに、余分座席分が含まれないように調整
 
 ### Deprecated
 
