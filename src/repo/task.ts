@@ -123,7 +123,7 @@ export class MongoRepository {
         ).exec();
     }
 
-    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask> {
+    public async abortOne(intervalInMinutes: number): Promise<factory.task.ITask | null> {
         const lastTriedAtShoudBeLessThan = moment().add(-intervalInMinutes, 'minutes').toDate();
 
         const doc = await this.taskModel.findOneAndUpdate(
@@ -139,7 +139,7 @@ export class MongoRepository {
         ).exec();
 
         if (doc === null) {
-            throw new factory.errors.NotFound('abortable task');
+            return null;
         }
 
         return <factory.task.ITask>doc.toObject();

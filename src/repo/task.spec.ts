@@ -1,11 +1,9 @@
 // tslint:disable:no-implicit-dependencies
-
 /**
  * task repository test
- * @ignore
  */
-
 import { } from 'mocha';
+import * as mongoose from 'mongoose';
 import * as assert from 'power-assert';
 import * as sinon from 'sinon';
 // tslint:disable-next-line:no-require-imports no-var-requires
@@ -26,7 +24,7 @@ describe('save()', () => {
     it('MongoDBの状態が正常であれば、保管できるはず', async () => {
         const ownershipInfo = {};
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(repository.taskModel).expects('create').once()
             .resolves(new repository.taskModel());
@@ -46,7 +44,7 @@ describe('executeOneByName()', () => {
     it('MongoDBの状態が正常であれば、オブジェクトが返却されるはず', async () => {
         const taskName = ttts.factory.taskName.SettleCreditCard;
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
@@ -60,7 +58,7 @@ describe('executeOneByName()', () => {
     it('存在しなければ、nullが返却されるはず', async () => {
         const taskName = ttts.factory.taskName.SettleCreditCard;
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(null);
@@ -79,7 +77,7 @@ describe('retry()', () => {
     it('MongoDBの状態が正常であれば、成功するはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(repository.taskModel).expects('update').once()
             .chain('exec').resolves();
@@ -99,7 +97,7 @@ describe('abortOne()', () => {
     it('MongoDBの状態が正常であれば、オブジェクトが返却されるはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());
@@ -110,16 +108,18 @@ describe('abortOne()', () => {
         sandbox.verify();
     });
 
-    it('存在しなければ、NotFoundエラーとなるはず', async () => {
+    it('存在しなければ、nullが返却されるはず', async () => {
         const intervalInMinutes = 10;
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
+        sandbox.mock(repository.taskModel)
+            .expects('findOneAndUpdate')
+            .once()
+            .chain('exec')
+            .resolves(null);
 
-        sandbox.mock(repository.taskModel).expects('findOneAndUpdate').once()
-            .chain('exec').resolves(null);
-
-        const result = await repository.abortOne(intervalInMinutes).catch((err) => err);
-        assert(result instanceof ttts.factory.errors.NotFound);
+        const result = await repository.abortOne(intervalInMinutes);
+        assert(result === null);
         sandbox.verify();
     });
 });
@@ -134,7 +134,7 @@ describe('pushExecutionResultById()', () => {
         const status = ttts.factory.taskStatus.Executed;
         const executionResult = {};
 
-        const repository = new ttts.repository.Task(ttts.mongoose.connection);
+        const repository = new ttts.repository.Task(mongoose.connection);
 
         sandbox.mock(repository.taskModel).expects('findByIdAndUpdate').once()
             .chain('exec').resolves(new repository.taskModel());

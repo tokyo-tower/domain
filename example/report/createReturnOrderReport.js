@@ -3,8 +3,8 @@ const ttts = require('../../');
 async function main() {
     await ttts.mongoose.connect(process.env.MONGOLAB_URI);
 
-    const transactionRepo = new ttts.repository.Transaction(ttts.mongoose.connection);
-    const aggregateSaleRepo = new ttts.repository.AggregateSale(ttts.mongoose.connection);
+    const transactionRepo = new ttts.repository.Transaction(mongoose.connection);
+    const aggregateSaleRepo = new ttts.repository.AggregateSale(mongoose.connection);
 
     const transaction = await transactionRepo.findReturnOrderById('5ac19ad3d4531f00382f2252');
 

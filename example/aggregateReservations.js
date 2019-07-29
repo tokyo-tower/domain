@@ -17,8 +17,8 @@ async function main() {
     })({
         checkinGate: new ttts.repository.place.CheckinGate(redisClient),
         eventWithAggregation: new ttts.repository.EventWithAggregation(redisClient),
-        performance: new ttts.repository.Performance(ttts.mongoose.connection),
-        reservation: new ttts.repository.Reservation(ttts.mongoose.connection),
+        performance: new ttts.repository.Performance(mongoose.connection),
+        reservation: new ttts.repository.Reservation(mongoose.connection),
         stock: new ttts.repository.Stock(redisClient),
         ticketTypeCategoryRateLimit: new ttts.repository.rateLimit.TicketTypeCategory(redisClient)
     });

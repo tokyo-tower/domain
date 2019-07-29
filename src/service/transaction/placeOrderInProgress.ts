@@ -19,7 +19,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 
 const debug = createDebug('ttts-domain:service');
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+// const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
@@ -433,7 +433,7 @@ export function createResult(
     }
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
-    // const tmpReservations = reserveTransaction.object.reservations;
+    const chevreReservations = reserveTransaction.object.reservations;
     const performance = seatReservationAuthorizeAction.object.performance;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
@@ -448,9 +448,14 @@ export function createResult(
 
     // 予約データを作成
     const eventReservations = tmpReservations.map((tmpReservation, index) => {
+        const chevreReservation = chevreReservations.find((r) => r.id === tmpReservation.id);
+        if (chevreReservation === undefined) {
+            throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
+        }
+
         return temporaryReservation2confirmed({
             tmpReservation: tmpReservation,
-            event: performance,
+            chevreReservation: chevreReservation,
             transaction: transaction,
             orderNumber: orderNumber,
             paymentNo: paymentNo,
@@ -469,7 +474,46 @@ export function createResult(
         additionalProperty: []
     }];
 
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.reservation.event.IReservation>[] = eventReservations
+        .filter((r) => {
+            // 余分確保分を除く
+            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            if (r.additionalProperty !== undefined) {
+                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            }
+
+            return r.additionalProperty === undefined
+                || extraProperty === undefined
+                || extraProperty.value !== '1';
+        })
+        .map((r) => {
+            const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+                ? r.reservedTicket.ticketType.priceSpecification.price
+                : 0;
+
+            return {
+                itemOffered: r,
+                price: unitPrice,
+                priceCurrency: factory.priceCurrency.JPY,
+                seller: {
+                    typeOf: transaction.seller.typeOf,
+                    name: transaction.seller.name
+                }
+            };
+        });
+
     const price = eventReservations
+        .filter((r) => {
+            // 余分確保分を除く
+            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+            if (r.additionalProperty !== undefined) {
+                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+            }
+
+            return r.additionalProperty === undefined
+                || extraProperty === undefined
+                || extraProperty.value !== '1';
+        })
         .reduce(
             (a, b) => {
                 const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
@@ -502,21 +546,7 @@ export function createResult(
                 url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''
             },
             customer: customer,
-            acceptedOffers: eventReservations.map((r) => {
-                const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
-                    ? r.reservedTicket.ticketType.priceSpecification.price
-                    : 0;
-
-                return {
-                    itemOffered: r,
-                    price: unitPrice,
-                    priceCurrency: factory.priceCurrency.JPY,
-                    seller: {
-                        typeOf: transaction.seller.typeOf,
-                        name: transaction.seller.name
-                    }
-                };
-            }),
+            acceptedOffers: acceptedOffers,
             confirmationNumber: confirmationNumber,
             orderNumber: orderNumber,
             price: price,
@@ -538,8 +568,7 @@ export function createResult(
 // tslint:disable-next-line:max-func-body-length
 function temporaryReservation2confirmed(params: {
     tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
-    // tmpReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
-    event: factory.performance.IPerformanceWithDetails;
+    chevreReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
     paymentNo: string;
@@ -550,20 +579,6 @@ function temporaryReservation2confirmed(params: {
 }): factory.reservation.event.IReservation {
     const transaction = params.transaction;
     const customerContact = params.customerContact;
-    const performance = params.event;
-
-    const unitPriceSpec = params.tmpReservation.reservedTicket.ticketType.priceSpecification;
-
-    const compoundPriceSpec: factory.chevre.reservation.IPriceSpecification<factory.chevre.reservationType.EventReservation> = {
-        project: project,
-        typeOf: <factory.chevre.priceSpecificationType.CompoundPriceSpecification>
-            factory.chevre.priceSpecificationType.CompoundPriceSpecification,
-        priceCurrency: factory.priceCurrency.JPY,
-        valueAddedTaxIncluded: true,
-        priceComponent: [
-            ...(unitPriceSpec !== undefined) ? [unitPriceSpec] : []
-        ]
-    };
 
     const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
         typeOf: factory.personType.Person,
@@ -591,114 +606,23 @@ function temporaryReservation2confirmed(params: {
         ...{ address: customerContact.address }
     };
 
-    const reservedTicket: factory.chevre.reservation.ITicket<factory.chevre.reservationType.EventReservation> = {
-        typeOf: 'Ticket',
-        dateIssued: params.bookingTime,
-        issuedBy: {
-            typeOf: transaction.seller.typeOf,
-            name: transaction.seller.name
-        },
-        totalPrice: compoundPriceSpec,
-        priceCurrency: factory.priceCurrency.JPY,
-        ticketedSeat: params.tmpReservation.reservedTicket.ticketedSeat,
-        underName: underName,
-        ticketType: params.tmpReservation.reservedTicket.ticketType
-    };
-
-    const reservationFor: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent> = {
-        project: project,
-        typeOf: factory.chevre.eventType.ScreeningEvent,
-        id: performance.id,
-        name: performance.superEvent.name,
-        eventStatus: factory.chevre.eventStatusType.EventScheduled,
-        doorTime: moment(performance.doorTime).toDate(),
-        startDate: moment(performance.startDate).toDate(),
-        endDate: moment(performance.endDate).toDate(),
-        superEvent: {
-            project: project,
-            typeOf: factory.chevre.eventType.ScreeningEventSeries,
-            id: performance.superEvent.id,
-            eventStatus: factory.chevre.eventStatusType.EventScheduled,
-            kanaName: '',
-            name: performance.superEvent.name,
-            videoFormat: [],
-            soundFormat: [],
-            workPerformed: (performance.superEvent.workPerformed !== undefined && performance.superEvent.workPerformed !== null)
-                ? performance.superEvent.workPerformed
-                : {
-                    project: project,
-                    typeOf: factory.chevre.creativeWorkType.Movie,
-                    identifier: performance.superEvent.id,
-                    id: performance.superEvent.id,
-                    name: performance.superEvent.name.ja
-                },
-            location: {
-                project: project,
-                typeOf: factory.chevre.placeType.MovieTheater,
-                id: performance.superEvent.location.id,
-                branchCode: performance.superEvent.location.branchCode,
-                name: performance.superEvent.location.name,
-                kanaName: ''
-            }
-
-        },
-        workPerformed: (performance.superEvent.workPerformed !== undefined && performance.superEvent.workPerformed !== null)
-            ? performance.superEvent.workPerformed
-            : {
-                project: project,
-                typeOf: factory.chevre.creativeWorkType.Movie,
-                identifier: performance.superEvent.id,
-                id: performance.superEvent.id,
-                name: performance.superEvent.name.ja
-            },
-        location: {
-            project: project,
-            typeOf: factory.chevre.placeType.ScreeningRoom,
-            branchCode: performance.location.branchCode,
-            name: performance.location.name
-        },
-        offers: <any>{
-            typeOf: 'Offer',
-            id: performance.ticket_type_group.id,
-            name: performance.ticket_type_group.name,
-            itemOffered: {
-                serviceType: {
-                    typeOf: 'ServiceType',
-                    id: '',
-                    name: ''
-                }
-            }
-        },
-        checkInCount: 0,
-        attendeeCount: 0,
-        additionalProperty: performance.additionalProperty
-    };
-
     return {
-        project: project,
-        typeOf: factory.reservationType.EventReservation,
+        ...params.chevreReservation,
 
+        reservationFor: {
+            ...params.chevreReservation.reservationFor,
+            doorTime: moment(params.chevreReservation.reservationFor.doorTime).toDate(),
+            endDate: moment(params.chevreReservation.reservationFor.endDate).toDate(),
+            startDate: moment(params.chevreReservation.reservationFor.startDate).toDate()
+        },
+        bookingTime: moment(params.bookingTime).toDate(),
+        reservationStatus: factory.reservationStatusType.ReservationConfirmed,
+        underName: underName,
         additionalProperty: [
             ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
             { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
         ],
-
         additionalTicketText: params.tmpReservation.additionalTicketText,
-        bookingTime: params.bookingTime,
-        modifiedTime: params.bookingTime,
-        numSeats: 1,
-        price: compoundPriceSpec,
-        priceCurrency: factory.priceCurrency.JPY,
-        reservationFor: reservationFor,
-        reservationNumber: params.tmpReservation.reservationNumber,
-        reservationStatus: factory.reservationStatusType.ReservationConfirmed,
-        reservedTicket: reservedTicket,
-        underName: underName,
-        checkedIn: false,
-        attended: false,
-
-        id: params.tmpReservation.id,
-
         checkins: []
     };
 }

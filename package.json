@@ -13,7 +13,6 @@
     "@motionpicture/gmo-service": "^4.3.0",
     "@sendgrid/mail": "^6.4.0",
     "@tokyotower/factory": "^11.1.1",
-    "@types/mongoose": "5.3.26",
     "@types/redis": "^2.8.13",
     "@waiter/domain": "^3.0.0",
     "aws-sdk": "^2.501.0",
@@ -28,7 +27,6 @@
     "lodash.uniq": "^4.5.0",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.26",
-    "mongoose": "5.5.1",
     "numeral": "^2.0.6",
     "pug": "^2.0.4",
     "redis": "^2.8.0",
@@ -49,6 +47,7 @@
     "@types/mocha": "^2.2.48",
     "@types/moment": "^2.13.0",
     "@types/moment-timezone": "^0.5.12",
+    "@types/mongoose": "^5.5.11",
     "@types/nock": "^8.2.1",
     "@types/numeral": "0.0.20",
     "@types/power-assert": "^1.5.0",
@@ -60,6 +59,7 @@
     "@types/validator": "^6.3.0",
     "mocha": "^3.5.3",
     "mongodb": "^3.3.0-beta2",
+    "mongoose": "^5.6.7",
     "nock": "^9.6.1",
     "nyc": "^11.9.0",
     "power-assert": "^1.6.1",
@@ -71,6 +71,9 @@
     "tslint": "^5.18.0",
     "tslint-microsoft-contrib": "^6.2.0",
     "typescript": "^3.5.3"
+  },
+  "peerDependencies": {
+    "mongoose": "^5.4.9"
   },
   "engines": {
     "node": ">=6.9.1",
@@ -110,5 +113,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "22.0.1"
+  "version": "23.0.0"
 }
