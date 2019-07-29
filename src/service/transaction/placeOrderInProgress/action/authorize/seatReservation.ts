@@ -419,25 +419,68 @@ export function create(
             responseBody = await reserveService.start(requestBody);
 
             const reservations = responseBody.object.reservations;
-            tmpReservations = acceptedOffersWithSeatNumber.map((o) => {
-                // 該当座席のChevre予約を検索
-                const chevreReservation = reservations.find((r) => {
-                    return r.reservedTicket.ticketedSeat !== undefined
-                        && o.itemOffered.reservedTicket.ticketedSeat !== undefined
-                        && r.reservedTicket.ticketedSeat.seatNumber === o.itemOffered.reservedTicket.ticketedSeat.seatNumber;
+            tmpReservations = acceptedOffersWithSeatNumber
+                .filter((o) => {
+                    const r = o.itemOffered;
+                    // 余分確保分を除く
+                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    if (r.additionalProperty !== undefined) {
+                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    }
+
+                    return r.additionalProperty === undefined
+                        || extraProperty === undefined
+                        || extraProperty.value !== '1';
+                })
+                .map((o) => {
+                    // 該当座席のChevre予約を検索
+                    const chevreReservation = reservations.find((r) => {
+                        return r.reservedTicket.ticketedSeat !== undefined
+                            && o.itemOffered.reservedTicket.ticketedSeat !== undefined
+                            && r.reservedTicket.ticketedSeat.seatNumber === o.itemOffered.reservedTicket.ticketedSeat.seatNumber;
+                    });
+
+                    if (chevreReservation === undefined) {
+                        throw new factory.errors.ServiceUnavailable('Reservation not found for an accepted offer');
+                    }
+
+                    let extraReservationIds: string[] | undefined;
+                    if (Array.isArray(o.itemOffered.additionalProperty)) {
+                        const extraSeatNumbersProperty = o.itemOffered.additionalProperty.find((p) => p.name === 'extraSeatNumbers');
+                        if (extraSeatNumbersProperty !== undefined) {
+                            const extraSeatNumbers: string[] = JSON.parse(extraSeatNumbersProperty.value);
+                            if (extraSeatNumbers.length > 0) {
+                                extraReservationIds = extraSeatNumbers.map((seatNumber) => {
+                                    const extraChevreReservation = reservations.find((r) => {
+                                        return r.reservedTicket.ticketedSeat !== undefined
+                                            && o.itemOffered.reservedTicket.ticketedSeat !== undefined
+                                            && r.reservedTicket.ticketedSeat.seatNumber
+                                            === seatNumber;
+                                    });
+                                    if (extraChevreReservation === undefined) {
+                                        throw new factory.errors.ServiceUnavailable(`Unexpected extra seat numbers: ${o.itemOffered.id}`);
+                                    }
+
+                                    return extraChevreReservation.id;
+                                });
+                            }
+                        }
+                    }
+
+                    return {
+                        ...o.itemOffered,
+                        additionalProperty: [
+                            ...(Array.isArray(o.itemOffered.additionalProperty))
+                                ? o.itemOffered.additionalProperty : [],
+                            ...(Array.isArray(extraReservationIds))
+                                ? [{ name: 'extraReservationIds', value: JSON.stringify(extraReservationIds) }]
+                                : []
+                        ],
+                        id: chevreReservation.id,
+                        reservationNumber: chevreReservation.reservationNumber,
+                        reservedTicket: chevreReservation.reservedTicket
+                    };
                 });
-
-                if (chevreReservation === undefined) {
-                    throw new factory.errors.ServiceUnavailable('Reservation not found for an accepted offer');
-                }
-
-                return {
-                    ...o.itemOffered,
-                    id: chevreReservation.id,
-                    reservationNumber: chevreReservation.reservationNumber,
-                    reservedTicket: chevreReservation.reservedTicket
-                };
-            });
             debug(tmpReservations.length, 'tmp reservation(s) created');
         } catch (error) {
             // actionにエラー結果を追加

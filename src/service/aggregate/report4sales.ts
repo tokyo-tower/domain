@@ -124,18 +124,18 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
 
             datas.push(
                 ...transactionResult.order.acceptedOffers
-                    .filter((o) => {
-                        const r = o.itemOffered;
-                        // 余分確保分を除く
-                        let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                        if (r.additionalProperty !== undefined) {
-                            extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                        }
+                    // .filter((o) => {
+                    //     const r = o.itemOffered;
+                    //     // 余分確保分を除く
+                    //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                    //     if (r.additionalProperty !== undefined) {
+                    //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                    //     }
 
-                        return r.additionalProperty === undefined
-                            || extraProperty === undefined
-                            || extraProperty.value !== '1';
-                    })
+                    //     return r.additionalProperty === undefined
+                    //         || extraProperty === undefined
+                    //         || extraProperty.value !== '1';
+                    // })
                     .map((o) => {
                         return reservation2data(
                             o.itemOffered,

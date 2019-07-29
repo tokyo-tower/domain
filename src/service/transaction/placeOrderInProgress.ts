@@ -297,18 +297,18 @@ export function confirm(params: {
         const printToken = await tokenRepo.createPrintToken(
             transaction.result.order.acceptedOffers
                 // 余分確保を除く
-                .filter((o) => {
-                    const r = o.itemOffered;
-                    // 余分確保分を除く
-                    let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    if (r.additionalProperty !== undefined) {
-                        extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                    }
+                // .filter((o) => {
+                //     const r = o.itemOffered;
+                //     // 余分確保分を除く
+                //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+                //     if (r.additionalProperty !== undefined) {
+                //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+                //     }
 
-                    return r.additionalProperty === undefined
-                        || extraProperty === undefined
-                        || extraProperty.value !== '1';
-                })
+                //     return r.additionalProperty === undefined
+                //         || extraProperty === undefined
+                //         || extraProperty.value !== '1';
+                // })
                 .map((o) => o.itemOffered.id)
         );
         debug('printToken created.', printToken);
@@ -475,17 +475,17 @@ export function createResult(
     }];
 
     const acceptedOffers: factory.order.IAcceptedOffer<factory.reservation.event.IReservation>[] = eventReservations
-        .filter((r) => {
-            // 余分確保分を除く
-            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (r.additionalProperty !== undefined) {
-                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            }
+        // .filter((r) => {
+        //     // 余分確保分を除く
+        //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+        //     if (r.additionalProperty !== undefined) {
+        //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+        //     }
 
-            return r.additionalProperty === undefined
-                || extraProperty === undefined
-                || extraProperty.value !== '1';
-        })
+        //     return r.additionalProperty === undefined
+        //         || extraProperty === undefined
+        //         || extraProperty.value !== '1';
+        // })
         .map((r) => {
             const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
                 ? r.reservedTicket.ticketType.priceSpecification.price
@@ -503,17 +503,17 @@ export function createResult(
         });
 
     const price = eventReservations
-        .filter((r) => {
-            // 余分確保分を除く
-            let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-            if (r.additionalProperty !== undefined) {
-                extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-            }
+        // .filter((r) => {
+        //     // 余分確保分を除く
+        //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+        //     if (r.additionalProperty !== undefined) {
+        //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+        //     }
 
-            return r.additionalProperty === undefined
-                || extraProperty === undefined
-                || extraProperty.value !== '1';
-        })
+        //     return r.additionalProperty === undefined
+        //         || extraProperty === undefined
+        //         || extraProperty.value !== '1';
+        // })
         .reduce(
             (a, b) => {
                 const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
