@@ -456,7 +456,6 @@ export function createResult(
         return temporaryReservation2confirmed({
             tmpReservation: tmpReservation,
             chevreReservation: chevreReservation,
-            // event: performance,
             transaction: transaction,
             orderNumber: orderNumber,
             paymentNo: paymentNo,
@@ -570,7 +569,6 @@ export function createResult(
 function temporaryReservation2confirmed(params: {
     tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
     chevreReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
-    // event: factory.performance.IPerformanceWithDetails;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
     paymentNo: string;
@@ -611,20 +609,13 @@ function temporaryReservation2confirmed(params: {
     return {
         ...params.chevreReservation,
 
-        // project: params.chevreReservation.project,
-        // typeOf: params.chevreReservation.typeOf,
-        // bookingTime: params.chevreReservation.bookingTime,
-        // modifiedTime: params.chevreReservation.modifiedTime,
-        // numSeats: params.chevreReservation.numSeats,
-        // price: params.chevreReservation.price,
-        // priceCurrency: params.chevreReservation.priceCurrency,
-        // reservationFor: params.chevreReservation.reservationFor,
-        // reservationNumber: params.chevreReservation.reservationNumber,
-        // reservedTicket: params.chevreReservation.reservedTicket,
-        // checkedIn: false,
-        // attended: false,
-        // id: params.chevreReservation.id,
-
+        reservationFor: {
+            ...params.chevreReservation.reservationFor,
+            doorTime: moment(params.chevreReservation.reservationFor.doorTime).toDate(),
+            endDate: moment(params.chevreReservation.reservationFor.endDate).toDate(),
+            startDate: moment(params.chevreReservation.reservationFor.startDate).toDate()
+        },
+        bookingTime: moment(params.bookingTime).toDate(),
         reservationStatus: factory.reservationStatusType.ReservationConfirmed,
         underName: underName,
         additionalProperty: [
