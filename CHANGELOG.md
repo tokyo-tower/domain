@@ -10,18 +10,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 中止タスクが存在しない場合に例外が投げられないように調整
-- 車椅子予約を含む注文データに、余分座席分が含まれないように調整
-
 ### Deprecated
 
 ### Removed
 
-- mongooseのエクスポートを削除
-
 ### Fixed
 
 ### Security
+
+## v23.0.0 - 2019-07-29
+
+### Changed
+
+- 中止タスクが存在しない場合に例外が投げられないように調整
+- 車椅子予約を含む注文データに、余分座席分が含まれないように調整
+
+### Removed
+
+- mongooseのエクスポートを削除
 
 ## v22.0.1 - 2019-07-28
 
