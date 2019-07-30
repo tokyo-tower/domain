@@ -98,14 +98,6 @@ export function cancelReservation(params: { id: string }) {
                         }
                     });
                     extraReservations = searchExtraReservationsResult.data;
-                    // extraReservations = await repos.reservation.search({
-                    //     typeOf: factory.reservationType.EventReservation,
-                    //     reservationFor: { id: reservation.reservationFor.id },
-                    //     reservationNumbers: [reservation.reservationNumber],
-                    //     reservedTicket: {
-                    //         ticketedSeat: { seatNumbers: extraSeatNumbers }
-                    //     }
-                    // });
                 }
             }
         }

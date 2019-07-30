@@ -295,21 +295,7 @@ export function confirm(params: {
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
-            transaction.result.order.acceptedOffers
-                // 余分確保を除く
-                // .filter((o) => {
-                //     const r = o.itemOffered;
-                //     // 余分確保分を除く
-                //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                //     if (r.additionalProperty !== undefined) {
-                //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                //     }
-
-                //     return r.additionalProperty === undefined
-                //         || extraProperty === undefined
-                //         || extraProperty.value !== '1';
-                // })
-                .map((o) => o.itemOffered.id)
+            transaction.result.order.acceptedOffers.map((o) => o.itemOffered.id)
         );
         debug('printToken created.', printToken);
         transaction.result.printToken = printToken;
@@ -445,6 +431,10 @@ export function createResult(
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
+    let paymentAccountId = '';
+    if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
+        paymentAccountId = creditCardAuthorizeAction.result.accountId;
+    }
 
     // 予約データを作成
     const eventReservations = tmpReservations.map((tmpReservation, index) => {
@@ -466,64 +456,47 @@ export function createResult(
         });
     });
 
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.reservation.event.IReservation>[] = eventReservations.map((r) => {
+        const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+            ? r.reservedTicket.ticketType.priceSpecification.price
+            : 0;
+
+        return {
+            typeOf: 'Offer',
+            itemOffered: r,
+            price: unitPrice,
+            priceCurrency: factory.priceCurrency.JPY,
+            seller: {
+                typeOf: <factory.organizationType>transaction.seller.typeOf,
+                name: transaction.seller.name
+            }
+        };
+    });
+
+    const price: number = eventReservations.reduce(
+        (a, b) => {
+            const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
+                ? b.reservedTicket.ticketType.priceSpecification.price
+                : 0;
+
+            return a + unitPrice;
+        },
+        0
+    );
+
     const paymentMethods = [{
         typeOf: transaction.object.paymentMethod,
         name: transaction.object.paymentMethod.toString(),
         paymentMethod: transaction.object.paymentMethod,
+        accountId: paymentAccountId,
         paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : '',
-        additionalProperty: []
+        additionalProperty: [],
+        totalPaymentDue: {
+            typeOf: <'MonetaryAmount'>'MonetaryAmount',
+            currency: factory.priceCurrency.JPY,
+            value: price
+        }
     }];
-
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.reservation.event.IReservation>[] = eventReservations
-        // .filter((r) => {
-        //     // 余分確保分を除く
-        //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-        //     if (r.additionalProperty !== undefined) {
-        //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-        //     }
-
-        //     return r.additionalProperty === undefined
-        //         || extraProperty === undefined
-        //         || extraProperty.value !== '1';
-        // })
-        .map((r) => {
-            const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
-                ? r.reservedTicket.ticketType.priceSpecification.price
-                : 0;
-
-            return {
-                itemOffered: r,
-                price: unitPrice,
-                priceCurrency: factory.priceCurrency.JPY,
-                seller: {
-                    typeOf: transaction.seller.typeOf,
-                    name: transaction.seller.name
-                }
-            };
-        });
-
-    const price = eventReservations
-        // .filter((r) => {
-        //     // 余分確保分を除く
-        //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-        //     if (r.additionalProperty !== undefined) {
-        //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-        //     }
-
-        //     return r.additionalProperty === undefined
-        //         || extraProperty === undefined
-        //         || extraProperty.value !== '1';
-        // })
-        .reduce(
-            (a, b) => {
-                const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
-                    ? b.reservedTicket.ticketType.priceSpecification.price
-                    : 0;
-
-                return a + unitPrice;
-            },
-            0
-        );
 
     const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
@@ -541,7 +514,7 @@ export function createResult(
             typeOf: 'Order',
             seller: {
                 id: transaction.seller.id,
-                typeOf: transaction.seller.typeOf,
+                typeOf: <factory.organizationType>transaction.seller.typeOf,
                 name: transaction.seller.name,
                 url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''
             },
@@ -565,7 +538,6 @@ export function createResult(
 /**
  * 仮予約から確定予約を生成する
  */
-// tslint:disable-next-line:max-func-body-length
 function temporaryReservation2confirmed(params: {
     tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
     chevreReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;

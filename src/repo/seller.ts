@@ -3,7 +3,7 @@ import * as factory from '@tokyotower/factory';
 import { Connection } from 'mongoose';
 import OrganizationModel from '../repo/mongoose/model/organization';
 
-export type ISeller = any;
+export type ISeller = factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType>>;
 
 /**
  * 販売者リポジトリ
