@@ -90,7 +90,7 @@ export function cancelReservation(params: { id: string }) {
                 if (Array.isArray(extraSeatNumbers) && extraSeatNumbers.length > 0) {
                     const searchExtraReservationsResult = await reservationService.search({
                         limit: 100,
-                        typeOf: factory.reservationType.EventReservation,
+                        typeOf: factory.chevre.reservationType.EventReservation,
                         reservationFor: { id: reservation.reservationFor.id },
                         reservationNumbers: [reservation.reservationNumber],
                         reservedTicket: {

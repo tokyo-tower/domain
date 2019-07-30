@@ -63,8 +63,8 @@ export function aggregateEventReservations(params: {
         // 予約情報取得
         const reservations = await repos.reservation.search(
             {
-                typeOf: factory.reservationType.EventReservation,
-                reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
+                typeOf: factory.chevre.reservationType.EventReservation,
+                reservationStatuses: [factory.chevre.reservationStatusType.ReservationConfirmed],
                 reservationFor: { id: performance.id },
                 additionalProperty: {
                     $nin: [{ name: 'extra', value: '1' }]
@@ -274,7 +274,7 @@ function aggregateRemainingAttendeeCapacity(params: {
 function aggregateCheckinCount(
     checkinGates: factory.place.checkinGate.IPlace[],
     reservations: factory.reservation.event.IReservation[],
-    offers: factory.offer.seatReservation.ITicketType[]
+    offers: factory.chevre.ticketType.ITicketType[]
 ): {
     checkinCount: number;
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];

@@ -153,8 +153,10 @@ export function sendEmail(
 
         const placeOrderTransaction = returnOrderTransaction.object.transaction;
 
-        const emailMessage = factory.creativeWork.message.email.create({
+        const emailMessage: factory.creativeWork.message.email.ICreativeWork = {
+            typeOf: factory.creativeWorkType.EmailMessage,
             identifier: `returnOrderTransaction-${transactionId}`,
+            name: `returnOrderTransaction-${transactionId}`,
             sender: {
                 typeOf: placeOrderTransaction.seller.typeOf,
                 name: emailMessageAttributes.sender.name,
@@ -167,7 +169,7 @@ export function sendEmail(
             },
             about: emailMessageAttributes.about,
             text: emailMessageAttributes.text
-        });
+        };
 
         // その場で送信ではなく、DBにタスクを登録
         const taskAttributes = factory.task.sendEmailNotification.createAttributes({

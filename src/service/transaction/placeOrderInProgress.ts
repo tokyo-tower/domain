@@ -75,7 +75,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             throw new factory.errors.NotFound('Seller');
         }
 
-        const seller = <factory.organization.corporation.IOrganization>doc.toObject();
+        const seller = <factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType.Corporation>>>doc.toObject();
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
@@ -540,7 +540,7 @@ export function createResult(
  */
 function temporaryReservation2confirmed(params: {
     tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
-    chevreReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
+    chevreReservation: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
     paymentNo: string;
@@ -588,7 +588,7 @@ function temporaryReservation2confirmed(params: {
             startDate: moment(params.chevreReservation.reservationFor.startDate).toDate()
         },
         bookingTime: moment(params.bookingTime).toDate(),
-        reservationStatus: factory.reservationStatusType.ReservationConfirmed,
+        reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed,
         underName: underName,
         additionalProperty: [
             ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
