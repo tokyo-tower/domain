@@ -87,14 +87,33 @@ export function create(
         );
 
         // GMOオーソリ取得
+        let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.cinerino.paymentMethodType.CreditCard>;
         let entryTranArgs: GMO.services.credit.IEntryTranArgs;
         let execTranArgs: GMO.services.credit.IExecTranArgs;
         let entryTranResult: GMO.services.credit.IEntryTranResult;
         let execTranResult: GMO.services.credit.IExecTranResult;
+        let searchTradeResult: GMO.services.credit.ISearchTradeResult | undefined;
+
+        if (seller.paymentAccepted === undefined) {
+            throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
+        }
+        creditCardPaymentAccepted = <factory.seller.IPaymentAccepted<factory.cinerino.paymentMethodType.CreditCard>>
+            seller.paymentAccepted.find(
+                (a) => a.paymentMethodType === factory.paymentMethodType.CreditCard
+            );
+        if (creditCardPaymentAccepted === undefined) {
+            throw new factory.errors.Argument('transaction', 'Credit card payment not accepted.');
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore next */
+        if (creditCardPaymentAccepted.gmoInfo.shopPass === undefined) {
+            throw new factory.errors.Argument('transaction', 'Credit card payment settings not enough');
+        }
+
         try {
             entryTranArgs = {
-                shopId: seller.gmoInfo.shopId,
-                shopPass: seller.gmoInfo.shopPass,
+                shopId: creditCardPaymentAccepted.gmoInfo.shopId,
+                shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
                 orderId: orderId,
                 jobCd: GMO.utils.util.JobCd.Auth,
                 amount: amount
@@ -154,12 +173,25 @@ export function create(
             throw error;
         }
 
+        try {
+            // ベストエフォートでクレジットカード詳細情報を取得
+            searchTradeResult = await creditService.searchTrade({
+                shopId: creditCardPaymentAccepted.gmoInfo.shopId,
+                shopPass: creditCardPaymentAccepted.gmoInfo.shopPass,
+                orderId: orderId
+            });
+        } catch (error) {
+            // no op
+        }
+
         // アクションを完了
         debug('ending authorize action...');
 
         return creditCardAuthorizeActionRepo.complete(
             action.id,
             {
+                accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
+                amount: amount,
                 price: amount,
                 entryTranArgs: entryTranArgs,
                 execTranArgs: execTranArgs,

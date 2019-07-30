@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v23.1.0 - 2019-07-30
+
+### Changed
+
+- 座席予約承認アクションの仮予約データに、余分座席分が含まれないように調整
+- 注文へのクレジットカード決済情報連携強化
+
 ## v23.0.0 - 2019-07-29
 
 ### Changed
