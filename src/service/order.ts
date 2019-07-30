@@ -559,8 +559,8 @@ async function createEmailMessage4sellerReason(
         },
         toRecipient: {
             typeOf: factory.personType.Person,
-            name: order.customer.name,
-            email: order.customer.email
+            name: (order.customer.name !== undefined) ? order.customer.name : '',
+            email: (order.customer.email !== undefined) ? order.customer.email : ''
         },
         about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Tower Top Deck Tour)',
         text: message

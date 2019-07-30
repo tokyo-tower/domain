@@ -456,7 +456,7 @@ export function createResult(
         });
     });
 
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.reservation.event.IReservation>[] = eventReservations.map((r) => {
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = eventReservations.map((r) => {
         const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
             ? r.reservedTicket.ticketType.priceSpecification.price
             : 0;
@@ -548,7 +548,7 @@ function temporaryReservation2confirmed(params: {
     paymentSeatIndex: string;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
     bookingTime: Date;
-}): factory.reservation.event.IReservation {
+}): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
     const customerContact = params.customerContact;
 
@@ -594,7 +594,6 @@ function temporaryReservation2confirmed(params: {
             ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
             { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
         ],
-        additionalTicketText: params.tmpReservation.additionalTicketText,
-        checkins: []
+        additionalTicketText: params.tmpReservation.additionalTicketText
     };
 }

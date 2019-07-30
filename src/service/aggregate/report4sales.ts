@@ -124,21 +124,12 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
 
             datas.push(
                 ...transactionResult.order.acceptedOffers
-                    // .filter((o) => {
-                    //     const r = o.itemOffered;
-                    //     // 余分確保分を除く
-                    //     let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                    //     if (r.additionalProperty !== undefined) {
-                    //         extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
-                    //     }
-
-                    //     return r.additionalProperty === undefined
-                    //         || extraProperty === undefined
-                    //         || extraProperty.value !== '1';
-                    // })
                     .map((o) => {
                         return reservation2data(
-                            o.itemOffered,
+                            {
+                                ...o.itemOffered,
+                                checkins: []
+                            },
                             transactionResult.order,
                             <Date>params.transaction.endDate,
                             AggregateUnit.SalesByEndDate,
@@ -187,7 +178,10 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
             // 座席分のキャンセルデータ
             datas.push({
                 ...reservation2data(
-                    r,
+                    {
+                        ...r,
+                        checkins: []
+                    },
                     placeOrderTransactionResult.order,
                     <Date>params.transaction.endDate,
                     AggregateUnit.SalesByEndDate,
@@ -203,7 +197,10 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
             if (reservationIndex === 0) {
                 datas.push({
                     ...reservation2data(
-                        r,
+                        {
+                            ...r,
+                            checkins: []
+                        },
                         placeOrderTransactionResult.order,
                         <Date>params.transaction.endDate,
                         AggregateUnit.SalesByEndDate,

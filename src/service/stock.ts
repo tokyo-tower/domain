@@ -173,7 +173,10 @@ export function transferSeatReservation(transactionId: string) {
 
         await Promise.all(reservations.map(async (reservation) => {
             /// 予約データを作成する
-            await reservationRepo.saveEventReservation(reservation);
+            await reservationRepo.saveEventReservation({
+                ...reservation,
+                checkins: []
+            });
 
             // 集計タスク作成
             const task: factory.task.aggregateEventReservations.IAttributes = {

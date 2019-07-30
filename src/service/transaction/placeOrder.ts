@@ -329,8 +329,8 @@ export function transaction2report(transaction: factory.transaction.placeOrder.I
             startDate: (transaction.startDate !== undefined) ? transaction.startDate.toISOString() : '',
             endDate: (transaction.endDate !== undefined) ? transaction.endDate.toISOString() : '',
             customer: {
-                name: order.customer.name,
-                email: order.customer.email,
+                name: (order.customer.name !== undefined) ? order.customer.name : '',
+                email: (order.customer.email !== undefined) ? order.customer.email : '',
                 telephone: (order.customer.telephone !== undefined) ? order.customer.telephone : '',
                 group: transaction.object.purchaser_group
             },
