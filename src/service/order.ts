@@ -200,8 +200,10 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                 // tslint:disable-next-line:no-suspicious-comment
                 // TODO 二重送信対策
                 emailMessageAttributes = await createEmailMessage4sellerReason(returnOrderTransaction.object.transaction);
-                emailMessage = factory.creativeWork.message.email.create({
+                emailMessage = {
+                    typeOf: factory.creativeWorkType.EmailMessage,
                     identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
+                    name: `returnOrderTransaction-${returnOrderTransactionId}`,
                     sender: {
                         typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
                         name: emailMessageAttributes.sender.name,
@@ -214,7 +216,7 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                     },
                     about: emailMessageAttributes.about,
                     text: emailMessageAttributes.text
-                });
+                };
 
                 sendEmailTaskAttributes = factory.task.sendEmailNotification.createAttributes({
                     status: factory.taskStatus.Ready,
@@ -404,8 +406,8 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         const reservations = (clientIds.length > 0)
             ? await reservationRepo.search(
                 {
-                    typeOf: factory.reservationType.EventReservation,
-                    reservationStatuses: [factory.reservationStatusType.ReservationConfirmed],
+                    typeOf: factory.chevre.reservationType.EventReservation,
+                    reservationStatuses: [factory.chevre.reservationStatusType.ReservationConfirmed],
                     reservationFor: { id: performanceId },
                     underName: {
                         identifiers: clientIds.map((clientId) => {
@@ -549,13 +551,16 @@ async function createEmailMessage4sellerReason(
     debug('message:', message);
 
     return {
+        typeOf: factory.creativeWorkType.EmailMessage,
         sender: {
+            typeOf: factory.organizationType.Corporation,
             name: 'Tokyo Tower TOP DECK TOUR Online Ticket',
             email: 'noreply@tokyotower.co.jp'
         },
         toRecipient: {
-            name: order.customer.name,
-            email: order.customer.email
+            typeOf: factory.personType.Person,
+            name: (order.customer.name !== undefined) ? order.customer.name : '',
+            email: (order.customer.email !== undefined) ? order.customer.email : ''
         },
         about: '東京タワートップデッキツアー 返金完了のお知らせ (Payment Refund Notification for the Tokyo Tower Top Deck Tour)',
         text: message

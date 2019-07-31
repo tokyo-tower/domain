@@ -175,8 +175,10 @@ export function sendEmail(
             throw new factory.errors.Forbidden('Transaction not confirmed.');
         }
 
-        const emailMessage = factory.creativeWork.message.email.create({
+        const emailMessage = {
+            typeOf: <factory.creativeWorkType.EmailMessage>factory.creativeWorkType.EmailMessage,
             identifier: `placeOrderTransaction-${transactionId}`,
+            name: `placeOrderTransaction-${transactionId}`,
             sender: {
                 typeOf: transaction.seller.typeOf,
                 name: emailMessageAttributes.sender.name,
@@ -189,7 +191,7 @@ export function sendEmail(
             },
             about: emailMessageAttributes.about,
             text: emailMessageAttributes.text
-        });
+        };
 
         // その場で送信ではなく、DBにタスクを登録
         const taskAttributes = factory.task.sendEmailNotification.createAttributes({
@@ -327,8 +329,8 @@ export function transaction2report(transaction: factory.transaction.placeOrder.I
             startDate: (transaction.startDate !== undefined) ? transaction.startDate.toISOString() : '',
             endDate: (transaction.endDate !== undefined) ? transaction.endDate.toISOString() : '',
             customer: {
-                name: order.customer.name,
-                email: order.customer.email,
+                name: (order.customer.name !== undefined) ? order.customer.name : '',
+                email: (order.customer.email !== undefined) ? order.customer.email : '',
                 telephone: (order.customer.telephone !== undefined) ? order.customer.telephone : '',
                 group: transaction.object.purchaser_group
             },

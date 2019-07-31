@@ -487,8 +487,7 @@ export class MongoRepository {
         await this.reservationModel.findOneAndUpdate(
             { _id: params.id },
             {
-                reservationStatus: factory.reservationStatusType.ReservationCancelled,
-                status: factory.reservationStatusType.ReservationCancelled,
+                reservationStatus: factory.chevre.reservationStatusType.ReservationCancelled,
                 modifiedTime: new Date()
             }
         ).exec();

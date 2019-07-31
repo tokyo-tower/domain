@@ -75,7 +75,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
             throw new factory.errors.NotFound('Seller');
         }
 
-        const seller = <factory.organization.corporation.IOrganization>doc.toObject();
+        const seller = <factory.seller.IOrganization<factory.seller.IAttributes<factory.organizationType.Corporation>>>doc.toObject();
 
         let passport: waiter.factory.passport.IPassport | undefined;
 
@@ -456,7 +456,7 @@ export function createResult(
         });
     });
 
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.reservation.event.IReservation>[] = eventReservations.map((r) => {
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = eventReservations.map((r) => {
         const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
             ? r.reservedTicket.ticketType.priceSpecification.price
             : 0;
@@ -540,7 +540,7 @@ export function createResult(
  */
 function temporaryReservation2confirmed(params: {
     tmpReservation: factory.action.authorize.seatReservation.ITmpReservation;
-    chevreReservation: factory.chevre.reservation.IReservation<factory.reservationType.EventReservation>;
+    chevreReservation: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
     transaction: factory.transaction.placeOrder.ITransaction;
     orderNumber: string;
     paymentNo: string;
@@ -548,7 +548,7 @@ function temporaryReservation2confirmed(params: {
     paymentSeatIndex: string;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
     bookingTime: Date;
-}): factory.reservation.event.IReservation {
+}): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
     const customerContact = params.customerContact;
 
@@ -588,13 +588,12 @@ function temporaryReservation2confirmed(params: {
             startDate: moment(params.chevreReservation.reservationFor.startDate).toDate()
         },
         bookingTime: moment(params.bookingTime).toDate(),
-        reservationStatus: factory.reservationStatusType.ReservationConfirmed,
+        reservationStatus: factory.chevre.reservationStatusType.ReservationConfirmed,
         underName: underName,
         additionalProperty: [
             ...(Array.isArray(params.tmpReservation.additionalProperty)) ? params.tmpReservation.additionalProperty : [],
             { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
         ],
-        additionalTicketText: params.tmpReservation.additionalTicketText,
-        checkins: []
+        additionalTicketText: params.tmpReservation.additionalTicketText
     };
 }

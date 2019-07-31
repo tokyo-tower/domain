@@ -51,9 +51,12 @@ export type ICancelOpetaiton<T> = (
 
 export type IValidateOperation<T> = () => Promise<T>;
 
-export type IAcceptedOfferWithSeatNumber = factory.offer.seatReservation.IOffer & {
+export interface IAcceptedOfferWithSeatNumber {
+    price: number;
+    priceCurrency: factory.priceCurrency;
+    additionalProperty?: factory.propertyValue.IPropertyValue<string>[];
     itemOffered: factory.action.authorize.seatReservation.ITmpReservation;
-};
+}
 
 /**
  * オファーのバリデーション
@@ -63,7 +66,7 @@ export type IAcceptedOfferWithSeatNumber = factory.offer.seatReservation.IOffer 
 function validateOffers(
     projectDetails: factory.project.IProject,
     performance: factory.performance.IPerformanceWithDetails,
-    acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[],
+    acceptedOffers: factory.action.authorize.seatReservation.IAcceptedOffer[],
     transactionId: string
 ): IValidateOperation<IAcceptedOfferWithSeatNumber[]> {
     return async () => {
@@ -285,7 +288,7 @@ export function create(
     agentId: string,
     transactionId: string,
     perfomanceId: string,
-    acceptedOffers: factory.offer.seatReservation.IAcceptedOffer[]
+    acceptedOffers: factory.action.authorize.seatReservation.IAcceptedOffer[]
 ): ICreateOpetaiton<factory.action.authorize.seatReservation.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (
