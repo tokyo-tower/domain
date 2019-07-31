@@ -10,6 +10,8 @@ import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const CANCELLABLE_DAYS = 3;
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type ITaskAndTransactionOperation<T> = (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => Promise<T>;
 
@@ -78,6 +80,7 @@ export function confirm(params: {
         const endDate = new Date();
         const cancelName = `${order.customer.familyName} ${order.customer.givenName}`;
         const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
+            project: project,
             typeOf: factory.transactionType.ReturnOrder,
             status: factory.transactionStatusType.Confirmed,
             agent: {

@@ -1,17 +1,6 @@
 import * as mongoose from 'mongoose';
 
-import multilingualString from './schemaTypes/multilingualString';
-
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
-
-const gmoInfoSchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
 
 const parentOrganizationSchema = new mongoose.Schema(
     {},
@@ -72,13 +61,14 @@ const makesOfferSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         typeOf: {
             type: String,
             required: true
         },
         identifier: String,
-        name: multilingualString,
-        legalName: multilingualString,
+        name: mongoose.SchemaTypes.Mixed,
+        legalName: mongoose.SchemaTypes.Mixed,
         sameAs: String,
         url: String,
         parentOrganization: parentOrganizationSchema,
@@ -89,8 +79,7 @@ const schema = new mongoose.Schema(
         hasPOS: [hasPOSSchema],
         areaServed: [areaServedSchema],
         makesOffer: [makesOfferSchema],
-        additionalProperty: [mongoose.SchemaTypes.Mixed],
-        gmoInfo: gmoInfoSchema
+        additionalProperty: [mongoose.SchemaTypes.Mixed]
     },
     {
         collection: 'organizations',
@@ -103,8 +92,18 @@ const schema = new mongoose.Schema(
             createdAt: 'createdAt',
             updatedAt: 'updatedAt'
         },
-        toJSON: { getters: true },
-        toObject: { getters: true }
+        toJSON: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        },
+        toObject: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        }
     }
 );
 

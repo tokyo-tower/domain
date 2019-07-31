@@ -55,12 +55,37 @@ const purposeSchema = new mongoose.Schema(
         strict: false
     }
 );
+const potentialActionsSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+const locationSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+const instrumentSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
 
 /**
  * アクションスキーマ
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         actionStatus: String,
         typeOf: String,
         agent: agentSchema,
@@ -70,7 +95,12 @@ const schema = new mongoose.Schema(
         object: objectSchema,
         startDate: Date,
         endDate: Date,
-        purpose: purposeSchema
+        purpose: purposeSchema,
+        potentialActions: potentialActionsSchema,
+        amount: Number,
+        fromLocation: locationSchema,
+        toLocation: locationSchema,
+        instrument: instrumentSchema
     },
     {
         collection: 'actions',
@@ -83,8 +113,18 @@ const schema = new mongoose.Schema(
             createdAt: 'createdAt',
             updatedAt: 'updatedAt'
         },
-        toJSON: { getters: true },
-        toObject: { getters: true }
+        toJSON: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        },
+        toObject: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        }
     }
 );
 

@@ -30,6 +30,15 @@ const agentSchema = new mongoose.Schema(
     }
 );
 
+const recipientSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 const sellerSchema = new mongoose.Schema(
     {},
     {
@@ -48,14 +57,25 @@ const errorSchema = new mongoose.Schema(
     }
 );
 
+const potentialActionsSchema = new mongoose.Schema(
+    {},
+    {
+        id: false,
+        _id: false,
+        strict: false
+    }
+);
+
 /**
  * 取引スキーマ
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         status: String,
         typeOf: String,
         agent: agentSchema,
+        recipient: recipientSchema,
         seller: sellerSchema,
         error: errorSchema,
         result: resultSchema,
@@ -64,7 +84,8 @@ const schema = new mongoose.Schema(
         startDate: Date,
         endDate: Date,
         tasksExportedAt: Date,
-        tasksExportationStatus: String
+        tasksExportationStatus: String,
+        potentialActions: potentialActionsSchema
     },
     {
         collection: 'transactions',
@@ -77,8 +98,18 @@ const schema = new mongoose.Schema(
             createdAt: 'createdAt',
             updatedAt: 'updatedAt'
         },
-        toJSON: { getters: true },
-        toObject: { getters: true }
+        toJSON: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        },
+        toObject: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        }
     }
 );
 

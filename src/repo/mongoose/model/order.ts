@@ -47,20 +47,12 @@ const discountSchema = new mongoose.Schema(
     }
 );
 
-const orderInquiryKeySchema = new mongoose.Schema(
-    {},
-    {
-        id: false,
-        _id: false,
-        strict: false
-    }
-);
-
 /**
  * 注文スキーマ
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         typeOf: {
             type: String,
             required: true
@@ -78,7 +70,7 @@ const schema = new mongoose.Schema(
         orderStatus: String,
         orderDate: Date,
         isGift: Boolean,
-        orderInquiryKey: orderInquiryKeySchema
+        dateReturned: Date
     },
     {
         collection: 'orders',
@@ -91,8 +83,18 @@ const schema = new mongoose.Schema(
             createdAt: 'createdAt',
             updatedAt: 'updatedAt'
         },
-        toJSON: { getters: true },
-        toObject: { getters: true }
+        toJSON: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        },
+        toObject: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        }
     }
 );
 
