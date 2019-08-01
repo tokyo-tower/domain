@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- アクション、タスク、取引、注文にプロジェクト属性を追加
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v23.3.0 - 2019-08-01
+
+### Changed
+
+- アクション、タスク、取引、注文にプロジェクト属性を追加
 
 ## v23.2.0 - 2019-07-30
 
