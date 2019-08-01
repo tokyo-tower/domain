@@ -19,7 +19,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 
 const debug = createDebug('ttts-domain:service');
 
-// const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
@@ -98,13 +98,14 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         // 新しい進行中取引を作成
         const transactionAttributes: factory.transaction.placeOrder.IAttributes = {
+            project: project,
             typeOf: factory.transactionType.PlaceOrder,
             status: factory.transactionStatusType.InProgress,
             agent: params.agent,
             seller: {
-                typeOf: factory.organizationType.Corporation,
+                typeOf: seller.typeOf,
                 id: seller.id,
-                name: seller.name.ja,
+                name: seller.name,
                 url: seller.url
             },
             object: {
@@ -467,8 +468,8 @@ export function createResult(
             price: unitPrice,
             priceCurrency: factory.priceCurrency.JPY,
             seller: {
-                typeOf: <factory.organizationType>transaction.seller.typeOf,
-                name: transaction.seller.name
+                typeOf: transaction.seller.typeOf,
+                name: transaction.seller.name.ja
             }
         };
     });
@@ -511,11 +512,12 @@ export function createResult(
 
     return {
         order: {
+            project: project,
             typeOf: 'Order',
             seller: {
                 id: transaction.seller.id,
-                typeOf: <factory.organizationType>transaction.seller.typeOf,
-                name: transaction.seller.name,
+                typeOf: transaction.seller.typeOf,
+                name: transaction.seller.name.ja,
                 url: (transaction.seller.url !== undefined) ? transaction.seller.url : ''
             },
             customer: customer,

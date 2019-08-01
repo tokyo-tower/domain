@@ -25,6 +25,7 @@ const dataSchema = new mongoose.Schema(
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         name: String,
         status: String,
         runsAt: Date,
@@ -45,8 +46,18 @@ const schema = new mongoose.Schema(
             createdAt: 'createdAt',
             updatedAt: 'updatedAt'
         },
-        toJSON: { getters: true },
-        toObject: { getters: true }
+        toJSON: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        },
+        toObject: {
+            getters: true,
+            virtuals: true,
+            minimize: false,
+            versionKey: false
+        }
     }
 );
 

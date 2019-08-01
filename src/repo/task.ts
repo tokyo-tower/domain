@@ -4,6 +4,8 @@ import { Connection } from 'mongoose';
 
 import taskModel from './mongoose/model/task';
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 /**
  * タスク実行時のソート条件
  */
@@ -76,10 +78,10 @@ export class MongoRepository {
     }
 
     public async save(taskAttributes: factory.task.IAttributes): Promise<factory.task.ITask> {
-        return this.taskModel.create(taskAttributes).then(
-            (doc) => <factory.task.ITask>doc.toObject()
-        );
+        return this.taskModel.create({ ...taskAttributes, project: project })
+            .then((doc) => <factory.task.ITask>doc.toObject());
     }
+
     public async executeOneByName(taskName: factory.taskName): Promise<factory.task.ITask | null> {
         const doc = await this.taskModel.findOneAndUpdate(
             {

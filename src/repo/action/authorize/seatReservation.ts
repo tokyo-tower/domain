@@ -1,6 +1,8 @@
 import * as factory from '@tokyotower/factory';
 import { MongoRepository as AuthorizeActionRepository } from '../authorize';
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 /**
  * 座席予約承認アクションレポジトリー
  */
@@ -20,9 +22,8 @@ export class MongoRepository extends AuthorizeActionRepository {
             startDate: new Date()
         });
 
-        return this.actionModel.create(actionAttributes).then(
-            (doc) => <factory.action.authorize.creditCard.IAction>doc.toObject()
-        );
+        return this.actionModel.create({ ...actionAttributes, project: project })
+            .then((doc) => <factory.action.authorize.creditCard.IAction>doc.toObject());
     }
 
     public async complete(

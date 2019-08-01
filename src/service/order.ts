@@ -78,7 +78,10 @@ export function processReturn(returnOrderTransactionId: string) {
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
         await orderRepo.orderModel.findOneAndUpdate(
             { orderNumber: placeOrderTransactionResult.order.orderNumber },
-            { orderStatus: factory.orderStatus.OrderReturned }
+            {
+                orderStatus: factory.orderStatus.OrderReturned,
+                dateReturned: new Date()
+            }
         ).exec();
 
         // 返品処理が全て完了した時点で、レポート作成タスクを追加
