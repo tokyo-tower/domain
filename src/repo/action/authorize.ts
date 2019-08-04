@@ -34,16 +34,4 @@ export class MongoRepository {
             return <factory.action.authorize.IAction>doc.toObject();
         });
     }
-
-    /**
-     * 取引内の承認アクションを取得する
-     * @param transactionId 取引ID
-     */
-    public async findByTransactionId(transactionId: string): Promise<factory.action.authorize.IAction[]> {
-        return this.actionModel.find({
-            typeOf: factory.actionType.AuthorizeAction,
-            'object.transactionId': transactionId,
-            'purpose.typeOf': this.purpose
-        }).exec().then((docs) => docs.map((doc) => <factory.action.authorize.IAction>doc.toObject()));
-    }
 }

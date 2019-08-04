@@ -134,7 +134,7 @@ export function transferSeatReservation(transactionId: string) {
             .map((o) => o.itemOffered);
 
         // 座席仮予約アクションを取得
-        const authorizeActions: factory.action.authorize.seatReservation.IAction[] = transaction.object.authorizeActions
+        const authorizeActions = <factory.action.authorize.seatReservation.IAction[]>transaction.object.authorizeActions
             .filter((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 

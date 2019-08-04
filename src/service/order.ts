@@ -267,7 +267,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
         const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>
             returnOrderTransaction.object.transaction.object.authorizeActions
                 .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .find((action) => action.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+                .find((action) => (<any>action.result).entryTranArgs !== undefined);
 
         // クレジットカードオーソリがなければ何もしない
         if (creditCardAuthorizeAction === undefined) {

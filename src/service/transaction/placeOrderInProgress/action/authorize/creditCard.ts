@@ -78,12 +78,13 @@ export function create(
             },
             transaction.seller,
             {
-                transactionId: transactionId,
+                typeOf: factory.paymentMethodType.CreditCard,
+                // transactionId: transactionId,
                 orderId: orderId,
                 amount: amount,
-                method: method,
-                payType: GMO.utils.util.PayType.Credit
-            }
+                method: method
+            },
+            { typeOf: transaction.typeOf, id: transaction.id }
         );
 
         // GMOオーソリ取得
@@ -190,10 +191,15 @@ export function create(
         return creditCardAuthorizeActionRepo.complete(
             action.id,
             {
+                paymentMethod: factory.paymentMethodType.CreditCard,
+                paymentMethodId: orderId,
+                paymentStatus: factory.cinerino.paymentStatusType.PaymentDue,
+                name: factory.paymentMethodType.CreditCard,
                 accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
                 amount: amount,
                 price: amount,
                 entryTranArgs: entryTranArgs,
+                entryTranResult: entryTranResult,
                 execTranArgs: execTranArgs,
                 execTranResult: execTranResult
             }

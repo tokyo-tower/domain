@@ -52,7 +52,7 @@ export function settleCreditCardAuth(transactionId: string) {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
         const authorizeActions = transaction.object.authorizeActions
             .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((action) => action.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+            .filter((action) => (<any>action.object).typeOf === factory.paymentMethodType.CreditCard);
 
         await Promise.all(authorizeActions.map(async (authorizeAction) => {
             const entryTranArgs = (<factory.action.authorize.creditCard.IResult>authorizeAction.result).entryTranArgs;

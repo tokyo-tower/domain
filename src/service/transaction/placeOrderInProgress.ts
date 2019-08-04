@@ -299,7 +299,7 @@ export function confirm(params: {
             transaction.result.order.acceptedOffers.map((o) => o.itemOffered.id)
         );
         debug('printToken created.', printToken);
-        transaction.result.printToken = printToken;
+        // transaction.result.printToken = printToken;
 
         // ステータス変更
         debug('updating transaction...');
@@ -327,7 +327,10 @@ export function confirm(params: {
             throw error;
         }
 
-        return transaction.result;
+        return {
+            order: transaction.result.order,
+            printToken: printToken
+        };
     };
 }
 
@@ -340,7 +343,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
     const agent = transaction.agent;
     const creditCardAuthorizeActions = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+        .filter((a) => (<any>a.object).typeOf === factory.paymentMethodType.CreditCard);
 
     switch (paymentMethod) {
         case factory.paymentMethodType.Cash:
@@ -411,7 +414,7 @@ export function createResult(
         .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
     const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction | undefined>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.CreditCard);
+        .find((authorizeAction) => (<any>authorizeAction.object).typeOf === factory.paymentMethodType.CreditCard);
 
     const authorizeSeatReservationResult = <factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result;
     const reserveTransaction = authorizeSeatReservationResult.responseBody;
@@ -532,8 +535,7 @@ export function createResult(
             orderStatus: factory.orderStatus.OrderDelivered,
             orderDate: orderDate,
             isGift: false
-        },
-        printToken: ''
+        }
     };
 }
 

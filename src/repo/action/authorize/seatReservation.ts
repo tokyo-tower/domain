@@ -122,4 +122,12 @@ export class MongoRepository extends AuthorizeActionRepository {
                 return <factory.action.authorize.seatReservation.IAction>doc.toObject();
             });
     }
+
+    public async findByTransactionId(transactionId: string): Promise<factory.action.authorize.IAction[]> {
+        return this.actionModel.find({
+            typeOf: factory.actionType.AuthorizeAction,
+            'object.transactionId': transactionId,
+            'purpose.typeOf': this.purpose
+        }).exec().then((docs) => docs.map((doc) => <factory.action.authorize.IAction>doc.toObject()));
+    }
 }
