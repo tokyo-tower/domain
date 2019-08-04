@@ -30,13 +30,14 @@ describe('CreditCardAuthorizeActionRepo.start()', () => {
         const agent = {};
         const recipient = {};
         const object = {};
+        const purpose = {};
 
         const repo = new CreditCardAuthorizeActionRepo(mongoose.connection);
         const doc = new repo.actionModel();
 
         sandbox.mock(repo.actionModel).expects('create').once().resolves(doc);
 
-        const result = await repo.start(<any>agent, <any>recipient, <any>object);
+        const result = await repo.start(<any>agent, <any>recipient, <any>object, <any>purpose);
         assert(typeof result, 'object');
         sandbox.verify();
     });
