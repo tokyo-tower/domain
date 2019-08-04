@@ -1,13 +1,14 @@
 const ttts = require('../lib/index');
 const moment = require('moment-timezone');
+const mongoose = require('mongoose');
 
 async function main() {
-    await ttts.mongoose.connect(process.env.MONGOLAB_URI);
+    await mongoose.connect(process.env.MONGOLAB_URI, { autoIndex: true });
 
     const reservationRepo = new ttts.repository.Reservation(mongoose.connection);
     const reservations = await reservationRepo.search(
         {
-            reservationStatuses: [ttts.factory.reservationStatusType.ReservationConfirmed],
+            reservationStatuses: [ttts.factory.chevre.reservationStatusType.ReservationConfirmed],
             // performance_day: '20190612',
             // performanceStartFrom: moment().add(-1, 'week').toDate(),
             reservationFor: {

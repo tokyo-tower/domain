@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v23.3.1 - 2019-08-04
+
+### Changed
+
+- アクションコレクションに検索のためのインデックス追加
+
 ## v23.3.0 - 2019-08-01
 
 ### Changed
