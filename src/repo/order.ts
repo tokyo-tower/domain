@@ -3,7 +3,7 @@ import { Connection } from 'mongoose';
 import OrderModel from './mongoose/model/order';
 
 /**
- * 注文レポジトリー
+ * 注文リポジトリ
  */
 export class MongoRepository {
     public readonly orderModel: typeof OrderModel;

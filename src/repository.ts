@@ -3,8 +3,6 @@
  * リポジトリ
  */
 import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize';
-import { MongoRepository as CreditCardAuthorizeActionRepo } from './repo/action/authorize/creditCard';
-import { MongoRepository as SeatReservationAuthorizeActionRepo } from './repo/action/authorize/seatReservation';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { MongoRepository as OrderRepo } from './repo/order';
@@ -30,16 +28,6 @@ export namespace action {
      * 承認アクションリポジトリ
      */
     export class Authorize extends AuthorizeActionRepo { }
-    export namespace authorize {
-        /**
-         * クレジットカード承認アクションリポジトリ
-         */
-        export class CreditCard extends CreditCardAuthorizeActionRepo { }
-        /**
-         * 座席予約承認アクションリポジトリ
-         */
-        export class SeatReservation extends SeatReservationAuthorizeActionRepo { }
-    }
 }
 
 /**

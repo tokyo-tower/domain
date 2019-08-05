@@ -9,7 +9,7 @@ import * as factory from '@tokyotower/factory';
 const debug = createDebug('ttts-domain:repository.sequence');
 
 /**
- * 採番レポジトリー
+ * 採番リポジトリ
  */
 export class RedisRepository {
     /**

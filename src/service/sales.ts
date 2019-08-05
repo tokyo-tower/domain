@@ -1,26 +1,23 @@
-/**
- * sales service
- * mainly handle transactions with GMO
- */
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
 import * as factory from '@tokyotower/factory';
-import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
+import { MongoRepository as AuthorizeActionRepo } from '../repo/action/authorize';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
 
 /**
  * クレジットカードオーソリ取消
- * @param transactionId 取引ID
  */
 export function cancelCreditCardAuth(transactionId: string) {
-    return async (creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo) => {
+    return async (authorizeActionRepo: AuthorizeActionRepo) => {
         // クレジットカード仮売上アクションを取得
-        const authorizeActions: factory.action.authorize.creditCard.IAction[] =
-            await creditCardAuthorizeActionRepo.findByTransactionId(transactionId)
-                .then((actions) => actions.filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus));
+        const authorizeActions = await authorizeActionRepo.findByTransactionId({
+            object: { typeOf: factory.paymentMethodType.CreditCard },
+            purpose: { id: transactionId }
+        })
+            .then((actions) => actions.filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus));
 
         await Promise.all(authorizeActions.map(async (action) => {
             const entryTranArgs = (<factory.action.authorize.creditCard.IResult>action.result).entryTranArgs;
@@ -51,8 +48,8 @@ export function settleCreditCardAuth(transactionId: string) {
     return async (transactionRepo: TransactionRepo) => {
         const transaction = await transactionRepo.findPlaceOrderById(transactionId);
         const authorizeActions = transaction.object.authorizeActions
-            .filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((action) => (<any>action.object).typeOf === factory.paymentMethodType.CreditCard);
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => (<any>a.object).typeOf === factory.paymentMethodType.CreditCard);
 
         await Promise.all(authorizeActions.map(async (authorizeAction) => {
             const entryTranArgs = (<factory.action.authorize.creditCard.IResult>authorizeAction.result).entryTranArgs;

@@ -7,8 +7,7 @@ import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../repo/action/authorize/creditCard';
-import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../repo/action/authorize/seatReservation';
+import { MongoRepository as AuthorizeActionRepo } from '../../repo/action/authorize';
 import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
@@ -25,8 +24,7 @@ export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: 
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
-    creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
-    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+    authorizeActionRepo: AuthorizeActionRepo,
     tokenRepo: TokenRepo,
     paymentNoRepo: PaymentNoRepo
 ) => Promise<T>;
@@ -251,8 +249,7 @@ export function confirm(params: {
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     return async (
         transactionRepo: TransactionRepo,
-        creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
-        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+        authorizeActionRepo: AuthorizeActionRepo,
         tokenRepo: TokenRepo,
         paymentNoRepo: PaymentNoRepo
     ) => {
@@ -264,8 +261,14 @@ export function confirm(params: {
 
         // 取引に対する全ての承認アクションをマージ
         let authorizeActions = [
-            ... await creditCardAuthorizeActionRepo.findByTransactionId(params.transactionId),
-            ... await seatReservationAuthorizeActionRepo.findByTransactionId(params.transactionId)
+            ... await authorizeActionRepo.findByTransactionId({
+                object: { typeOf: factory.paymentMethodType.CreditCard },
+                purpose: { id: params.transactionId }
+            }),
+            ... await authorizeActionRepo.findByTransactionId({
+                object: { typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation },
+                purpose: { id: params.transactionId }
+            })
         ];
 
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
@@ -380,14 +383,14 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         factory.action.authorize.seatReservation.IResult;
 
     if (purchaserGroup === factory.person.Group.Customer && paymentMethod === factory.paymentMethodType.CreditCard) {
-        // agentとsellerで、承認アクションの金額が合うかどうか
+        // customerとsellerで、承認アクションの金額が合うかどうか
         const priceByAgent = transaction.object.authorizeActions
-            .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((authorizeAction) => authorizeAction.agent.id === transaction.agent.id)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.agent.id === transaction.agent.id)
             .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
         const priceBySeller = transaction.object.authorizeActions
-            .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((authorizeAction) => authorizeAction.agent.id === transaction.seller.id)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.agent.id === transaction.seller.id)
             .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
         debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
 
@@ -410,11 +413,11 @@ export function createResult(
 ): factory.transaction.placeOrder.IResult {
     debug('creating result of transaction...', transaction.id);
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
-        .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .find((authorizeAction) => authorizeAction.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation);
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .find((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation);
     const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction | undefined>transaction.object.authorizeActions
-        .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .find((authorizeAction) => (<any>authorizeAction.object).typeOf === factory.paymentMethodType.CreditCard);
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .find((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
     const authorizeSeatReservationResult = <factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result;
     const reserveTransaction = authorizeSeatReservationResult.responseBody;
