@@ -12,15 +12,18 @@ export class MongoRepository extends AuthorizeActionRepository {
     public async start(
         agent: factory.action.IParticipant,
         recipient: factory.action.IParticipant,
-        object: factory.action.authorize.seatReservation.IObject
+        object: factory.action.authorize.seatReservation.IObject,
+        purpose: factory.action.authorize.seatReservation.IPurpose
     ): Promise<factory.action.authorize.creditCard.IAction> {
-        const actionAttributes = factory.action.authorize.seatReservation.createAttributes({
+        const actionAttributes: factory.action.authorize.seatReservation.IAttributes = {
+            typeOf: factory.actionType.AuthorizeAction,
             actionStatus: factory.actionStatusType.ActiveActionStatus,
+            purpose: purpose,
             object: object,
             agent: agent,
             recipient: recipient,
             startDate: new Date()
-        });
+        };
 
         return this.actionModel.create({ ...actionAttributes, project: project })
             .then((doc) => <factory.action.authorize.creditCard.IAction>doc.toObject());
@@ -55,8 +58,18 @@ export class MongoRepository extends AuthorizeActionRepository {
             {
                 _id: actionId,
                 typeOf: factory.actionType.AuthorizeAction,
-                'object.transactionId': transactionId,
-                'purpose.typeOf': this.purpose
+                'object.typeOf': {
+                    $exists: true,
+                    $eq: factory.action.authorize.seatReservation.ObjectType.SeatReservation
+                },
+                'purpose.typeOf': {
+                    $exists: true,
+                    $eq: factory.transactionType.PlaceOrder
+                },
+                'purpose.id': {
+                    $exists: true,
+                    $eq: transactionId
+                }
             },
             { actionStatus: factory.actionStatusType.CanceledActionStatus },
             { new: true }
@@ -85,8 +98,18 @@ export class MongoRepository extends AuthorizeActionRepository {
             {
                 _id: actionId,
                 typeOf: factory.actionType.AuthorizeAction,
-                'object.transactionId': transactionId,
-                'purpose.typeOf': this.purpose,
+                'object.typeOf': {
+                    $exists: true,
+                    $eq: factory.action.authorize.seatReservation.ObjectType.SeatReservation
+                },
+                'purpose.typeOf': {
+                    $exists: true,
+                    $eq: factory.transactionType.PlaceOrder
+                },
+                'purpose.id': {
+                    $exists: true,
+                    $eq: transactionId
+                },
                 actionStatus: factory.actionStatusType.CompletedActionStatus // 完了ステータスのアクションのみ
             },
             {
@@ -123,11 +146,21 @@ export class MongoRepository extends AuthorizeActionRepository {
             });
     }
 
-    public async findByTransactionId(transactionId: string): Promise<factory.action.authorize.IAction[]> {
+    public async findByTransactionId(transactionId: string): Promise<factory.action.authorize.seatReservation.IAction[]> {
         return this.actionModel.find({
             typeOf: factory.actionType.AuthorizeAction,
-            'object.transactionId': transactionId,
-            'purpose.typeOf': this.purpose
-        }).exec().then((docs) => docs.map((doc) => <factory.action.authorize.IAction>doc.toObject()));
+            'object.typeOf': {
+                $exists: true,
+                $eq: factory.action.authorize.seatReservation.ObjectType.SeatReservation
+            },
+            'purpose.typeOf': {
+                $exists: true,
+                $eq: factory.transactionType.PlaceOrder
+            },
+            'purpose.id': {
+                $exists: true,
+                $eq: transactionId
+            }
+        }).exec().then((docs) => docs.map((doc) => doc.toObject()));
     }
 }

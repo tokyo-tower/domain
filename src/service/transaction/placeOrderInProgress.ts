@@ -284,7 +284,7 @@ export function confirm(params: {
         const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction | undefined>
             transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .find((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
+                .find((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation);
         if (seatReservationAuthorizeAction === undefined) {
             throw new factory.errors.Argument('transactionId', 'Authorize seat reservation action not found');
         }
@@ -411,7 +411,7 @@ export function createResult(
     debug('creating result of transaction...', transaction.id);
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .find((authorizeAction) => authorizeAction.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation);
+        .find((authorizeAction) => authorizeAction.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation);
     const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction | undefined>transaction.object.authorizeActions
         .filter((authorizeAction) => authorizeAction.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((authorizeAction) => (<any>authorizeAction.object).typeOf === factory.paymentMethodType.CreditCard);

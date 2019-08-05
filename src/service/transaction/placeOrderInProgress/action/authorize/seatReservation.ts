@@ -330,10 +330,11 @@ export function create(
                 typeOf: factory.personType.Person
             },
             {
-                transactionId: transactionId,
+                typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation,
                 offers: acceptedOffers,
                 performance: performance
-            }
+            },
+            { typeOf: <factory.transactionType.PlaceOrder>transaction.typeOf, id: transaction.id }
         );
 
         // 在庫から仮予約
@@ -580,6 +581,7 @@ export function create(
                     },
                     0
                 ),
+            priceCurrency: factory.priceCurrency.JPY,
             tmpReservations: tmpReservations,
             requestBody: requestBody,
             responseBody: responseBody

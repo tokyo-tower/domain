@@ -135,7 +135,7 @@ export function transferSeatReservation(transactionId: string) {
 
         // 座席仮予約アクションを取得
         const authorizeActions = <factory.action.authorize.seatReservation.IAction[]>transaction.object.authorizeActions
-            .filter((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation)
+            .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
         const reserveService = new chevre.service.transaction.Reserve({

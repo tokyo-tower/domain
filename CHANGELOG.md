@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - クレジットカード決済承認アクションインターフェースをCinerino化
+- 座席予約承認アクションインターフェースをCinerino化
 
 ### Deprecated
 

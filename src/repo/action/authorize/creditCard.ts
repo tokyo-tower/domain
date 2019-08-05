@@ -16,8 +16,8 @@ export class MongoRepository extends AuthorizeActionRepository {
         purpose: factory.action.authorize.creditCard.IPurpose
     ): Promise<factory.action.authorize.creditCard.IAction> {
         const actionAttributes: factory.action.authorize.creditCard.IAttributes = {
-            actionStatus: factory.actionStatusType.ActiveActionStatus,
             typeOf: factory.actionType.AuthorizeAction,
+            actionStatus: factory.actionStatusType.ActiveActionStatus,
             purpose: purpose,
             object: object,
             agent: agent,
