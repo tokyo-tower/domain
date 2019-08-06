@@ -13,7 +13,6 @@ import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
 const debug = createDebug('ttts-domain:service');
@@ -174,10 +173,6 @@ export namespace action {
      * 取引に対する承認アクション
      */
     export namespace authorize {
-        /**
-         * クレジットカード承認アクションサービス
-         */
-        export import creditCard = CreditCardAuthorizeActionService;
         /**
          * 座席予約承認アクションサービス
          */

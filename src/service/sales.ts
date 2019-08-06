@@ -2,43 +2,9 @@ import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
 import * as factory from '@tokyotower/factory';
-import { MongoRepository as AuthorizeActionRepo } from '../repo/action/authorize';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
-
-/**
- * クレジットカードオーソリ取消
- */
-export function cancelCreditCardAuth(transactionId: string) {
-    return async (authorizeActionRepo: AuthorizeActionRepo) => {
-        // クレジットカード仮売上アクションを取得
-        const authorizeActions = await authorizeActionRepo.findByTransactionId({
-            object: { typeOf: factory.paymentMethodType.CreditCard },
-            purpose: { id: transactionId }
-        })
-            .then((actions) => actions.filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus));
-
-        await Promise.all(authorizeActions.map(async (action) => {
-            const entryTranArgs = (<factory.action.authorize.creditCard.IResult>action.result).entryTranArgs;
-            const execTranArgs = (<factory.action.authorize.creditCard.IResult>action.result).execTranArgs;
-
-            debug('calling alterTran...');
-            await GMO.services.credit.alterTran({
-                shopId: entryTranArgs.shopId,
-                shopPass: entryTranArgs.shopPass,
-                accessId: execTranArgs.accessId,
-                accessPass: execTranArgs.accessPass,
-                jobCd: GMO.utils.util.JobCd.Void,
-                amount: entryTranArgs.amount
-            });
-        }));
-
-        // 失敗したら取引状態確認してどうこう、という処理も考えうるが、
-        // GMOはapiのコール制限が厳しく、下手にコールするとすぐにクライアントサイドにも影響をあたえてしまう
-        // リトライはタスクの仕組みに含まれているので失敗してもここでは何もしない
-    };
-}
 
 /**
  * クレジットカード売上確定

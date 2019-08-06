@@ -224,6 +224,45 @@ export class MongoRepository {
         return andConditions;
     }
 
+    /**
+     * 特定取引検索
+     */
+    public async findById<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<factory.transaction.ITransaction<T>> {
+        const doc = await this.transactionModel.findOne({
+            _id: params.id,
+            typeOf: params.typeOf
+        })
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound(this.transactionModel.modelName);
+        }
+
+        return doc.toObject();
+    }
+
+    /**
+     * 進行中の取引を取得する
+     */
+    public async findInProgressById<T extends factory.transactionType>(params: {
+        typeOf: T;
+        id: string;
+    }): Promise<factory.transaction.ITransaction<T>> {
+        const doc = await this.transactionModel.findOne({
+            _id: params.id,
+            typeOf: params.typeOf,
+            status: factory.transactionStatusType.InProgress
+        })
+            .exec();
+        if (doc === null) {
+            throw new factory.errors.NotFound(this.transactionModel.modelName);
+        }
+
+        return doc.toObject();
+    }
+
     public async startPlaceOrder(
         transactionAttributes: factory.transaction.placeOrder.IAttributes
     ): Promise<factory.transaction.placeOrder.ITransaction> {

@@ -6,6 +6,7 @@ import * as factory from '@tokyotower/factory';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
+import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as AuthorizeActionRepo } from '../repo/action/authorize';
 import { MongoRepository as AggregateSaleRepo } from '../repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
@@ -21,6 +22,7 @@ import { MongoRepository as TransactionRepo } from '../repo/transaction';
 import * as AggregateService from '../service/aggregate';
 import * as NotificationService from '../service/notification';
 import * as OrderService from '../service/order';
+import * as CreditCardPaymentService from '../service/payment/creditCard';
 import * as SalesService from '../service/sales';
 import * as StockService from '../service/stock';
 
@@ -70,9 +72,11 @@ export function cancelCreditCard(
     data: factory.task.cancelCreditCard.IData
 ): IOperation<void> {
     return async (connection: mongoose.Connection) => {
-        await SalesService.cancelCreditCardAuth(data.transactionId)(
-            new AuthorizeActionRepo(connection)
-        );
+        await CreditCardPaymentService.cancelCreditCardAuth(data)({
+            action: new ActionRepo(connection),
+            project: new ProjectRepo(connection),
+            transaction: new TransactionRepo(connection)
+        });
     };
 }
 
