@@ -432,10 +432,11 @@ export function createResult(
 
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
-    const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
+    let paymentMethodId = '';
     let paymentAccountId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
         paymentAccountId = creditCardAuthorizeAction.result.accountId;
+        paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
     }
 
     // 予約データを作成
@@ -451,7 +452,7 @@ export function createResult(
             transaction: transaction,
             orderNumber: orderNumber,
             paymentNo: paymentNo,
-            gmoOrderId: gmoOrderId,
+            gmoOrderId: paymentMethodId,
             paymentSeatIndex: index.toString(),
             customerContact: customerContact,
             bookingTime: orderDate
@@ -491,7 +492,7 @@ export function createResult(
         name: transaction.object.paymentMethod.toString(),
         paymentMethod: transaction.object.paymentMethod,
         accountId: paymentAccountId,
-        paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : '',
+        paymentMethodId: paymentMethodId,
         additionalProperty: [],
         totalPaymentDue: {
             typeOf: <'MonetaryAmount'>'MonetaryAmount',
