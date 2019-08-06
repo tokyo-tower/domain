@@ -2,7 +2,7 @@ import { Connection } from 'mongoose';
 import AggregateSaleModel from './mongoose/model/aggregateSale';
 
 /**
- * 売上集計レポジトリー
+ * 売上集計リポジトリ
  */
 export class MongoRepository {
     public readonly aggregateSaleModel: typeof AggregateSaleModel;

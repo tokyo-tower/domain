@@ -60,26 +60,3 @@ describe('AuthorizeActionRepo.giveUp()', () => {
         sandbox.verify();
     });
 });
-
-describe('AuthorizeActionRepo.findByTransactionId()', () => {
-    afterEach(() => {
-        sandbox.restore();
-    });
-
-    it('配列を取得できるはず', async () => {
-        const transactionId = 'transactionId';
-
-        const authorizeRepo = new AuthorizeActionRepo(mongoose.connection);
-        const docs = [new authorizeRepo.actionModel()];
-
-        sandbox.mock(authorizeRepo.actionModel)
-            .expects('find').once()
-            .chain('exec')
-            .resolves(docs);
-
-        const result = await authorizeRepo.findByTransactionId(transactionId);
-        assert(Array.isArray(result));
-        assert.equal(result.length, 1);
-        sandbox.verify();
-    });
-});

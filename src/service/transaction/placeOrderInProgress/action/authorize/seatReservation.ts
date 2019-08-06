@@ -3,7 +3,7 @@ import * as moment from 'moment-timezone';
 
 import * as factory from '@tokyotower/factory';
 
-import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../../../../../repo/action/authorize/seatReservation';
+import { MongoRepository as AuthorizeActionRepo } from '../../../../../repo/action/authorize';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
@@ -35,7 +35,7 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
-    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+    authorizeActionRepo: AuthorizeActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     taskRepo: TaskRepo,
     projectRepo: ProjectRepo
@@ -43,7 +43,7 @@ export type ICreateOpetaiton<T> = (
 
 export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
-    seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+    authorizeActionRepo: AuthorizeActionRepo,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     taskRepo: TaskRepo,
     projectRepo: ProjectRepo
@@ -294,8 +294,7 @@ export function create(
     return async (
         transactionRepo: TransactionRepo,
         performanceRepo: PerformanceRepo,
-        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
-        // paymentNoRepo: PaymentNoRepo,
+        authorizeActionRepo: AuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
         projectRepo: ProjectRepo
@@ -323,18 +322,22 @@ export function create(
         const acceptedOffersWithSeatNumber = await validateOffers(projectDetails, performance, acceptedOffers, transactionId)();
 
         // 承認アクションを開始
-        const action = await seatReservationAuthorizeActionRepo.start(
-            transaction.seller,
-            {
+        const action = await authorizeActionRepo.start({
+            typeOf: factory.actionType.AuthorizeAction,
+            actionStatus: factory.actionStatusType.ActiveActionStatus,
+            startDate: new Date(),
+            agent: transaction.seller,
+            recipient: {
                 id: transaction.agent.id,
                 typeOf: factory.personType.Person
             },
-            {
-                transactionId: transactionId,
+            object: {
+                typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation,
                 offers: acceptedOffers,
                 performance: performance
-            }
-        );
+            },
+            purpose: { typeOf: <factory.transactionType.PlaceOrder>transaction.typeOf, id: transaction.id }
+        });
 
         // 在庫から仮予約
         let tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
@@ -489,7 +492,7 @@ export function create(
             // actionにエラー結果を追加
             try {
                 const actionError = (error instanceof Error) ? { ...error, ...{ message: error.message } } : error;
-                await seatReservationAuthorizeActionRepo.giveUp(action.id, actionError);
+                await authorizeActionRepo.giveUp(action.id, actionError);
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -580,12 +583,17 @@ export function create(
                     },
                     0
                 ),
+            priceCurrency: factory.priceCurrency.JPY,
             tmpReservations: tmpReservations,
             requestBody: requestBody,
             responseBody: responseBody
         };
 
-        return seatReservationAuthorizeActionRepo.complete(action.id, result);
+        return authorizeActionRepo.complete<factory.action.authorize.seatReservation.ObjectType.SeatReservation>({
+            typeOf: factory.actionType.AuthorizeAction,
+            id: action.id,
+            result: result
+        });
     };
 }
 
@@ -599,7 +607,7 @@ export function cancel(
 ): ICancelOpetaiton<void> {
     return async (
         transactionRepo: TransactionRepo,
-        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+        authorizeActionRepo: AuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
         projectRepo: ProjectRepo
@@ -621,7 +629,8 @@ export function cancel(
 
             // アクションではcompleteステータスであるにも関わらず、在庫は有になっている、というのが最悪の状況
             // それだけは回避するためにアクションを先に変更
-            const action = await seatReservationAuthorizeActionRepo.cancel(actionId, transactionId);
+            const action = <factory.action.authorize.seatReservation.IAction>
+                await authorizeActionRepo.cancel({ typeOf: factory.actionType.AuthorizeAction, id: actionId });
             const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
 
             const performance = action.object.performance;

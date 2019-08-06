@@ -5,7 +5,7 @@ import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 
 import * as factory from '@tokyotower/factory';
-import { MongoRepository as CreditCardAuthorizeActionRepo } from '../../../../../repo/action/authorize/creditCard';
+import { MongoRepository as AuthorizeActionRepo } from '../../../../../repo/action/authorize';
 import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { MongoRepository as SellerRepo } from '../../../../../repo/seller';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
@@ -15,7 +15,7 @@ const debug = createDebug('ttts-domain:service');
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 export type ICreateOperation<T> = (
-    creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
+    authorizeActionRepo: AuthorizeActionRepo,
     sellerRepo: SellerRepo,
     transactionRepo: TransactionRepo,
     creditService: GMO.service.Credit,
@@ -43,7 +43,7 @@ export function create(
 ): ICreateOperation<factory.action.authorize.creditCard.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
+        authorizeActionRepo: AuthorizeActionRepo,
         sellerRepo: SellerRepo,
         transactionRepo: TransactionRepo,
         creditService: GMO.service.Credit,
@@ -71,20 +71,24 @@ export function create(
         const seller = await sellerRepo.findById({ id: transaction.seller.id });
 
         // 承認アクションを開始する
-        const action = await creditCardAuthorizeActionRepo.start(
-            {
+        const action = await authorizeActionRepo.start({
+            typeOf: factory.actionType.AuthorizeAction,
+            actionStatus: factory.actionStatusType.ActiveActionStatus,
+            startDate: new Date(),
+            agent: {
                 id: transaction.agent.id,
                 typeOf: factory.personType.Person
             },
-            transaction.seller,
-            {
-                transactionId: transactionId,
+            recipient: transaction.seller,
+            object: {
+                typeOf: factory.paymentMethodType.CreditCard,
+                // transactionId: transactionId,
                 orderId: orderId,
                 amount: amount,
-                method: method,
-                payType: GMO.utils.util.PayType.Credit
-            }
-        );
+                method: method
+            },
+            purpose: { typeOf: transaction.typeOf, id: transaction.id }
+        });
 
         // GMOオーソリ取得
         let creditCardPaymentAccepted: factory.seller.IPaymentAccepted<factory.cinerino.paymentMethodType.CreditCard>;
@@ -142,7 +146,7 @@ export function create(
             // actionにエラー結果を追加
             try {
                 const actionError = (error instanceof Error) ? { ...error, ...{ message: error.message } } : error;
-                await creditCardAuthorizeActionRepo.giveUp(action.id, actionError);
+                await authorizeActionRepo.giveUp(action.id, actionError);
             } catch (__) {
                 // 失敗したら仕方ない
             }
@@ -187,17 +191,23 @@ export function create(
         // アクションを完了
         debug('ending authorize action...');
 
-        return creditCardAuthorizeActionRepo.complete(
-            action.id,
-            {
+        return authorizeActionRepo.complete<factory.paymentMethodType.CreditCard>({
+            typeOf: factory.actionType.AuthorizeAction,
+            id: action.id,
+            result: {
+                paymentMethod: factory.paymentMethodType.CreditCard,
+                paymentMethodId: orderId,
+                paymentStatus: factory.cinerino.paymentStatusType.PaymentDue,
+                name: factory.paymentMethodType.CreditCard,
                 accountId: (searchTradeResult !== undefined) ? searchTradeResult.cardNo : '',
                 amount: amount,
                 price: amount,
                 entryTranArgs: entryTranArgs,
+                entryTranResult: entryTranResult,
                 execTranArgs: execTranArgs,
                 execTranResult: execTranResult
             }
-        );
+        });
     };
 }
 
@@ -207,7 +217,7 @@ export function cancel(
     actionId: string
 ) {
     return async (
-        creditCardAuthorizeActionRepo: CreditCardAuthorizeActionRepo,
+        authorizeActionRepo: AuthorizeActionRepo,
         transactionRepo: TransactionRepo,
         creditService: GMO.service.Credit
     ) => {
@@ -217,7 +227,7 @@ export function cancel(
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
 
-        const action = await creditCardAuthorizeActionRepo.cancel(actionId, transactionId);
+        const action = await authorizeActionRepo.cancel({ typeOf: factory.actionType.AuthorizeAction, id: actionId });
         const actionResult = <factory.action.authorize.creditCard.IResult>action.result;
 
         // オーソリ取消

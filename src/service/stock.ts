@@ -6,7 +6,7 @@ import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
+import { MongoRepository as AuthorizeActionRepo } from '../repo/action/authorize';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
@@ -35,7 +35,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
  */
 export function cancelSeatReservationAuth(transactionId: string) {
     return async (
-        seatReservationAuthorizeActionRepo: SeatReservationAuthorizeActionRepo,
+        authorizeActionRepo: AuthorizeActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
         projectRepo: ProjectRepo
@@ -49,9 +49,11 @@ export function cancelSeatReservationAuth(transactionId: string) {
         }
 
         // 座席仮予約アクションを取得
-        const authorizeActions: factory.action.authorize.seatReservation.IAction[] =
-            await seatReservationAuthorizeActionRepo.findByTransactionId(transactionId)
-                .then((actions) => actions.filter((action) => action.actionStatus === factory.actionStatusType.CompletedActionStatus));
+        const authorizeActions = await authorizeActionRepo.findByTransactionId({
+            object: { typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation },
+            purpose: { id: transactionId }
+        })
+            .then((actions) => actions.filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus));
 
         const reserveService = new chevre.service.transaction.Reserve({
             endpoint: projectDetails.settings.chevre.endpoint,
@@ -134,8 +136,8 @@ export function transferSeatReservation(transactionId: string) {
             .map((o) => o.itemOffered);
 
         // 座席仮予約アクションを取得
-        const authorizeActions: factory.action.authorize.seatReservation.IAction[] = transaction.object.authorizeActions
-            .filter((a) => a.purpose.typeOf === factory.action.authorize.authorizeActionPurpose.SeatReservation)
+        const authorizeActions = <factory.action.authorize.seatReservation.IAction[]>transaction.object.authorizeActions
+            .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
         const reserveService = new chevre.service.transaction.Reserve({

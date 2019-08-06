@@ -6,8 +6,7 @@ import * as factory from '@tokyotower/factory';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
-import { MongoRepository as CreditCardAuthorizeActionRepo } from '../repo/action/authorize/creditCard';
-import { MongoRepository as SeatReservationAuthorizeActionRepo } from '../repo/action/authorize/seatReservation';
+import { MongoRepository as AuthorizeActionRepo } from '../repo/action/authorize';
 import { MongoRepository as AggregateSaleRepo } from '../repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
 import { MongoRepository as OrderRepo } from '../repo/order';
@@ -59,7 +58,7 @@ export function cancelSeatReservation(
 ): IOperation<void> {
     return async (connection: mongoose.Connection, redisClient: redis.RedisClient) => {
         await StockService.cancelSeatReservationAuth(data.transactionId)(
-            new SeatReservationAuthorizeActionRepo(connection),
+            new AuthorizeActionRepo(connection),
             new TicketTypeCategoryRateLimitRepo(redisClient),
             new TaskRepo(connection),
             new ProjectRepo(connection)
@@ -72,7 +71,7 @@ export function cancelCreditCard(
 ): IOperation<void> {
     return async (connection: mongoose.Connection) => {
         await SalesService.cancelCreditCardAuth(data.transactionId)(
-            new CreditCardAuthorizeActionRepo(connection)
+            new AuthorizeActionRepo(connection)
         );
     };
 }

@@ -295,18 +295,13 @@ export class MongoRepository {
     }
 
     /**
-     * confirm a placeOrder
      * 注文取引を確定する
-     * @param transactionId transaction id
-     * @param endDate end date
-     * @param authorizeActions authorize actions
-     * @param result transaction result
      */
     public async confirmPlaceOrder(
         transactionId: string,
         endDate: Date,
         paymentMethod: factory.paymentMethodType,
-        authorizeActions: factory.action.authorize.IAction[],
+        authorizeActions: factory.transaction.placeOrder.IAuthorizeAction[],
         result: factory.transaction.placeOrder.IResult
     ): Promise<factory.transaction.placeOrder.ITransaction> {
         const doc = await this.transactionModel.findOneAndUpdate(
