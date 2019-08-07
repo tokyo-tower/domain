@@ -7,7 +7,7 @@ import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as AuthorizeActionRepo } from '../../repo/action/authorize';
+import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
@@ -23,7 +23,7 @@ export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: 
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
-    authorizeActionRepo: AuthorizeActionRepo,
+    actionRepo: ActionRepo,
     tokenRepo: TokenRepo,
     paymentNoRepo: PaymentNoRepo
 ) => Promise<T>;
@@ -244,7 +244,7 @@ export function confirm(params: {
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     return async (
         transactionRepo: TransactionRepo,
-        authorizeActionRepo: AuthorizeActionRepo,
+        actionRepo: ActionRepo,
         tokenRepo: TokenRepo,
         paymentNoRepo: PaymentNoRepo
     ) => {
@@ -255,16 +255,13 @@ export function confirm(params: {
         }
 
         // 取引に対する全ての承認アクションをマージ
-        let authorizeActions = [
-            ... await authorizeActionRepo.findByTransactionId({
-                object: { typeOf: factory.paymentMethodType.CreditCard },
-                purpose: { id: params.transactionId }
-            }),
-            ... await authorizeActionRepo.findByTransactionId({
-                object: { typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation },
-                purpose: { id: params.transactionId }
-            })
-        ];
+        let authorizeActions = await actionRepo.searchByPurpose({
+            typeOf: factory.actionType.AuthorizeAction,
+            purpose: {
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.transactionId
+            }
+        });
 
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
         authorizeActions = authorizeActions.filter(

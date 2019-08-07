@@ -13,10 +13,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - クレジットカード決済サービスをCinerino化
+- タスクサービスをCinerino化
 
 ### Deprecated
 
 ### Removed
+
+- 座席予約承認アクションリポジトリを削除
 
 ### Fixed
 

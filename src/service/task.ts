@@ -1,5 +1,4 @@
 /**
- * task service
  * タスクサービス
  */
 import * as createDebug from 'debug';
@@ -8,62 +7,76 @@ import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
 import * as factory from '@tokyotower/factory';
-import { MongoRepository as TaskRepository } from '../repo/task';
+
+import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as NotificationService from './notification';
-import * as TaskFunctionsService from './taskFunctions';
 
-export type TaskOperation<T> = (taskRepository: TaskRepository) => Promise<T>;
-export type IExecuteOperation<T> = (
-    taskRepository: TaskRepository, connection: mongoose.Connection, redisClient: redis.RedisClient
-) => Promise<T>;
+const debug = createDebug('cinerino-domain:service');
 
-const debug = createDebug('ttts-domain:service');
+export interface IConnectionSettings {
+    /**
+     * MongoDBコネクション
+     */
+    connection: mongoose.Connection;
+    /**
+     * Redisクライアント
+     */
+    redisClient: redis.RedisClient;
+}
 
-export const ABORT_REPORT_SUBJECT = 'One task aboted !!!';
+export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
+export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
+
+export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
 
 /**
- * execute a task by taskName
  * タスク名でタスクをひとつ実行する
- * @param taskName タスク名
  */
-export function executeByName(taskName: factory.taskName): IExecuteOperation<void> {
-    return async (taskRepository: TaskRepository, connection: mongoose.Connection, redisClient: redis.RedisClient) => {
+export function executeByName<T extends factory.taskName>(params: {
+    project?: factory.project.IProject;
+    name: T;
+}): IOperation<void> {
+    return async (settings: IConnectionSettings) => {
+        const taskRepo = new TaskRepo(settings.connection);
+
         // 未実行のタスクを取得
         let task: factory.task.ITask | null = null;
         try {
-            task = await taskRepository.executeOneByName(taskName);
+            task = await taskRepo.executeOneByName(params.name);
             debug('task found', task);
         } catch (error) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore next */
             debug('executeByName error:', error);
         }
 
         // タスクがなければ終了
         if (task !== null) {
-            await execute(task)(taskRepository, connection, redisClient);
+            await execute(task)(settings);
         }
     };
 }
 
 /**
- * execute a task
  * タスクを実行する
- * @param task タスクオブジェクト
  */
-export function execute(task: factory.task.ITask): IExecuteOperation<void> {
+export function execute(task: factory.task.ITask): IOperation<void> {
     debug('executing a task...', task);
     const now = new Date();
 
-    return async (taskRepository: TaskRepository, connection: mongoose.Connection, redisClient: redis.RedisClient) => {
+    return async (settings: IConnectionSettings) => {
+        const taskRepo = new TaskRepo(settings.connection);
+
         try {
             // タスク名の関数が定義されていなければ、TypeErrorとなる
-            await (<any>TaskFunctionsService)[task.name](task.data)(connection, redisClient);
-
+            const { call } = await import(`./task/${task.name}`);
+            await call(task.data)(settings);
             const result = {
                 executedAt: now,
                 error: ''
             };
-            await taskRepository.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
+            await taskRepo.pushExecutionResultById(task.id, factory.taskStatus.Executed, result);
         } catch (error) {
             // 実行結果追加
             const result = {
@@ -71,30 +84,35 @@ export function execute(task: factory.task.ITask): IExecuteOperation<void> {
                 error: error.stack
             };
             // 失敗してもここではステータスを戻さない(Runningのまま待機)
-            await taskRepository.pushExecutionResultById(task.id, task.status, result);
+            await taskRepo.pushExecutionResultById(task.id, task.status, result);
         }
     };
 }
 
 /**
- * retry tasks in running status
  * 実行中ステータスのままになっているタスクをリトライする
- * @param intervalInMinutes 最終トライ日時から何分経過したタスクをリトライするか
  */
-export function retry(intervalInMinutes: number): TaskOperation<void> {
-    return async (taskRepository: TaskRepository) => {
-        await taskRepository.retry(intervalInMinutes);
+export function retry(params: {
+    project?: factory.project.IProject;
+    intervalInMinutes: number;
+}): TaskOperation<void> {
+    return async (repos: { task: TaskRepo }) => {
+        await repos.task.retry(params.intervalInMinutes);
     };
 }
 
 /**
- * abort a task
  * トライ可能回数が0に達したタスクを実行中止する
- * @param intervalInMinutes 最終トライ日時から何分経過したタスクを中止するか
  */
-export function abort(intervalInMinutes: number): TaskOperation<void> {
-    return async (taskRepository: TaskRepository) => {
-        const abortedTask = await taskRepository.abortOne(intervalInMinutes);
+export function abort(params: {
+    project?: factory.project.IProject;
+    /**
+     * 最終トライ日時から何分経過したタスクを中止するか
+     */
+    intervalInMinutes: number;
+}): TaskOperation<void> {
+    return async (repos: { task: TaskRepo }) => {
+        const abortedTask = await repos.task.abortOne(params.intervalInMinutes);
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */
@@ -112,10 +130,13 @@ export function abort(intervalInMinutes: number): TaskOperation<void> {
 
         await NotificationService.report2developers(
             ABORT_REPORT_SUBJECT,
-            `id:${abortedTask.id}
+            `project:${(params.project !== undefined) ? params.project.id : ''}
+id:${abortedTask.id}
 name:${abortedTask.name}
-runsAt:${moment(abortedTask.runsAt).toISOString()}
-lastTriedAt:${moment(<Date>abortedTask.lastTriedAt).toISOString()}
+runsAt:${moment(abortedTask.runsAt)
+                .toISOString()}
+lastTriedAt:${moment(<Date>abortedTask.lastTriedAt)
+                .toISOString()}
 numberOfTried:${abortedTask.numberOfTried}
 lastResult:${lastResult}`
         )();

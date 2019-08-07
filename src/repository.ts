@@ -3,7 +3,6 @@
  * リポジトリ
  */
 import { MongoRepository as ActionRepo } from './repo/action';
-import { MongoRepository as AuthorizeActionRepo } from './repo/action/authorize';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { MongoRepository as OrderRepo } from './repo/order';
@@ -28,13 +27,6 @@ export class AggregateSale extends AggregateSaleRepo { }
  * アクションリポジトリ
  */
 export class Action extends ActionRepo { }
-
-export namespace action {
-    /**
-     * 承認アクションリポジトリ
-     */
-    export class Authorize extends AuthorizeActionRepo { }
-}
 
 /**
  * 集計データ付きイベントリポジトリ

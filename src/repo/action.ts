@@ -3,10 +3,12 @@ import { Connection, Model } from 'mongoose';
 import * as factory from '@tokyotower/factory';
 import ActionModel from './mongoose/model/action';
 
+export type IAuthorizeAction = factory.cinerino.action.authorize.IAction<factory.cinerino.action.authorize.IAttributes<any, any>>
+    | factory.action.authorize.seatReservation.IAction;
+
 export type IAction<T extends factory.actionType> =
     T extends factory.actionType.OrderAction ? factory.cinerino.action.trade.order.IAction :
-    T extends factory.actionType.AuthorizeAction
-    ? factory.cinerino.action.authorize.IAction<factory.cinerino.action.authorize.IAttributes<any, any>> :
+    T extends factory.actionType.AuthorizeAction ? IAuthorizeAction :
     factory.cinerino.action.IAction<factory.cinerino.action.IAttributes<T, any, any>>;
 
 /**

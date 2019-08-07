@@ -210,7 +210,8 @@ export function authorize(params: {
             ...{ price: params.object.amount }
         };
 
-        return repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+        return <Promise<factory.cinerino.action.authorize.paymentMethod.creditCard.IAction>>
+            repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
     };
 }
 

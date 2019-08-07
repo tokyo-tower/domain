@@ -6,7 +6,7 @@ import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { MongoRepository as AuthorizeActionRepo } from '../repo/action/authorize';
+import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
@@ -35,7 +35,7 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
  */
 export function cancelSeatReservationAuth(transactionId: string) {
     return async (
-        authorizeActionRepo: AuthorizeActionRepo,
+        actionRepo: ActionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: TaskRepo,
         projectRepo: ProjectRepo
@@ -49,11 +49,17 @@ export function cancelSeatReservationAuth(transactionId: string) {
         }
 
         // 座席仮予約アクションを取得
-        const authorizeActions = await authorizeActionRepo.findByTransactionId({
-            object: { typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation },
-            purpose: { id: transactionId }
+        const authorizeActions = await actionRepo.searchByPurpose({
+            typeOf: factory.actionType.AuthorizeAction,
+            purpose: {
+                typeOf: factory.transactionType.PlaceOrder,
+                id: transactionId
+            }
         })
-            .then((actions) => actions.filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus));
+            .then((actions) => actions
+                .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            );
 
         const reserveService = new chevre.service.transaction.Reserve({
             endpoint: projectDetails.settings.chevre.endpoint,
@@ -62,7 +68,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
 
         await Promise.all(authorizeActions.map(async (action) => {
             if (action.result !== undefined) {
-                const reserveTransaction = (<any>action.result).responseBody;
+                const reserveTransaction = action.result.responseBody;
                 await reserveService.cancel({ id: reserveTransaction.id });
             }
 
