@@ -1,6 +1,7 @@
 /**
  * index module
  */
+import * as cinerino from '@cinerino/domain';
 import * as GMO from '@motionpicture/gmo-service';
 import * as AWS from 'aws-sdk';
 import * as redis from 'redis';
@@ -10,7 +11,6 @@ import * as AggregateService from './service/aggregate';
 import * as NotificationService from './service/notification';
 import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
-import * as PaymentService from './service/payment';
 import * as PerformanceService from './service/performance';
 import * as ReserveService from './service/reserve';
 import * as SalesService from './service/sales';
@@ -19,7 +19,6 @@ import * as TaskService from './service/task';
 import * as PlaceOrderTransactionService from './service/transaction/placeOrder';
 import * as PlaceOrderInProgressTransactionService from './service/transaction/placeOrderInProgress';
 import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
-import * as UtilService from './service/util';
 
 import * as factory from '@tokyotower/factory';
 
@@ -52,7 +51,7 @@ export namespace service {
     export import notification = NotificationService;
     export import offer = OfferService;
     export import order = OrderService;
-    export import payment = PaymentService;
+    export import payment = cinerino.service.payment;
     export import performance = PerformanceService;
     export import reserve = ReserveService;
     export import aggregate = AggregateService;
@@ -64,7 +63,7 @@ export namespace service {
         export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
         export import returnOrder = ReturnOrderTransactionService;
     }
-    export import util = UtilService;
+    export import util = cinerino.service.util;
 }
 
 export import factory = factory;

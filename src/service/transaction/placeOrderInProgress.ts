@@ -379,7 +379,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         const priceByAgent = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.agent.id === transaction.agent.id)
-            .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
+            .reduce((a, b) => a + Number((<any>b.result).amount), 0);
         const priceBySeller = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.agent.id === transaction.seller.id)

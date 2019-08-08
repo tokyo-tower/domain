@@ -8,13 +8,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- アクションリポジトリを追加
-
 ### Changed
 
-- クレジットカード決済サービスをCinerino化
 - タスクサービスをCinerino化
 - アクション、注文、プロジェクト、販売者、タスク、取引リポジトリをCinerino継承
+- 決済サービス、ユーティリティサービスをCinerino継承
 
 ### Deprecated
 
