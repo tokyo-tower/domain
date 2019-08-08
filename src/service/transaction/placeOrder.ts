@@ -41,7 +41,7 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
         // 失敗してもここでは戻さない(RUNNINGのまま待機)
         await exportTasksById(transaction.id)(taskRepository, transactionRepo);
 
-        await transactionRepo.setTasksExportedById(transaction.id);
+        await transactionRepo.setTasksExportedById({ id: transaction.id });
     };
 }
 
@@ -154,8 +154,8 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
         }
         debug('taskAttributes prepared', taskAttributes);
 
-        return Promise.all(taskAttributes.map(async (taskAttribute) => {
-            return taskRepository.save(taskAttribute);
+        return Promise.all(taskAttributes.map<any>(async (taskAttribute) => {
+            return taskRepository.save(<any>taskAttribute);
         }));
     };
 }
@@ -207,7 +207,7 @@ export function sendEmail(
             }
         });
 
-        return <factory.task.sendEmailNotification.ITask>await taskRepo.save(taskAttributes);
+        return <any>await taskRepo.save(<any>taskAttributes);
     };
 }
 

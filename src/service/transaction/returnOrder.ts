@@ -188,7 +188,7 @@ export function sendEmail(
             }
         });
 
-        return <factory.task.sendEmailNotification.ITask>await taskRepo.save(taskAttributes);
+        return <any>await taskRepo.save(<any>taskAttributes);
     };
 }
 
@@ -221,7 +221,7 @@ export async function exportTasks(status: factory.transactionStatusType) {
     // 失敗してもここでは戻さない(RUNNINGのまま待機)
     await exportTasksById(transaction.id);
 
-    await transactionRepo.setTasksExportedById(transaction.id);
+    await transactionRepo.setTasksExportedById({ id: transaction.id });
 }
 
 export async function exportTasksById(transactionId: string): Promise<factory.task.ITask[]> {
@@ -255,7 +255,7 @@ export async function exportTasksById(transactionId: string): Promise<factory.ta
             throw new factory.errors.NotImplemented(`Transaction status "${transaction.status}" not implemented.`);
     }
 
-    return Promise.all(taskAttributes.map(async (taskAttribute) => {
-        return taskRepo.save(taskAttribute);
+    return Promise.all(taskAttributes.map<any>(async (taskAttribute) => {
+        return taskRepo.save(<any>taskAttribute);
     }));
 }

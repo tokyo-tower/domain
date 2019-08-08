@@ -142,6 +142,6 @@ export function cancelReservation(params: { id: string }) {
                 id: reservation.reservationFor.id
             }
         };
-        await repos.task.save(task);
+        await repos.task.save(<any>task);
     };
 }

@@ -557,7 +557,7 @@ export function create(
                 executionResults: [],
                 data: { id: performance.id }
             };
-            await taskRepo.save(aggregateTask);
+            await taskRepo.save(<any>aggregateTask);
         } catch (error) {
             // no op
         }
@@ -683,7 +683,7 @@ export function cancel(
                 executionResults: [],
                 data: { id: performance.id }
             };
-            await taskRepo.save(aggregateTask);
+            await taskRepo.save(<any>aggregateTask);
         } catch (error) {
             // no op
         }

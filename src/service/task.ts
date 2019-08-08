@@ -43,7 +43,7 @@ export function executeByName<T extends factory.taskName>(params: {
         // 未実行のタスクを取得
         let task: factory.task.ITask | null = null;
         try {
-            task = await taskRepo.executeOneByName(params.name);
+            task = <any>await taskRepo.executeOneByName<any>(params);
             debug('task found', task);
         } catch (error) {
             // tslint:disable-next-line:no-single-line-block-comment
@@ -97,7 +97,7 @@ export function retry(params: {
     intervalInMinutes: number;
 }): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
-        await repos.task.retry(params.intervalInMinutes);
+        await repos.task.retry(params);
     };
 }
 
@@ -112,7 +112,7 @@ export function abort(params: {
     intervalInMinutes: number;
 }): TaskOperation<void> {
     return async (repos: { task: TaskRepo }) => {
-        const abortedTask = await repos.task.abortOne(params.intervalInMinutes);
+        const abortedTask = await repos.task.abortOne(params);
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore if */

@@ -114,7 +114,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 executionResults: [],
                 data: { id: performance.id }
             };
-            await taskRepo.save(aggregateTask);
+            await taskRepo.save(<any>aggregateTask);
         }));
     };
 }
@@ -199,7 +199,7 @@ export function transferSeatReservation(transactionId: string) {
                     id: reservation.reservationFor.id
                 }
             };
-            await taskRepo.save(task);
+            await taskRepo.save(<any>task);
         }));
     };
 }
