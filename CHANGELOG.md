@@ -10,19 +10,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- タスクサービスをCinerino化
-- アクション、注文、プロジェクト、販売者、タスク、取引リポジトリをCinerino継承
-- 決済サービス、ユーティリティサービスをCinerino継承
-
 ### Deprecated
 
 ### Removed
 
-- 座席予約承認アクションリポジトリを削除
-
 ### Fixed
 
 ### Security
+
+## v25.0.0 - 2019-08-09
+
+### Changed
+
+- タスクサービスをCinerino化
+- アクション、注文、プロジェクト、販売者、タスク、取引リポジトリをCinerino継承
+- 決済サービス、ユーティリティサービスをCinerino継承
+
+### Removed
+
+- 座席予約承認アクションリポジトリを削除
 
 ## v24.0.0 - 2019-08-06
 
