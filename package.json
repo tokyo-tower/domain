@@ -10,6 +10,7 @@
   ],
   "dependencies": {
     "@chevre/api-nodejs-client": "^1.0.0",
+    "@cinerino/domain": "1.0.0-alpha.262",
     "@motionpicture/gmo-service": "^4.3.0",
     "@sendgrid/mail": "^6.4.0",
     "@tokyotower/factory": "14.0.0-alpha.1",
@@ -113,5 +114,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "24.0.0"
+  "version": "25.0.0"
 }

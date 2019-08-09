@@ -7,13 +7,12 @@ import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as AuthorizeActionRepo } from '../../repo/action/authorize';
+import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
 import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
-import * as CreditCardAuthorizeActionService from './placeOrderInProgress/action/authorize/creditCard';
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
 const debug = createDebug('ttts-domain:service');
@@ -24,7 +23,7 @@ export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: 
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
-    authorizeActionRepo: AuthorizeActionRepo,
+    actionRepo: ActionRepo,
     tokenRepo: TokenRepo,
     paymentNoRepo: PaymentNoRepo
 ) => Promise<T>;
@@ -175,10 +174,6 @@ export namespace action {
      */
     export namespace authorize {
         /**
-         * クレジットカード承認アクションサービス
-         */
-        export import creditCard = CreditCardAuthorizeActionService;
-        /**
          * 座席予約承認アクションサービス
          */
         export import seatReservation = SeatReservationAuthorizeActionService;
@@ -249,7 +244,7 @@ export function confirm(params: {
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     return async (
         transactionRepo: TransactionRepo,
-        authorizeActionRepo: AuthorizeActionRepo,
+        actionRepo: ActionRepo,
         tokenRepo: TokenRepo,
         paymentNoRepo: PaymentNoRepo
     ) => {
@@ -260,16 +255,13 @@ export function confirm(params: {
         }
 
         // 取引に対する全ての承認アクションをマージ
-        let authorizeActions = [
-            ... await authorizeActionRepo.findByTransactionId({
-                object: { typeOf: factory.paymentMethodType.CreditCard },
-                purpose: { id: params.transactionId }
-            }),
-            ... await authorizeActionRepo.findByTransactionId({
-                object: { typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation },
-                purpose: { id: params.transactionId }
-            })
-        ];
+        let authorizeActions = await actionRepo.searchByPurpose({
+            typeOf: factory.actionType.AuthorizeAction,
+            purpose: {
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.transactionId
+            }
+        });
 
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
         authorizeActions = authorizeActions.filter(
@@ -387,7 +379,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         const priceByAgent = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.agent.id === transaction.agent.id)
-            .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
+            .reduce((a, b) => a + Number((<any>b.result).amount), 0);
         const priceBySeller = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.agent.id === transaction.seller.id)
@@ -437,10 +429,11 @@ export function createResult(
 
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
-    const gmoOrderId = (creditCardAuthorizeAction !== undefined) ? creditCardAuthorizeAction.object.orderId : '';
+    let paymentMethodId = '';
     let paymentAccountId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
         paymentAccountId = creditCardAuthorizeAction.result.accountId;
+        paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
     }
 
     // 予約データを作成
@@ -456,7 +449,7 @@ export function createResult(
             transaction: transaction,
             orderNumber: orderNumber,
             paymentNo: paymentNo,
-            gmoOrderId: gmoOrderId,
+            gmoOrderId: paymentMethodId,
             paymentSeatIndex: index.toString(),
             customerContact: customerContact,
             bookingTime: orderDate
@@ -496,7 +489,7 @@ export function createResult(
         name: transaction.object.paymentMethod.toString(),
         paymentMethod: transaction.object.paymentMethod,
         accountId: paymentAccountId,
-        paymentMethodId: (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard) ? gmoOrderId : '',
+        paymentMethodId: paymentMethodId,
         additionalProperty: [],
         totalPaymentDue: {
             typeOf: <'MonetaryAmount'>'MonetaryAmount',

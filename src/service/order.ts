@@ -35,7 +35,8 @@ export function createFromTransaction(transactionId: string) {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (transaction.result !== undefined) {
-            await orderRepo.save(transaction.result.order);
+            await orderRepo.createIfNotExist(transaction.result.order);
+            // await orderRepo.save(transaction.result.order);
         }
     };
 }
@@ -96,7 +97,7 @@ export function processReturn(returnOrderTransactionId: string) {
                 transaction: returnOrderTransaction
             }
         });
-        await taskRepo.save(createReturnOrderReportTask);
+        await taskRepo.save(<any>createReturnOrderReportTask);
     };
 }
 
@@ -234,7 +235,7 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                     }
                 });
 
-                await taskRepo.save(sendEmailTaskAttributes);
+                await taskRepo.save(<any>sendEmailTaskAttributes);
 
                 break;
 
@@ -399,7 +400,7 @@ export function returnAllByPerformance(
             }
         });
 
-        return taskRepo.save(taskAttribute);
+        return <any>taskRepo.save(<any>taskAttribute);
     };
 }
 
