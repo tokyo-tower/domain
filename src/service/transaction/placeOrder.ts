@@ -97,17 +97,34 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                         transactionId: transaction.id
                     }
                 }));
-                taskAttributes.push(factory.task.createOrder.createAttributes({
-                    status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
-                    remainingNumberOfTries: 10,
-                    lastTriedAt: null,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        transactionId: transaction.id
-                    }
-                }));
+                // taskAttributes.push(factory.task.createOrder.createAttributes({
+                //     status: factory.taskStatus.Ready,
+                //     runsAt: new Date(), // なるはやで実行
+                //     remainingNumberOfTries: 10,
+                //     lastTriedAt: null,
+                //     numberOfTried: 0,
+                //     executionResults: [],
+                //     data: {
+                //         transactionId: transaction.id
+                //     }
+                // }));
+
+                const potentialActions = (<any>transaction).potentialActions;
+                if (potentialActions !== undefined) {
+                    const orderActionAttributes = potentialActions.order;
+                    const placeOrderTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.PlaceOrder> = {
+                        project: transaction.project,
+                        name: factory.cinerino.taskName.PlaceOrder,
+                        status: factory.taskStatus.Ready,
+                        runsAt: new Date(), // なるはやで実行
+                        remainingNumberOfTries: 10,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: orderActionAttributes
+                    };
+                    taskAttributes.push(<any>placeOrderTaskAttributes);
+                }
+
                 taskAttributes.push(factory.task.createPlaceOrderReport.createAttributes({
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行

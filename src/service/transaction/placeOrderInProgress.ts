@@ -236,12 +236,12 @@ export function setCustomerContact(
 /**
  * 取引確定
  */
-// tslint:disable-next-line:max-func-body-length
 export function confirm(params: {
     agentId: string;
     transactionId: string;
     paymentMethod: factory.paymentMethodType;
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
+    // tslint:disable-next-line:max-func-body-length
     return async (
         transactionRepo: TransactionRepo,
         actionRepo: ActionRepo,
@@ -286,15 +286,31 @@ export function confirm(params: {
         const performance = seatReservationAuthorizeAction.object.performance;
         const paymentNo = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
 
-        // 結果作成
-        transaction.result = createResult(paymentNo, transaction);
+        // 注文作成
+        const { order } = createResult(paymentNo, transaction);
+        transaction.result = { order };
+
+        const potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions = {
+            order: {
+                project: transaction.project,
+                typeOf: factory.actionType.OrderAction,
+                object: order,
+                agent: transaction.agent,
+                // potentialActions: {
+                //     payCreditCard: payCreditCardActions,
+                // },
+                purpose: <any>{
+                    typeOf: transaction.typeOf,
+                    id: transaction.id
+                }
+            }
+        };
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
             transaction.result.order.acceptedOffers.map((o) => o.itemOffered.id)
         );
         debug('printToken created.', printToken);
-        // transaction.result.printToken = printToken;
 
         // ステータス変更
         debug('updating transaction...');
@@ -305,7 +321,8 @@ export function confirm(params: {
                 now,
                 params.paymentMethod,
                 authorizeActions,
-                transaction.result
+                transaction.result,
+                potentialActions
             );
         } catch (error) {
             if (error.name === 'MongoError') {

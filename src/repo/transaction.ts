@@ -84,7 +84,8 @@ export class MongoRepository extends cinerino.repository.Transaction {
         endDate: Date,
         paymentMethod: factory.paymentMethodType,
         authorizeActions: factory.transaction.placeOrder.IAuthorizeAction[],
-        result: factory.transaction.placeOrder.IResult
+        result: factory.transaction.placeOrder.IResult,
+        potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions
     ): Promise<factory.transaction.placeOrder.ITransaction> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
@@ -97,7 +98,8 @@ export class MongoRepository extends cinerino.repository.Transaction {
                 endDate: endDate,
                 'object.authorizeActions': authorizeActions, // 認可アクションリストを更新
                 'object.paymentMethod': paymentMethod, // 決済方法を更新
-                result: result // resultを更新
+                result: result, // resultを更新
+                potentialActions: potentialActions
             },
             { new: true }
         ).exec();
