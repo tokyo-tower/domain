@@ -30,7 +30,7 @@ export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo,
 
 export function createFromTransaction(transactionId: string) {
     return async (orderRepo: OrderRepo, transactionRepo: TransactionRepo) => {
-        const transaction = await transactionRepo.findPlaceOrderById(transactionId);
+        const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */

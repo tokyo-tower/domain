@@ -309,7 +309,8 @@ export function create(
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+        const transaction = <factory.transaction.placeOrder.ITransaction>
+            await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         if (transaction.agent.id !== agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -620,7 +621,8 @@ export function cancel(
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
-            const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+            const transaction = <factory.transaction.placeOrder.ITransaction>
+                await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
             if (transaction.agent.id !== agentId) {
                 throw new factory.errors.Forbidden('A specified transaction is not yours.');

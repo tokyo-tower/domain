@@ -6,48 +6,6 @@ import * as factory from '@tokyotower/factory';
  * 取引リポジトリ
  */
 export class MongoRepository extends cinerino.repository.Transaction {
-    public async startPlaceOrder(
-        transactionAttributes: factory.transaction.placeOrder.IAttributes
-    ): Promise<factory.transaction.placeOrder.ITransaction> {
-        return this.transactionModel.create(transactionAttributes).then(
-            (doc) => <factory.transaction.placeOrder.ITransaction>doc.toObject()
-        );
-    }
-
-    /**
-     * find placeOrder transaction by id
-     * @param transactionId transaction id
-     */
-    public async findPlaceOrderById(transactionId: string): Promise<factory.transaction.placeOrder.ITransaction> {
-        const doc = await this.transactionModel.findOne({
-            _id: transactionId,
-            typeOf: factory.transactionType.PlaceOrder
-        }).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('transaction');
-        }
-
-        return <factory.transaction.placeOrder.ITransaction>doc.toObject();
-    }
-
-    /**
-     * 進行中の取引を取得する
-     */
-    public async findPlaceOrderInProgressById(transactionId: string): Promise<factory.transaction.placeOrder.ITransaction> {
-        const doc = await this.transactionModel.findOne({
-            _id: transactionId,
-            typeOf: factory.transactionType.PlaceOrder,
-            status: factory.transactionStatusType.InProgress
-        }).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
-        }
-
-        return <factory.transaction.placeOrder.ITransaction>doc.toObject();
-    }
-
     /**
      * 取引の顧客プロフィールを更新
      */
@@ -109,43 +67,5 @@ export class MongoRepository extends cinerino.repository.Transaction {
         }
 
         return <factory.transaction.placeOrder.ITransaction>doc.toObject();
-    }
-
-    /**
-     * 返品取引をひとつ検索する
-     */
-    public async findReturnOrderById(transactionId: string): Promise<factory.transaction.returnOrder.ITransaction> {
-        const doc = await this.transactionModel.findOne({
-            _id: transactionId,
-            typeOf: factory.transactionType.ReturnOrder
-        }).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('transaction');
-        }
-
-        return <factory.transaction.returnOrder.ITransaction>doc.toObject();
-    }
-
-    /**
-     * 注文取引を検索する
-     * @param conditions 検索条件
-     */
-    public async searchPlaceOrder(
-        conditions: {
-            startFrom: Date;
-            startThrough: Date;
-        }
-    ): Promise<factory.transaction.placeOrder.ITransaction[]> {
-        return this.transactionModel.find(
-            {
-                typeOf: factory.transactionType.PlaceOrder,
-                startDate: {
-                    $gte: conditions.startFrom,
-                    $lte: conditions.startThrough
-                }
-            }
-        ).exec()
-            .then((docs) => docs.map((doc) => <factory.transaction.placeOrder.ITransaction>doc.toObject()));
     }
 }

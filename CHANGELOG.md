@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 取引リポジトリから冗長なメソッドを削除
+
 ### Fixed
 
 ### Security

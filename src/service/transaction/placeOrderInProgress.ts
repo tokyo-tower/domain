@@ -119,7 +119,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
-            transaction = await transactionRepo.startPlaceOrder(transactionAttributes);
+            transaction = <any>await transactionRepo.start(<any>transactionAttributes);
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -217,7 +217,7 @@ export function setCustomerContact(
             telephone: formattedTelephone
         };
 
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         if (transaction.agent.id !== agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -249,7 +249,8 @@ export function confirm(params: {
         paymentNoRepo: PaymentNoRepo
     ) => {
         const now = new Date();
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
+        const transaction = <factory.transaction.placeOrder.ITransaction>
+            await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
