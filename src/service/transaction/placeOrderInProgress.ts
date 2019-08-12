@@ -284,7 +284,7 @@ export function confirm(params: {
         if (seatReservationAuthorizeAction === undefined) {
             throw new factory.errors.Argument('transactionId', 'Authorize seat reservation action not found');
         }
-        const performance = seatReservationAuthorizeAction.object.performance;
+        const performance = seatReservationAuthorizeAction.object.event;
         const paymentNo = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
 
         // 注文作成
@@ -437,7 +437,7 @@ export function createResult(
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
     const chevreReservations = reserveTransaction.object.reservations;
-    const performance = seatReservationAuthorizeAction.object.performance;
+    const performance = seatReservationAuthorizeAction.object.event;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
 

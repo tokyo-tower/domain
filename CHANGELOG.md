@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 注文作成タスクをCinerino化
+- 座席予約承認アクションインターフェースをCinerino化
 
 ### Deprecated
 

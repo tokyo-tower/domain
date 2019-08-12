@@ -72,7 +72,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 await reserveService.cancel({ id: reserveTransaction.id });
             }
 
-            const performance = action.object.performance;
+            const performance = action.object.event;
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
