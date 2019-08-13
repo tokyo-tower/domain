@@ -12,10 +12,10 @@ const debug = createDebug('ttts-domain:service');
  */
 export function settleCreditCardAuth(transactionId: string) {
     return async (transactionRepo: TransactionRepo) => {
-        const transaction = await transactionRepo.findPlaceOrderById(transactionId);
+        const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
         const authorizeActions = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => (<any>a.object).typeOf === factory.paymentMethodType.CreditCard);
+            .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
         await Promise.all(authorizeActions.map(async (authorizeAction) => {
             const entryTranArgs = (<factory.action.authorize.creditCard.IResult>authorizeAction.result).entryTranArgs;

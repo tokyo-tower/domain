@@ -72,7 +72,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 await reserveService.cancel({ id: reserveTransaction.id });
             }
 
-            const performance = action.object.performance;
+            const performance = action.object.event;
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
@@ -137,7 +137,7 @@ export function transferSeatReservation(transactionId: string) {
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const transaction = await transactionRepo.findPlaceOrderById(transactionId);
+        const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
         const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
             .map((o) => o.itemOffered);
 

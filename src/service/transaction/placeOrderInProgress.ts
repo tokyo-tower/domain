@@ -119,7 +119,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
 
         let transaction: factory.transaction.placeOrder.ITransaction;
         try {
-            transaction = await transactionRepo.startPlaceOrder(transactionAttributes);
+            transaction = <any>await transactionRepo.start(<any>transactionAttributes);
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 許可証を重複使用しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -217,7 +217,7 @@ export function setCustomerContact(
             telephone: formattedTelephone
         };
 
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         if (transaction.agent.id !== agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -236,12 +236,12 @@ export function setCustomerContact(
 /**
  * 取引確定
  */
-// tslint:disable-next-line:max-func-body-length
 export function confirm(params: {
     agentId: string;
     transactionId: string;
     paymentMethod: factory.paymentMethodType;
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
+    // tslint:disable-next-line:max-func-body-length
     return async (
         transactionRepo: TransactionRepo,
         actionRepo: ActionRepo,
@@ -249,7 +249,8 @@ export function confirm(params: {
         paymentNoRepo: PaymentNoRepo
     ) => {
         const now = new Date();
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(params.transactionId);
+        const transaction = <factory.transaction.placeOrder.ITransaction>
+            await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
         }
@@ -283,18 +284,34 @@ export function confirm(params: {
         if (seatReservationAuthorizeAction === undefined) {
             throw new factory.errors.Argument('transactionId', 'Authorize seat reservation action not found');
         }
-        const performance = seatReservationAuthorizeAction.object.performance;
+        const performance = seatReservationAuthorizeAction.object.event;
         const paymentNo = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
 
-        // 結果作成
-        transaction.result = createResult(paymentNo, transaction);
+        // 注文作成
+        const { order } = createResult(paymentNo, transaction);
+        transaction.result = { order };
+
+        const potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions = {
+            order: {
+                project: transaction.project,
+                typeOf: factory.actionType.OrderAction,
+                object: order,
+                agent: transaction.agent,
+                // potentialActions: {
+                //     payCreditCard: payCreditCardActions,
+                // },
+                purpose: <any>{
+                    typeOf: transaction.typeOf,
+                    id: transaction.id
+                }
+            }
+        };
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
             transaction.result.order.acceptedOffers.map((o) => o.itemOffered.id)
         );
         debug('printToken created.', printToken);
-        // transaction.result.printToken = printToken;
 
         // ステータス変更
         debug('updating transaction...');
@@ -305,7 +322,8 @@ export function confirm(params: {
                 now,
                 params.paymentMethod,
                 authorizeActions,
-                transaction.result
+                transaction.result,
+                potentialActions
             );
         } catch (error) {
             if (error.name === 'MongoError') {
@@ -419,7 +437,7 @@ export function createResult(
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
     const chevreReservations = reserveTransaction.object.reservations;
-    const performance = seatReservationAuthorizeAction.object.performance;
+    const performance = seatReservationAuthorizeAction.object.event;
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
 

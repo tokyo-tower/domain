@@ -149,7 +149,8 @@ export function sendEmail(
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
 ): ITaskAndTransactionOperation<factory.task.sendEmailNotification.ITask> {
     return async (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => {
-        const returnOrderTransaction = await transactionRepo.findReturnOrderById(transactionId);
+        const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
+            await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
         if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
             throw new factory.errors.Forbidden('Transaction not confirmed.');
         }
@@ -228,7 +229,8 @@ export async function exportTasksById(transactionId: string): Promise<factory.ta
     const transactionRepo = new TransactionRepo(mongoose.connection);
     const taskRepo = new TaskRepo(mongoose.connection);
 
-    const transaction = await transactionRepo.findReturnOrderById(transactionId);
+    const transaction: factory.transaction.returnOrder.ITransaction = <any>
+        await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
 
     const taskAttributes: factory.task.IAttributes[] = [];
     switch (transaction.status) {

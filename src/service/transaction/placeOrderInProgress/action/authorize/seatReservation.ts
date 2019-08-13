@@ -309,7 +309,8 @@ export function create(
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+        const transaction = <factory.transaction.placeOrder.ITransaction>
+            await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         if (transaction.agent.id !== agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -329,8 +330,14 @@ export function create(
             startDate: new Date(),
             object: {
                 typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation,
-                offers: acceptedOffers,
-                performance: performance
+                event: performance,
+                acceptedOffer: acceptedOffersWithSeatNumber.map((o) => {
+                    return {
+                        id: o.itemOffered.reservedTicket.ticketType.id,
+                        ticketedSeat: o.itemOffered.reservedTicket.ticketedSeat
+                    };
+                }),
+                ...{ offers: acceptedOffers }
             },
             agent: transaction.seller,
             recipient: {
@@ -620,7 +627,8 @@ export function cancel(
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
-            const transaction = await transactionRepo.findPlaceOrderInProgressById(transactionId);
+            const transaction = <factory.transaction.placeOrder.ITransaction>
+                await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
             if (transaction.agent.id !== agentId) {
                 throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -632,7 +640,7 @@ export function cancel(
                 await actionRepo.cancel({ typeOf: factory.actionType.AuthorizeAction, id: actionId });
             const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
 
-            const performance = action.object.performance;
+            const performance = action.object.event;
 
             // 在庫から仮予約削除
             debug(`removing ${actionResult.tmpReservations.length} tmp reservations...`);
