@@ -10,18 +10,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 注文作成タスクをCinerino化
-- 座席予約承認アクションインターフェースをCinerino化
-
 ### Deprecated
 
 ### Removed
 
-- 取引リポジトリから冗長なメソッドを削除
-
 ### Fixed
 
 ### Security
+
+## v26.0.0 - 2019-08-13
+
+### Changed
+
+- 注文作成タスクをCinerino化
+- 座席予約承認アクションインターフェースをCinerino化
+
+### Removed
+
+- 取引リポジトリから冗長なメソッドを削除
 
 ## v25.0.0 - 2019-08-09
 
