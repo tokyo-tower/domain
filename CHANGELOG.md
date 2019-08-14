@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - クレジットカード決済タスクをCinerino化
+- クレジットカード以外の決済方法に対する承認アクションに対応
 
 ### Deprecated
 
