@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - CreateOrderタスクを削除
+- 注文取引から購入者区分属性を削除
 
 ### Fixed
 

@@ -18,6 +18,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 const debug = createDebug('ttts-domain:service');
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+const STAFF_CLIENT_ID = <string>process.env.STAFF_CLIENT_ID;
 
 export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
@@ -55,7 +56,7 @@ export interface IStartParams {
     /**
      * 購入者区分
      */
-    purchaserGroup: factory.person.Group;
+    // purchaserGroup?: factory.person.Group;
 }
 
 /**
@@ -109,7 +110,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 passportToken: params.passportToken,
                 passport: passport,
                 clientUser: params.clientUser,
-                purchaser_group: params.purchaserGroup,
+                // purchaser_group: params.purchaserGroup,
                 authorizeActions: []
             },
             expires: params.expires,
@@ -340,7 +341,7 @@ function canBeClosed(
     transaction: factory.transaction.placeOrder.ITransaction,
     paymentMethod: factory.paymentMethodType
 ) {
-    const purchaserGroup = transaction.object.purchaser_group;
+    const clientId = (transaction.object.clientUser !== undefined) ? transaction.object.clientUser.client_id : '';
     const agent = transaction.agent;
     const creditCardAuthorizeActions = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -364,9 +365,9 @@ function canBeClosed(
         case factory.paymentMethodType.Invitation:
         case factory.paymentMethodType.Invoice:
         case factory.paymentMethodType.OTC:
-            // 認められるのはスタッフだけ(CognitoUserログインしているはず)
-            if (purchaserGroup !== factory.person.Group.Staff || agent.memberOf === undefined) {
-                throw new factory.errors.Argument('paymentMethod', `Invalid payment method for ${purchaserGroup}.`);
+            // 認められるのはスタッフだけ(管理者としてログインしているはず)
+            if (clientId !== STAFF_CLIENT_ID || agent.memberOf === undefined) {
+                throw new factory.errors.Argument('paymentMethod', `Invalid payment method for the client`);
             }
 
             break;
@@ -380,7 +381,7 @@ function canBeClosed(
         factory.action.authorize.creditCard.IResult |
         factory.action.authorize.seatReservation.IResult;
 
-    if (purchaserGroup === factory.person.Group.Customer && paymentMethod === factory.paymentMethodType.CreditCard) {
+    if (clientId !== STAFF_CLIENT_ID && paymentMethod === factory.paymentMethodType.CreditCard) {
         // customerとsellerで、承認アクションの金額が合うかどうか
         const priceByAgent = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
