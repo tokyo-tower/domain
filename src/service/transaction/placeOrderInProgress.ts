@@ -265,14 +265,11 @@ export function confirm(params: {
         });
 
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-        authorizeActions = authorizeActions.filter(
-            (authorizeAction) => (authorizeAction.endDate !== undefined && authorizeAction.endDate < now)
-        );
+        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < now));
         transaction.object.authorizeActions = authorizeActions;
-        transaction.object.paymentMethod = params.paymentMethod;
 
         // 注文取引成立条件を満たしているかどうか
-        if (!canBeClosed(transaction)) {
+        if (!canBeClosed(transaction, params.paymentMethod)) {
             throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
         }
 
@@ -309,7 +306,7 @@ export function confirm(params: {
             await transactionRepo.confirmPlaceOrder(
                 params.transactionId,
                 now,
-                params.paymentMethod,
+                // params.paymentMethod,
                 authorizeActions,
                 transaction.result,
                 potentialActions
@@ -339,8 +336,10 @@ export function confirm(params: {
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
-function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
-    const paymentMethod = transaction.object.paymentMethod;
+function canBeClosed(
+    transaction: factory.transaction.placeOrder.ITransaction,
+    paymentMethod: factory.paymentMethodType
+) {
     const purchaserGroup = transaction.object.purchaser_group;
     const agent = transaction.agent;
     const creditCardAuthorizeActions = transaction.object.authorizeActions
@@ -430,9 +429,9 @@ export function createResult(
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
 
-    if (transaction.object.paymentMethod === undefined) {
-        throw new Error('PaymentMethod undefined.');
-    }
+    // if (transaction.object.paymentMethod === undefined) {
+    //     throw new Error('PaymentMethod undefined.');
+    // }
 
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
@@ -442,54 +441,6 @@ export function createResult(
         // paymentAccountId = creditCardAuthorizeAction.result.accountId;
         paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
     }
-
-    // 予約データを作成
-    const eventReservations = tmpReservations.map((tmpReservation, index) => {
-        const chevreReservation = chevreReservations.find((r) => r.id === tmpReservation.id);
-        if (chevreReservation === undefined) {
-            throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
-        }
-
-        return temporaryReservation2confirmed({
-            tmpReservation: tmpReservation,
-            chevreReservation: chevreReservation,
-            transaction: transaction,
-            orderNumber: orderNumber,
-            paymentNo: paymentNo,
-            gmoOrderId: paymentMethodId,
-            paymentSeatIndex: index.toString(),
-            customerContact: customerContact,
-            bookingTime: orderDate
-        });
-    });
-
-    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = eventReservations.map((r) => {
-        const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
-            ? r.reservedTicket.ticketType.priceSpecification.price
-            : 0;
-
-        return {
-            typeOf: 'Offer',
-            itemOffered: r,
-            price: unitPrice,
-            priceCurrency: factory.priceCurrency.JPY,
-            seller: {
-                typeOf: transaction.seller.typeOf,
-                name: transaction.seller.name.ja
-            }
-        };
-    });
-
-    const price: number = eventReservations.reduce(
-        (a, b) => {
-            const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
-                ? b.reservedTicket.ticketType.priceSpecification.price
-                : 0;
-
-            return a + unitPrice;
-        },
-        0
-    );
 
     // const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [{
     //     typeOf: transaction.object.paymentMethod,
@@ -528,6 +479,55 @@ export function createResult(
                     });
                 });
         });
+
+    // 予約データを作成
+    const eventReservations = tmpReservations.map((tmpReservation, index) => {
+        const chevreReservation = chevreReservations.find((r) => r.id === tmpReservation.id);
+        if (chevreReservation === undefined) {
+            throw new factory.errors.Argument('Transaction', `Unexpected temporary reservation: ${tmpReservation.id}`);
+        }
+
+        return temporaryReservation2confirmed({
+            tmpReservation: tmpReservation,
+            chevreReservation: chevreReservation,
+            transaction: transaction,
+            orderNumber: orderNumber,
+            paymentNo: paymentNo,
+            gmoOrderId: paymentMethodId,
+            paymentSeatIndex: index.toString(),
+            customerContact: customerContact,
+            bookingTime: orderDate,
+            paymentMethod: paymentMethods[0].typeOf
+        });
+    });
+
+    const acceptedOffers: factory.order.IAcceptedOffer<factory.order.IItemOffered>[] = eventReservations.map((r) => {
+        const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
+            ? r.reservedTicket.ticketType.priceSpecification.price
+            : 0;
+
+        return {
+            typeOf: 'Offer',
+            itemOffered: r,
+            price: unitPrice,
+            priceCurrency: factory.priceCurrency.JPY,
+            seller: {
+                typeOf: transaction.seller.typeOf,
+                name: transaction.seller.name.ja
+            }
+        };
+    });
+
+    const price: number = eventReservations.reduce(
+        (a, b) => {
+            const unitPrice = (b.reservedTicket.ticketType.priceSpecification !== undefined)
+                ? b.reservedTicket.ticketType.priceSpecification.price
+                : 0;
+
+            return a + unitPrice;
+        },
+        0
+    );
 
     const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
@@ -579,6 +579,7 @@ function temporaryReservation2confirmed(params: {
     paymentSeatIndex: string;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
     bookingTime: Date;
+    paymentMethod: factory.paymentMethodType;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
     const customerContact = params.customerContact;
@@ -602,8 +603,8 @@ function temporaryReservation2confirmed(params: {
             ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
                 ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
                 : [],
-            ...(transaction.object.paymentMethod !== undefined)
-                ? [{ name: 'paymentMethod', value: transaction.object.paymentMethod }]
+            ...(params.paymentMethod !== undefined)
+                ? [{ name: 'paymentMethod', value: params.paymentMethod }]
                 : []
         ],
         ...{ address: customerContact.address }

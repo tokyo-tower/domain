@@ -40,7 +40,7 @@ export class MongoRepository extends cinerino.repository.Transaction {
     public async confirmPlaceOrder(
         transactionId: string,
         endDate: Date,
-        paymentMethod: factory.paymentMethodType,
+        // paymentMethod: factory.paymentMethodType,
         authorizeActions: factory.transaction.placeOrder.IAuthorizeAction[],
         result: factory.transaction.placeOrder.IResult,
         potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions
@@ -55,7 +55,7 @@ export class MongoRepository extends cinerino.repository.Transaction {
                 status: factory.transactionStatusType.Confirmed, // ステータス変更
                 endDate: endDate,
                 'object.authorizeActions': authorizeActions, // 認可アクションリストを更新
-                'object.paymentMethod': paymentMethod, // 決済方法を更新
+                // 'object.paymentMethod': paymentMethod, // 決済方法を更新
                 result: result, // resultを更新
                 potentialActions: potentialActions
             },
