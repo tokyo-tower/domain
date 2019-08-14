@@ -84,17 +84,6 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                         transactionId: transaction.id
                     }
                 }));
-                // taskAttributes.push(factory.task.settleCreditCard.createAttributes({
-                //     status: factory.taskStatus.Ready,
-                //     runsAt: new Date(), // なるはやで実行
-                //     remainingNumberOfTries: 10,
-                //     lastTriedAt: null,
-                //     numberOfTried: 0,
-                //     executionResults: [],
-                //     data: {
-                //         transactionId: transaction.id
-                //     }
-                // }));
 
                 const potentialActions = transaction.potentialActions;
                 if (potentialActions !== undefined) {
