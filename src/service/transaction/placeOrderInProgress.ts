@@ -291,21 +291,10 @@ export function confirm(params: {
         const { order } = createResult(paymentNo, transaction);
         transaction.result = { order };
 
-        const potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions = {
-            order: {
-                project: transaction.project,
-                typeOf: factory.actionType.OrderAction,
-                object: order,
-                agent: transaction.agent,
-                // potentialActions: {
-                //     payCreditCard: payCreditCardActions,
-                // },
-                purpose: <any>{
-                    typeOf: transaction.typeOf,
-                    id: transaction.id
-                }
-            }
-        };
+        const potentialActions = await createPotentialActionsFromTransaction({
+            transaction: transaction,
+            order: order
+        });
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
@@ -613,5 +602,73 @@ function temporaryReservation2confirmed(params: {
             { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
         ],
         additionalTicketText: params.tmpReservation.additionalTicketText
+    };
+}
+
+/**
+ * 取引のポストアクションを作成する
+ */
+// tslint:disable-next-line:max-func-body-length
+export async function createPotentialActionsFromTransaction(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+    order: factory.order.IOrder;
+}): Promise<factory.cinerino.transaction.placeOrder.IPotentialActions> {
+    // クレジットカード支払いアクション
+    const authorizeCreditCardActions = <factory.action.authorize.creditCard.IAction[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.result !== undefined)
+            .filter((a) => (<any>a.result).paymentMethod === factory.paymentMethodType.CreditCard);
+    const payCreditCardActions: factory.cinerino.action.trade.pay.IAttributes<factory.cinerino.paymentMethodType.CreditCard>[] = [];
+    authorizeCreditCardActions.forEach((a) => {
+        const result = <factory.cinerino.action.authorize.paymentMethod.creditCard.IResult>a.result;
+        if (result.paymentStatus === factory.cinerino.paymentStatusType.PaymentDue) {
+            payCreditCardActions.push({
+                project: params.transaction.project,
+                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+                object: [{
+                    typeOf: <factory.cinerino.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    paymentMethod: {
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: <factory.cinerino.paymentMethodType.CreditCard>result.paymentMethod
+                    },
+                    price: result.amount,
+                    priceCurrency: factory.priceCurrency.JPY,
+                    entryTranArgs: result.entryTranArgs,
+                    execTranArgs: result.execTranArgs
+                }],
+                agent: params.transaction.agent,
+                purpose: {
+                    typeOf: params.order.typeOf,
+                    seller: params.order.seller,
+                    customer: params.order.customer,
+                    confirmationNumber: params.order.confirmationNumber,
+                    orderNumber: params.order.orderNumber,
+                    price: params.order.price,
+                    priceCurrency: params.order.priceCurrency,
+                    orderDate: params.order.orderDate
+                }
+            });
+        }
+    });
+
+    return {
+        order: {
+            project: params.transaction.project,
+            typeOf: factory.actionType.OrderAction,
+            object: params.order,
+            agent: params.transaction.agent,
+            potentialActions: {
+                payCreditCard: payCreditCardActions
+            },
+            purpose: <any>{
+                typeOf: params.transaction.typeOf,
+                id: params.transaction.id
+            }
+        }
     };
 }

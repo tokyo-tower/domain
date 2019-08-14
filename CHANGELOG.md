@@ -10,9 +10,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- クレジットカード決済タスクをCinerino化
+
 ### Deprecated
 
 ### Removed
+
+- CreateOrderタスクを削除
 
 ### Fixed
 
