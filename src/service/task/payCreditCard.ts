@@ -35,10 +35,10 @@ export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName
             });
             const transaction = transactions.shift();
 
-            if (transaction !== undefined) {
+            if (transaction !== undefined && Array.isArray(payAction.result.creditCardSales)) {
                 await transactionRepo.transactionModel.findByIdAndUpdate(
                     transaction.id,
-                    { 'result.creditCardSales': payAction.result.creditCardSales }
+                    { 'result.creditCardSales': payAction.result.creditCardSales[0] }
                 ).exec();
             }
         }
