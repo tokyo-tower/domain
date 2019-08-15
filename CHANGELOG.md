@@ -18,6 +18,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v27.0.0 - 2019-08-15
+
+### Changed
+
+- クレジットカード決済タスクをCinerino化
+- クレジットカード以外の決済方法に対する承認アクションに対応
+
+### Removed
+
+- CreateOrderタスクを削除
+- 注文取引から購入者区分属性を削除
+- Salesサービスを削除
+
 ## v26.0.0 - 2019-08-13
 
 ### Changed

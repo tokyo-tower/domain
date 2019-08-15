@@ -8,6 +8,7 @@ import * as moment from 'moment';
 import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
 
 const debug = createDebug('ttts-domain:service');
+const STAFF_CLIENT_ID = process.env.STAFF_CLIENT_ID;
 
 const purchaserGroupStrings: any = {
     Customer: '01',
@@ -122,6 +123,12 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
         if (params.transaction.endDate !== undefined) {
             const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
 
+            let purchaserGroup: factory.person.Group = factory.person.Group.Customer;
+            if (params.transaction.object.clientUser !== undefined
+                && params.transaction.object.clientUser.client_id === STAFF_CLIENT_ID) {
+                purchaserGroup = factory.person.Group.Staff;
+            }
+
             datas.push(
                 ...transactionResult.order.acceptedOffers
                     .map((o) => {
@@ -133,7 +140,7 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
                             transactionResult.order,
                             <Date>params.transaction.endDate,
                             AggregateUnit.SalesByEndDate,
-                            params.transaction.object.purchaser_group
+                            purchaserGroup
                         );
                     })
             );
@@ -174,6 +181,12 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
             })
             .map((o) => o.itemOffered);
 
+        let purchaserGroup: factory.person.Group = factory.person.Group.Customer;
+        if (placeOrderTransaction.object.clientUser !== undefined
+            && placeOrderTransaction.object.clientUser.client_id === STAFF_CLIENT_ID) {
+            purchaserGroup = factory.person.Group.Staff;
+        }
+
         reservations.forEach((r, reservationIndex) => {
             // 座席分のキャンセルデータ
             datas.push({
@@ -185,7 +198,7 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                     placeOrderTransactionResult.order,
                     <Date>params.transaction.endDate,
                     AggregateUnit.SalesByEndDate,
-                    placeOrderTransaction.object.purchaser_group
+                    purchaserGroup
                 ),
                 reservationStatus: Status4csv.Cancelled,
                 status_sort: `${r.reservationStatus}_1`,
@@ -204,7 +217,7 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                         placeOrderTransactionResult.order,
                         <Date>params.transaction.endDate,
                         AggregateUnit.SalesByEndDate,
-                        placeOrderTransaction.object.purchaser_group
+                        purchaserGroup
                     ),
                     seat: {
                         code: '',

@@ -68,7 +68,11 @@ export function confirm(params: {
         const creditCardSales = transactionResult.creditCardSales;
 
         // クレジットカード決済の場合、取引状態が実売上でなければまだ返品できない
-        if (transaction.object.paymentMethod === factory.paymentMethodType.CreditCard && creditCardSales === undefined) {
+        let paymentMethod = transaction.object.paymentMethod;
+        if (typeof paymentMethod !== 'string') {
+            paymentMethod = order.paymentMethods[0].typeOf;
+        }
+        if (paymentMethod === factory.paymentMethodType.CreditCard && creditCardSales === undefined) {
             throw new factory.errors.Argument('transaction', 'Status not Sales.');
         }
 

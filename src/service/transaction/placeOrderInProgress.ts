@@ -18,6 +18,7 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 const debug = createDebug('ttts-domain:service');
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+const STAFF_CLIENT_ID = <string>process.env.STAFF_CLIENT_ID;
 
 export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
@@ -55,7 +56,7 @@ export interface IStartParams {
     /**
      * 購入者区分
      */
-    purchaserGroup: factory.person.Group;
+    // purchaserGroup?: factory.person.Group;
 }
 
 /**
@@ -109,7 +110,7 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 passportToken: params.passportToken,
                 passport: passport,
                 clientUser: params.clientUser,
-                purchaser_group: params.purchaserGroup,
+                // purchaser_group: params.purchaserGroup,
                 authorizeActions: []
             },
             expires: params.expires,
@@ -265,14 +266,11 @@ export function confirm(params: {
         });
 
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-        authorizeActions = authorizeActions.filter(
-            (authorizeAction) => (authorizeAction.endDate !== undefined && authorizeAction.endDate < now)
-        );
+        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < now));
         transaction.object.authorizeActions = authorizeActions;
-        transaction.object.paymentMethod = params.paymentMethod;
 
         // 注文取引成立条件を満たしているかどうか
-        if (!canBeClosed(transaction)) {
+        if (!canBeClosed(transaction, params.paymentMethod)) {
             throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
         }
 
@@ -291,21 +289,10 @@ export function confirm(params: {
         const { order } = createResult(paymentNo, transaction);
         transaction.result = { order };
 
-        const potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions = {
-            order: {
-                project: transaction.project,
-                typeOf: factory.actionType.OrderAction,
-                object: order,
-                agent: transaction.agent,
-                // potentialActions: {
-                //     payCreditCard: payCreditCardActions,
-                // },
-                purpose: <any>{
-                    typeOf: transaction.typeOf,
-                    id: transaction.id
-                }
-            }
-        };
+        const potentialActions = await createPotentialActionsFromTransaction({
+            transaction: transaction,
+            order: order
+        });
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
@@ -320,7 +307,7 @@ export function confirm(params: {
             await transactionRepo.confirmPlaceOrder(
                 params.transactionId,
                 now,
-                params.paymentMethod,
+                // params.paymentMethod,
                 authorizeActions,
                 transaction.result,
                 potentialActions
@@ -350,9 +337,11 @@ export function confirm(params: {
 /**
  * 取引が確定可能な状態かどうかをチェックする
  */
-function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
-    const paymentMethod = transaction.object.paymentMethod;
-    const purchaserGroup = transaction.object.purchaser_group;
+function canBeClosed(
+    transaction: factory.transaction.placeOrder.ITransaction,
+    paymentMethod: factory.paymentMethodType
+) {
+    const clientId = (transaction.object.clientUser !== undefined) ? transaction.object.clientUser.client_id : '';
     const agent = transaction.agent;
     const creditCardAuthorizeActions = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -376,9 +365,9 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         case factory.paymentMethodType.Invitation:
         case factory.paymentMethodType.Invoice:
         case factory.paymentMethodType.OTC:
-            // 認められるのはスタッフだけ(CognitoUserログインしているはず)
-            if (purchaserGroup !== factory.person.Group.Staff || agent.memberOf === undefined) {
-                throw new factory.errors.Argument('paymentMethod', `Invalid payment method for ${purchaserGroup}.`);
+            // 認められるのはスタッフだけ(管理者としてログインしているはず)
+            if (clientId !== STAFF_CLIENT_ID || agent.memberOf === undefined) {
+                throw new factory.errors.Argument('paymentMethod', `Invalid payment method for the client`);
             }
 
             break;
@@ -392,7 +381,7 @@ function canBeClosed(transaction: factory.transaction.placeOrder.ITransaction) {
         factory.action.authorize.creditCard.IResult |
         factory.action.authorize.seatReservation.IResult;
 
-    if (purchaserGroup === factory.person.Group.Customer && paymentMethod === factory.paymentMethodType.CreditCard) {
+    if (clientId !== STAFF_CLIENT_ID && paymentMethod === factory.paymentMethodType.CreditCard) {
         // customerとsellerで、承認アクションの金額が合うかどうか
         const priceByAgent = transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -441,18 +430,56 @@ export function createResult(
     const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
     const orderDate = new Date();
 
-    if (transaction.object.paymentMethod === undefined) {
-        throw new Error('PaymentMethod undefined.');
-    }
+    // if (transaction.object.paymentMethod === undefined) {
+    //     throw new Error('PaymentMethod undefined.');
+    // }
 
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     let paymentMethodId = '';
-    let paymentAccountId = '';
+    // let paymentAccountId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
-        paymentAccountId = creditCardAuthorizeAction.result.accountId;
+        // paymentAccountId = creditCardAuthorizeAction.result.accountId;
         paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
     }
+
+    // const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [{
+    //     typeOf: transaction.object.paymentMethod,
+    //     name: transaction.object.paymentMethod.toString(),
+    //     accountId: paymentAccountId,
+    //     paymentMethodId: paymentMethodId,
+    //     additionalProperty: [],
+    //     totalPaymentDue: {
+    //         typeOf: <'MonetaryAmount'>'MonetaryAmount',
+    //         currency: factory.priceCurrency.JPY,
+    //         value: price
+    //     }
+    // }];
+
+    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
+
+    // 決済方法をセット
+    Object.keys(factory.paymentMethodType)
+        .forEach((key) => {
+            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            transaction.object.authorizeActions
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                .filter((a) => a.result !== undefined && (<any>a.result).paymentMethod === paymentMethodType)
+                .forEach((a: any) => {
+                    const authorizePaymentMethodAction =
+                        <factory.cinerino.action.authorize.paymentMethod.any.IAction<factory.cinerino.paymentMethodType>>a;
+                    const result = (<factory.cinerino.action.authorize.paymentMethod.any.IResult<factory.cinerino.paymentMethodType>>
+                        authorizePaymentMethodAction.result);
+                    paymentMethods.push({
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: paymentMethodType
+                    });
+                });
+        });
 
     // 予約データを作成
     const eventReservations = tmpReservations.map((tmpReservation, index) => {
@@ -470,7 +497,8 @@ export function createResult(
             gmoOrderId: paymentMethodId,
             paymentSeatIndex: index.toString(),
             customerContact: customerContact,
-            bookingTime: orderDate
+            bookingTime: orderDate,
+            paymentMethod: paymentMethods[0].typeOf
         });
     });
 
@@ -501,20 +529,6 @@ export function createResult(
         },
         0
     );
-
-    const paymentMethods = [{
-        typeOf: transaction.object.paymentMethod,
-        name: transaction.object.paymentMethod.toString(),
-        paymentMethod: transaction.object.paymentMethod,
-        accountId: paymentAccountId,
-        paymentMethodId: paymentMethodId,
-        additionalProperty: [],
-        totalPaymentDue: {
-            typeOf: <'MonetaryAmount'>'MonetaryAmount',
-            currency: factory.priceCurrency.JPY,
-            value: price
-        }
-    }];
 
     const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
@@ -566,6 +580,7 @@ function temporaryReservation2confirmed(params: {
     paymentSeatIndex: string;
     customerContact: factory.transaction.placeOrder.ICustomerContact;
     bookingTime: Date;
+    paymentMethod: factory.paymentMethodType;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
     const customerContact = params.customerContact;
@@ -589,8 +604,8 @@ function temporaryReservation2confirmed(params: {
             ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
                 ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
                 : [],
-            ...(transaction.object.paymentMethod !== undefined)
-                ? [{ name: 'paymentMethod', value: transaction.object.paymentMethod }]
+            ...(params.paymentMethod !== undefined)
+                ? [{ name: 'paymentMethod', value: params.paymentMethod }]
                 : []
         ],
         ...{ address: customerContact.address }
@@ -613,5 +628,73 @@ function temporaryReservation2confirmed(params: {
             { name: 'paymentSeatIndex', value: params.paymentSeatIndex }
         ],
         additionalTicketText: params.tmpReservation.additionalTicketText
+    };
+}
+
+/**
+ * 取引のポストアクションを作成する
+ */
+// tslint:disable-next-line:max-func-body-length
+export async function createPotentialActionsFromTransaction(params: {
+    transaction: factory.transaction.placeOrder.ITransaction;
+    order: factory.order.IOrder;
+}): Promise<factory.cinerino.transaction.placeOrder.IPotentialActions> {
+    // クレジットカード支払いアクション
+    const authorizeCreditCardActions = <factory.action.authorize.creditCard.IAction[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.result !== undefined)
+            .filter((a) => (<any>a.result).paymentMethod === factory.paymentMethodType.CreditCard);
+    const payCreditCardActions: factory.cinerino.action.trade.pay.IAttributes<factory.cinerino.paymentMethodType.CreditCard>[] = [];
+    authorizeCreditCardActions.forEach((a) => {
+        const result = <factory.cinerino.action.authorize.paymentMethod.creditCard.IResult>a.result;
+        if (result.paymentStatus === factory.cinerino.paymentStatusType.PaymentDue) {
+            payCreditCardActions.push({
+                project: params.transaction.project,
+                typeOf: <factory.actionType.PayAction>factory.actionType.PayAction,
+                object: [{
+                    typeOf: <factory.cinerino.action.trade.pay.TypeOfObject>'PaymentMethod',
+                    paymentMethod: {
+                        accountId: result.accountId,
+                        additionalProperty: (Array.isArray(result.additionalProperty)) ? result.additionalProperty : [],
+                        name: result.name,
+                        paymentMethodId: result.paymentMethodId,
+                        totalPaymentDue: result.totalPaymentDue,
+                        typeOf: <factory.cinerino.paymentMethodType.CreditCard>result.paymentMethod
+                    },
+                    price: result.amount,
+                    priceCurrency: factory.priceCurrency.JPY,
+                    entryTranArgs: result.entryTranArgs,
+                    execTranArgs: result.execTranArgs
+                }],
+                agent: params.transaction.agent,
+                purpose: {
+                    typeOf: params.order.typeOf,
+                    seller: params.order.seller,
+                    customer: params.order.customer,
+                    confirmationNumber: params.order.confirmationNumber,
+                    orderNumber: params.order.orderNumber,
+                    price: params.order.price,
+                    priceCurrency: params.order.priceCurrency,
+                    orderDate: params.order.orderDate
+                }
+            });
+        }
+    });
+
+    return {
+        order: {
+            project: params.transaction.project,
+            typeOf: factory.actionType.OrderAction,
+            object: params.order,
+            agent: params.transaction.agent,
+            potentialActions: {
+                payCreditCard: payCreditCardActions
+            },
+            purpose: <any>{
+                typeOf: params.transaction.typeOf,
+                id: params.transaction.id
+            }
+        }
     };
 }
