@@ -12,7 +12,7 @@ export class MongoRepository extends cinerino.repository.Transaction {
     public async updateCustomerProfile<T extends factory.transactionType>(params: {
         typeOf: T;
         id: string;
-        agent: factory.transaction.placeOrder.ICustomerContact;
+        agent: factory.transaction.placeOrder.ICustomerProfile;
     }): Promise<void> {
         const doc = await this.transactionModel.findOneAndUpdate(
             {
@@ -25,7 +25,9 @@ export class MongoRepository extends cinerino.repository.Transaction {
                 'agent.familyName': params.agent.familyName,
                 'agent.givenName': params.agent.givenName,
                 'agent.telephone': params.agent.telephone,
-                'object.customerContact': params.agent // agentでの情報保持である程度運用したら削除する
+                ...(typeof params.agent.age === 'string') ? { 'agent.age': params.agent.age } : {},
+                ...(typeof params.agent.address === 'string') ? { 'agent.address': params.agent.address } : {},
+                ...(typeof params.agent.gender === 'string') ? { 'agent.gender': params.agent.gender } : {}
             }
         )
             .exec();
