@@ -381,22 +381,18 @@ function canBeClosed(
         factory.action.authorize.creditCard.IResult |
         factory.action.authorize.seatReservation.IResult;
 
-    if (clientId !== STAFF_CLIENT_ID && paymentMethod === factory.paymentMethodType.CreditCard) {
-        // customerとsellerで、承認アクションの金額が合うかどうか
-        const priceByAgent = transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.agent.id === transaction.agent.id)
-            .reduce((a, b) => a + Number((<any>b.result).amount), 0);
-        const priceBySeller = transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.agent.id === transaction.seller.id)
-            .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
-        debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
+    // customerとsellerで、承認アクションの金額が合うかどうか
+    const priceByAgent = transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.agent.id === transaction.agent.id)
+        .reduce((a, b) => a + Number((<any>b.result).amount), 0);
+    const priceBySeller = transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.agent.id === transaction.seller.id)
+        .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
 
-        // 決済金額なし
-        if (priceByAgent !== priceBySeller) {
-            throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
-        }
+    if (priceByAgent !== priceBySeller) {
+        throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
     }
 
     return true;

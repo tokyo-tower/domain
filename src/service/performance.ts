@@ -56,7 +56,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         debug(eventsWithAggregation.length, 'eventsWithAggregation found.');
 
         const data: factory.performance.IPerformanceWithAvailability[] = performances.map((performance) => {
-            const ticketTypes = performance.ticket_type_group.ticket_types;
+            const ticketTypes = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : [];
             const eventWithAggregation = eventsWithAggregation.find((e) => e.id === performance.id);
 
             let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
@@ -96,10 +96,14 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                         available_num: (offerAggregation !== undefined) ? offerAggregation.remainingAttendeeCapacity : undefined
                     };
                 }),
-                online_sales_status: performance.ttts_extension.online_sales_status,
-                refunded_count: performance.ttts_extension.refunded_count,
-                refund_status: performance.ttts_extension.refund_status,
-                ev_service_status: performance.ttts_extension.ev_service_status
+                online_sales_status: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.online_sales_status : factory.performance.OnlineSalesStatus.Normal,
+                refunded_count: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.refunded_count : undefined,
+                refund_status: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.refund_status : undefined,
+                ev_service_status: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.ev_service_status : undefined
             };
 
             return {
@@ -109,8 +113,12 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 endDate: performance.endDate,
                 duration: performance.duration,
                 tourNumber: tourNumber,
-                evServiceStatus: performance.ttts_extension.ev_service_status,
-                onlineSalesStatus: performance.ttts_extension.online_sales_status,
+                evServiceStatus: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.ev_service_status
+                    : factory.performance.EvServiceStatus.Normal,
+                onlineSalesStatus: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.online_sales_status
+                    : factory.performance.OnlineSalesStatus.Normal,
                 maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
                 remainingAttendeeCapacity: (eventWithAggregation !== undefined)
                     ? eventWithAggregation.remainingAttendeeCapacity
@@ -118,7 +126,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 remainingAttendeeCapacityForWheelchair: (eventWithAggregation !== undefined)
                     ? eventWithAggregation.remainingAttendeeCapacityForWheelchair
                     : undefined,
-                extension: performance.ttts_extension,
+                extension: (performance.ttts_extension !== undefined) ? performance.ttts_extension : <any>{},
                 additionalProperty: performance.additionalProperty,
                 // attributes属性は、POSに対するAPI互換性維持のため
                 attributes: attributes

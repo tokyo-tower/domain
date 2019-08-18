@@ -94,7 +94,7 @@ export function aggregateEventReservations(params: {
                 remainingAttendeeCapacityForWheelchair
             } = await aggregateRemainingAttendeeCapacity({ performance: performance, project: project })(repos);
 
-            let offers = performance.ticket_type_group.ticket_types;
+            let offers = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : undefined;
             if (offers === undefined) {
                 offers = [];
             }
@@ -135,8 +135,12 @@ export function aggregateEventReservations(params: {
                 startDate: performance.startDate,
                 endDate: performance.endDate,
                 duration: performance.duration,
-                evServiceStatus: performance.ttts_extension.ev_service_status,
-                onlineSalesStatus: performance.ttts_extension.online_sales_status,
+                evServiceStatus: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.ev_service_status
+                    : factory.performance.EvServiceStatus.Normal,
+                onlineSalesStatus: (performance.ttts_extension !== undefined)
+                    ? performance.ttts_extension.online_sales_status
+                    : factory.performance.OnlineSalesStatus.Normal,
                 maximumAttendeeCapacity: maximumAttendeeCapacity,
                 remainingAttendeeCapacity: remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,

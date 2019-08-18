@@ -330,7 +330,16 @@ export function create(
             startDate: new Date(),
             object: {
                 typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation,
-                event: performance,
+                event: {
+                    id: performance.id,
+                    doorTime: moment(performance.doorTime).toDate(),
+                    startDate: moment(performance.startDate).toDate(),
+                    endDate: moment(performance.endDate).toDate(),
+                    superEvent: performance.superEvent,
+                    location: performance.location,
+                    additionalProperty: performance.additionalProperty,
+                    duration: performance.duration
+                },
                 acceptedOffer: acceptedOffersWithSeatNumber.map((o) => {
                     return {
                         id: o.itemOffered.reservedTicket.ticketType.id,

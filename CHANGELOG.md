@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- POSと内部予約に対しても注文取引における承認価格バリデーションを追加
+- 座席予約承認のイベント属性を最適化
+
 ### Deprecated
 
 ### Removed
