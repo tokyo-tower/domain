@@ -53,10 +53,6 @@ export interface IStartParams {
      * WAITER許可証トークン
      */
     passportToken?: waiter.factory.passport.IEncodedPassport;
-    /**
-     * 購入者区分
-     */
-    // purchaserGroup?: factory.person.Group;
 }
 
 /**
@@ -110,7 +106,6 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 passportToken: params.passportToken,
                 passport: passport,
                 clientUser: params.clientUser,
-                // purchaser_group: params.purchaserGroup,
                 authorizeActions: []
             },
             expires: params.expires,
