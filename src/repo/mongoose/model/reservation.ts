@@ -75,14 +75,6 @@ schema.index(
 // 予約検索
 schema.index(
     {
-        performance: 1,
-        purchaser_group: 1
-    }
-);
-
-// 予約検索
-schema.index(
-    {
         status: 1,
         performance_day: 1,
         performance_start_time: 1,

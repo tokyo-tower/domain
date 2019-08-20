@@ -53,10 +53,6 @@ export interface IStartParams {
      * WAITER許可証トークン
      */
     passportToken?: waiter.factory.passport.IEncodedPassport;
-    /**
-     * 購入者区分
-     */
-    // purchaserGroup?: factory.person.Group;
 }
 
 /**
@@ -110,7 +106,6 @@ export function start(params: IStartParams): IStartOperation<factory.transaction
                 passportToken: params.passportToken,
                 passport: passport,
                 clientUser: params.clientUser,
-                // purchaser_group: params.purchaserGroup,
                 authorizeActions: []
             },
             expires: params.expires,
@@ -187,14 +182,14 @@ export namespace action {
 export function setCustomerContact(
     agentId: string,
     transactionId: string,
-    contact: factory.transaction.placeOrder.ICustomerContact
-): ITransactionOperation<factory.transaction.placeOrder.ICustomerContact> {
+    contact: factory.transaction.placeOrder.ICustomerProfile
+): ITransactionOperation<factory.transaction.placeOrder.ICustomerProfile> {
     return async (transactionRepo: TransactionRepo) => {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
             // addressが国コード
-            const phoneNumber = phoneUtil.parse(contact.tel, contact.address);
+            const phoneNumber = phoneUtil.parse(contact.telephone, contact.address);
             if (!phoneUtil.isValidNumber(phoneNumber)) {
                 throw new Error('invalid phone number format.');
             }
@@ -205,16 +200,13 @@ export function setCustomerContact(
         }
 
         // 連絡先を再生成(validationの意味も含めて)
-        const customerContact: factory.transaction.placeOrder.ICustomerContact = {
-            last_name: contact.last_name,
-            first_name: contact.first_name,
+        const profile: factory.transaction.placeOrder.ICustomerProfile = {
             email: contact.email,
-            tel: formattedTelephone,
             age: contact.age,
             address: contact.address,
             gender: contact.gender,
-            givenName: contact.first_name,
-            familyName: contact.last_name,
+            givenName: contact.givenName,
+            familyName: contact.familyName,
             telephone: formattedTelephone
         };
 
@@ -227,10 +219,10 @@ export function setCustomerContact(
         await transactionRepo.updateCustomerProfile({
             typeOf: transaction.typeOf,
             id: transaction.id,
-            agent: customerContact
+            agent: profile
         });
 
-        return customerContact;
+        return profile;
     };
 }
 
@@ -381,22 +373,18 @@ function canBeClosed(
         factory.action.authorize.creditCard.IResult |
         factory.action.authorize.seatReservation.IResult;
 
-    if (clientId !== STAFF_CLIENT_ID && paymentMethod === factory.paymentMethodType.CreditCard) {
-        // customerとsellerで、承認アクションの金額が合うかどうか
-        const priceByAgent = transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.agent.id === transaction.agent.id)
-            .reduce((a, b) => a + Number((<any>b.result).amount), 0);
-        const priceBySeller = transaction.object.authorizeActions
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-            .filter((a) => a.agent.id === transaction.seller.id)
-            .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
-        debug('priceByAgent priceBySeller:', priceByAgent, priceBySeller);
+    // customerとsellerで、承認アクションの金額が合うかどうか
+    const priceByAgent = transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.agent.id === transaction.agent.id)
+        .reduce((a, b) => a + Number((<any>b.result).amount), 0);
+    const priceBySeller = transaction.object.authorizeActions
+        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+        .filter((a) => a.agent.id === transaction.seller.id)
+        .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
 
-        // 決済金額なし
-        if (priceByAgent !== priceBySeller) {
-            throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
-        }
+    if (priceByAgent !== priceBySeller) {
+        throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
     }
 
     return true;
@@ -427,7 +415,9 @@ export function createResult(
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
     const chevreReservations = reserveTransaction.object.reservations;
     const performance = seatReservationAuthorizeAction.object.event;
-    const customerContact = <factory.transaction.placeOrder.ICustomerContact>transaction.object.customerContact;
+
+    const profile = transaction.agent;
+
     const orderDate = new Date();
 
     // if (transaction.object.paymentMethod === undefined) {
@@ -496,7 +486,7 @@ export function createResult(
             paymentNo: paymentNo,
             gmoOrderId: paymentMethodId,
             paymentSeatIndex: index.toString(),
-            customerContact: customerContact,
+            customer: profile,
             bookingTime: orderDate,
             paymentMethod: paymentMethods[0].typeOf
         });
@@ -532,10 +522,11 @@ export function createResult(
 
     const customerIdentifier = (Array.isArray(transaction.agent.identifier)) ? transaction.agent.identifier : [];
     const customer: factory.order.ICustomer = {
-        typeOf: transaction.agent.typeOf,
+        ...profile,
         id: transaction.agent.id,
-        name: `${customerContact.first_name} ${customerContact.last_name}`,
-        ...customerContact,
+        typeOf: transaction.agent.typeOf,
+        name: `${profile.givenName} ${profile.familyName}`,
+        url: '',
         identifier: customerIdentifier
     };
 
@@ -578,28 +569,30 @@ function temporaryReservation2confirmed(params: {
     paymentNo: string;
     gmoOrderId: string;
     paymentSeatIndex: string;
-    customerContact: factory.transaction.placeOrder.ICustomerContact;
+    customer: factory.transaction.placeOrder.IAgent;
     bookingTime: Date;
     paymentMethod: factory.paymentMethodType;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
-    const customerContact = params.customerContact;
+    const customer = params.customer;
 
     const underName: factory.chevre.reservation.IUnderName<factory.chevre.reservationType.EventReservation> = {
         typeOf: factory.personType.Person,
         id: params.transaction.agent.id,
-        name: `${customerContact.first_name} ${customerContact.last_name}`,
-        familyName: customerContact.last_name,
-        givenName: customerContact.first_name,
-        email: customerContact.email,
-        telephone: customerContact.telephone,
-        gender: customerContact.gender,
+        name: `${customer.givenName} ${customer.familyName}`,
+        familyName: customer.familyName,
+        givenName: customer.givenName,
+        email: customer.email,
+        telephone: customer.telephone,
+        gender: customer.gender,
         identifier: [
-            { name: 'age', value: customerContact.age },
             { name: 'orderNumber', value: params.orderNumber },
             { name: 'paymentNo', value: params.paymentNo },
             { name: 'transaction', value: transaction.id },
             { name: 'gmoOrderId', value: params.gmoOrderId },
+            ...(typeof customer.age === 'string')
+                ? [{ name: 'age', value: customer.age }]
+                : [],
             ...(transaction.agent.identifier !== undefined) ? transaction.agent.identifier : [],
             ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
                 ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
@@ -608,7 +601,7 @@ function temporaryReservation2confirmed(params: {
                 ? [{ name: 'paymentMethod', value: params.paymentMethod }]
                 : []
         ],
-        ...{ address: customerContact.address }
+        ...{ address: customer.address }
     };
 
     return {
