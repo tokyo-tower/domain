@@ -10,18 +10,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- POSと内部予約に対しても注文取引における承認価格バリデーションを追加
-- 座席予約承認のイベント属性を最適化
-
 ### Deprecated
 
 ### Removed
 
-- 注文取引から顧客連絡先属性を削除
-
 ### Fixed
 
 ### Security
+
+## v28.0.0 - 2019-08-20
+
+### Changed
+
+- POSと内部予約に対しても注文取引における承認価格バリデーションを追加
+- 座席予約承認のイベント属性を最適化
+
+### Removed
+
+- 注文取引から顧客連絡先属性を削除
 
 ## v27.0.0 - 2019-08-15
 
