@@ -18,9 +18,9 @@ export class CognitoRepository {
 
     public static ATTRIBUTE2PROFILE(userAttributes: AttributeListType) {
         const profile: factory.person.IProfile = {
-            last_name: '',
-            first_name: '',
-            tel: '',
+            // last_name: '',
+            // first_name: '',
+            // tel: '',
             age: '',
             address: '',
             gender: '',

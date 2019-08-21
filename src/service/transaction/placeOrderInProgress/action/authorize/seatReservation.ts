@@ -326,8 +326,6 @@ export function create(
         const actionAttributes: factory.action.authorize.seatReservation.IAttributes = {
             project: transaction.project,
             typeOf: factory.actionType.AuthorizeAction,
-            actionStatus: factory.actionStatusType.ActiveActionStatus,
-            startDate: new Date(),
             object: {
                 typeOf: factory.action.authorize.seatReservation.ObjectType.SeatReservation,
                 event: {

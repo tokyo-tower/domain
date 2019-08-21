@@ -13,7 +13,7 @@
     "@cinerino/domain": "1.0.0-alpha.266",
     "@motionpicture/gmo-service": "^4.3.0",
     "@sendgrid/mail": "^6.4.0",
-    "@tokyotower/factory": "^16.0.0",
+    "@tokyotower/factory": "^17.0.0",
     "@types/redis": "^2.8.13",
     "@waiter/domain": "^3.0.0",
     "aws-sdk": "^2.501.0",
@@ -114,5 +114,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "28.0.0"
+  "version": "28.1.0"
 }
