@@ -337,7 +337,7 @@ function canBeClosed(
     const agent = transaction.agent;
     const creditCardAuthorizeActions = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => (<any>a.object).typeOf === factory.paymentMethodType.CreditCard);
+        .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
     switch (paymentMethod) {
         case factory.paymentMethodType.Cash:
@@ -369,19 +369,15 @@ function canBeClosed(
             throw new factory.errors.Argument('paymentMethod', 'Invalid payment method.');
     }
 
-    type IAuthorizeActionResult =
-        factory.action.authorize.creditCard.IResult |
-        factory.action.authorize.seatReservation.IResult;
-
     // customerとsellerで、承認アクションの金額が合うかどうか
     const priceByAgent = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.agent.id === transaction.agent.id)
-        .reduce((a, b) => a + Number((<any>b.result).amount), 0);
+        .reduce((a, b) => a + Number((<factory.action.authorize.creditCard.IResult>b.result).amount), 0);
     const priceBySeller = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.agent.id === transaction.seller.id)
-        .reduce((a, b) => a + (<IAuthorizeActionResult>b.result).price, 0);
+        .reduce((a, b) => a + (<factory.action.authorize.seatReservation.IResult>b.result).price, 0);
 
     if (priceByAgent !== priceBySeller) {
         throw new factory.errors.Argument('transactionId', 'Prices not matched between an agent and a seller.');
@@ -454,7 +450,7 @@ export function createResult(
             const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
             transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .filter((a) => a.result !== undefined && (<any>a.result).paymentMethod === paymentMethodType)
+                .filter((a) => a.result !== undefined && a.result.paymentMethod === paymentMethodType)
                 .forEach((a: any) => {
                     const authorizePaymentMethodAction =
                         <factory.cinerino.action.authorize.paymentMethod.any.IAction<factory.cinerino.paymentMethodType>>a;
@@ -637,7 +633,7 @@ export async function createPotentialActionsFromTransaction(params: {
         params.transaction.object.authorizeActions
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
-            .filter((a) => (<any>a.result).paymentMethod === factory.paymentMethodType.CreditCard);
+            .filter((a) => a.result.paymentMethod === factory.paymentMethodType.CreditCard);
     const payCreditCardActions: factory.cinerino.action.trade.pay.IAttributes<factory.cinerino.paymentMethodType.CreditCard>[] = [];
     authorizeCreditCardActions.forEach((a) => {
         const result = <factory.cinerino.action.authorize.paymentMethod.creditCard.IResult>a.result;

@@ -68,7 +68,7 @@ export function confirm(params: {
         const creditCardSales = transactionResult.creditCardSales;
 
         // クレジットカード決済の場合、取引状態が実売上でなければまだ返品できない
-        let paymentMethod = transaction.object.paymentMethod;
+        let paymentMethod = (<any>transaction.object).paymentMethod; // 互換性維持対応
         if (typeof paymentMethod !== 'string') {
             paymentMethod = order.paymentMethods[0].typeOf;
         }
@@ -91,6 +91,7 @@ export function confirm(params: {
                 typeOf: factory.personType.Person,
                 id: params.agentId
             },
+            seller: transaction.seller,
             result: {},
             object: {
                 clientUser: params.clientUser,
