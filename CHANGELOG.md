@@ -10,10 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 人物インターフェースをCinerino化
-- アクションインターフェースをCinerino化
-- 取引インターフェースをCinerino化
-
 ### Deprecated
 
 ### Removed
@@ -21,6 +17,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v28.1.0 - 2019-08-21
+
+### Changed
+
+- 人物インターフェースをCinerino化
+- アクションインターフェースをCinerino化
+- 取引インターフェースをCinerino化
 
 ## v28.0.0 - 2019-08-20
 
