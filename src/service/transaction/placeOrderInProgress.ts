@@ -442,12 +442,12 @@ export function createResult(
     //     }
     // }];
 
-    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
+    const paymentMethods: factory.order.IPaymentMethod<factory.cinerino.paymentMethodType>[] = [];
 
     // 決済方法をセット
-    Object.keys(factory.paymentMethodType)
+    Object.keys(factory.cinerino.paymentMethodType)
         .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            const paymentMethodType = <factory.cinerino.paymentMethodType>(<any>factory.cinerino.paymentMethodType)[key];
             transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.result !== undefined && a.result.paymentMethod === paymentMethodType)

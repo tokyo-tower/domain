@@ -42,7 +42,6 @@ export class MongoRepository extends cinerino.repository.Transaction {
     public async confirmPlaceOrder(
         transactionId: string,
         endDate: Date,
-        // paymentMethod: factory.paymentMethodType,
         authorizeActions: factory.transaction.placeOrder.IAuthorizeAction[],
         result: factory.transaction.placeOrder.IResult,
         potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions
