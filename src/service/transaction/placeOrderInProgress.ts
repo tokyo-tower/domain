@@ -484,7 +484,7 @@ export function createResult(
             paymentSeatIndex: index.toString(),
             customer: profile,
             bookingTime: orderDate,
-            paymentMethod: paymentMethods[0].typeOf
+            paymentMethodName: paymentMethods[0].name
         });
     });
 
@@ -567,7 +567,7 @@ function temporaryReservation2confirmed(params: {
     paymentSeatIndex: string;
     customer: factory.transaction.placeOrder.IAgent;
     bookingTime: Date;
-    paymentMethod: factory.paymentMethodType;
+    paymentMethodName: string;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
     const customer = params.customer;
@@ -593,8 +593,8 @@ function temporaryReservation2confirmed(params: {
             ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
                 ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
                 : [],
-            ...(params.paymentMethod !== undefined)
-                ? [{ name: 'paymentMethod', value: params.paymentMethod }]
+            ...(params.paymentMethodName !== undefined)
+                ? [{ name: 'paymentMethod', value: params.paymentMethodName }]
                 : []
         ],
         ...{ address: customer.address }
