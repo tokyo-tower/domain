@@ -142,42 +142,42 @@ export function transferSeatReservation(transactionId: string) {
             .map((o) => o.itemOffered);
 
         // 座席仮予約アクションを取得
-        const authorizeActions = <factory.action.authorize.seatReservation.IAction[]>transaction.object.authorizeActions
-            .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
-            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+        // const authorizeActions = <factory.action.authorize.seatReservation.IAction[]>transaction.object.authorizeActions
+        //     .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
+        //     .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
 
-        const reserveService = new chevre.service.transaction.Reserve({
-            endpoint: projectDetails.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
+        // const reserveService = new chevre.service.transaction.Reserve({
+        //     endpoint: projectDetails.settings.chevre.endpoint,
+        //     auth: chevreAuthClient
+        // });
 
-        await Promise.all(authorizeActions.map(async (a) => {
-            if (a.result !== undefined) {
-                const reserveTransaction = a.result.responseBody;
-                if (reserveTransaction !== undefined) {
-                    // Chevre予約取引確定
-                    await reserveService.confirm({
-                        id: reserveTransaction.id,
-                        object: {
-                            reservations: reservations.map((r) => {
-                                // プロジェクト固有の値を連携
-                                return {
-                                    id: r.id,
-                                    additionalTicketText: r.additionalTicketText,
-                                    reservedTicket: {
-                                        issuedBy: r.reservedTicket.issuedBy,
-                                        ticketToken: r.reservedTicket.ticketToken,
-                                        underName: r.reservedTicket.underName
-                                    },
-                                    underName: r.underName,
-                                    additionalProperty: r.additionalProperty
-                                };
-                            })
-                        }
-                    });
-                }
-            }
-        }));
+        // await Promise.all(authorizeActions.map(async (a) => {
+        //     if (a.result !== undefined) {
+        //         const reserveTransaction = a.result.responseBody;
+        //         if (reserveTransaction !== undefined) {
+        //             // Chevre予約取引確定
+        //             await reserveService.confirm({
+        //                 id: reserveTransaction.id,
+        //                 object: {
+        //                     reservations: reservations.map((r) => {
+        //                         // プロジェクト固有の値を連携
+        //                         return {
+        //                             id: r.id,
+        //                             additionalTicketText: r.additionalTicketText,
+        //                             reservedTicket: {
+        //                                 issuedBy: r.reservedTicket.issuedBy,
+        //                                 ticketToken: r.reservedTicket.ticketToken,
+        //                                 underName: r.reservedTicket.underName
+        //                             },
+        //                             underName: r.underName,
+        //                             additionalProperty: r.additionalProperty
+        //                         };
+        //                     })
+        //                 }
+        //             });
+        //         }
+        //     }
+        // }));
 
         await Promise.all(reservations.map(async (reservation) => {
             /// 予約データを作成する

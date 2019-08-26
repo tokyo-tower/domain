@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 注文後の配送タスクと予約確定タスクを追加
+
 ### Changed
 
 - 予約データの決済方法には、注文データの決済方法名を連携するように変更
