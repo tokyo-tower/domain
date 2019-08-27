@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Added
 
 - 注文後の配送タスクと予約確定タスクを追加
+- 請求書リポジトリを追加
 
 ### Changed
 

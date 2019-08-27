@@ -2,6 +2,8 @@
 /**
  * リポジトリ
  */
+import * as cinerino from '@cinerino/domain';
+
 import { MongoRepository as ActionRepo } from './repo/action';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
@@ -32,6 +34,11 @@ export class Action extends ActionRepo { }
  * 集計データ付きイベントリポジトリ
  */
 export class EventWithAggregation extends EventWithAggregationRepo { }
+
+/**
+ * 請求書リポジトリ
+ */
+export class Invoice extends cinerino.repository.Invoice { }
 
 export namespace rateLimit {
     /**
