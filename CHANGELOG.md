@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 予約データの決済方法には、注文データの決済方法名を連携するように変更
 - タスクインターフェースをCinerino化
+- 注文インターフェースをCinerino化
+- 注文取引インターフェースをCinerino化
 
 ### Deprecated
 

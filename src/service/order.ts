@@ -1,6 +1,7 @@
 /**
  * 注文サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as Email from 'email-templates';
@@ -11,6 +12,7 @@ import * as uniq from 'lodash.uniq';
 import * as moment from 'moment-timezone';
 import * as numeral from 'numeral';
 
+import { MongoRepository as ActionRepo } from '../repo/action';
 import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { MongoRepository as ProjectRepo } from '../repo/project';
@@ -48,6 +50,7 @@ export function createFromTransaction(transactionId: string) {
  */
 export function processReturn(returnOrderTransactionId: string) {
     return async (
+        actionRepo: ActionRepo,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
         transactionRepo: TransactionRepo,
@@ -67,7 +70,7 @@ export function processReturn(returnOrderTransactionId: string) {
             });
         debug('processing return order...', returnOrderTransaction);
 
-        await returnCreditCardSales(returnOrderTransactionId)(performanceRepo, transactionRepo);
+        await returnCreditCardSales(returnOrderTransactionId)(actionRepo, performanceRepo, transactionRepo);
 
         await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
 
@@ -127,7 +130,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
 
         await Promise.all(placeOrderTransactionResult.order.acceptedOffers.map(async (o) => {
-            const reservation = o.itemOffered;
+            const reservation = <factory.cinerino.order.IReservation>o.itemOffered;
 
             await ReserveService.cancelReservation(reservation)({
                 project: projectRepo,
@@ -251,6 +254,7 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
 export function returnCreditCardSales(returnOrderTransactionId: string) {
     // tslint:disable-next-line:max-func-body-length
     return async (
+        actionRepo: ActionRepo,
         performanceRepo: PerformanceRepo,
         transactionRepo: TransactionRepo
     ) => {
@@ -283,8 +287,25 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
         const execTranArgs = creditCardAuthorizeAction.result.execTranArgs;
 
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
-        const creditCardSalesBefore = <factory.transaction.placeOrder.ICreditCardSales>placeOrderTransactionResult.creditCardSales;
-        const reservation = placeOrderTransactionResult.order.acceptedOffers[0].itemOffered;
+        const order = placeOrderTransactionResult.order;
+
+        let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined = (<any>placeOrderTransactionResult).creditCardSales;
+        if (creditCardSalesBefore === undefined) {
+            const payActions = <factory.cinerino.action.trade.pay.IAction<factory.cinerino.paymentMethodType.CreditCard>[]>
+                await actionRepo.search({
+                    typeOf: factory.actionType.PayAction,
+                    purpose: { typeOf: { $in: ['Order'] }, orderNumber: { $in: [order.orderNumber] } }
+                });
+            const payAction = payActions.shift();
+            if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
+                creditCardSalesBefore = payAction.result.creditCardSales[0];
+            }
+        }
+        if (creditCardSalesBefore === undefined) {
+            throw new Error('Credit Card Sales not found');
+        }
+
+        const reservation = <factory.cinerino.order.IReservation>placeOrderTransactionResult.order.acceptedOffers[0].itemOffered;
         let orderId = (<any>reservation).gmo_order_id; // 互換性維持のため
         if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
             const orderIdProperty = reservation.underName.identifier.find((p) => p.name === 'gmoOrderId');
@@ -324,7 +345,8 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 
                 // パフォーマンスに返品済数を連携
                 await performanceRepo.updateOne(
-                    { _id: placeOrderTransactionResult.order.acceptedOffers[0].itemOffered.reservationFor.id },
+                    // tslint:disable-next-line:max-line-length
+                    { _id: (<factory.cinerino.order.IReservation>placeOrderTransactionResult.order.acceptedOffers[0].itemOffered).reservationFor.id },
                     {
                         $inc: {
                             'ttts_extension.refunded_count': 1,
@@ -337,7 +359,8 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
                 // すべて返金完了したら、返金ステータス変更
                 await performanceRepo.updateOne(
                     {
-                        _id: placeOrderTransactionResult.order.acceptedOffers[0].itemOffered.reservationFor.id,
+                        // tslint:disable-next-line:max-line-length
+                        _id: (<factory.cinerino.order.IReservation>placeOrderTransactionResult.order.acceptedOffers[0].itemOffered).reservationFor.id,
                         'ttts_extension.unrefunded_count': 0
                     },
                     {
@@ -405,7 +428,12 @@ export function returnAllByPerformance(
 }
 
 export function processReturnAllByPerformance(agentId: string, performanceId: string, clientIds: string[]) {
-    return async (performanceRepo: PerformanceRepo, reservationRepo: ReservationRepo, transactionRepo: TransactionRepo) => {
+    return async (
+        invoiceRepo: cinerino.repository.Invoice,
+        performanceRepo: PerformanceRepo,
+        reservationRepo: ReservationRepo,
+        transactionRepo: TransactionRepo
+    ) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = (clientIds.length > 0)
             ? await reservationRepo.search(
@@ -472,7 +500,10 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
                 cancellationFee: 0,
                 forcibly: true,
                 reason: factory.transaction.returnOrder.Reason.Seller
-            })(transactionRepo);
+            })({
+                invoice: invoiceRepo,
+                transaction: transactionRepo
+            });
         }));
 
         debug('returnOrders by performance started.');
@@ -487,7 +518,7 @@ async function createEmailMessage4sellerReason(
 ): Promise<factory.creativeWork.message.email.IAttributes> {
     const transactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
     const order = transactionResult.order;
-    const reservation = transactionResult.order.acceptedOffers[0].itemOffered;
+    const reservation = <factory.cinerino.order.IReservation>transactionResult.order.acceptedOffers[0].itemOffered;
 
     const email = new Email({
         views: { root: `${__dirname}/../../emails` },
@@ -512,7 +543,7 @@ async function createEmailMessage4sellerReason(
         };
     } = {};
     transactionResult.order.acceptedOffers.forEach((o) => {
-        const r = o.itemOffered;
+        const r = <factory.cinerino.order.IReservation>o.itemOffered;
         const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
             ? r.reservedTicket.ticketType.priceSpecification.price
             : 0;

@@ -1,6 +1,7 @@
 /**
  * 注文返品サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
@@ -12,12 +13,16 @@ const CANCELLABLE_DAYS = 3;
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
-export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
+export type ITransactionOperation<T> = (repos: {
+    invoice: cinerino.repository.Invoice;
+    transaction: TransactionRepo;
+}) => Promise<T>;
 export type ITaskAndTransactionOperation<T> = (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => Promise<T>;
 
 /**
  * 予約キャンセル処理
  */
+// tslint:disable-next-line:max-func-body-length
 export function confirm(params: {
     /**
      * 主体者ID
@@ -45,11 +50,14 @@ export function confirm(params: {
      */
     reason: factory.transaction.returnOrder.Reason;
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo) => {
+    return async (repos: {
+        invoice: cinerino.repository.Invoice;
+        transaction: TransactionRepo;
+    }) => {
         const now = new Date();
 
         // 返品対象の取引取得
-        const transaction = await transactionRepo.transactionModel.findOne(
+        const transaction = await repos.transaction.transactionModel.findOne(
             {
                 typeOf: factory.transactionType.PlaceOrder,
                 status: factory.transactionStatusType.Confirmed,
@@ -65,20 +73,21 @@ export function confirm(params: {
 
         const transactionResult = <factory.transaction.placeOrder.IResult>transaction.result;
         const order = transactionResult.order;
-        const creditCardSales = transactionResult.creditCardSales;
 
-        // クレジットカード決済の場合、取引状態が実売上でなければまだ返品できない
-        let paymentMethod = (<any>transaction.object).paymentMethod; // 互換性維持対応
-        if (typeof paymentMethod !== 'string') {
-            paymentMethod = order.paymentMethods[0].typeOf;
-        }
-        if (paymentMethod === factory.paymentMethodType.CreditCard && creditCardSales === undefined) {
-            throw new factory.errors.Argument('transaction', 'Status not Sales.');
+        // 決済がある場合、請求書の状態を検証
+        if (order.paymentMethods.length > 0) {
+            const invoices = await repos.invoice.search({ referencesOrder: { orderNumbers: [order.orderNumber] } });
+            const allPaymentCompleted = invoices.every(
+                (invoice) => invoice.paymentStatus === factory.cinerino.paymentStatusType.PaymentComplete
+            );
+            if (!allPaymentCompleted) {
+                throw new factory.errors.Argument('order.orderNumber', 'Payment not completed');
+            }
         }
 
         // 検証
         if (!params.forcibly) {
-            validateRequest(now, transactionResult.order.acceptedOffers[0].itemOffered.reservationFor.startDate);
+            validateRequest(now, (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.startDate);
         }
 
         const endDate = new Date();
@@ -95,7 +104,7 @@ export function confirm(params: {
             result: {},
             object: {
                 clientUser: params.clientUser,
-                order: transactionResult.order,
+                order: order,
                 transaction: transaction,
                 cancelName: cancelName,
                 cancellationFee: params.cancellationFee,
@@ -109,7 +118,7 @@ export function confirm(params: {
 
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;
         try {
-            returnOrderTransaction = await transactionRepo.transactionModel.create(returnOrderAttributes)
+            returnOrderTransaction = await repos.transaction.transactionModel.create(returnOrderAttributes)
                 .then((doc) => <factory.transaction.returnOrder.ITransaction>doc.toObject());
         } catch (error) {
             if (error.name === 'MongoError') {

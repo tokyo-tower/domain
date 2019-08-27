@@ -288,22 +288,19 @@ export function confirm(params: {
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
-            transaction.result.order.acceptedOffers.map((o) => o.itemOffered.id)
+            transaction.result.order.acceptedOffers.map((o) => (<factory.cinerino.order.IReservation>o.itemOffered).id)
         );
         debug('printToken created.', printToken);
 
         // ステータス変更
-        debug('updating transaction...');
-
         try {
-            await transactionRepo.confirmPlaceOrder(
-                params.transactionId,
-                now,
-                // params.paymentMethod,
-                authorizeActions,
-                transaction.result,
-                potentialActions
-            );
+            await transactionRepo.confirm({
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.transactionId,
+                authorizeActions: authorizeActions,
+                result: transaction.result,
+                potentialActions: potentialActions
+            });
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -718,7 +715,7 @@ export async function createPotentialActionsFromTransaction(params: {
                             typeOf: factory.chevre.transactionType.Reserve,
                             id: responseBody.id,
                             object: {
-                                reservations: params.order.acceptedOffers.map((o) => o.itemOffered)
+                                reservations: params.order.acceptedOffers.map((o) => <factory.cinerino.order.IReservation>o.itemOffered)
                                     .map((r) => {
                                         // プロジェクト固有の値を連携
                                         return {

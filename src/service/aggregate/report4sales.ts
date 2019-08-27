@@ -148,7 +148,7 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
                     .map((o) => {
                         return reservation2data(
                             {
-                                ...o.itemOffered,
+                                ...<factory.cinerino.order.IReservation>o.itemOffered,
                                 checkins: []
                             },
                             transactionResult.order,
@@ -182,7 +182,7 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
         const reservations = placeOrderTransactionResult.order.acceptedOffers
             .filter((o) => {
-                const r = o.itemOffered;
+                const r = <factory.cinerino.order.IReservation>o.itemOffered;
                 // 余分確保分を除く
                 let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
                 if (r.additionalProperty !== undefined) {
@@ -193,7 +193,7 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                     || extraProperty === undefined
                     || extraProperty.value !== '1';
             })
-            .map((o) => o.itemOffered);
+            .map((o) => <factory.cinerino.order.IReservation>o.itemOffered);
 
         let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
         if (placeOrderTransaction.object.clientUser !== undefined

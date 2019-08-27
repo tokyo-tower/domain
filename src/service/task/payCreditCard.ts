@@ -6,7 +6,7 @@ import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
-import { MongoRepository as TransactionRepo } from '../../repo/transaction';
+// import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 /**
  * タスク実行関数
@@ -17,30 +17,30 @@ export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName
         const invoiceRepo = new cinerino.repository.Invoice(settings.connection);
         const projectRepo = new ProjectRepo(settings.connection);
 
-        const payAction = await cinerino.service.payment.creditCard.payCreditCard(data)({
+        await cinerino.service.payment.creditCard.payCreditCard(data)({
             action: actionRepo,
             invoice: invoiceRepo,
             project: projectRepo
         });
 
         // 東京タワーでは、取引結果に売上結果連携が必要
-        if (payAction.result !== undefined) {
-            const transactionRepo = new TransactionRepo(settings.connection);
+        // if (payAction.result !== undefined) {
+        //     const transactionRepo = new TransactionRepo(settings.connection);
 
-            const orderNumber = payAction.purpose.orderNumber;
-            const transactions = await transactionRepo.search({
-                limit: 1,
-                typeOf: factory.transactionType.PlaceOrder,
-                result: { order: { orderNumbers: [orderNumber] } }
-            });
-            const transaction = transactions.shift();
+        //     const orderNumber = payAction.purpose.orderNumber;
+        //     const transactions = await transactionRepo.search({
+        //         limit: 1,
+        //         typeOf: factory.transactionType.PlaceOrder,
+        //         result: { order: { orderNumbers: [orderNumber] } }
+        //     });
+        //     const transaction = transactions.shift();
 
-            if (transaction !== undefined && Array.isArray(payAction.result.creditCardSales)) {
-                await transactionRepo.transactionModel.findByIdAndUpdate(
-                    transaction.id,
-                    { 'result.creditCardSales': payAction.result.creditCardSales[0] }
-                ).exec();
-            }
-        }
+        //     if (transaction !== undefined && Array.isArray(payAction.result.creditCardSales)) {
+        //         await transactionRepo.transactionModel.findByIdAndUpdate(
+        //             transaction.id,
+        //             { 'result.creditCardSales': payAction.result.creditCardSales[0] }
+        //         ).exec();
+        //     }
+        // }
     };
 }

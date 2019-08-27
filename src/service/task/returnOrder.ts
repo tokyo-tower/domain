@@ -2,6 +2,7 @@ import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
+import { MongoRepository as ActionRepo } from '../../repo/action';
 import { MongoRepository as OrderRepo } from '../../repo/order';
 import { MongoRepository as PerformanceRepo } from '../../repo/performance';
 import { MongoRepository as ProjectRepo } from '../../repo/project';
@@ -18,6 +19,7 @@ import * as OrderService from '../order';
 export function call(data: factory.task.returnOrder.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         await OrderService.processReturn(data.transactionId)(
+            new ActionRepo(settings.connection),
             new PerformanceRepo(settings.connection),
             new ReservationRepo(settings.connection),
             new TransactionRepo(settings.connection),

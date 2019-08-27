@@ -137,7 +137,7 @@ export function transferSeatReservation(transactionId: string) {
 
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
         const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
-            .map((o) => o.itemOffered);
+            .map((o) => <factory.cinerino.order.IReservation>o.itemOffered);
 
         // 座席仮予約アクションを取得
         // const authorizeActions = <factory.action.authorize.seatReservation.IAction[]>transaction.object.authorizeActions
