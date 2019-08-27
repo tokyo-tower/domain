@@ -129,13 +129,12 @@ export function cancelReservation(params: { id: string }) {
         }));
 
         const task: factory.task.aggregateEventReservations.IAttributes = {
-            name: factory.taskName.AggregateEventReservations,
+            name: <any>factory.taskName.AggregateEventReservations,
             status: factory.taskStatus.Ready,
             // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
             // tslint:disable-next-line:no-magic-numbers
             runsAt: moment().add(10, 'seconds').toDate(),
             remainingNumberOfTries: 3,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {

@@ -41,7 +41,7 @@ export function executeByName<T extends factory.taskName>(params: {
         const taskRepo = new TaskRepo(settings.connection);
 
         // 未実行のタスクを取得
-        let task: factory.task.ITask | null = null;
+        let task: factory.task.ITask<any> | null = null;
         try {
             task = <any>await taskRepo.executeOneByName<any>(params);
             debug('task found', task);
@@ -61,7 +61,7 @@ export function executeByName<T extends factory.taskName>(params: {
 /**
  * タスクを実行する
  */
-export function execute(task: factory.task.ITask): IOperation<void> {
+export function execute(task: factory.task.ITask<any>): IOperation<void> {
     debug('executing a task...', task);
     const now = new Date();
 

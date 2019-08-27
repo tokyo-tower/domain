@@ -43,23 +43,22 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
     };
 }
 
-export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask[]> {
+export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask<any>[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => {
         const transaction = <any>await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
-        const taskAttributes: factory.task.IAttributes[] = [];
+        const taskAttributes: factory.task.IAttributes<any>[] = [];
 
         // ウェブフックタスクを追加
         const webhookUrl =
             // tslint:disable-next-line:max-line-length
             `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/analyzePlaceOrder`;
-        const triggerWebhookTaskAttributes: factory.task.triggerWebhook.IAttributes = {
-            name: factory.taskName.TriggerWebhook,
+        const triggerWebhookTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> = {
+            name: factory.cinerino.taskName.TriggerWebhook,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 3,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {
@@ -73,17 +72,17 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                taskAttributes.push(factory.task.settleSeatReservation.createAttributes({
+                taskAttributes.push({
+                    name: <any>factory.taskName.SettleSeatReservation,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
                         transactionId: transaction.id
                     }
-                }));
+                });
 
                 const potentialActions = transaction.potentialActions;
                 if (potentialActions !== undefined) {
@@ -101,44 +100,44 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                     taskAttributes.push(<any>placeOrderTaskAttributes);
                 }
 
-                taskAttributes.push(factory.task.createPlaceOrderReport.createAttributes({
+                taskAttributes.push({
+                    name: <any>factory.taskName.CreatePlaceOrderReport,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
                         transaction: transaction
                     }
-                }));
+                });
 
                 break;
 
             // 期限切れの場合は、タスクリストを作成する
             case factory.transactionStatusType.Expired:
-                taskAttributes.push(factory.task.cancelSeatReservation.createAttributes({
+                taskAttributes.push({
+                    name: <any>factory.taskName.CancelSeatReservation,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
                         transactionId: transaction.id
                     }
-                }));
-                taskAttributes.push(factory.task.cancelCreditCard.createAttributes({
+                });
+                taskAttributes.push({
+                    name: <any>factory.cinerino.taskName.CancelCreditCard,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
                         transactionId: transaction.id
                     }
-                }));
+                });
 
                 break;
 
@@ -187,18 +186,18 @@ export function sendEmail(
         };
 
         // その場で送信ではなく、DBにタスクを登録
-        const taskAttributes = factory.task.sendEmailNotification.createAttributes({
+        const taskAttributes: factory.task.sendEmailNotification.IAttributes = {
+            name: <any>factory.taskName.SendEmailNotification,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {
                 transactionId: transactionId,
                 emailMessage: emailMessage
             }
-        });
+        };
 
         return <any>await taskRepo.save(<any>taskAttributes);
     };

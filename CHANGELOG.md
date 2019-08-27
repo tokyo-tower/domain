@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 予約データの決済方法には、注文データの決済方法名を連携するように変更
+- タスクインターフェースをCinerino化
 
 ### Deprecated
 

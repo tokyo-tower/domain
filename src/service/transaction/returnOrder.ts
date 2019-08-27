@@ -181,18 +181,18 @@ export function sendEmail(
         };
 
         // その場で送信ではなく、DBにタスクを登録
-        const taskAttributes = factory.task.sendEmailNotification.createAttributes({
+        const taskAttributes: factory.task.sendEmailNotification.IAttributes = {
+            name: <any>factory.taskName.SendEmailNotification,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {
                 transactionId: transactionId,
                 emailMessage: emailMessage
             }
-        });
+        };
 
         return <any>await taskRepo.save(<any>taskAttributes);
     };
@@ -230,27 +230,27 @@ export async function exportTasks(status: factory.transactionStatusType) {
     await transactionRepo.setTasksExportedById({ id: transaction.id });
 }
 
-export async function exportTasksById(transactionId: string): Promise<factory.task.ITask[]> {
+export async function exportTasksById(transactionId: string): Promise<factory.task.ITask<any>[]> {
     const transactionRepo = new TransactionRepo(mongoose.connection);
     const taskRepo = new TaskRepo(mongoose.connection);
 
     const transaction: factory.transaction.returnOrder.ITransaction = <any>
         await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
 
-    const taskAttributes: factory.task.IAttributes[] = [];
+    const taskAttributes: factory.task.IAttributes<any>[] = [];
     switch (transaction.status) {
         case factory.transactionStatusType.Confirmed:
-            taskAttributes.push(factory.task.returnOrder.createAttributes({
+            taskAttributes.push({
+                name: <any>factory.taskName.ReturnOrder,
                 status: factory.taskStatus.Ready,
                 runsAt: new Date(), // なるはやで実行
                 remainingNumberOfTries: 10,
-                lastTriedAt: null,
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
                     transactionId: transaction.id
                 }
-            }));
+            });
 
             break;
 

@@ -559,14 +559,12 @@ export function create(
         try {
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
-                name: factory.taskName.AggregateEventReservations,
+                name: <any>factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 // tslint:disable-next-line:no-magic-numbers
                 runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
-                // tslint:disable-next-line:no-null-keyword
-                lastTriedAt: null,
                 numberOfTried: 0,
                 executionResults: [],
                 data: { id: performance.id }
@@ -686,14 +684,12 @@ export function cancel(
 
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
-                name: factory.taskName.AggregateEventReservations,
+                name: <any>factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 // tslint:disable-next-line:no-magic-numbers
                 runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
-                // tslint:disable-next-line:no-null-keyword
-                lastTriedAt: null,
                 numberOfTried: 0,
                 executionResults: [],
                 data: { id: performance.id }

@@ -86,17 +86,17 @@ export function processReturn(returnOrderTransactionId: string) {
         ).exec();
 
         // 返品処理が全て完了した時点で、レポート作成タスクを追加
-        const createReturnOrderReportTask = factory.task.createReturnOrderReport.createAttributes({
+        const createReturnOrderReportTask: factory.task.createReturnOrderReport.IAttributes = {
+            name: <any>factory.taskName.CreatePlaceOrderReport,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {
                 transaction: returnOrderTransaction
             }
-        });
+        };
         await taskRepo.save(<any>createReturnOrderReportTask);
     };
 }
@@ -222,18 +222,18 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                     text: emailMessageAttributes.text
                 };
 
-                sendEmailTaskAttributes = factory.task.sendEmailNotification.createAttributes({
+                sendEmailTaskAttributes = {
+                    name: <any>factory.taskName.SendEmailNotification,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
-                    lastTriedAt: null,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
                         transactionId: returnOrderTransactionId,
                         emailMessage: emailMessage
                     }
-                });
+                };
 
                 await taskRepo.save(<any>sendEmailTaskAttributes);
 
@@ -386,11 +386,11 @@ export function returnAllByPerformance(
             throw new Error('上映が終了していないので返品処理を実行できません。');
         }
 
-        const taskAttribute = factory.task.returnOrdersByPerformance.createAttributes({
+        const taskAttribute: factory.task.returnOrdersByPerformance.IAttributes = {
+            name: <any>factory.taskName.ReturnOrdersByPerformance,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
-            lastTriedAt: null,
             numberOfTried: 0,
             executionResults: [],
             data: {
@@ -398,7 +398,7 @@ export function returnAllByPerformance(
                 performanceId: performanceId,
                 clientIds: clientIds
             }
-        });
+        };
 
         return <any>taskRepo.save(<any>taskAttribute);
     };
