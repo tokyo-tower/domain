@@ -86,7 +86,7 @@ export function processReturn(returnOrderTransactionId: string) {
 
         // 返品処理が全て完了した時点で、レポート作成タスクを追加
         const createReturnOrderReportTask: factory.task.createReturnOrderReport.IAttributes = {
-            name: <any>factory.taskName.CreatePlaceOrderReport,
+            name: <any>factory.taskName.CreateReturnOrderReport,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
