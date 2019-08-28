@@ -12,13 +12,9 @@ import * as uniq from 'lodash.uniq';
 import * as moment from 'moment-timezone';
 import * as numeral from 'numeral';
 
-import { MongoRepository as ActionRepo } from '../repo/action';
-import { MongoRepository as OrderRepo } from '../repo/order';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as TaskRepo } from '../repo/task';
 import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as factory from '@tokyotower/factory';
@@ -28,10 +24,10 @@ import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
 
-export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => Promise<T>;
+export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
 export function createFromTransaction(transactionId: string) {
-    return async (orderRepo: OrderRepo, transactionRepo: TransactionRepo) => {
+    return async (orderRepo: cinerino.repository.Order, transactionRepo: TransactionRepo) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -50,14 +46,14 @@ export function createFromTransaction(transactionId: string) {
  */
 export function processReturn(returnOrderTransactionId: string) {
     return async (
-        actionRepo: ActionRepo,
+        actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo,
-        orderRepo: OrderRepo,
-        projectRepo: ProjectRepo
+        taskRepo: cinerino.repository.Task,
+        orderRepo: cinerino.repository.Order,
+        projectRepo: cinerino.repository.Project
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -113,8 +109,8 @@ export function cancelReservations(returnOrderTransactionId: string) {
         reservationRepo: ReservationRepo,
         transactionRepo: TransactionRepo,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo,
-        projectRepo: ProjectRepo
+        taskRepo: cinerino.repository.Task,
+        projectRepo: cinerino.repository.Project
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -149,7 +145,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
 export function notifyReturnOrder(returnOrderTransactionId: string) {
     return async (
         transactionRepo: TransactionRepo,
-        taskRepo: TaskRepo
+        taskRepo: cinerino.repository.Task
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -254,7 +250,7 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
 export function returnCreditCardSales(returnOrderTransactionId: string) {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        actionRepo: ActionRepo,
+        actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
         transactionRepo: TransactionRepo
     ) => {
@@ -396,7 +392,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
 export function returnAllByPerformance(
     agentId: string, performanceId: string, clientIds: string[]
 ): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
-    return async (performanceRepo: PerformanceRepo, taskRepo: TaskRepo) => {
+    return async (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => {
         // パフォーマンス情報取得
         const performance = await performanceRepo.findById(performanceId);
         debug('starting returnOrders by performance...', performance.id);

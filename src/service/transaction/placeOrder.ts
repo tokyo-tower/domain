@@ -1,21 +1,21 @@
 /**
  * 注文取引サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 
-import { MongoRepository as TaskRepository } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const debug = createDebug('ttts-domain:service');
 
-export type ITaskAndTransactionOperation<T> = (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => Promise<T>;
+export type ITaskAndTransactionOperation<T> = (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => Promise<T>;
 
 /**
  * ひとつの取引のタスクをエクスポートする
  */
 export function exportTasks(status: factory.transactionStatusType): ITaskAndTransactionOperation<void> {
-    return async (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => {
+    return async (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
         const statusesTasksExportable = [factory.transactionStatusType.Expired, factory.transactionStatusType.Confirmed];
         if (statusesTasksExportable.indexOf(status) < 0) {
             throw new factory.errors.Argument('status', `transaction status should be in [${statusesTasksExportable.join(',')}]`);
@@ -45,7 +45,7 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
 
 export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask<any>[]> {
     // tslint:disable-next-line:max-func-body-length
-    return async (taskRepository: TaskRepository, transactionRepo: TransactionRepo) => {
+    return async (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
         const transaction = <any>await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         const taskAttributes: factory.task.IAttributes<any>[] = [];
@@ -161,7 +161,7 @@ export function sendEmail(
     transactionId: string,
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
 ): ITaskAndTransactionOperation<factory.task.sendEmailNotification.ITask> {
-    return async (taskRepo: TaskRepository, transactionRepo: TransactionRepo) => {
+    return async (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
         if (transaction.status !== factory.transactionStatusType.Confirmed) {
             throw new factory.errors.Forbidden('Transaction not confirmed.');

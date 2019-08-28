@@ -1,15 +1,14 @@
 /**
  * 予約サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { MongoRepository as ProjectRepo } from '../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as chevre from '../chevre';
 import { credentials } from '../credentials';
@@ -34,9 +33,9 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 export function cancelReservation(params: { id: string }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        project: ProjectRepo;
+        project: cinerino.repository.Project;
         reservation: ReservationRepo;
-        task: TaskRepo;
+        task: cinerino.repository.Task;
         ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const projectDetails = await repos.project.findById({ id: project.id });

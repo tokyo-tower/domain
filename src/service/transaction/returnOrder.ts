@@ -6,7 +6,6 @@ import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
-import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 const CANCELLABLE_DAYS = 3;
@@ -17,7 +16,7 @@ export type ITransactionOperation<T> = (repos: {
     invoice: cinerino.repository.Invoice;
     transaction: TransactionRepo;
 }) => Promise<T>;
-export type ITaskAndTransactionOperation<T> = (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => Promise<T>;
+export type ITaskAndTransactionOperation<T> = (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => Promise<T>;
 
 /**
  * 予約キャンセル処理
@@ -162,7 +161,7 @@ export function sendEmail(
     transactionId: string,
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
 ): ITaskAndTransactionOperation<factory.task.sendEmailNotification.ITask> {
-    return async (taskRepo: TaskRepo, transactionRepo: TransactionRepo) => {
+    return async (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
         const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
             await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
         if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
@@ -241,7 +240,7 @@ export async function exportTasks(status: factory.transactionStatusType) {
 
 export async function exportTasksById(transactionId: string): Promise<factory.task.ITask<any>[]> {
     const transactionRepo = new TransactionRepo(mongoose.connection);
-    const taskRepo = new TaskRepo(mongoose.connection);
+    const taskRepo = new cinerino.repository.Task(mongoose.connection);
 
     const transaction: factory.transaction.returnOrder.ITransaction = <any>
         await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });

@@ -4,19 +4,14 @@
  */
 import * as cinerino from '@cinerino/domain';
 
-import { MongoRepository as ActionRepo } from './repo/action';
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
-import { MongoRepository as OrderRepo } from './repo/order';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
-import { MongoRepository as ProjectRepo } from './repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
-import { MongoRepository as SellerRepo } from './repo/seller';
-import { MongoRepository as TaskRepo } from './repo/task';
 import { RedisRepository as TokenRepo } from './repo/token';
 import { MongoRepository as TransactionRepo } from './repo/transaction';
 
@@ -28,7 +23,7 @@ export class AggregateSale extends AggregateSaleRepo { }
 /**
  * アクションリポジトリ
  */
-export class Action extends ActionRepo { }
+export class Action extends cinerino.repository.Action { }
 
 /**
  * 集計データ付きイベントリポジトリ
@@ -50,7 +45,7 @@ export namespace rateLimit {
 /**
  * 注文リポジトリ
  */
-export class Order extends OrderRepo { }
+export class Order extends cinerino.repository.Order { }
 
 export namespace place {
     /**
@@ -74,7 +69,7 @@ export class Person extends PersonRepo { }
 /**
  * プロジェクトリポジトリ
  */
-export class Project extends ProjectRepo { }
+export class Project extends cinerino.repository.Project { }
 /**
  * 予約リポジトリ
  */
@@ -82,11 +77,11 @@ export class Reservation extends ReservationRepo { }
 /**
  * 販売者リポジトリ
  */
-export class Seller extends SellerRepo { }
+export class Seller extends cinerino.repository.Seller { }
 /**
  * タスクリポジトリ
  */
-export class Task extends TaskRepo { }
+export class Task extends cinerino.repository.Task { }
 /**
  * トークンリポジトリ
  */

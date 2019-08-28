@@ -1,15 +1,14 @@
 /**
  * 進行中注文取引サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -20,11 +19,14 @@ const debug = createDebug('ttts-domain:service');
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 const STAFF_CLIENT_ID = <string>process.env.STAFF_CLIENT_ID;
 
-export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
+export type IStartOperation<T> = (
+    transactionRepo: TransactionRepo,
+    sellerRepo: cinerino.repository.Seller
+) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
-    actionRepo: ActionRepo,
+    actionRepo: cinerino.repository.Action,
     tokenRepo: TokenRepo,
     paymentNoRepo: PaymentNoRepo
 ) => Promise<T>;
@@ -59,7 +61,7 @@ export interface IStartParams {
  * 取引開始
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => {
+    return async (transactionRepo: TransactionRepo, sellerRepo: cinerino.repository.Seller) => {
         // 販売者を取得
         const doc = await sellerRepo.organizationModel.findOne({
             identifier: params.sellerIdentifier
@@ -237,12 +239,12 @@ export function confirm(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (
         transactionRepo: TransactionRepo,
-        actionRepo: ActionRepo,
+        actionRepo: cinerino.repository.Action,
         tokenRepo: TokenRepo,
         paymentNoRepo: PaymentNoRepo
     ) => {
         const now = new Date();
-        const transaction = <factory.transaction.placeOrder.ITransaction>
+        const transaction =
             await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
