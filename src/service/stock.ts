@@ -116,7 +116,7 @@ export function cancelSeatReservationAuth(transactionId: string) {
 }
 
 /**
- * 仮予約→本予約
+ * 予約データをローカルDBにもコピーする
  */
 export function transferSeatReservation(transactionId: string) {
     return async (

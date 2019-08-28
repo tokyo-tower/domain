@@ -415,31 +415,12 @@ export function createResult(
 
     const orderDate = new Date();
 
-    // if (transaction.object.paymentMethod === undefined) {
-    //     throw new Error('PaymentMethod undefined.');
-    // }
-
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     let paymentMethodId = '';
-    // let paymentAccountId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
-        // paymentAccountId = creditCardAuthorizeAction.result.accountId;
         paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
     }
-
-    // const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [{
-    //     typeOf: transaction.object.paymentMethod,
-    //     name: transaction.object.paymentMethod.toString(),
-    //     accountId: paymentAccountId,
-    //     paymentMethodId: paymentMethodId,
-    //     additionalProperty: [],
-    //     totalPaymentDue: {
-    //         typeOf: <'MonetaryAmount'>'MonetaryAmount',
-    //         currency: factory.priceCurrency.JPY,
-    //         value: price
-    //     }
-    // }];
 
     const paymentMethods: factory.order.IPaymentMethod<factory.cinerino.paymentMethodType>[] = [];
 
