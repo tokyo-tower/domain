@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v29.0.0 - 2019-08-28
+
+### Added
+
 - 注文後の配送タスクと予約確定タスクを追加
 - 請求書リポジトリを追加
 
@@ -17,14 +31,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - タスクインターフェースをCinerino化
 - 注文インターフェースをCinerino化
 - 注文取引インターフェースをCinerino化
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v28.1.0 - 2019-08-21
 
