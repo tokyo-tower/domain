@@ -1,3 +1,4 @@
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
@@ -5,7 +6,6 @@ import { IConnectionSettings, IOperation } from '../task';
 import { RedisRepository as EventWithAggregationRepo } from '../../repo/event';
 import { MongoRepository as PerformanceRepo } from '../../repo/performance';
 import { RedisRepository as CheckinGateRepo } from '../../repo/place/checkinGate';
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../../repo/reservation';
 
@@ -20,7 +20,7 @@ export function call(data: factory.task.aggregateEventReservations.IData): IOper
             checkinGate: new CheckinGateRepo(settings.redisClient),
             eventWithAggregation: new EventWithAggregationRepo(settings.redisClient),
             performance: new PerformanceRepo(settings.connection),
-            project: new ProjectRepo(settings.connection),
+            project: new cinerino.repository.Project(settings.connection),
             reservation: new ReservationRepo(settings.connection),
             ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(settings.redisClient)
         });

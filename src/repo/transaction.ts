@@ -35,39 +35,4 @@ export class MongoRepository extends cinerino.repository.Transaction {
             throw new factory.errors.NotFound(this.transactionModel.modelName);
         }
     }
-
-    /**
-     * 注文取引を確定する
-     */
-    public async confirmPlaceOrder(
-        transactionId: string,
-        endDate: Date,
-        // paymentMethod: factory.paymentMethodType,
-        authorizeActions: factory.transaction.placeOrder.IAuthorizeAction[],
-        result: factory.transaction.placeOrder.IResult,
-        potentialActions: factory.cinerino.transaction.placeOrder.IPotentialActions
-    ): Promise<factory.transaction.placeOrder.ITransaction> {
-        const doc = await this.transactionModel.findOneAndUpdate(
-            {
-                _id: transactionId,
-                typeOf: factory.transactionType.PlaceOrder,
-                status: factory.transactionStatusType.InProgress
-            },
-            {
-                status: factory.transactionStatusType.Confirmed, // ステータス変更
-                endDate: endDate,
-                'object.authorizeActions': authorizeActions, // 認可アクションリストを更新
-                // 'object.paymentMethod': paymentMethod, // 決済方法を更新
-                result: result, // resultを更新
-                potentialActions: potentialActions
-            },
-            { new: true }
-        ).exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('transaction in progress');
-        }
-
-        return <factory.transaction.placeOrder.ITransaction>doc.toObject();
-    }
 }

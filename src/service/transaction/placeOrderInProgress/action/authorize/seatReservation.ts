@@ -1,13 +1,11 @@
+import * as cinerino from '@cinerino/domain';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import * as factory from '@tokyotower/factory';
 
-import { MongoRepository as ActionRepo } from '../../../../../repo/action';
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
-import { MongoRepository as ProjectRepo } from '../../../../../repo/project';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
-import { MongoRepository as TaskRepo } from '../../../../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
 import * as chevre from '../../../../../chevre';
@@ -35,18 +33,18 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 export type ICreateOpetaiton<T> = (
     transactionRepo: TransactionRepo,
     performanceRepo: PerformanceRepo,
-    actionRepo: ActionRepo,
+    actionRepo: cinerino.repository.Action,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    taskRepo: TaskRepo,
-    projectRepo: ProjectRepo
+    taskRepo: cinerino.repository.Task,
+    projectRepo: cinerino.repository.Project
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
     transactionRepo: TransactionRepo,
-    actionRepo: ActionRepo,
+    actionRepo: cinerino.repository.Action,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-    taskRepo: TaskRepo,
-    projectRepo: ProjectRepo
+    taskRepo: cinerino.repository.Task,
+    projectRepo: cinerino.repository.Project
 ) => Promise<T>;
 
 export type IValidateOperation<T> = () => Promise<T>;
@@ -294,10 +292,10 @@ export function create(
     return async (
         transactionRepo: TransactionRepo,
         performanceRepo: PerformanceRepo,
-        actionRepo: ActionRepo,
+        actionRepo: cinerino.repository.Action,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo,
-        projectRepo: ProjectRepo
+        taskRepo: cinerino.repository.Task,
+        projectRepo: cinerino.repository.Project
     ): Promise<factory.action.authorize.seatReservation.IAction> => {
         debug('creating seatReservation authorizeAction...acceptedOffers:', acceptedOffers.length);
 
@@ -309,8 +307,7 @@ export function create(
             throw new factory.errors.ServiceUnavailable('Project settings not found');
         }
 
-        const transaction = <factory.transaction.placeOrder.ITransaction>
-            await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         if (transaction.agent.id !== agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -559,14 +556,12 @@ export function create(
         try {
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
-                name: factory.taskName.AggregateEventReservations,
+                name: <any>factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 // tslint:disable-next-line:no-magic-numbers
                 runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
-                // tslint:disable-next-line:no-null-keyword
-                lastTriedAt: null,
                 numberOfTried: 0,
                 executionResults: [],
                 data: { id: performance.id }
@@ -620,10 +615,10 @@ export function cancel(
 ): ICancelOpetaiton<void> {
     return async (
         transactionRepo: TransactionRepo,
-        actionRepo: ActionRepo,
+        actionRepo: cinerino.repository.Action,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: TaskRepo,
-        projectRepo: ProjectRepo
+        taskRepo: cinerino.repository.Task,
+        projectRepo: cinerino.repository.Project
     ) => {
         try {
             const projectDetails = await projectRepo.findById({ id: project.id });
@@ -634,8 +629,7 @@ export function cancel(
                 throw new factory.errors.ServiceUnavailable('Project settings not found');
             }
 
-            const transaction = <factory.transaction.placeOrder.ITransaction>
-                await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+            const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
             if (transaction.agent.id !== agentId) {
                 throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -686,14 +680,12 @@ export function cancel(
 
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
-                name: factory.taskName.AggregateEventReservations,
+                name: <any>factory.taskName.AggregateEventReservations,
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 // tslint:disable-next-line:no-magic-numbers
                 runsAt: moment().add(5, 'seconds').toDate(),
                 remainingNumberOfTries: 3,
-                // tslint:disable-next-line:no-null-keyword
-                lastTriedAt: null,
                 numberOfTried: 0,
                 executionResults: [],
                 data: { id: performance.id }

@@ -1,15 +1,14 @@
 /**
  * 進行中注文取引サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as waiter from '@waiter/domain';
 import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
 
-import { MongoRepository as ActionRepo } from '../../repo/action';
 import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
-import { MongoRepository as SellerRepo } from '../../repo/seller';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
@@ -20,11 +19,14 @@ const debug = createDebug('ttts-domain:service');
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 const STAFF_CLIENT_ID = <string>process.env.STAFF_CLIENT_ID;
 
-export type IStartOperation<T> = (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => Promise<T>;
+export type IStartOperation<T> = (
+    transactionRepo: TransactionRepo,
+    sellerRepo: cinerino.repository.Seller
+) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (
     transactionRepo: TransactionRepo,
-    actionRepo: ActionRepo,
+    actionRepo: cinerino.repository.Action,
     tokenRepo: TokenRepo,
     paymentNoRepo: PaymentNoRepo
 ) => Promise<T>;
@@ -59,7 +61,7 @@ export interface IStartParams {
  * 取引開始
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, sellerRepo: SellerRepo) => {
+    return async (transactionRepo: TransactionRepo, sellerRepo: cinerino.repository.Seller) => {
         // 販売者を取得
         const doc = await sellerRepo.organizationModel.findOne({
             identifier: params.sellerIdentifier
@@ -237,12 +239,12 @@ export function confirm(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (
         transactionRepo: TransactionRepo,
-        actionRepo: ActionRepo,
+        actionRepo: cinerino.repository.Action,
         tokenRepo: TokenRepo,
         paymentNoRepo: PaymentNoRepo
     ) => {
         const now = new Date();
-        const transaction = <factory.transaction.placeOrder.ITransaction>
+        const transaction =
             await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
         if (transaction.agent.id !== params.agentId) {
             throw new factory.errors.Forbidden('A specified transaction is not yours.');
@@ -288,22 +290,19 @@ export function confirm(params: {
 
         // 印刷トークンを発行
         const printToken = await tokenRepo.createPrintToken(
-            transaction.result.order.acceptedOffers.map((o) => o.itemOffered.id)
+            transaction.result.order.acceptedOffers.map((o) => (<factory.cinerino.order.IReservation>o.itemOffered).id)
         );
         debug('printToken created.', printToken);
 
         // ステータス変更
-        debug('updating transaction...');
-
         try {
-            await transactionRepo.confirmPlaceOrder(
-                params.transactionId,
-                now,
-                // params.paymentMethod,
-                authorizeActions,
-                transaction.result,
-                potentialActions
-            );
+            await transactionRepo.confirm({
+                typeOf: factory.transactionType.PlaceOrder,
+                id: params.transactionId,
+                authorizeActions: authorizeActions,
+                result: transaction.result,
+                potentialActions: potentialActions
+            });
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 万が一同一注文番号で確定しようとすると、MongoDBでE11000 duplicate key errorが発生する
@@ -416,38 +415,19 @@ export function createResult(
 
     const orderDate = new Date();
 
-    // if (transaction.object.paymentMethod === undefined) {
-    //     throw new Error('PaymentMethod undefined.');
-    // }
-
     // 注文番号を作成
     const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     let paymentMethodId = '';
-    // let paymentAccountId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
-        // paymentAccountId = creditCardAuthorizeAction.result.accountId;
         paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
     }
 
-    // const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [{
-    //     typeOf: transaction.object.paymentMethod,
-    //     name: transaction.object.paymentMethod.toString(),
-    //     accountId: paymentAccountId,
-    //     paymentMethodId: paymentMethodId,
-    //     additionalProperty: [],
-    //     totalPaymentDue: {
-    //         typeOf: <'MonetaryAmount'>'MonetaryAmount',
-    //         currency: factory.priceCurrency.JPY,
-    //         value: price
-    //     }
-    // }];
-
-    const paymentMethods: factory.order.IPaymentMethod<factory.paymentMethodType>[] = [];
+    const paymentMethods: factory.order.IPaymentMethod<factory.cinerino.paymentMethodType>[] = [];
 
     // 決済方法をセット
-    Object.keys(factory.paymentMethodType)
+    Object.keys(factory.cinerino.paymentMethodType)
         .forEach((key) => {
-            const paymentMethodType = <factory.paymentMethodType>(<any>factory.paymentMethodType)[key];
+            const paymentMethodType = <factory.cinerino.paymentMethodType>(<any>factory.cinerino.paymentMethodType)[key];
             transaction.object.authorizeActions
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
                 .filter((a) => a.result !== undefined && a.result.paymentMethod === paymentMethodType)
@@ -484,7 +464,7 @@ export function createResult(
             paymentSeatIndex: index.toString(),
             customer: profile,
             bookingTime: orderDate,
-            paymentMethod: paymentMethods[0].typeOf
+            paymentMethodName: paymentMethods[0].name
         });
     });
 
@@ -567,7 +547,7 @@ function temporaryReservation2confirmed(params: {
     paymentSeatIndex: string;
     customer: factory.transaction.placeOrder.IAgent;
     bookingTime: Date;
-    paymentMethod: factory.paymentMethodType;
+    paymentMethodName: string;
 }): factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation> {
     const transaction = params.transaction;
     const customer = params.customer;
@@ -593,8 +573,8 @@ function temporaryReservation2confirmed(params: {
             ...(transaction.agent.memberOf !== undefined && transaction.agent.memberOf.membershipNumber !== undefined)
                 ? [{ name: 'username', value: transaction.agent.memberOf.membershipNumber }]
                 : [],
-            ...(params.paymentMethod !== undefined)
-                ? [{ name: 'paymentMethod', value: params.paymentMethod }]
+            ...(params.paymentMethodName !== undefined)
+                ? [{ name: 'paymentMethod', value: params.paymentMethodName }]
                 : []
         ],
         ...{ address: customer.address }
@@ -620,6 +600,9 @@ function temporaryReservation2confirmed(params: {
     };
 }
 
+export type IAuthorizeSeatReservationOffer =
+    factory.cinerino.action.authorize.offer.seatReservation.IAction<factory.cinerino.service.webAPI.Identifier>;
+
 /**
  * 取引のポストアクションを作成する
  */
@@ -634,6 +617,11 @@ export async function createPotentialActionsFromTransaction(params: {
             .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             .filter((a) => a.result !== undefined)
             .filter((a) => a.result.paymentMethod === factory.paymentMethodType.CreditCard);
+    const seatReservationAuthorizeActions = <IAuthorizeSeatReservationOffer[]>
+        params.transaction.object.authorizeActions
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+            .filter((a) => a.object.typeOf === factory.cinerino.action.authorize.offer.seatReservation.ObjectType.SeatReservation);
+
     const payCreditCardActions: factory.cinerino.action.trade.pay.IAttributes<factory.cinerino.paymentMethodType.CreditCard>[] = [];
     authorizeCreditCardActions.forEach((a) => {
         const result = <factory.cinerino.action.authorize.paymentMethod.creditCard.IResult>a.result;
@@ -671,6 +659,79 @@ export async function createPotentialActionsFromTransaction(params: {
         }
     });
 
+    const sendOrderActionAttributes: factory.cinerino.action.transfer.send.order.IAttributes = {
+        project: params.transaction.project,
+        typeOf: factory.actionType.SendAction,
+        object: params.order,
+        agent: params.transaction.seller,
+        recipient: params.transaction.agent,
+        potentialActions: {
+            // sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined,
+        }
+    };
+
+    const confirmReservationActions:
+        factory.cinerino.action.interact.confirm.reservation.IAttributes<factory.cinerino.service.webAPI.Identifier>[] = [];
+    // tslint:disable-next-line:max-func-body-length
+    seatReservationAuthorizeActions.forEach((a) => {
+        const actionResult = a.result;
+
+        if (a.instrument === undefined) {
+            a.instrument = {
+                typeOf: 'WebAPI',
+                identifier: factory.cinerino.service.webAPI.Identifier.Chevre
+            };
+        }
+
+        if (actionResult !== undefined) {
+            let responseBody = actionResult.responseBody;
+
+            switch (a.instrument.identifier) {
+                default:
+                    // tslint:disable-next-line:max-line-length
+                    responseBody = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
+
+                    confirmReservationActions.push({
+                        project: params.transaction.project,
+                        typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
+                        object: {
+                            typeOf: factory.chevre.transactionType.Reserve,
+                            id: responseBody.id,
+                            object: {
+                                reservations: params.order.acceptedOffers.map((o) => <factory.cinerino.order.IReservation>o.itemOffered)
+                                    .map((r) => {
+                                        // プロジェクト固有の値を連携
+                                        return {
+                                            id: r.id,
+                                            additionalTicketText: r.additionalTicketText,
+                                            reservedTicket: {
+                                                issuedBy: r.reservedTicket.issuedBy,
+                                                ticketToken: r.reservedTicket.ticketToken,
+                                                underName: r.reservedTicket.underName
+                                            },
+                                            underName: r.underName,
+                                            additionalProperty: r.additionalProperty
+                                        };
+                                    })
+                            }
+                        },
+                        agent: params.transaction.agent,
+                        purpose: {
+                            typeOf: params.order.typeOf,
+                            seller: params.order.seller,
+                            customer: params.order.customer,
+                            confirmationNumber: params.order.confirmationNumber,
+                            orderNumber: params.order.orderNumber,
+                            price: params.order.price,
+                            priceCurrency: params.order.priceCurrency,
+                            orderDate: params.order.orderDate
+                        },
+                        instrument: a.instrument
+                    });
+            }
+        }
+    });
+
     return {
         order: {
             project: params.transaction.project,
@@ -678,7 +739,9 @@ export async function createPotentialActionsFromTransaction(params: {
             object: params.order,
             agent: params.transaction.agent,
             potentialActions: {
-                payCreditCard: payCreditCardActions
+                payCreditCard: payCreditCardActions,
+                sendOrder: sendOrderActionAttributes,
+                confirmReservation: confirmReservationActions
             },
             purpose: <any>{
                 typeOf: params.transaction.typeOf,

@@ -1,14 +1,13 @@
 /**
  * タスクサービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
 import * as factory from '@tokyotower/factory';
-
-import { MongoRepository as TaskRepo } from '../repo/task';
 
 import * as NotificationService from './notification';
 
@@ -25,7 +24,7 @@ export interface IConnectionSettings {
     redisClient: redis.RedisClient;
 }
 
-export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;
+export type TaskOperation<T> = (repos: { task: cinerino.repository.Task }) => Promise<T>;
 export type IOperation<T> = (settings: IConnectionSettings) => Promise<T>;
 
 export const ABORT_REPORT_SUBJECT = 'Task aborted !!!';
@@ -38,10 +37,10 @@ export function executeByName<T extends factory.taskName>(params: {
     name: T;
 }): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        const taskRepo = new TaskRepo(settings.connection);
+        const taskRepo = new cinerino.repository.Task(settings.connection);
 
         // 未実行のタスクを取得
-        let task: factory.task.ITask | null = null;
+        let task: factory.task.ITask<any> | null = null;
         try {
             task = <any>await taskRepo.executeOneByName<any>(params);
             debug('task found', task);
@@ -61,12 +60,12 @@ export function executeByName<T extends factory.taskName>(params: {
 /**
  * タスクを実行する
  */
-export function execute(task: factory.task.ITask): IOperation<void> {
+export function execute(task: factory.task.ITask<any>): IOperation<void> {
     debug('executing a task...', task);
     const now = new Date();
 
     return async (settings: IConnectionSettings) => {
-        const taskRepo = new TaskRepo(settings.connection);
+        const taskRepo = new cinerino.repository.Task(settings.connection);
 
         try {
             // タスク名の関数が定義されていなければ、TypeErrorとなる
@@ -96,7 +95,7 @@ export function retry(params: {
     project?: factory.project.IProject;
     intervalInMinutes: number;
 }): TaskOperation<void> {
-    return async (repos: { task: TaskRepo }) => {
+    return async (repos: { task: cinerino.repository.Task }) => {
         await repos.task.retry(params);
     };
 }
@@ -111,7 +110,7 @@ export function abort(params: {
      */
     intervalInMinutes: number;
 }): TaskOperation<void> {
-    return async (repos: { task: TaskRepo }) => {
+    return async (repos: { task: cinerino.repository.Task }) => {
         const abortedTask = await repos.task.abortOne(params);
 
         // tslint:disable-next-line:no-single-line-block-comment

@@ -1,9 +1,5 @@
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
-// import * as createDebug from 'debug';
-
-// import { MongoRepository as EventRepo } from '../repo/event';
-import { MongoRepository as ProjectRepo } from '../repo/project';
-import { MongoRepository as SellerRepo } from '../repo/seller';
 
 import * as chevre from '../chevre';
 import { credentials } from '../credentials';
@@ -19,14 +15,12 @@ const chevreAuthClient = new chevre.auth.ClientCredentials({
 });
 
 export type ISearchEventOffersOperation<T> = (repos: {
-    // event: EventRepo;
-    project: ProjectRepo;
+    project: cinerino.repository.Project;
 }) => Promise<T>;
 
 export type ISearchEventTicketOffersOperation<T> = (repos: {
-    // event: EventRepo;
-    project: ProjectRepo;
-    seller: SellerRepo;
+    project: cinerino.repository.Project;
+    seller: cinerino.repository.Seller;
 }) => Promise<T>;
 
 /**
@@ -37,8 +31,7 @@ export function searchEventOffers(params: {
     event: { id: string };
 }): ISearchEventOffersOperation<factory.chevre.event.screeningEvent.IScreeningRoomSectionOffer[]> {
     return async (repos: {
-        // event: EventRepo;
-        project: ProjectRepo;
+        project: cinerino.repository.Project;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
 
@@ -83,9 +76,8 @@ export function searchEventTicketOffers(params: {
 }): ISearchEventTicketOffersOperation<factory.chevre.event.screeningEvent.ITicketOffer[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        // event: EventRepo;
-        project: ProjectRepo;
-        seller: SellerRepo;
+        project: cinerino.repository.Project;
+        seller: cinerino.repository.Seller;
     }) => {
         const project = await repos.project.findById({ id: params.project.id });
         if (project.settings === undefined) {

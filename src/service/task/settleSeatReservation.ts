@@ -1,10 +1,9 @@
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
-import { MongoRepository as ProjectRepo } from '../../repo/project';
 import { MongoRepository as ReservationRepo } from '../../repo/reservation';
-import { MongoRepository as TaskRepo } from '../../repo/task';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as StockService from '../stock';
@@ -17,8 +16,8 @@ export function call(data: factory.task.settleSeatReservation.IData): IOperation
         await StockService.transferSeatReservation(data.transactionId)(
             new TransactionRepo(settings.connection),
             new ReservationRepo(settings.connection),
-            new TaskRepo(settings.connection),
-            new ProjectRepo(settings.connection)
+            new cinerino.repository.Task(settings.connection),
+            new cinerino.repository.Project(settings.connection)
         );
     };
 }
