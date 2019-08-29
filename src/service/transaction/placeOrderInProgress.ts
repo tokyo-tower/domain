@@ -235,6 +235,10 @@ export function confirm(params: {
     agentId: string;
     transactionId: string;
     paymentMethod: factory.paymentMethodType;
+    /**
+     * 取引確定後アクション
+     */
+    potentialActions?: factory.transaction.placeOrder.IConfirmPotentialActionsParams;
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     // tslint:disable-next-line:max-func-body-length
     return async (
@@ -285,7 +289,8 @@ export function confirm(params: {
 
         const potentialActions = await createPotentialActionsFromTransaction({
             transaction: transaction,
-            order: order
+            order: order,
+            potentialActions: params.potentialActions
         });
 
         // 印刷トークンを発行
@@ -610,6 +615,7 @@ export type IAuthorizeSeatReservationOffer =
 export async function createPotentialActionsFromTransaction(params: {
     transaction: factory.transaction.placeOrder.ITransaction;
     order: factory.order.IOrder;
+    potentialActions?: factory.transaction.placeOrder.IConfirmPotentialActionsParams;
 }): Promise<factory.cinerino.transaction.placeOrder.IPotentialActions> {
     // クレジットカード支払いアクション
     const authorizeCreditCardActions = <factory.action.authorize.creditCard.IAction[]>
@@ -732,6 +738,35 @@ export async function createPotentialActionsFromTransaction(params: {
         }
     });
 
+    const informOrderActionsOnPlaceOrder: factory.cinerino.action.interact.inform.IAttributes<any, any>[] = [];
+    if (params.potentialActions !== undefined) {
+        if (params.potentialActions.order !== undefined) {
+            if (params.potentialActions.order.potentialActions !== undefined) {
+                if (Array.isArray(params.potentialActions.order.potentialActions.informOrder)) {
+                    params.potentialActions.order.potentialActions.informOrder.forEach((a) => {
+                        if (a.recipient !== undefined) {
+                            if (typeof a.recipient.url === 'string') {
+                                informOrderActionsOnPlaceOrder.push({
+                                    agent: params.transaction.seller,
+                                    object: params.order,
+                                    project: params.transaction.project,
+                                    // purpose: params.transaction,
+                                    recipient: {
+                                        id: params.transaction.agent.id,
+                                        name: params.transaction.agent.name,
+                                        typeOf: params.transaction.agent.typeOf,
+                                        url: a.recipient.url
+                                    },
+                                    typeOf: factory.actionType.InformAction
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+
     return {
         order: {
             project: params.transaction.project,
@@ -739,9 +774,10 @@ export async function createPotentialActionsFromTransaction(params: {
             object: params.order,
             agent: params.transaction.agent,
             potentialActions: {
+                confirmReservation: confirmReservationActions,
+                informOrder: informOrderActionsOnPlaceOrder,
                 payCreditCard: payCreditCardActions,
-                sendOrder: sendOrderActionAttributes,
-                confirmReservation: confirmReservationActions
+                sendOrder: sendOrderActionAttributes
             },
             purpose: <any>{
                 typeOf: params.transaction.typeOf,

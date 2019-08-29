@@ -129,36 +129,40 @@ enum AggregateUnit {
 /**
  * 注文取引からレポートを作成する
  */
-export function createPlaceOrderReport(params: { transaction: factory.transaction.placeOrder.ITransaction }) {
+export function createPlaceOrderReport(params: {
+    order: factory.order.IOrder;
+    // transaction: factory.transaction.placeOrder.ITransaction;
+}) {
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
         const datas: IData[] = [];
-        if (params.transaction.endDate !== undefined) {
-            const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
+        // const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
+        const order = params.order;
 
-            let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
-            if (params.transaction.object.clientUser !== undefined
-                && params.transaction.object.clientUser.client_id === STAFF_CLIENT_ID) {
+        let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
+        if (Array.isArray(order.customer.identifier)) {
+            const clientIdProperty = order.customer.identifier.find((i) => i.name === 'clientId');
+            if (clientIdProperty !== undefined && clientIdProperty.value === STAFF_CLIENT_ID) {
                 purchaserGroup = PurchaserGroup.Staff;
             }
-
-            datas.push(
-                ...transactionResult.order.acceptedOffers
-                    .map((o) => {
-                        return reservation2data(
-                            {
-                                ...<factory.cinerino.order.IReservation>o.itemOffered,
-                                checkins: []
-                            },
-                            transactionResult.order,
-                            <Date>params.transaction.endDate,
-                            AggregateUnit.SalesByEndDate,
-                            purchaserGroup
-                        );
-                    })
-            );
         }
+
+        datas.push(
+            ...order.acceptedOffers
+                .map((o) => {
+                    return reservation2data(
+                        {
+                            ...<factory.cinerino.order.IReservation>o.itemOffered,
+                            checkins: []
+                        },
+                        order,
+                        order.orderDate,
+                        AggregateUnit.SalesByEndDate,
+                        purchaserGroup
+                    );
+                })
+        );
         debug('creating', datas.length, 'datas...');
 
         // 冪等性の確保!

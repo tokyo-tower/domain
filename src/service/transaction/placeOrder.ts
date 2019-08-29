@@ -62,8 +62,18 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
             numberOfTried: 0,
             executionResults: [],
             data: {
-                url: webhookUrl,
-                payload: { transaction: transaction }
+                agent: transaction.seller,
+                object: { transaction: transaction },
+                project: transaction.project,
+                purpose: { typeOf: transaction.typeOf, id: transaction.id },
+                recipient: {
+                    id: '',
+                    name: { ja: 'Cinerino Telemetry', en: 'Cinerino Telemetry' },
+                    typeOf: factory.organizationType.Corporation,
+                    url: webhookUrl
+                },
+                typeOf: factory.actionType.InformAction
+                // payload: { transaction: transaction }
             }
         };
         taskAttributes.push(
@@ -100,17 +110,17 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                     taskAttributes.push(<any>placeOrderTaskAttributes);
                 }
 
-                taskAttributes.push({
-                    name: <any>factory.taskName.CreatePlaceOrderReport,
-                    status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        transaction: transaction
-                    }
-                });
+                // taskAttributes.push({
+                //     name: <any>factory.taskName.CreatePlaceOrderReport,
+                //     status: factory.taskStatus.Ready,
+                //     runsAt: new Date(), // なるはやで実行
+                //     remainingNumberOfTries: 10,
+                //     numberOfTried: 0,
+                //     executionResults: [],
+                //     data: {
+                //         transaction: transaction
+                //     }
+                // });
 
                 break;
 
