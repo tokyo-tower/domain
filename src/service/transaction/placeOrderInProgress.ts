@@ -17,7 +17,6 @@ import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/a
 const debug = createDebug('ttts-domain:service');
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
-const STAFF_CLIENT_ID = <string>process.env.STAFF_CLIENT_ID;
 
 export type IStartOperation<T> = (
     transactionRepo: TransactionRepo,
@@ -337,16 +336,11 @@ function canBeClosed(
     transaction: factory.transaction.placeOrder.ITransaction,
     paymentMethod: factory.paymentMethodType
 ) {
-    const clientId = (transaction.object.clientUser !== undefined) ? transaction.object.clientUser.client_id : '';
-    const agent = transaction.agent;
     const creditCardAuthorizeActions = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
 
     switch (paymentMethod) {
-        case factory.paymentMethodType.Cash:
-            break;
-
         case factory.paymentMethodType.CreditCard:
             // 決済方法がクレジットカードであれば、承認アクションが必須
             if (creditCardAuthorizeActions.length === 0) {
@@ -355,22 +349,7 @@ function canBeClosed(
 
             break;
 
-        case factory.paymentMethodType.Charter:
-        case factory.paymentMethodType.CP:
-        case factory.paymentMethodType.GroupReservation:
-        case factory.paymentMethodType.Invitation:
-        case factory.paymentMethodType.Invoice:
-        case factory.paymentMethodType.OTC:
-            // 認められるのはスタッフだけ(管理者としてログインしているはず)
-            if (clientId !== STAFF_CLIENT_ID || agent.memberOf === undefined) {
-                throw new factory.errors.Argument('paymentMethod', `Invalid payment method for the client`);
-            }
-
-            break;
-
         default:
-            // それ以外の決済方法は認められない
-            throw new factory.errors.Argument('paymentMethod', 'Invalid payment method.');
     }
 
     // customerとsellerで、承認アクションの金額が合うかどうか

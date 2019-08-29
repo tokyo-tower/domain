@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 注文レポート作成タスクを、注文後の通知アクション先で作成するように設計変更
+- 注文取引の決済方法に関するバリデーションをAPIアプリケーション側へ以降
 
 ### Deprecated
 
