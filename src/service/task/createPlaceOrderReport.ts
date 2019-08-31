@@ -11,9 +11,7 @@ import * as AggregateService from '../aggregate';
  */
 export function call(data: factory.task.createPlaceOrderReport.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        if (data.transaction.result !== undefined) {
-            const aggregateSaleRepo = new AggregateSaleRepo(settings.connection);
-            await AggregateService.report4sales.createPlaceOrderReport({ order: data.transaction.result.order })(aggregateSaleRepo);
-        }
+        const aggregateSaleRepo = new AggregateSaleRepo(settings.connection);
+        await AggregateService.report4sales.createPlaceOrderReport(data)(aggregateSaleRepo);
     };
 }

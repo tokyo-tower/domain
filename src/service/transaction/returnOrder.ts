@@ -48,7 +48,12 @@ export function confirm(params: {
      * 返品理由
      */
     reason: factory.transaction.returnOrder.Reason;
+    /**
+     * 取引確定後アクション
+     */
+    potentialActions?: factory.cinerino.transaction.returnOrder.IConfirmPotentialActionsParams;
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         invoice: cinerino.repository.Invoice;
         transaction: TransactionRepo;
@@ -91,6 +96,66 @@ export function confirm(params: {
 
         const endDate = new Date();
         const cancelName = `${order.customer.familyName} ${order.customer.givenName}`;
+
+        const informOrderActionsOnReturn: factory.cinerino.action.interact.inform.IAttributes<any, any>[] = [];
+        if (params.potentialActions !== undefined) {
+            if (params.potentialActions.returnOrder !== undefined) {
+                if (params.potentialActions.returnOrder.potentialActions !== undefined) {
+                    if (Array.isArray(params.potentialActions.returnOrder.potentialActions.informOrder)) {
+                        params.potentialActions.returnOrder.potentialActions.informOrder.forEach((a) => {
+                            if (a.recipient !== undefined) {
+                                if (typeof a.recipient.url === 'string') {
+                                    informOrderActionsOnReturn.push({
+                                        agent: transaction.seller,
+                                        object: order,
+                                        project: transaction.project,
+                                        // purpose: params.transaction,
+                                        recipient: {
+                                            id: transaction.agent.id,
+                                            name: transaction.agent.name,
+                                            typeOf: transaction.agent.typeOf,
+                                            url: a.recipient.url
+                                        },
+                                        typeOf: factory.actionType.InformAction
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        const returnOrderActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes = {
+            project: transaction.project,
+            typeOf: factory.actionType.ReturnAction,
+            object: {
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            },
+            agent: order.customer,
+            recipient: transaction.seller,
+            potentialActions: {
+                // cancelReservation: cancelReservationActions,
+                informOrder: informOrderActionsOnReturn,
+                refundCreditCard: [],
+                refundAccount: [],
+                refundMovieTicket: [],
+                returnPointAward: []
+            }
+        };
+        // const result: factory.transaction.returnOrder.IResult = {
+        // };
+        const potentialActions: factory.cinerino.transaction.returnOrder.IPotentialActions = {
+            returnOrder: returnOrderActionAttributes
+        };
+
         const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
             project: project,
             typeOf: factory.transactionType.ReturnOrder,
@@ -112,7 +177,8 @@ export function confirm(params: {
             expires: endDate,
             startDate: now,
             endDate: endDate,
-            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
+            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported,
+            potentialActions: potentialActions
         };
 
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;

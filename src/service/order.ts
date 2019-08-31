@@ -66,6 +66,12 @@ export function processReturn(returnOrderTransactionId: string) {
             });
         debug('processing return order...', returnOrderTransaction);
 
+        const potentialActions = returnOrderTransaction.potentialActions;
+        if (potentialActions === undefined) {
+            throw new factory.errors.NotFound('PotentialActions of return order transaction');
+        }
+        const returnOrderActionAttributes = potentialActions.returnOrder;
+
         await returnCreditCardSales(returnOrderTransactionId)(actionRepo, performanceRepo, transactionRepo);
 
         await notifyReturnOrder(returnOrderTransactionId)(transactionRepo, taskRepo);
@@ -76,27 +82,73 @@ export function processReturn(returnOrderTransactionId: string) {
 
         // 注文を返品済ステータスに変更
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
-        await orderRepo.orderModel.findOneAndUpdate(
-            { orderNumber: placeOrderTransactionResult.order.orderNumber },
+        const order = await orderRepo.returnOrder(
             {
-                orderStatus: factory.orderStatus.OrderReturned,
+                orderNumber: placeOrderTransactionResult.order.orderNumber,
                 dateReturned: new Date()
             }
-        ).exec();
+        );
 
         // 返品処理が全て完了した時点で、レポート作成タスクを追加
-        const createReturnOrderReportTask: factory.task.createReturnOrderReport.IAttributes = {
-            name: <any>factory.taskName.CreateReturnOrderReport,
-            status: factory.taskStatus.Ready,
-            runsAt: new Date(), // なるはやで実行
-            remainingNumberOfTries: 10,
-            numberOfTried: 0,
-            executionResults: [],
-            data: {
-                transaction: returnOrderTransaction
+        // const createReturnOrderReportTask: factory.task.createReturnOrderReport.IAttributes = {
+        //     name: <any>factory.taskName.CreateReturnOrderReport,
+        //     status: factory.taskStatus.Ready,
+        //     runsAt: new Date(), // なるはやで実行
+        //     remainingNumberOfTries: 10,
+        //     numberOfTried: 0,
+        //     executionResults: [],
+        //     data: {
+        //         transaction: returnOrderTransaction
+        //     }
+        // };
+        // await taskRepo.save(<any>createReturnOrderReportTask);
+
+        await onReturn(returnOrderActionAttributes, order)({ task: taskRepo });
+    };
+}
+
+/**
+ * 返品アクション後の処理
+ */
+export function onReturn(
+    returnActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes,
+    order: factory.order.IOrder
+) {
+    return async (repos: {
+        task: cinerino.repository.Task;
+    }) => {
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+        const potentialActions = returnActionAttributes.potentialActions;
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (potentialActions !== undefined) {
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map(
+                    (a): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.cinerino.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
             }
-        };
-        await taskRepo.save(<any>createReturnOrderReportTask);
+        }
+
+        // タスク保管
+        await Promise.all(taskAttributes.map(async (taskAttribute) => {
+            return repos.task.save(taskAttribute);
+        }));
     };
 }
 
