@@ -51,7 +51,7 @@ export function confirm(params: {
     /**
      * 取引確定後アクション
      */
-    potentialActions?: factory.cinerino.transaction.returnOrder.IConfirmPotentialActionsParams;
+    potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams;
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {

@@ -644,19 +644,19 @@ export async function createPotentialActionsFromTransaction(params: {
         }
     });
 
-    const sendOrderActionAttributes: factory.cinerino.action.transfer.send.order.IAttributes = {
-        project: params.transaction.project,
-        typeOf: factory.actionType.SendAction,
-        object: params.order,
-        agent: params.transaction.seller,
-        recipient: params.transaction.agent,
-        potentialActions: {
-            // sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined,
-        }
-    };
-
     const confirmReservationActions:
         factory.cinerino.action.interact.confirm.reservation.IAttributes<factory.cinerino.service.webAPI.Identifier>[] = [];
+    let confirmReservationParams: factory.transaction.placeOrder.IConfirmReservationParams[] = [];
+    if (params.potentialActions !== undefined
+        && params.potentialActions.order !== undefined
+        && params.potentialActions.order.potentialActions !== undefined
+        && params.potentialActions.order.potentialActions.sendOrder !== undefined
+        && params.potentialActions.order.potentialActions.sendOrder.potentialActions !== undefined
+        && Array.isArray(params.potentialActions.order.potentialActions.sendOrder.potentialActions.confirmReservation)) {
+        confirmReservationParams =
+            params.potentialActions.order.potentialActions.sendOrder.potentialActions.confirmReservation;
+    }
+
     // tslint:disable-next-line:max-func-body-length
     seatReservationAuthorizeActions.forEach((a) => {
         const actionResult = a.result;
@@ -669,37 +669,91 @@ export async function createPotentialActionsFromTransaction(params: {
         }
 
         if (actionResult !== undefined) {
-            let responseBody = actionResult.responseBody;
+            const responseBody = actionResult.responseBody;
 
             switch (a.instrument.identifier) {
                 default:
                     // tslint:disable-next-line:max-line-length
-                    responseBody = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
+                    // responseBody = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
+                    // tslint:disable-next-line:max-line-length
+                    const reserveTransaction = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
+                    const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
+                        = [{ name: 'orderNumber', value: params.order.orderNumber }];
+
+                    const confirmReservationObject:
+                        factory.cinerino.action.interact.confirm.reservation.IObject<factory.cinerino.service.webAPI.Identifier.Chevre> = {
+                        typeOf: factory.chevre.transactionType.Reserve,
+                        id: reserveTransaction.id,
+                        object: {
+                            reservations: params.order.acceptedOffers.map((o) => <factory.cinerino.order.IReservation>o.itemOffered)
+                                .map((r) => {
+                                    // プロジェクト固有の値を連携
+                                    return {
+                                        id: r.id,
+                                        additionalTicketText: r.additionalTicketText,
+                                        reservedTicket: {
+                                            issuedBy: r.reservedTicket.issuedBy,
+                                            ticketToken: r.reservedTicket.ticketToken,
+                                            underName: r.reservedTicket.underName
+                                        },
+                                        underName: r.underName,
+                                        additionalProperty: r.additionalProperty
+                                    };
+                                })
+                        }
+                    };
+
+                    const confirmReservationObjectParams = confirmReservationParams.find((p) => {
+                        const object = <factory.cinerino.action.interact.confirm.reservation.IObject4Chevre>p.object;
+
+                        return object !== undefined
+                            && object.typeOf === factory.chevre.transactionType.Reserve
+                            && object.id === reserveTransaction.id;
+                    });
+                    // 予約確定パラメータの指定があれば上書きする
+                    if (confirmReservationObjectParams !== undefined) {
+                        const customizedConfirmReservationObject =
+                            <factory.cinerino.action.interact.confirm.reservation.IObject4Chevre>confirmReservationObjectParams.object;
+
+                        // 予約取引確定オブジェクトの指定があれば上書き
+                        if (customizedConfirmReservationObject.object !== undefined) {
+                            if (Array.isArray(customizedConfirmReservationObject.object.reservations)) {
+                                customizedConfirmReservationObject.object.reservations.forEach((r) => {
+                                    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
+                                        r.underName.identifier.push(...defaultUnderNameIdentifiers);
+                                    }
+
+                                    if (r.reservedTicket !== undefined
+                                        && r.reservedTicket.underName !== undefined
+                                        && Array.isArray(r.reservedTicket.underName.identifier)) {
+                                        r.reservedTicket.underName.identifier.push(...defaultUnderNameIdentifiers);
+                                    }
+                                });
+                            }
+
+                            confirmReservationObject.object = customizedConfirmReservationObject.object;
+                        }
+
+                        // 予約取引確定後アクションの指定があれば上書き
+                        const confirmReservePotentialActions = customizedConfirmReservationObject.potentialActions;
+                        if (confirmReservePotentialActions !== undefined
+                            && confirmReservePotentialActions.reserve !== undefined
+                            && confirmReservePotentialActions.reserve.potentialActions !== undefined
+                            && Array.isArray(confirmReservePotentialActions.reserve.potentialActions.informReservation)) {
+                            confirmReservationObject.potentialActions = {
+                                reserve: {
+                                    potentialActions: {
+                                        informReservation: confirmReservePotentialActions.reserve.potentialActions.informReservation
+                                    }
+                                }
+                            };
+                        }
+                    }
 
                     confirmReservationActions.push({
                         project: params.transaction.project,
                         typeOf: <factory.actionType.ConfirmAction>factory.actionType.ConfirmAction,
-                        object: {
-                            typeOf: factory.chevre.transactionType.Reserve,
-                            id: responseBody.id,
-                            object: {
-                                reservations: params.order.acceptedOffers.map((o) => <factory.cinerino.order.IReservation>o.itemOffered)
-                                    .map((r) => {
-                                        // プロジェクト固有の値を連携
-                                        return {
-                                            id: r.id,
-                                            additionalTicketText: r.additionalTicketText,
-                                            reservedTicket: {
-                                                issuedBy: r.reservedTicket.issuedBy,
-                                                ticketToken: r.reservedTicket.ticketToken,
-                                                underName: r.reservedTicket.underName
-                                            },
-                                            underName: r.underName,
-                                            additionalProperty: r.additionalProperty
-                                        };
-                                    })
-                            }
-                        },
+                        object: confirmReservationObject,
                         agent: params.transaction.agent,
                         purpose: {
                             typeOf: params.order.typeOf,
@@ -746,6 +800,18 @@ export async function createPotentialActionsFromTransaction(params: {
         }
     }
 
+    const sendOrderActionAttributes: factory.cinerino.action.transfer.send.order.IAttributes = {
+        project: params.transaction.project,
+        typeOf: factory.actionType.SendAction,
+        object: params.order,
+        agent: params.transaction.seller,
+        recipient: params.transaction.agent,
+        potentialActions: {
+            confirmReservation: confirmReservationActions
+            // sendEmailMessage: (sendEmailMessageActionAttributes !== null) ? sendEmailMessageActionAttributes : undefined,
+        }
+    };
+
     return {
         order: {
             project: params.transaction.project,
@@ -753,12 +819,11 @@ export async function createPotentialActionsFromTransaction(params: {
             object: params.order,
             agent: params.transaction.agent,
             potentialActions: {
-                confirmReservation: confirmReservationActions,
                 informOrder: informOrderActionsOnPlaceOrder,
                 payCreditCard: payCreditCardActions,
                 sendOrder: sendOrderActionAttributes
             },
-            purpose: <any>{
+            purpose: {
                 typeOf: params.transaction.typeOf,
                 id: params.transaction.id
             }
