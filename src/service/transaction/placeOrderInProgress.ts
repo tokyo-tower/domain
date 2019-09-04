@@ -4,17 +4,14 @@
 import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as waiter from '@waiter/domain';
-import * as createDebug from 'debug';
+// import * as createDebug from 'debug';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 import * as moment from 'moment-timezone';
 
-import { RedisRepository as PaymentNoRepo } from '../../repo/paymentNo';
 import { RedisRepository as TokenRepo } from '../../repo/token';
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
-
-const debug = createDebug('ttts-domain:service');
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
@@ -23,12 +20,11 @@ export type IStartOperation<T> = (
     sellerRepo: cinerino.repository.Seller
 ) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
-export type IConfirmOperation<T> = (
-    transactionRepo: TransactionRepo,
-    actionRepo: cinerino.repository.Action,
-    tokenRepo: TokenRepo,
-    paymentNoRepo: PaymentNoRepo
-) => Promise<T>;
+export type IConfirmOperation<T> = (repos: {
+    transaction: TransactionRepo;
+    action: cinerino.repository.Action;
+    token: TokenRepo;
+}) => Promise<T>;
 
 /**
  * 取引開始パラメーターインターフェース
@@ -231,60 +227,77 @@ export function setCustomerContact(
  * 取引確定
  */
 export function confirm(params: {
-    agentId: string;
-    transactionId: string;
-    paymentMethod: factory.paymentMethodType;
+    id: string;
+    agent?: {
+        id?: string;
+    };
     /**
      * 取引確定後アクション
      */
     potentialActions?: factory.transaction.placeOrder.IConfirmPotentialActionsParams;
+    result: {
+        order: {
+            orderDate: Date;
+            /**
+             * 確認番号のカスタム指定
+             */
+            confirmationNumber?: string;
+        };
+    };
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
     // tslint:disable-next-line:max-func-body-length
-    return async (
-        transactionRepo: TransactionRepo,
-        actionRepo: cinerino.repository.Action,
-        tokenRepo: TokenRepo,
-        paymentNoRepo: PaymentNoRepo
-    ) => {
-        const now = new Date();
-        const transaction =
-            await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.transactionId });
-        if (transaction.agent.id !== params.agentId) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+    return async (repos: {
+        action: cinerino.repository.Action;
+        orderNumber: cinerino.repository.OrderNumber;
+        token: TokenRepo;
+        transaction: TransactionRepo;
+        // paymentNoRepo: PaymentNoRepo
+    }) => {
+        const transaction = await repos.transaction.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.id });
+
+        if (params.agent !== undefined && typeof params.agent.id === 'string') {
+            if (transaction.agent.id !== params.agent.id) {
+                throw new factory.errors.Forbidden('A specified transaction is not yours');
+            }
         }
 
         // 取引に対する全ての承認アクションをマージ
-        let authorizeActions = await actionRepo.searchByPurpose({
+        let authorizeActions = await repos.action.searchByPurpose({
             typeOf: factory.actionType.AuthorizeAction,
             purpose: {
                 typeOf: factory.transactionType.PlaceOrder,
-                id: params.transactionId
+                id: params.id
             }
         });
 
         // 万が一このプロセス中に他処理が発生してもそれらを無視するように、endDateでフィルタリング
-        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < now));
+        authorizeActions = authorizeActions.filter((a) => (a.endDate !== undefined && a.endDate < params.result.order.orderDate));
         transaction.object.authorizeActions = authorizeActions;
 
         // 注文取引成立条件を満たしているかどうか
-        if (!canBeClosed(transaction, params.paymentMethod)) {
+        if (!canBeClosed(transaction)) {
             throw new factory.errors.Argument('transactionId', 'Transaction cannot be confirmed because prices are not matched.');
         }
 
-        // 購入番号発行
-        const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction | undefined>
-            transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .find((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation);
-        if (seatReservationAuthorizeAction === undefined) {
-            throw new factory.errors.Argument('transactionId', 'Authorize seat reservation action not found');
+        const orderNumber = await repos.orderNumber.publishByTimestamp({
+            project: project,
+            orderDate: params.result.order.orderDate
+        });
+
+        // 確認番号を発行
+        let confirmationNumber = '0';
+
+        // 確認番号の指定があれば上書き
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (typeof params.result.order.confirmationNumber === 'string') {
+            confirmationNumber = params.result.order.confirmationNumber;
         }
-        const performance = seatReservationAuthorizeAction.object.event;
-        const paymentNo = await paymentNoRepo.publish(moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'));
 
         // 注文作成
-        const { order } = createResult(paymentNo, transaction);
-        transaction.result = { order };
+        const { order } = createResult(confirmationNumber, orderNumber, transaction);
+
+        const result: factory.transaction.placeOrder.IResult = { order };
 
         const potentialActions = await createPotentialActionsFromTransaction({
             transaction: transaction,
@@ -293,18 +306,17 @@ export function confirm(params: {
         });
 
         // 印刷トークンを発行
-        const printToken = await tokenRepo.createPrintToken(
-            transaction.result.order.acceptedOffers.map((o) => (<factory.cinerino.order.IReservation>o.itemOffered).id)
+        const printToken = await repos.token.createPrintToken(
+            order.acceptedOffers.map((o) => (<factory.cinerino.order.IReservation>o.itemOffered).id)
         );
-        debug('printToken created.', printToken);
 
         // ステータス変更
         try {
-            await transactionRepo.confirm({
-                typeOf: factory.transactionType.PlaceOrder,
-                id: params.transactionId,
+            await repos.transaction.confirm({
+                typeOf: transaction.typeOf,
+                id: transaction.id,
                 authorizeActions: authorizeActions,
-                result: transaction.result,
+                result: result,
                 potentialActions: potentialActions
             });
         } catch (error) {
@@ -323,7 +335,7 @@ export function confirm(params: {
         }
 
         return {
-            order: transaction.result.order,
+            order: order,
             printToken: printToken
         };
     };
@@ -333,25 +345,8 @@ export function confirm(params: {
  * 取引が確定可能な状態かどうかをチェックする
  */
 function canBeClosed(
-    transaction: factory.transaction.placeOrder.ITransaction,
-    paymentMethod: factory.paymentMethodType
+    transaction: factory.transaction.placeOrder.ITransaction
 ) {
-    const creditCardAuthorizeActions = transaction.object.authorizeActions
-        .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-        .filter((a) => a.object.typeOf === factory.paymentMethodType.CreditCard);
-
-    switch (paymentMethod) {
-        case factory.paymentMethodType.CreditCard:
-            // 決済方法がクレジットカードであれば、承認アクションが必須
-            if (creditCardAuthorizeActions.length === 0) {
-                throw new factory.errors.Argument('paymentMethod', 'Credit card authorization required.');
-            }
-
-            break;
-
-        default:
-    }
-
     // customerとsellerで、承認アクションの金額が合うかどうか
     const priceByAgent = transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
@@ -374,10 +369,15 @@ function canBeClosed(
  */
 // tslint:disable-next-line:max-func-body-length
 export function createResult(
-    paymentNo: string,
+    // const confirmationNumber: string = `${moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD')}${paymentNo}`;
+    confirmationNumber: string,
+    orderNumber: string,
+    // paymentNo: string,
     transaction: factory.transaction.placeOrder.ITransaction
 ): factory.transaction.placeOrder.IResult {
-    debug('creating result of transaction...', transaction.id);
+    // tslint:disable-next-line:no-magic-numbers
+    const paymentNo = confirmationNumber.slice(-6);
+
     const seatReservationAuthorizeAction = <factory.action.authorize.seatReservation.IAction>transaction.object.authorizeActions
         .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
         .find((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation);
@@ -393,14 +393,14 @@ export function createResult(
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
     const chevreReservations = reserveTransaction.object.reservations;
-    const performance = seatReservationAuthorizeAction.object.event;
+    // const performance = seatReservationAuthorizeAction.object.event;
 
     const profile = transaction.agent;
 
     const orderDate = new Date();
 
     // 注文番号を作成
-    const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
+    // const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     let paymentMethodId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
         paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;
@@ -489,8 +489,6 @@ export function createResult(
         url: '',
         identifier: customerIdentifier
     };
-
-    const confirmationNumber: string = `${moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD')}${paymentNo}`;
 
     return {
         order: {

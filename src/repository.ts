@@ -47,6 +47,11 @@ export namespace rateLimit {
  */
 export class Order extends cinerino.repository.Order { }
 
+/**
+ * 注文番号リポジトリ
+ */
+export class OrderNumber extends cinerino.repository.OrderNumber { }
+
 export namespace place {
     /**
      * 入場場所リポジトリ
