@@ -192,7 +192,6 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
 /**
  * 返品処理を受け付けたことを購入者へ通知する
- * @param returnOrderTransactionId 返品取引ID
  */
 export function notifyReturnOrder(returnOrderTransactionId: string) {
     return async (
@@ -200,54 +199,21 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
         taskRepo: cinerino.repository.Task
     ) => {
         debug('finding returnOrder transaction...');
-        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
-            .then((doc) => {
-                if (doc === null) {
-                    throw new factory.errors.NotFound('transaction');
-                }
+        const returnOrderTransaction = <factory.transaction.returnOrder.ITransaction>
+            await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: returnOrderTransactionId });
 
-                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
-            });
-        debug('processing return order...', returnOrderTransaction);
+        const placeOrderTransaction = returnOrderTransaction.object.transaction;
+        if (placeOrderTransaction.result === undefined) {
+            throw new factory.errors.NotFound('PlaceOrder Transaction Result');
+        }
+        const order = placeOrderTransaction.result.order;
 
         let emailMessageAttributes: factory.creativeWork.message.email.IAttributes;
         let emailMessage: factory.creativeWork.message.email.ICreativeWork;
-        let sendEmailTaskAttributes: factory.task.sendEmailNotification.IAttributes;
+        let sendEmailTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage>;
         switch (returnOrderTransaction.object.reason) {
             case factory.transaction.returnOrder.Reason.Customer:
-                // tslint:disable-next-line:no-suspicious-comment
-                // TODO 二重送信対策
-                // emailMessageAttributes = await createEmailMessage4customerReason(returnOrderTransaction.object.transaction);
-                // emailMessage = factory.creativeWork.message.email.create({
-                //     identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
-                //     sender: {
-                //         typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
-                //         name: emailMessageAttributes.sender.name,
-                //         email: emailMessageAttributes.sender.email
-                //     },
-                //     toRecipient: {
-                //         typeOf: returnOrderTransaction.object.transaction.agent.typeOf,
-                //         name: emailMessageAttributes.toRecipient.name,
-                //         email: emailMessageAttributes.toRecipient.email
-                //     },
-                //     about: emailMessageAttributes.about,
-                //     text: emailMessageAttributes.text
-                // });
-
-                // sendEmailTaskAttributes = factory.task.sendEmailNotification.createAttributes({
-                //     status: factory.taskStatus.Ready,
-                //     runsAt: new Date(), // なるはやで実行
-                //     remainingNumberOfTries: 10,
-                //     lastTriedAt: null,
-                //     numberOfTried: 0,
-                //     executionResults: [],
-                //     data: {
-                //         transactionId: returnOrderTransactionId,
-                //         emailMessage: emailMessage
-                //     }
-                // });
-
-                // await taskRepo.save(sendEmailTaskAttributes);
+                // no op
 
                 break;
 
@@ -274,19 +240,37 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                 };
 
                 sendEmailTaskAttributes = {
-                    name: <any>factory.taskName.SendEmailNotification,
+                    name: factory.cinerino.taskName.SendEmailMessage,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        transactionId: returnOrderTransactionId,
-                        emailMessage: emailMessage
+                        actionAttributes: {
+                            agent: {
+                                id: order.seller.id,
+                                name: { ja: order.seller.name, en: '' },
+                                typeOf: order.seller.typeOf
+                            },
+                            object: emailMessage,
+                            recipient: {
+                                id: order.customer.id,
+                                name: order.customer.name,
+                                typeOf: order.customer.typeOf
+                            },
+                            purpose: {
+                                typeOf: order.typeOf,
+                                orderNumber: order.orderNumber
+                            },
+                            typeOf: factory.cinerino.actionType.SendAction
+                        }
+                        // transactionId: returnOrderTransactionId,
+                        // emailMessage: emailMessage
                     }
                 };
 
-                await taskRepo.save(<any>sendEmailTaskAttributes);
+                await taskRepo.save(sendEmailTaskAttributes);
 
                 break;
 

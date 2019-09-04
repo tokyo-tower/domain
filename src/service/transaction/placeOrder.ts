@@ -136,18 +136,21 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
 
 /**
  * 確定取引についてメールを送信する
- * @param transactionId 取引ID
- * @param emailMessageAttributes Eメールメッセージ属性
  */
 export function sendEmail(
     transactionId: string,
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
-): ITaskAndTransactionOperation<factory.task.sendEmailNotification.ITask> {
+): ITaskAndTransactionOperation<factory.cinerino.task.ITask<factory.cinerino.taskName.SendEmailMessage>> {
     return async (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
         if (transaction.status !== factory.transactionStatusType.Confirmed) {
             throw new factory.errors.Forbidden('Transaction not confirmed.');
         }
+
+        if (transaction.result === undefined) {
+            throw new factory.errors.NotFound('PlaceOrder Transaction Result');
+        }
+        const order = transaction.result.order;
 
         const emailMessage = {
             typeOf: <factory.creativeWorkType.EmailMessage>factory.creativeWorkType.EmailMessage,
@@ -168,19 +171,37 @@ export function sendEmail(
         };
 
         // その場で送信ではなく、DBにタスクを登録
-        const taskAttributes: factory.task.sendEmailNotification.IAttributes = {
-            name: <any>factory.taskName.SendEmailNotification,
+        const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage> = {
+            name: factory.cinerino.taskName.SendEmailMessage,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
             numberOfTried: 0,
             executionResults: [],
             data: {
-                transactionId: transactionId,
-                emailMessage: emailMessage
+                actionAttributes: {
+                    agent: {
+                        id: order.seller.id,
+                        name: { ja: order.seller.name, en: '' },
+                        typeOf: order.seller.typeOf
+                    },
+                    object: emailMessage,
+                    recipient: {
+                        id: order.customer.id,
+                        name: order.customer.name,
+                        typeOf: order.customer.typeOf
+                    },
+                    purpose: {
+                        typeOf: order.typeOf,
+                        orderNumber: order.orderNumber
+                    },
+                    typeOf: factory.cinerino.actionType.SendAction
+                }
+                // transactionId: transactionId,
+                // emailMessage: emailMessage
             }
         };
 
-        return <any>await taskRepo.save(<any>taskAttributes);
+        return <any>await taskRepo.save(taskAttributes);
     };
 }
