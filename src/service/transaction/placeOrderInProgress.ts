@@ -670,6 +670,7 @@ export async function createPotentialActionsFromTransaction(params: {
                     // responseBody = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
                     // tslint:disable-next-line:max-line-length
                     const reserveTransaction = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
+                    const chevreReservations = reserveTransaction.object.reservations;
                     const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
                         = [{ name: 'orderNumber', value: params.order.orderNumber }];
 
@@ -678,21 +679,40 @@ export async function createPotentialActionsFromTransaction(params: {
                         typeOf: factory.chevre.transactionType.Reserve,
                         id: reserveTransaction.id,
                         object: {
-                            reservations: params.order.acceptedOffers.map((o) => <factory.cinerino.order.IReservation>o.itemOffered)
-                                .map((r) => {
-                                    // プロジェクト固有の値を連携
-                                    return {
-                                        id: r.id,
-                                        additionalTicketText: r.additionalTicketText,
-                                        reservedTicket: {
-                                            issuedBy: r.reservedTicket.issuedBy,
-                                            ticketToken: r.reservedTicket.ticketToken,
-                                            underName: r.reservedTicket.underName
-                                        },
-                                        underName: r.underName,
-                                        additionalProperty: r.additionalProperty
-                                    };
+                            reservations: [
+                                ...params.order.acceptedOffers.map((o) => <factory.cinerino.order.IReservation>o.itemOffered)
+                                    .map((r) => {
+                                        // プロジェクト固有の値を連携
+                                        return {
+                                            id: r.id,
+                                            additionalTicketText: r.additionalTicketText,
+                                            reservedTicket: {
+                                                issuedBy: r.reservedTicket.issuedBy,
+                                                ticketToken: r.reservedTicket.ticketToken,
+                                                underName: r.reservedTicket.underName
+                                            },
+                                            underName: r.underName,
+                                            additionalProperty: r.additionalProperty
+                                        };
+                                    }),
+                                // 余分確保分の予約にもextraプロパティを連携
+                                ...chevreReservations.filter((r) => {
+                                    // 注文アイテムに存在しない予約(余分確保分)にフィルタリング
+                                    const orderItem = params.order.acceptedOffers.find(
+                                        (o) => (<factory.cinerino.order.IReservation>o.itemOffered).id === r.id
+                                    );
+
+                                    return orderItem === undefined;
                                 })
+                                    .map((r) => {
+                                        return {
+                                            id: r.id,
+                                            additionalProperty: [
+                                                { name: 'extra', value: '1' }
+                                            ]
+                                        };
+                                    })
+                            ]
                         }
                     };
 
