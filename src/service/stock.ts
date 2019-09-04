@@ -8,8 +8,6 @@ import * as moment from 'moment';
 import * as factory from '@tokyotower/factory';
 
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
-import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as chevre from '../chevre';
 import { credentials } from '../credentials';
@@ -118,37 +116,37 @@ export function cancelSeatReservationAuth(transactionId: string) {
 /**
  * 予約データをローカルDBにもコピーする
  */
-export function transferSeatReservation(transactionId: string) {
-    return async (
-        transactionRepo: TransactionRepo,
-        reservationRepo: ReservationRepo,
-        taskRepo: cinerino.repository.Task,
-        _: cinerino.repository.Project
-    ) => {
-        const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
-        const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
-            .map((o) => <factory.cinerino.order.IReservation>o.itemOffered);
+// export function transferSeatReservation(transactionId: string) {
+//     return async (
+//         transactionRepo: TransactionRepo,
+//         reservationRepo: ReservationRepo,
+//         taskRepo: cinerino.repository.Task,
+//         _: cinerino.repository.Project
+//     ) => {
+//         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+//         const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
+//             .map((o) => <factory.cinerino.order.IReservation>o.itemOffered);
 
-        await Promise.all(reservations.map(async (reservation) => {
-            // 予約データを作成する
-            await reservationRepo.saveEventReservation({
-                ...reservation,
-                checkins: []
-            });
+//         await Promise.all(reservations.map(async (reservation) => {
+//             // 予約データを作成する
+//             await reservationRepo.saveEventReservation({
+//                 ...reservation,
+//                 checkins: []
+//             });
 
-            // 集計タスク作成
-            const task: factory.task.aggregateEventReservations.IAttributes = {
-                name: <any>factory.taskName.AggregateEventReservations,
-                status: factory.taskStatus.Ready,
-                runsAt: new Date(),
-                remainingNumberOfTries: 3,
-                numberOfTried: 0,
-                executionResults: [],
-                data: {
-                    id: reservation.reservationFor.id
-                }
-            };
-            await taskRepo.save(<any>task);
-        }));
-    };
-}
+//             // 集計タスク作成
+//             const task: factory.task.aggregateEventReservations.IAttributes = {
+//                 name: <any>factory.taskName.AggregateEventReservations,
+//                 status: factory.taskStatus.Ready,
+//                 runsAt: new Date(),
+//                 remainingNumberOfTries: 3,
+//                 numberOfTried: 0,
+//                 executionResults: [],
+//                 data: {
+//                     id: reservation.reservationFor.id
+//                 }
+//             };
+//             await taskRepo.save(<any>task);
+//         }));
+//     };
+// }

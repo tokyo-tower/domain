@@ -21,8 +21,9 @@ export type IStartOperation<T> = (
 ) => Promise<T>;
 export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
 export type IConfirmOperation<T> = (repos: {
-    transaction: TransactionRepo;
     action: cinerino.repository.Action;
+    orderNumber: cinerino.repository.OrderNumber;
+    transaction: TransactionRepo;
     token: TokenRepo;
 }) => Promise<T>;
 
@@ -245,13 +246,11 @@ export function confirm(params: {
         };
     };
 }): IConfirmOperation<factory.transaction.placeOrder.IResult> {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         action: cinerino.repository.Action;
         orderNumber: cinerino.repository.OrderNumber;
         token: TokenRepo;
         transaction: TransactionRepo;
-        // paymentNoRepo: PaymentNoRepo
     }) => {
         const transaction = await repos.transaction.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.id });
 
@@ -369,10 +368,8 @@ function canBeClosed(
  */
 // tslint:disable-next-line:max-func-body-length
 export function createResult(
-    // const confirmationNumber: string = `${moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD')}${paymentNo}`;
     confirmationNumber: string,
     orderNumber: string,
-    // paymentNo: string,
     transaction: factory.transaction.placeOrder.ITransaction
 ): factory.transaction.placeOrder.IResult {
     // tslint:disable-next-line:no-magic-numbers
@@ -393,14 +390,12 @@ export function createResult(
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
     const chevreReservations = reserveTransaction.object.reservations;
-    // const performance = seatReservationAuthorizeAction.object.event;
 
     const profile = transaction.agent;
 
     const orderDate = new Date();
 
     // 注文番号を作成
-    // const orderNumber = `TT-${moment(performance.startDate).tz('Asia/Tokyo').format('YYMMDD')}-${paymentNo}`;
     let paymentMethodId = '';
     if (creditCardAuthorizeAction !== undefined && creditCardAuthorizeAction.result !== undefined) {
         paymentMethodId = creditCardAuthorizeAction.result.paymentMethodId;

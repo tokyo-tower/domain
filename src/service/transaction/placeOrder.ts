@@ -79,18 +79,6 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                // taskAttributes.push({
-                //     name: <any>factory.taskName.SettleSeatReservation,
-                //     status: factory.taskStatus.Ready,
-                //     runsAt: new Date(), // なるはやで実行
-                //     remainingNumberOfTries: 10,
-                //     numberOfTried: 0,
-                //     executionResults: [],
-                //     data: {
-                //         transactionId: transaction.id
-                //     }
-                // });
-
                 const potentialActions = transaction.potentialActions;
                 if (potentialActions !== undefined) {
                     const orderActionAttributes = potentialActions.order;
@@ -106,18 +94,6 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                     };
                     taskAttributes.push(<any>placeOrderTaskAttributes);
                 }
-
-                // taskAttributes.push({
-                //     name: <any>factory.taskName.CreatePlaceOrderReport,
-                //     status: factory.taskStatus.Ready,
-                //     runsAt: new Date(), // なるはやで実行
-                //     remainingNumberOfTries: 10,
-                //     numberOfTried: 0,
-                //     executionResults: [],
-                //     data: {
-                //         transaction: transaction
-                //     }
-                // });
 
                 break;
 
