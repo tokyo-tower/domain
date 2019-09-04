@@ -3,11 +3,8 @@
  */
 import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
-import * as createDebug from 'debug';
 
 import { MongoRepository as TransactionRepo } from '../../repo/transaction';
-
-const debug = createDebug('ttts-domain:service');
 
 export type ITaskAndTransactionOperation<T> = (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => Promise<T>;
 
@@ -82,17 +79,17 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
 
         switch (transaction.status) {
             case factory.transactionStatusType.Confirmed:
-                taskAttributes.push({
-                    name: <any>factory.taskName.SettleSeatReservation,
-                    status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        transactionId: transaction.id
-                    }
-                });
+                // taskAttributes.push({
+                //     name: <any>factory.taskName.SettleSeatReservation,
+                //     status: factory.taskStatus.Ready,
+                //     runsAt: new Date(), // なるはやで実行
+                //     remainingNumberOfTries: 10,
+                //     numberOfTried: 0,
+                //     executionResults: [],
+                //     data: {
+                //         transactionId: transaction.id
+                //     }
+                // });
 
                 const potentialActions = transaction.potentialActions;
                 if (potentialActions !== undefined) {
@@ -154,7 +151,6 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
             default:
                 throw new factory.errors.NotImplemented(`Transaction status "${transaction.status}" not implemented.`);
         }
-        debug('taskAttributes prepared', taskAttributes);
 
         return Promise.all(taskAttributes.map<any>(async (taskAttribute) => {
             return taskRepository.save(<any>taskAttribute);

@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文返品レポート作成タスクを、注文返品後の通知アクション先で作成するように設計変更
 - 注文取引の決済方法に関するバリデーションをAPIアプリケーション側へ以降
 - 予約確定時の予約者属性とポストアクションをカスタムできるように調整
+- SettleSeatReservationタスクを廃止
 
 ### Deprecated
 
