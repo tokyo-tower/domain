@@ -130,6 +130,7 @@ export function confirm(params: {
             project: transaction.project,
             typeOf: factory.actionType.ReturnAction,
             object: {
+                project: project,
                 typeOf: order.typeOf,
                 seller: order.seller,
                 customer: order.customer,
@@ -259,6 +260,7 @@ export function sendEmail(
         // その場で送信ではなく、DBにタスクを登録
         const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage> = {
             name: factory.cinerino.taskName.SendEmailMessage,
+            project: project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
@@ -269,17 +271,19 @@ export function sendEmail(
                     agent: {
                         id: order.seller.id,
                         name: { ja: order.seller.name, en: '' },
+                        project: project,
                         typeOf: order.seller.typeOf
                     },
                     object: emailMessage,
+                    project: project,
+                    purpose: {
+                        typeOf: order.typeOf,
+                        orderNumber: order.orderNumber
+                    },
                     recipient: {
                         id: order.customer.id,
                         name: order.customer.name,
                         typeOf: order.customer.typeOf
-                    },
-                    purpose: {
-                        typeOf: order.typeOf,
-                        orderNumber: order.orderNumber
                     },
                     typeOf: factory.cinerino.actionType.SendAction
                 }
@@ -336,6 +340,7 @@ export async function exportTasksById(transactionId: string): Promise<factory.ta
         case factory.transactionStatusType.Confirmed:
             taskAttributes.push({
                 name: <any>factory.taskName.ReturnOrder,
+                project: project,
                 status: factory.taskStatus.Ready,
                 runsAt: new Date(), // なるはやで実行
                 remainingNumberOfTries: 10,

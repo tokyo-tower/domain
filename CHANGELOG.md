@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文番号をCinerino化
 - Eメール送信佐をCinerino化
 - 通知サービスをCinerino化
+- 全リソースにプロジェクト属性を結合
 
 ### Deprecated
 

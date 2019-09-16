@@ -2,54 +2,35 @@
  * 在庫の管理に対して責任を負うサービス
  */
 import * as cinerino from '@cinerino/domain';
-import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 
-import * as chevre from '../chevre';
-import { credentials } from '../credentials';
-
-const debug = createDebug('ttts-domain:service');
-
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
-    scopes: [],
-    state: ''
-});
-
 /**
  * 仮予約承認取消
  */
-export function cancelSeatReservationAuth(transactionId: string) {
-    return async (
-        actionRepo: cinerino.repository.Action,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
-        taskRepo: cinerino.repository.Task,
-        projectRepo: cinerino.repository.Project
-    ) => {
-        const projectDetails = await projectRepo.findById({ id: project.id });
-        if (projectDetails.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (projectDetails.settings.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
+export function cancelSeatReservationAuth(params: factory.cinerino.task.IData<factory.cinerino.taskName.CancelSeatReservation>) {
+    return async (repos: {
+        action: cinerino.repository.Action;
+        project: cinerino.repository.Project;
+        task: cinerino.repository.Task;
+        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
+    }) => {
+        // 座席予約キャンセル
+        await cinerino.service.stock.cancelSeatReservationAuth(params)(repos);
 
         // 座席仮予約アクションを取得
-        const authorizeActions = await actionRepo.searchByPurpose({
+        const authorizeActions = await repos.action.searchByPurpose({
             typeOf: factory.actionType.AuthorizeAction,
             purpose: {
-                typeOf: factory.transactionType.PlaceOrder,
-                id: transactionId
+                typeOf: params.purpose.typeOf,
+                id: params.purpose.id
             }
         })
             .then((actions) => actions
@@ -57,18 +38,8 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             );
 
-        const reserveService = new chevre.service.transaction.Reserve({
-            endpoint: projectDetails.settings.chevre.endpoint,
-            auth: chevreAuthClient
-        });
-
         await Promise.all(authorizeActions.map(async (action) => {
-            if (action.result !== undefined) {
-                const reserveTransaction = action.result.responseBody;
-                await reserveService.cancel({ id: reserveTransaction.id });
-            }
-
-            const performance = action.object.event;
+            const event = action.object.event;
 
             // 在庫を元の状態に戻す
             const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
@@ -84,21 +55,20 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 }
 
                 if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
-                    debug('resetting wheelchair rate limit...');
-                    const performanceStartDate = moment(`${performance.startDate}`).toDate();
                     const rateLimitKey = {
-                        performanceStartDate: performanceStartDate,
+                        performanceStartDate: moment(`${event.startDate}`)
+                            .toDate(),
                         ticketTypeCategory: ticketTypeCategory,
                         unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
                     };
-                    await ticketTypeCategoryRateLimitRepo.unlock(rateLimitKey);
-                    debug('wheelchair rate limit reset.');
+                    await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
                 }
             }));
 
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
                 name: <any>factory.taskName.AggregateEventReservations,
+                project: project,
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 // tslint:disable-next-line:no-magic-numbers
@@ -106,47 +76,9 @@ export function cancelSeatReservationAuth(transactionId: string) {
                 remainingNumberOfTries: 3,
                 numberOfTried: 0,
                 executionResults: [],
-                data: { id: performance.id }
+                data: { id: event.id }
             };
-            await taskRepo.save(<any>aggregateTask);
+            await repos.task.save(<any>aggregateTask);
         }));
     };
 }
-
-/**
- * 予約データをローカルDBにもコピーする
- */
-// export function transferSeatReservation(transactionId: string) {
-//     return async (
-//         transactionRepo: TransactionRepo,
-//         reservationRepo: ReservationRepo,
-//         taskRepo: cinerino.repository.Task,
-//         _: cinerino.repository.Project
-//     ) => {
-//         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
-//         const reservations = (<factory.transaction.placeOrder.IResult>transaction.result).order.acceptedOffers
-//             .map((o) => <factory.cinerino.order.IReservation>o.itemOffered);
-
-//         await Promise.all(reservations.map(async (reservation) => {
-//             // 予約データを作成する
-//             await reservationRepo.saveEventReservation({
-//                 ...reservation,
-//                 checkins: []
-//             });
-
-//             // 集計タスク作成
-//             const task: factory.task.aggregateEventReservations.IAttributes = {
-//                 name: <any>factory.taskName.AggregateEventReservations,
-//                 status: factory.taskStatus.Ready,
-//                 runsAt: new Date(),
-//                 remainingNumberOfTries: 3,
-//                 numberOfTried: 0,
-//                 executionResults: [],
-//                 data: {
-//                     id: reservation.reservationFor.id
-//                 }
-//             };
-//             await taskRepo.save(<any>task);
-//         }));
-//     };
-// }

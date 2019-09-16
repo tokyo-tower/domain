@@ -69,10 +69,11 @@ export class CognitoRepository {
             typeOf: factory.personType.Person,
             id: '',
             memberOf: {
-                typeOf: 'ProgramMembership',
+                award: [],
                 membershipNumber: params.username,
                 programName: 'Amazon Cognito',
-                award: []
+                project: <any>{},
+                typeOf: 'ProgramMembership'
             },
             ...profile
         };

@@ -40,12 +40,12 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
     };
 }
 
-export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.task.ITask<any>[]> {
+export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.cinerino.task.ITask<any>[]> {
     // tslint:disable-next-line:max-func-body-length
     return async (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
         const transaction = <any>await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
-        const taskAttributes: factory.task.IAttributes<any>[] = [];
+        const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName>[] = [];
 
         // ウェブフックタスクを追加
         const webhookUrl =
@@ -53,6 +53,7 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
             `${process.env.TELEMETRY_API_ENDPOINT}/organizations/project/${process.env.PROJECT_ID}/tasks/analyzePlaceOrder`;
         const triggerWebhookTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> = {
             name: factory.cinerino.taskName.TriggerWebhook,
+            project: transaction.project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 3,
@@ -66,6 +67,7 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
                 recipient: {
                     id: '',
                     name: { ja: 'Cinerino Telemetry', en: 'Cinerino Telemetry' },
+                    project: transaction.project,
                     typeOf: factory.organizationType.Corporation,
                     url: webhookUrl
                 },
@@ -100,25 +102,29 @@ export function exportTasksById(transactionId: string): ITaskAndTransactionOpera
             // 期限切れの場合は、タスクリストを作成する
             case factory.transactionStatusType.Expired:
                 taskAttributes.push({
-                    name: <any>factory.taskName.CancelSeatReservation,
+                    name: factory.cinerino.taskName.CancelSeatReservation,
+                    project: transaction.project,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        transactionId: transaction.id
+                        project: transaction.project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 });
                 taskAttributes.push({
-                    name: <any>factory.cinerino.taskName.CancelCreditCard,
+                    name: factory.cinerino.taskName.CancelCreditCard,
+                    project: transaction.project,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        transactionId: transaction.id
+                        project: transaction.project,
+                        purpose: { typeOf: transaction.typeOf, id: transaction.id }
                     }
                 });
 
@@ -173,6 +179,7 @@ export function sendEmail(
         // その場で送信ではなく、DBにタスクを登録
         const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage> = {
             name: factory.cinerino.taskName.SendEmailMessage,
+            project: transaction.project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
@@ -183,17 +190,19 @@ export function sendEmail(
                     agent: {
                         id: order.seller.id,
                         name: { ja: order.seller.name, en: '' },
+                        project: transaction.project,
                         typeOf: order.seller.typeOf
                     },
                     object: emailMessage,
+                    project: transaction.project,
+                    purpose: {
+                        typeOf: order.typeOf,
+                        orderNumber: order.orderNumber
+                    },
                     recipient: {
                         id: order.customer.id,
                         name: order.customer.name,
                         typeOf: order.customer.typeOf
-                    },
-                    purpose: {
-                        typeOf: order.typeOf,
-                        orderNumber: order.orderNumber
                     },
                     typeOf: factory.cinerino.actionType.SendAction
                 }

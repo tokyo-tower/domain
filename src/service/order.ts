@@ -24,6 +24,8 @@ import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
 export function createFromTransaction(transactionId: string) {
@@ -118,7 +120,7 @@ export function onReturn(
         task: cinerino.repository.Task;
     }) => {
         const now = new Date();
-        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+        const taskAttributes: factory.task.IAttributes<any>[] = [];
         const potentialActions = returnActionAttributes.potentialActions;
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -147,7 +149,7 @@ export function onReturn(
 
         // タスク保管
         await Promise.all(taskAttributes.map(async (taskAttribute) => {
-            return repos.task.save(taskAttribute);
+            return repos.task.save<any>(taskAttribute);
         }));
     };
 }
@@ -241,6 +243,7 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
 
                 sendEmailTaskAttributes = {
                     name: factory.cinerino.taskName.SendEmailMessage,
+                    project: project,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
@@ -251,17 +254,19 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                             agent: {
                                 id: order.seller.id,
                                 name: { ja: order.seller.name, en: '' },
+                                project: project,
                                 typeOf: order.seller.typeOf
                             },
                             object: emailMessage,
+                            project: project,
+                            purpose: {
+                                typeOf: order.typeOf,
+                                orderNumber: order.orderNumber
+                            },
                             recipient: {
                                 id: order.customer.id,
                                 name: order.customer.name,
                                 typeOf: order.customer.typeOf
-                            },
-                            purpose: {
-                                typeOf: order.typeOf,
-                                orderNumber: order.orderNumber
                             },
                             typeOf: factory.cinerino.actionType.SendAction
                         }
@@ -443,6 +448,7 @@ export function returnAllByPerformance(
 
         const taskAttribute: factory.task.returnOrdersByPerformance.IAttributes = {
             name: <any>factory.taskName.ReturnOrdersByPerformance,
+            project: project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
