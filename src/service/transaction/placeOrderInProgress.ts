@@ -255,7 +255,10 @@ export function confirm(params: {
         token: TokenRepo;
         transaction: TransactionRepo;
     }) => {
-        const transaction = await repos.transaction.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: params.id });
+        const transaction = await repos.transaction.findInProgressById({
+            typeOf: factory.transactionType.PlaceOrder,
+            id: params.id
+        });
 
         if (params.agent !== undefined && typeof params.agent.id === 'string') {
             if (transaction.agent.id !== params.agent.id) {

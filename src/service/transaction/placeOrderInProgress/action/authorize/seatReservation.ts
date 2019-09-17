@@ -319,6 +319,33 @@ export function create(
         // 供給情報の有効性を確認
         const acceptedOffersWithSeatNumber = await validateOffers(projectDetails, performance, acceptedOffers, transactionId)();
 
+        let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
+        let responseBody: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
+
+        // Chevre予約の場合、まず予約取引開始
+        const reserveService = new chevre.service.transaction.Reserve({
+            endpoint: projectDetails.settings.chevre.endpoint,
+            auth: chevreAuthClient
+        });
+
+        requestBody = {
+            project: project,
+            typeOf: chevre.factory.transactionType.Reserve,
+            agent: {
+                typeOf: transaction.agent.typeOf,
+                name: transaction.agent.id
+            },
+            object: {
+                event: {
+                    id: performance.id
+                },
+                acceptedOffer: []
+            },
+            expires: moment(performance.endDate).add(1, 'month').toDate()
+        };
+
+        const reserveTransaction = await reserveService.start(requestBody);
+
         // 承認アクションを開始
         const actionAttributes: factory.action.authorize.seatReservation.IAttributes = {
             project: transaction.project,
@@ -341,6 +368,9 @@ export function create(
                         ticketedSeat: o.itemOffered.reservedTicket.ticketedSeat
                     };
                 }),
+                ...(reserveTransaction !== undefined)
+                    ? { pendingTransaction: reserveTransaction }
+                    : {},
                 ...{ offers: acceptedOffers }
             },
             agent: transaction.seller,
@@ -356,8 +386,6 @@ export function create(
         let tmpReservations: factory.action.authorize.seatReservation.ITmpReservation[] = [];
 
         const performanceStartDate = moment(performance.startDate).toDate();
-        let requestBody: factory.chevre.transaction.reserve.IStartParamsWithoutDetail | undefined;
-        let responseBody: factory.chevre.transaction.ITransaction<factory.chevre.transactionType.Reserve> | undefined;
 
         try {
             // 車椅子予約がある場合、レート制限
@@ -398,19 +426,8 @@ export function create(
                 })
             );
 
-            // Chevre仮予約
-            const reserveService = new chevre.service.transaction.Reserve({
-                endpoint: projectDetails.settings.chevre.endpoint,
-                auth: chevreAuthClient
-            });
-
-            requestBody = {
-                project: project,
-                typeOf: chevre.factory.transactionType.Reserve,
-                agent: {
-                    typeOf: transaction.agent.typeOf,
-                    name: transaction.agent.id
-                },
+            responseBody = await reserveService.addReservations({
+                id: reserveTransaction.id,
                 object: {
                     event: {
                         id: performance.id
@@ -431,13 +448,10 @@ export function create(
                             }
                         };
                     })
-                },
-                expires: moment(performance.endDate).add(1, 'month').toDate()
-            };
+                }
+            });
 
-            responseBody = await reserveService.start(requestBody);
-
-            const reservations = responseBody.object.reservations;
+            const reservations = (Array.isArray(responseBody.object.reservations)) ? responseBody.object.reservations : [];
             tmpReservations = acceptedOffersWithSeatNumber
                 .filter((o) => {
                     const r = o.itemOffered;
@@ -513,11 +527,6 @@ export function create(
             try {
                 // 仮予約があれば削除
                 if (responseBody !== undefined) {
-                    const reserveService = new chevre.service.transaction.Reserve({
-                        endpoint: projectDetails.settings.chevre.endpoint,
-                        auth: chevreAuthClient
-                    });
-
                     await reserveService.cancel({ id: responseBody.id });
                 }
 

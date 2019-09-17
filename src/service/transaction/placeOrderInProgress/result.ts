@@ -29,7 +29,7 @@ export function createOrder(
     }
 
     const tmpReservations = (<factory.action.authorize.seatReservation.IResult>seatReservationAuthorizeAction.result).tmpReservations;
-    const chevreReservations = reserveTransaction.object.reservations;
+    const chevreReservations = (Array.isArray(reserveTransaction.object.reservations)) ? reserveTransaction.object.reservations : [];
 
     const profile = transaction.agent;
 

@@ -97,7 +97,9 @@ export async function createPotentialActions(params: {
                     // responseBody = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
                     // tslint:disable-next-line:max-line-length
                     const reserveTransaction = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
-                    const chevreReservations = reserveTransaction.object.reservations;
+                    const chevreReservations = (Array.isArray(reserveTransaction.object.reservations))
+                        ? reserveTransaction.object.reservations
+                        : [];
                     const defaultUnderNameIdentifiers: factory.propertyValue.IPropertyValue<string>[]
                         = [{ name: 'orderNumber', value: params.order.orderNumber }];
 
