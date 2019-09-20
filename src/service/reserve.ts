@@ -7,7 +7,6 @@ import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as chevre from '../chevre';
@@ -36,7 +35,7 @@ export function cancelReservation(params: { id: string }) {
         project: cinerino.repository.Project;
         reservation: ReservationRepo;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
+        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
     }) => {
         const projectDetails = await repos.project.findById({ id: project.id });
         if (projectDetails.settings === undefined) {

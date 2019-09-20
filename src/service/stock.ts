@@ -6,8 +6,6 @@ import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
-
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
@@ -20,7 +18,7 @@ export function cancelSeatReservationAuth(params: factory.cinerino.task.IData<fa
         action: cinerino.repository.Action;
         project: cinerino.repository.Project;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
+        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
     }) => {
         // 座席予約キャンセル
         await cinerino.service.stock.cancelSeatReservationAuth(params)(repos);

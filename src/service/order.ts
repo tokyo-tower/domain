@@ -13,7 +13,6 @@ import * as moment from 'moment-timezone';
 import * as numeral from 'numeral';
 
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as factory from '@tokyotower/factory';
@@ -51,7 +50,7 @@ export function processReturn(returnOrderTransactionId: string) {
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
         transactionRepo: cinerino.repository.Transaction,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        ticketTypeCategoryRateLimitRepo: cinerino.repository.rateLimit.TicketTypeCategory,
         taskRepo: cinerino.repository.Task,
         orderRepo: cinerino.repository.Order,
         projectRepo: cinerino.repository.Project
@@ -160,7 +159,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
     return async (
         reservationRepo: ReservationRepo,
         transactionRepo: cinerino.repository.Transaction,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        ticketTypeCategoryRateLimitRepo: cinerino.repository.rateLimit.TicketTypeCategory,
         taskRepo: cinerino.repository.Task,
         projectRepo: cinerino.repository.Project
     ) => {

@@ -3,8 +3,6 @@ import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../repo/rateLimit/ticketTypeCategory';
-
 import * as StockService from '../stock';
 
 /**
@@ -15,7 +13,7 @@ export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName
         const actionRepo = new cinerino.repository.Action(settings.connection);
         const projectRepo = new cinerino.repository.Project(settings.connection);
         const taskRepo = new cinerino.repository.Task(settings.connection);
-        const ticketTypeCategoryRateLimitRepo = new TicketTypeCategoryRateLimitRepo(settings.redisClient);
+        const ticketTypeCategoryRateLimitRepo = new cinerino.repository.rateLimit.TicketTypeCategory(settings.redisClient);
 
         await StockService.cancelSeatReservationAuth(data)({
             action: actionRepo,

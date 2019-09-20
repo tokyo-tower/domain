@@ -10,7 +10,6 @@ import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 
 /**
@@ -33,12 +32,7 @@ export class EventWithAggregation extends EventWithAggregationRepo { }
  */
 export class Invoice extends cinerino.repository.Invoice { }
 
-export namespace rateLimit {
-    /**
-     * 券種カテゴリーレート制限リポジトリ
-     */
-    export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
-}
+export import rateLimit = cinerino.repository.rateLimit;
 
 /**
  * 注文リポジトリ
