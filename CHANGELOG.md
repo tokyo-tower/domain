@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 全リソースにプロジェクト属性を結合
 - 座席予約承認アクションのobjectに進行中予約取引を追加
 - 取引リポジトリをCinerino化
+- Chevre@6.0.0対応
 
 ### Deprecated
 

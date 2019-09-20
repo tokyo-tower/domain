@@ -334,13 +334,10 @@ export function create(
                 typeOf: transaction.agent.typeOf,
                 name: transaction.agent.id
             },
-            object: {
-                event: {
-                    id: performance.id
-                },
-                acceptedOffer: []
-            },
-            expires: moment(performance.endDate).add(1, 'month').toDate()
+            object: {},
+            expires: moment(performance.endDate)
+                .add(1, 'month')
+                .toDate()
         };
 
         const reserveTransaction = await reserveService.start(requestBody);
