@@ -12,7 +12,6 @@ import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
-import { RedisRepository as TokenRepo } from './repo/token';
 
 /**
  * 売上集計リポジトリ
@@ -89,7 +88,7 @@ export class Task extends cinerino.repository.Task { }
 /**
  * トークンリポジトリ
  */
-export class Token extends TokenRepo { }
+export class Token extends cinerino.repository.Token { }
 /**
  * 取引リポジトリ
  */
