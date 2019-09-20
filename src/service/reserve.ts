@@ -87,7 +87,7 @@ export function cancelReservation(params: { id: string }) {
 
                 // このイベントの予約から余分確保分を検索
                 if (Array.isArray(extraSeatNumbers) && extraSeatNumbers.length > 0) {
-                    const searchExtraReservationsResult = await reservationService.search({
+                    const searchExtraReservationsResult = await reservationService.search<factory.chevre.reservationType.EventReservation>({
                         limit: 100,
                         typeOf: factory.chevre.reservationType.EventReservation,
                         reservationFor: { id: reservation.reservationFor.id },

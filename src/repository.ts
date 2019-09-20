@@ -13,7 +13,6 @@ import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { RedisRepository as TokenRepo } from './repo/token';
-import { MongoRepository as TransactionRepo } from './repo/transaction';
 
 /**
  * 売上集計リポジトリ
@@ -94,4 +93,4 @@ export class Token extends TokenRepo { }
 /**
  * 取引リポジトリ
  */
-export class Transaction extends TransactionRepo { }
+export class Transaction extends cinerino.repository.Transaction { }

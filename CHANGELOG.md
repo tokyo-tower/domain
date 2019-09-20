@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 通知サービスをCinerino化
 - 全リソースにプロジェクト属性を結合
 - 座席予約承認アクションのobjectに進行中予約取引を追加
+- 取引リポジトリをCinerino化
 
 ### Deprecated
 

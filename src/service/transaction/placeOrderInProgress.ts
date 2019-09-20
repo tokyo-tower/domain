@@ -8,7 +8,6 @@ import * as waiter from '@waiter/domain';
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
 
 import { RedisRepository as TokenRepo } from '../../repo/token';
-import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as SeatReservationAuthorizeActionService from './placeOrderInProgress/action/authorize/seatReservation';
 
@@ -18,14 +17,14 @@ import { createOrder } from './placeOrderInProgress/result';
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 export type IStartOperation<T> = (
-    transactionRepo: TransactionRepo,
+    transactionRepo: cinerino.repository.Transaction,
     sellerRepo: cinerino.repository.Seller
 ) => Promise<T>;
-export type ITransactionOperation<T> = (transactionRepo: TransactionRepo) => Promise<T>;
+export type ITransactionOperation<T> = (transactionRepo: cinerino.repository.Transaction) => Promise<T>;
 export type IConfirmOperation<T> = (repos: {
     action: cinerino.repository.Action;
     orderNumber: cinerino.repository.OrderNumber;
-    transaction: TransactionRepo;
+    transaction: cinerino.repository.Transaction;
     token: TokenRepo;
 }) => Promise<T>;
 
@@ -59,7 +58,7 @@ export interface IStartParams {
  * 取引開始
  */
 export function start(params: IStartParams): IStartOperation<factory.transaction.placeOrder.ITransaction> {
-    return async (transactionRepo: TransactionRepo, sellerRepo: cinerino.repository.Seller) => {
+    return async (transactionRepo: cinerino.repository.Transaction, sellerRepo: cinerino.repository.Seller) => {
         // 販売者を取得
         const doc = await sellerRepo.organizationModel.findOne({
             identifier: params.sellerIdentifier
@@ -185,7 +184,7 @@ export function setCustomerContact(
     transactionId: string,
     contact: factory.transaction.placeOrder.ICustomerProfile
 ): ITransactionOperation<factory.transaction.placeOrder.ICustomerProfile> {
-    return async (transactionRepo: TransactionRepo) => {
+    return async (transactionRepo: cinerino.repository.Transaction) => {
         let formattedTelephone: string;
         try {
             const phoneUtil = PhoneNumberUtil.getInstance();
@@ -200,8 +199,16 @@ export function setCustomerContact(
             throw new factory.errors.Argument('contact.telephone', error.message);
         }
 
-        // 連絡先を再生成(validationの意味も含めて)
-        const profile: factory.transaction.placeOrder.ICustomerProfile = {
+        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
+
+        if (transaction.agent.id !== agentId) {
+            throw new factory.errors.Forbidden('A specified transaction is not yours.');
+        }
+
+        // 新プロフィールを生成
+        const newAgent: factory.transaction.placeOrder.IAgent = {
+            typeOf: transaction.agent.typeOf,
+            id: transaction.agent.id,
             email: contact.email,
             age: contact.age,
             address: contact.address,
@@ -211,19 +218,13 @@ export function setCustomerContact(
             telephone: formattedTelephone
         };
 
-        const transaction = await transactionRepo.findInProgressById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
-
-        if (transaction.agent.id !== agentId) {
-            throw new factory.errors.Forbidden('A specified transaction is not yours.');
-        }
-
-        await transactionRepo.updateCustomerProfile({
+        await transactionRepo.updateAgent({
             typeOf: transaction.typeOf,
             id: transaction.id,
-            agent: profile
+            agent: newAgent
         });
 
-        return profile;
+        return newAgent;
     };
 }
 
@@ -253,7 +254,7 @@ export function confirm(params: {
         action: cinerino.repository.Action;
         orderNumber: cinerino.repository.OrderNumber;
         token: TokenRepo;
-        transaction: TransactionRepo;
+        transaction: cinerino.repository.Transaction;
     }) => {
         const transaction = await repos.transaction.findInProgressById({
             typeOf: factory.transactionType.PlaceOrder,

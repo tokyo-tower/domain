@@ -9,11 +9,11 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "2.0.0-alpha.0",
-    "@cinerino/domain": "1.0.0-alpha.337",
+    "@chevre/api-nodejs-client": "2.0.0-alpha.2",
+    "@cinerino/domain": "1.0.0-alpha.343",
     "@motionpicture/gmo-service": "^4.3.0",
     "@sendgrid/mail": "^6.4.0",
-    "@tokyotower/factory": "20.0.0-alpha.1",
+    "@tokyotower/factory": "20.0.0-alpha.2",
     "@types/redis": "^2.8.13",
     "@waiter/domain": "^3.0.0",
     "aws-sdk": "^2.501.0",

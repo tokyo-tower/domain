@@ -15,7 +15,6 @@ import * as numeral from 'numeral';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as factory from '@tokyotower/factory';
 
@@ -29,7 +28,7 @@ const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
 export function createFromTransaction(transactionId: string) {
-    return async (orderRepo: cinerino.repository.Order, transactionRepo: TransactionRepo) => {
+    return async (orderRepo: cinerino.repository.Order, transactionRepo: cinerino.repository.Transaction) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -51,13 +50,12 @@ export function processReturn(returnOrderTransactionId: string) {
         actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
-        transactionRepo: TransactionRepo,
+        transactionRepo: cinerino.repository.Transaction,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: cinerino.repository.Task,
         orderRepo: cinerino.repository.Order,
         projectRepo: cinerino.repository.Project
     ) => {
-        debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
             .then((doc) => {
                 if (doc === null) {
@@ -161,7 +159,7 @@ export function onReturn(
 export function cancelReservations(returnOrderTransactionId: string) {
     return async (
         reservationRepo: ReservationRepo,
-        transactionRepo: TransactionRepo,
+        transactionRepo: cinerino.repository.Transaction,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: cinerino.repository.Task,
         projectRepo: cinerino.repository.Project
@@ -197,7 +195,7 @@ export function cancelReservations(returnOrderTransactionId: string) {
  */
 export function notifyReturnOrder(returnOrderTransactionId: string) {
     return async (
-        transactionRepo: TransactionRepo,
+        transactionRepo: cinerino.repository.Transaction,
         taskRepo: cinerino.repository.Task
     ) => {
         debug('finding returnOrder transaction...');
@@ -293,7 +291,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
     return async (
         actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
-        transactionRepo: TransactionRepo
+        transactionRepo: cinerino.repository.Transaction
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -470,7 +468,7 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
         invoiceRepo: cinerino.repository.Invoice,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
-        transactionRepo: TransactionRepo
+        transactionRepo: cinerino.repository.Transaction
     ) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = (clientIds.length > 0)

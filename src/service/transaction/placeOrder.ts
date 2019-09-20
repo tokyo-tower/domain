@@ -4,15 +4,15 @@
 import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 
-import { MongoRepository as TransactionRepo } from '../../repo/transaction';
-
-export type ITaskAndTransactionOperation<T> = (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => Promise<T>;
+export type ITaskAndTransactionOperation<T> = (
+    taskRepository: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction
+) => Promise<T>;
 
 /**
  * ひとつの取引のタスクをエクスポートする
  */
 export function exportTasks(status: factory.transactionStatusType): ITaskAndTransactionOperation<void> {
-    return async (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
+    return async (taskRepository: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction) => {
         const statusesTasksExportable = [factory.transactionStatusType.Expired, factory.transactionStatusType.Confirmed];
         if (statusesTasksExportable.indexOf(status) < 0) {
             throw new factory.errors.Argument('status', `transaction status should be in [${statusesTasksExportable.join(',')}]`);
@@ -42,7 +42,7 @@ export function exportTasks(status: factory.transactionStatusType): ITaskAndTran
 
 export function exportTasksById(transactionId: string): ITaskAndTransactionOperation<factory.cinerino.task.ITask<any>[]> {
     // tslint:disable-next-line:max-func-body-length
-    return async (taskRepository: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
+    return async (taskRepository: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction) => {
         const transaction = <any>await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName>[] = [];
@@ -147,7 +147,7 @@ export function sendEmail(
     transactionId: string,
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
 ): ITaskAndTransactionOperation<factory.cinerino.task.ITask<factory.cinerino.taskName.SendEmailMessage>> {
-    return async (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
+    return async (taskRepo: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
         if (transaction.status !== factory.transactionStatusType.Confirmed) {
             throw new factory.errors.Forbidden('Transaction not confirmed.');

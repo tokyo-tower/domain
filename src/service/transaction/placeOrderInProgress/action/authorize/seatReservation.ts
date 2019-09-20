@@ -6,7 +6,6 @@ import * as factory from '@tokyotower/factory';
 
 import { MongoRepository as PerformanceRepo } from '../../../../../repo/performance';
 import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../../../../repo/rateLimit/ticketTypeCategory';
-import { MongoRepository as TransactionRepo } from '../../../../../repo/transaction';
 
 import * as chevre from '../../../../../chevre';
 import { credentials } from '../../../../../credentials';
@@ -31,7 +30,7 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
 const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 export type ICreateOpetaiton<T> = (
-    transactionRepo: TransactionRepo,
+    transactionRepo: cinerino.repository.Transaction,
     performanceRepo: PerformanceRepo,
     actionRepo: cinerino.repository.Action,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
@@ -40,7 +39,7 @@ export type ICreateOpetaiton<T> = (
 ) => Promise<T>;
 
 export type ICancelOpetaiton<T> = (
-    transactionRepo: TransactionRepo,
+    transactionRepo: cinerino.repository.Transaction,
     actionRepo: cinerino.repository.Action,
     ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
     taskRepo: cinerino.repository.Task,
@@ -290,7 +289,7 @@ export function create(
 ): ICreateOpetaiton<factory.action.authorize.seatReservation.IAction> {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        transactionRepo: TransactionRepo,
+        transactionRepo: cinerino.repository.Transaction,
         performanceRepo: PerformanceRepo,
         actionRepo: cinerino.repository.Action,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
@@ -624,7 +623,7 @@ export function cancel(
     actionId: string
 ): ICancelOpetaiton<void> {
     return async (
-        transactionRepo: TransactionRepo,
+        transactionRepo: cinerino.repository.Transaction,
         actionRepo: cinerino.repository.Action,
         ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
         taskRepo: cinerino.repository.Task,
