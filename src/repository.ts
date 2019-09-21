@@ -8,7 +8,6 @@ import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
-import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 
@@ -63,10 +62,6 @@ export class Performance extends PerformanceRepo { }
  * 会員リポジトリ
  */
 export class Person extends cinerino.repository.Person { }
-/**
- * 旧会員リポジトリ
- */
-export class PersonOld extends PersonRepo { }
 /**
  * プロジェクトリポジトリ
  */
