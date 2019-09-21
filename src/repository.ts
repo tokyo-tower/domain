@@ -62,7 +62,11 @@ export class Performance extends PerformanceRepo { }
 /**
  * 会員リポジトリ
  */
-export class Person extends PersonRepo { }
+export class Person extends cinerino.repository.Person { }
+/**
+ * 旧会員リポジトリ
+ */
+export class PersonOld extends PersonRepo { }
 /**
  * プロジェクトリポジトリ
  */

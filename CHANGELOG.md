@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Chevre@6.0.0対応
 - 注文取引サービスを@cinerino/domainへ移行
 - 座席予約承認時のイベント存在確認を直接Chevreにて実行するように変更
+- 会員リポジトリをCinerino化
 
 ### Deprecated
 
