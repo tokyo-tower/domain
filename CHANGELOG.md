@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v30.0.0 - 2019-09-24
+
+### Changed
+
 - 注文レポート作成タスクを、注文後の通知アクション先で作成するように設計変更
 - 注文返品レポート作成タスクを、注文返品後の通知アクション先で作成するように設計変更
 - 注文取引の決済方法に関するバリデーションをAPIアプリケーション側へ以降
@@ -25,14 +37,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文取引サービスを@cinerino/domainへ移行
 - 座席予約承認時のイベント存在確認を直接Chevreにて実行するように変更
 - 会員リポジトリをCinerino化
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## v29.0.0 - 2019-08-28
 
