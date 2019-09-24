@@ -462,7 +462,12 @@ export function returnAllByPerformance(
     };
 }
 
-export function processReturnAllByPerformance(agentId: string, performanceId: string, clientIds: string[]) {
+export function processReturnAllByPerformance(
+    agentId: string,
+    performanceId: string,
+    clientIds: string[],
+    potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams
+) {
     return async (
         invoiceRepo: cinerino.repository.Invoice,
         performanceRepo: PerformanceRepo,
@@ -534,7 +539,8 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
                 transactionId: transactionId,
                 cancellationFee: 0,
                 forcibly: true,
-                reason: factory.transaction.returnOrder.Reason.Seller
+                reason: factory.transaction.returnOrder.Reason.Seller,
+                potentialActions: potentialActions
             })({
                 invoice: invoiceRepo,
                 transaction: transactionRepo

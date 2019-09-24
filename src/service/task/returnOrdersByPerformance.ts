@@ -18,7 +18,7 @@ export function call(data: factory.task.returnOrdersByPerformance.IData): IOpera
         const reservationRepo = new ReservationRepo(settings.connection);
         const transactionRepo = new cinerino.repository.Transaction(settings.connection);
 
-        await OrderService.processReturnAllByPerformance(data.agentId, data.performanceId, data.clientIds)(
+        await OrderService.processReturnAllByPerformance(data.agentId, data.performanceId, data.clientIds, data.potentialActions)(
             invoiceRepo, performanceRepo, reservationRepo, transactionRepo
         );
     };
