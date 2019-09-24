@@ -2,16 +2,11 @@
  * タスクサービス
  */
 import * as cinerino from '@cinerino/domain';
-import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 import * as redis from 'redis';
 
 import * as factory from '@tokyotower/factory';
-
-import * as NotificationService from './notification';
-
-const debug = createDebug('cinerino-domain:service');
 
 export interface IConnectionSettings {
     /**
@@ -43,11 +38,8 @@ export function executeByName<T extends factory.taskName>(params: {
         let task: factory.task.ITask<any> | null = null;
         try {
             task = <any>await taskRepo.executeOneByName<any>(params);
-            debug('task found', task);
         } catch (error) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore next */
-            debug('executeByName error:', error);
+            // no op
         }
 
         // タスクがなければ終了
@@ -61,7 +53,6 @@ export function executeByName<T extends factory.taskName>(params: {
  * タスクを実行する
  */
 export function execute(task: factory.task.ITask<any>): IOperation<void> {
-    debug('executing a task...', task);
     const now = new Date();
 
     return async (settings: IConnectionSettings) => {
@@ -118,7 +109,6 @@ export function abort(params: {
         if (abortedTask === null) {
             return;
         }
-        debug('abortedTask found', abortedTask);
 
         // 開発者へ報告
         const lastResult = (abortedTask.executionResults.length > 0) ?
@@ -127,7 +117,7 @@ export function abort(params: {
             /* istanbul ignore next */
             '';
 
-        await NotificationService.report2developers(
+        await cinerino.service.notification.report2developers(
             ABORT_REPORT_SUBJECT,
             `project:${(params.project !== undefined) ? params.project.id : ''}
 id:${abortedTask.id}

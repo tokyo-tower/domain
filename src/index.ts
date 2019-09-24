@@ -8,15 +8,12 @@ import * as redis from 'redis';
 
 import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
-import * as NotificationService from './service/notification';
 import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReserveService from './service/reserve';
 import * as StockService from './service/stock';
 import * as TaskService from './service/task';
-import * as PlaceOrderTransactionService from './service/transaction/placeOrder';
-import * as PlaceOrderInProgressTransactionService from './service/transaction/placeOrderInProgress';
 import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
 
 import * as factory from '@tokyotower/factory';
@@ -47,7 +44,7 @@ export import AWS = AWS;
 
 export namespace service {
     export import admin = AdminService;
-    export import notification = NotificationService;
+    export import notification = cinerino.service.notification;
     export import offer = OfferService;
     export import order = OrderService;
     export import payment = cinerino.service.payment;
@@ -57,8 +54,8 @@ export namespace service {
     export import stock = StockService;
     export import task = TaskService;
     export namespace transaction {
-        export import placeOrder = PlaceOrderTransactionService;
-        export import placeOrderInProgress = PlaceOrderInProgressTransactionService;
+        export import placeOrder = cinerino.service.transaction.placeOrder;
+        export import placeOrderInProgress = cinerino.service.transaction.placeOrderInProgress4ttts;
         export import returnOrder = ReturnOrderTransactionService;
     }
     export import util = cinerino.service.util;

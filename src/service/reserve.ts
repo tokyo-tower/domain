@@ -7,7 +7,6 @@ import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as chevre from '../chevre';
@@ -36,7 +35,7 @@ export function cancelReservation(params: { id: string }) {
         project: cinerino.repository.Project;
         reservation: ReservationRepo;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
+        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
     }) => {
         const projectDetails = await repos.project.findById({ id: project.id });
         if (projectDetails.settings === undefined) {
@@ -87,7 +86,7 @@ export function cancelReservation(params: { id: string }) {
 
                 // このイベントの予約から余分確保分を検索
                 if (Array.isArray(extraSeatNumbers) && extraSeatNumbers.length > 0) {
-                    const searchExtraReservationsResult = await reservationService.search({
+                    const searchExtraReservationsResult = await reservationService.search<factory.chevre.reservationType.EventReservation>({
                         limit: 100,
                         typeOf: factory.chevre.reservationType.EventReservation,
                         reservationFor: { id: reservation.reservationFor.id },
@@ -129,6 +128,7 @@ export function cancelReservation(params: { id: string }) {
 
         const task: factory.task.aggregateEventReservations.IAttributes = {
             name: <any>factory.taskName.AggregateEventReservations,
+            project: project,
             status: factory.taskStatus.Ready,
             // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
             // tslint:disable-next-line:no-magic-numbers

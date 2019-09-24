@@ -8,12 +8,8 @@ import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
-import { CognitoRepository as PersonRepo } from './repo/person';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from './repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
-import { RedisRepository as TokenRepo } from './repo/token';
-import { MongoRepository as TransactionRepo } from './repo/transaction';
 
 /**
  * 売上集計リポジトリ
@@ -35,17 +31,17 @@ export class EventWithAggregation extends EventWithAggregationRepo { }
  */
 export class Invoice extends cinerino.repository.Invoice { }
 
-export namespace rateLimit {
-    /**
-     * 券種カテゴリーレート制限リポジトリ
-     */
-    export class TicketTypeCategory extends TicketTypeCategoryRateLimitRepo { }
-}
+export import rateLimit = cinerino.repository.rateLimit;
 
 /**
  * 注文リポジトリ
  */
 export class Order extends cinerino.repository.Order { }
+
+/**
+ * 注文番号リポジトリ
+ */
+export class OrderNumber extends cinerino.repository.OrderNumber { }
 
 export namespace place {
     /**
@@ -65,7 +61,7 @@ export class Performance extends PerformanceRepo { }
 /**
  * 会員リポジトリ
  */
-export class Person extends PersonRepo { }
+export class Person extends cinerino.repository.Person { }
 /**
  * プロジェクトリポジトリ
  */
@@ -85,8 +81,8 @@ export class Task extends cinerino.repository.Task { }
 /**
  * トークンリポジトリ
  */
-export class Token extends TokenRepo { }
+export class Token extends cinerino.repository.Token { }
 /**
  * 取引リポジトリ
  */
-export class Transaction extends TransactionRepo { }
+export class Transaction extends cinerino.repository.Transaction { }

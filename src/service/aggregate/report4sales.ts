@@ -9,6 +9,7 @@ import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
 
 const debug = createDebug('ttts-domain:service');
 const STAFF_CLIENT_ID = process.env.STAFF_CLIENT_ID;
+const CANCELLATION_FEE = 1000;
 
 /**
  * 購入者区分
@@ -129,36 +130,38 @@ enum AggregateUnit {
 /**
  * 注文取引からレポートを作成する
  */
-export function createPlaceOrderReport(params: { transaction: factory.transaction.placeOrder.ITransaction }) {
+export function createPlaceOrderReport(params: {
+    order: factory.order.IOrder;
+}) {
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
         const datas: IData[] = [];
-        if (params.transaction.endDate !== undefined) {
-            const transactionResult = <factory.transaction.placeOrder.IResult>params.transaction.result;
+        const order = params.order;
 
-            let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
-            if (params.transaction.object.clientUser !== undefined
-                && params.transaction.object.clientUser.client_id === STAFF_CLIENT_ID) {
+        let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
+        if (Array.isArray(order.customer.identifier)) {
+            const clientIdProperty = order.customer.identifier.find((i) => i.name === 'clientId');
+            if (clientIdProperty !== undefined && clientIdProperty.value === STAFF_CLIENT_ID) {
                 purchaserGroup = PurchaserGroup.Staff;
             }
-
-            datas.push(
-                ...transactionResult.order.acceptedOffers
-                    .map((o) => {
-                        return reservation2data(
-                            {
-                                ...<factory.cinerino.order.IReservation>o.itemOffered,
-                                checkins: []
-                            },
-                            transactionResult.order,
-                            <Date>params.transaction.endDate,
-                            AggregateUnit.SalesByEndDate,
-                            purchaserGroup
-                        );
-                    })
-            );
         }
+
+        datas.push(
+            ...order.acceptedOffers
+                .map((o) => {
+                    return reservation2data(
+                        {
+                            ...<factory.cinerino.order.IReservation>o.itemOffered,
+                            checkins: []
+                        },
+                        order,
+                        order.orderDate,
+                        AggregateUnit.SalesByEndDate,
+                        purchaserGroup
+                    );
+                })
+        );
         debug('creating', datas.length, 'datas...');
 
         // 冪等性の確保!
@@ -171,16 +174,16 @@ export function createPlaceOrderReport(params: { transaction: factory.transactio
 /**
  * 注文返品取引からレポートを作成する
  */
-export function createReturnOrderReport(params: { transaction: factory.transaction.returnOrder.ITransaction }) {
+export function createReturnOrderReport(params: {
+    order: factory.order.IOrder;
+}) {
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
         const datas: IData[] = [];
 
-        // 取引からキャンセル予約情報取得
-        const placeOrderTransaction = params.transaction.object.transaction;
-        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
-        const reservations = placeOrderTransactionResult.order.acceptedOffers
+        const order = params.order;
+        const reservations = order.acceptedOffers
             .filter((o) => {
                 const r = <factory.cinerino.order.IReservation>o.itemOffered;
                 // 余分確保分を除く
@@ -196,10 +199,15 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
             .map((o) => <factory.cinerino.order.IReservation>o.itemOffered);
 
         let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
-        if (placeOrderTransaction.object.clientUser !== undefined
-            && placeOrderTransaction.object.clientUser.client_id === STAFF_CLIENT_ID) {
-            purchaserGroup = PurchaserGroup.Staff;
+        if (Array.isArray(order.customer.identifier)) {
+            const clientIdProperty = order.customer.identifier.find((i) => i.name === 'clientId');
+            if (clientIdProperty !== undefined && clientIdProperty.value === STAFF_CLIENT_ID) {
+                purchaserGroup = PurchaserGroup.Staff;
+            }
         }
+
+        const dateReturned = moment(<Date>order.dateReturned).toDate();
+        const cancellationFee = CANCELLATION_FEE;
 
         reservations.forEach((r, reservationIndex) => {
             // 座席分のキャンセルデータ
@@ -209,15 +217,15 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                         ...r,
                         checkins: []
                     },
-                    placeOrderTransactionResult.order,
-                    <Date>params.transaction.endDate,
+                    order,
+                    <Date>order.dateReturned,
                     AggregateUnit.SalesByEndDate,
                     purchaserGroup
                 ),
                 reservationStatus: Status4csv.Cancelled,
                 status_sort: `${r.reservationStatus}_1`,
-                cancellationFee: params.transaction.object.cancellationFee,
-                orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
+                cancellationFee: cancellationFee,
+                orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
             });
 
             // 購入分のキャンセル料データ
@@ -228,8 +236,8 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                             ...r,
                             checkins: []
                         },
-                        placeOrderTransactionResult.order,
-                        <Date>params.transaction.endDate,
+                        order,
+                        dateReturned,
                         AggregateUnit.SalesByEndDate,
                         purchaserGroup
                     ),
@@ -240,15 +248,15 @@ export function createReturnOrderReport(params: { transaction: factory.transacti
                     },
                     ticketType: {
                         name: '',
-                        charge: params.transaction.object.cancellationFee.toString(),
+                        charge: cancellationFee.toString(),
                         csvCode: ''
                     },
                     payment_seat_index: '',
                     reservationStatus: Status4csv.CancellationFee,
                     status_sort: `${r.reservationStatus}_2`,
-                    cancellationFee: params.transaction.object.cancellationFee,
-                    price: params.transaction.object.cancellationFee.toString(),
-                    orderDate: moment(<Date>params.transaction.endDate).format('YYYY/MM/DD HH:mm:ss')
+                    cancellationFee: cancellationFee,
+                    price: cancellationFee.toString(),
+                    orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
                 });
             }
         });

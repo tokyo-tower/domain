@@ -13,9 +13,7 @@ import * as moment from 'moment-timezone';
 import * as numeral from 'numeral';
 
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
-import { MongoRepository as TransactionRepo } from '../repo/transaction';
 
 import * as factory from '@tokyotower/factory';
 
@@ -24,10 +22,12 @@ import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
 
+const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
 export function createFromTransaction(transactionId: string) {
-    return async (orderRepo: cinerino.repository.Order, transactionRepo: TransactionRepo) => {
+    return async (orderRepo: cinerino.repository.Order, transactionRepo: cinerino.repository.Transaction) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
 
         // tslint:disable-next-line:no-single-line-block-comment
@@ -49,13 +49,12 @@ export function processReturn(returnOrderTransactionId: string) {
         actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
-        transactionRepo: TransactionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        transactionRepo: cinerino.repository.Transaction,
+        ticketTypeCategoryRateLimitRepo: cinerino.repository.rateLimit.TicketTypeCategory,
         taskRepo: cinerino.repository.Task,
         orderRepo: cinerino.repository.Order,
         projectRepo: cinerino.repository.Project
     ) => {
-        debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
             .then((doc) => {
                 if (doc === null) {
@@ -65,6 +64,12 @@ export function processReturn(returnOrderTransactionId: string) {
                 return <factory.transaction.returnOrder.ITransaction>doc.toObject();
             });
         debug('processing return order...', returnOrderTransaction);
+
+        const potentialActions = returnOrderTransaction.potentialActions;
+        if (potentialActions === undefined) {
+            throw new factory.errors.NotFound('PotentialActions of return order transaction');
+        }
+        const returnOrderActionAttributes = potentialActions.returnOrder;
 
         await returnCreditCardSales(returnOrderTransactionId)(actionRepo, performanceRepo, transactionRepo);
 
@@ -76,27 +81,73 @@ export function processReturn(returnOrderTransactionId: string) {
 
         // 注文を返品済ステータスに変更
         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
-        await orderRepo.orderModel.findOneAndUpdate(
-            { orderNumber: placeOrderTransactionResult.order.orderNumber },
+        const order = await orderRepo.returnOrder(
             {
-                orderStatus: factory.orderStatus.OrderReturned,
+                orderNumber: placeOrderTransactionResult.order.orderNumber,
                 dateReturned: new Date()
             }
-        ).exec();
+        );
 
         // 返品処理が全て完了した時点で、レポート作成タスクを追加
-        const createReturnOrderReportTask: factory.task.createReturnOrderReport.IAttributes = {
-            name: <any>factory.taskName.CreateReturnOrderReport,
-            status: factory.taskStatus.Ready,
-            runsAt: new Date(), // なるはやで実行
-            remainingNumberOfTries: 10,
-            numberOfTried: 0,
-            executionResults: [],
-            data: {
-                transaction: returnOrderTransaction
+        // const createReturnOrderReportTask: factory.task.createReturnOrderReport.IAttributes = {
+        //     name: <any>factory.taskName.CreateReturnOrderReport,
+        //     status: factory.taskStatus.Ready,
+        //     runsAt: new Date(), // なるはやで実行
+        //     remainingNumberOfTries: 10,
+        //     numberOfTried: 0,
+        //     executionResults: [],
+        //     data: {
+        //         transaction: returnOrderTransaction
+        //     }
+        // };
+        // await taskRepo.save(<any>createReturnOrderReportTask);
+
+        await onReturn(returnOrderActionAttributes, order)({ task: taskRepo });
+    };
+}
+
+/**
+ * 返品アクション後の処理
+ */
+export function onReturn(
+    returnActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes,
+    order: factory.order.IOrder
+) {
+    return async (repos: {
+        task: cinerino.repository.Task;
+    }) => {
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<any>[] = [];
+        const potentialActions = returnActionAttributes.potentialActions;
+
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (potentialActions !== undefined) {
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map(
+                    (a): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.cinerino.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
             }
-        };
-        await taskRepo.save(<any>createReturnOrderReportTask);
+        }
+
+        // タスク保管
+        await Promise.all(taskAttributes.map(async (taskAttribute) => {
+            return repos.task.save<any>(taskAttribute);
+        }));
     };
 }
 
@@ -107,8 +158,8 @@ export function processReturn(returnOrderTransactionId: string) {
 export function cancelReservations(returnOrderTransactionId: string) {
     return async (
         reservationRepo: ReservationRepo,
-        transactionRepo: TransactionRepo,
-        ticketTypeCategoryRateLimitRepo: TicketTypeCategoryRateLimitRepo,
+        transactionRepo: cinerino.repository.Transaction,
+        ticketTypeCategoryRateLimitRepo: cinerino.repository.rateLimit.TicketTypeCategory,
         taskRepo: cinerino.repository.Task,
         projectRepo: cinerino.repository.Project
     ) => {
@@ -140,62 +191,28 @@ export function cancelReservations(returnOrderTransactionId: string) {
 
 /**
  * 返品処理を受け付けたことを購入者へ通知する
- * @param returnOrderTransactionId 返品取引ID
  */
 export function notifyReturnOrder(returnOrderTransactionId: string) {
     return async (
-        transactionRepo: TransactionRepo,
+        transactionRepo: cinerino.repository.Transaction,
         taskRepo: cinerino.repository.Task
     ) => {
         debug('finding returnOrder transaction...');
-        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
-            .then((doc) => {
-                if (doc === null) {
-                    throw new factory.errors.NotFound('transaction');
-                }
+        const returnOrderTransaction = <factory.transaction.returnOrder.ITransaction>
+            await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: returnOrderTransactionId });
 
-                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
-            });
-        debug('processing return order...', returnOrderTransaction);
+        const placeOrderTransaction = returnOrderTransaction.object.transaction;
+        if (placeOrderTransaction.result === undefined) {
+            throw new factory.errors.NotFound('PlaceOrder Transaction Result');
+        }
+        const order = placeOrderTransaction.result.order;
 
         let emailMessageAttributes: factory.creativeWork.message.email.IAttributes;
         let emailMessage: factory.creativeWork.message.email.ICreativeWork;
-        let sendEmailTaskAttributes: factory.task.sendEmailNotification.IAttributes;
+        let sendEmailTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage>;
         switch (returnOrderTransaction.object.reason) {
             case factory.transaction.returnOrder.Reason.Customer:
-                // tslint:disable-next-line:no-suspicious-comment
-                // TODO 二重送信対策
-                // emailMessageAttributes = await createEmailMessage4customerReason(returnOrderTransaction.object.transaction);
-                // emailMessage = factory.creativeWork.message.email.create({
-                //     identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
-                //     sender: {
-                //         typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
-                //         name: emailMessageAttributes.sender.name,
-                //         email: emailMessageAttributes.sender.email
-                //     },
-                //     toRecipient: {
-                //         typeOf: returnOrderTransaction.object.transaction.agent.typeOf,
-                //         name: emailMessageAttributes.toRecipient.name,
-                //         email: emailMessageAttributes.toRecipient.email
-                //     },
-                //     about: emailMessageAttributes.about,
-                //     text: emailMessageAttributes.text
-                // });
-
-                // sendEmailTaskAttributes = factory.task.sendEmailNotification.createAttributes({
-                //     status: factory.taskStatus.Ready,
-                //     runsAt: new Date(), // なるはやで実行
-                //     remainingNumberOfTries: 10,
-                //     lastTriedAt: null,
-                //     numberOfTried: 0,
-                //     executionResults: [],
-                //     data: {
-                //         transactionId: returnOrderTransactionId,
-                //         emailMessage: emailMessage
-                //     }
-                // });
-
-                // await taskRepo.save(sendEmailTaskAttributes);
+                // no op
 
                 break;
 
@@ -222,19 +239,40 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
                 };
 
                 sendEmailTaskAttributes = {
-                    name: <any>factory.taskName.SendEmailNotification,
+                    name: factory.cinerino.taskName.SendEmailMessage,
+                    project: project,
                     status: factory.taskStatus.Ready,
                     runsAt: new Date(), // なるはやで実行
                     remainingNumberOfTries: 10,
                     numberOfTried: 0,
                     executionResults: [],
                     data: {
-                        transactionId: returnOrderTransactionId,
-                        emailMessage: emailMessage
+                        actionAttributes: {
+                            agent: {
+                                id: order.seller.id,
+                                name: { ja: order.seller.name, en: '' },
+                                project: project,
+                                typeOf: order.seller.typeOf
+                            },
+                            object: emailMessage,
+                            project: project,
+                            purpose: {
+                                typeOf: order.typeOf,
+                                orderNumber: order.orderNumber
+                            },
+                            recipient: {
+                                id: order.customer.id,
+                                name: order.customer.name,
+                                typeOf: order.customer.typeOf
+                            },
+                            typeOf: factory.cinerino.actionType.SendAction
+                        }
+                        // transactionId: returnOrderTransactionId,
+                        // emailMessage: emailMessage
                     }
                 };
 
-                await taskRepo.save(<any>sendEmailTaskAttributes);
+                await taskRepo.save(sendEmailTaskAttributes);
 
                 break;
 
@@ -252,7 +290,7 @@ export function returnCreditCardSales(returnOrderTransactionId: string) {
     return async (
         actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
-        transactionRepo: TransactionRepo
+        transactionRepo: cinerino.repository.Transaction
     ) => {
         debug('finding returnOrder transaction...');
         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
@@ -407,6 +445,7 @@ export function returnAllByPerformance(
 
         const taskAttribute: factory.task.returnOrdersByPerformance.IAttributes = {
             name: <any>factory.taskName.ReturnOrdersByPerformance,
+            project: project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
@@ -423,12 +462,17 @@ export function returnAllByPerformance(
     };
 }
 
-export function processReturnAllByPerformance(agentId: string, performanceId: string, clientIds: string[]) {
+export function processReturnAllByPerformance(
+    agentId: string,
+    performanceId: string,
+    clientIds: string[],
+    potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams
+) {
     return async (
         invoiceRepo: cinerino.repository.Invoice,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
-        transactionRepo: TransactionRepo
+        transactionRepo: cinerino.repository.Transaction
     ) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = (clientIds.length > 0)
@@ -495,7 +539,8 @@ export function processReturnAllByPerformance(agentId: string, performanceId: st
                 transactionId: transactionId,
                 cancellationFee: 0,
                 forcibly: true,
-                reason: factory.transaction.returnOrder.Reason.Seller
+                reason: factory.transaction.returnOrder.Reason.Seller,
+                potentialActions: potentialActions
             })({
                 invoice: invoiceRepo,
                 transaction: transactionRepo

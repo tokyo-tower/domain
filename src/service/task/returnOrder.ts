@@ -4,9 +4,7 @@ import * as factory from '@tokyotower/factory';
 import { IConnectionSettings, IOperation } from '../task';
 
 import { MongoRepository as PerformanceRepo } from '../../repo/performance';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../../repo/reservation';
-import { MongoRepository as TransactionRepo } from '../../repo/transaction';
 
 import * as OrderService from '../order';
 
@@ -19,8 +17,8 @@ export function call(data: factory.task.returnOrder.IData): IOperation<void> {
             new cinerino.repository.Action(settings.connection),
             new PerformanceRepo(settings.connection),
             new ReservationRepo(settings.connection),
-            new TransactionRepo(settings.connection),
-            new TicketTypeCategoryRateLimitRepo(settings.redisClient),
+            new cinerino.repository.Transaction(settings.connection),
+            new cinerino.repository.rateLimit.TicketTypeCategory(settings.redisClient),
             new cinerino.repository.Task(settings.connection),
             new cinerino.repository.Order(settings.connection),
             new cinerino.repository.Project(settings.connection)

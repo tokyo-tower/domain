@@ -6,17 +6,17 @@ import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
-import { MongoRepository as TransactionRepo } from '../../repo/transaction';
-
 const CANCELLABLE_DAYS = 3;
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 export type ITransactionOperation<T> = (repos: {
     invoice: cinerino.repository.Invoice;
-    transaction: TransactionRepo;
+    transaction: cinerino.repository.Transaction;
 }) => Promise<T>;
-export type ITaskAndTransactionOperation<T> = (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => Promise<T>;
+export type ITaskAndTransactionOperation<T> = (
+    taskRepo: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction
+) => Promise<T>;
 
 /**
  * 予約キャンセル処理
@@ -48,10 +48,15 @@ export function confirm(params: {
      * 返品理由
      */
     reason: factory.transaction.returnOrder.Reason;
+    /**
+     * 取引確定後アクション
+     */
+    potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams;
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         invoice: cinerino.repository.Invoice;
-        transaction: TransactionRepo;
+        transaction: cinerino.repository.Transaction;
     }) => {
         const now = new Date();
 
@@ -91,6 +96,67 @@ export function confirm(params: {
 
         const endDate = new Date();
         const cancelName = `${order.customer.familyName} ${order.customer.givenName}`;
+
+        const informOrderActionsOnReturn: factory.cinerino.action.interact.inform.IAttributes<any, any>[] = [];
+        if (params.potentialActions !== undefined) {
+            if (params.potentialActions.returnOrder !== undefined) {
+                if (params.potentialActions.returnOrder.potentialActions !== undefined) {
+                    if (Array.isArray(params.potentialActions.returnOrder.potentialActions.informOrder)) {
+                        params.potentialActions.returnOrder.potentialActions.informOrder.forEach((a) => {
+                            if (a.recipient !== undefined) {
+                                if (typeof a.recipient.url === 'string') {
+                                    informOrderActionsOnReturn.push({
+                                        agent: transaction.seller,
+                                        object: order,
+                                        project: transaction.project,
+                                        // purpose: params.transaction,
+                                        recipient: {
+                                            id: transaction.agent.id,
+                                            name: transaction.agent.name,
+                                            typeOf: transaction.agent.typeOf,
+                                            url: a.recipient.url
+                                        },
+                                        typeOf: factory.actionType.InformAction
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        const returnOrderActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes = {
+            project: transaction.project,
+            typeOf: factory.actionType.ReturnAction,
+            object: {
+                project: project,
+                typeOf: order.typeOf,
+                seller: order.seller,
+                customer: order.customer,
+                confirmationNumber: order.confirmationNumber,
+                orderNumber: order.orderNumber,
+                price: order.price,
+                priceCurrency: order.priceCurrency,
+                orderDate: order.orderDate
+            },
+            agent: order.customer,
+            recipient: transaction.seller,
+            potentialActions: {
+                // cancelReservation: cancelReservationActions,
+                informOrder: informOrderActionsOnReturn,
+                refundCreditCard: [],
+                refundAccount: [],
+                refundMovieTicket: [],
+                returnPointAward: []
+            }
+        };
+        // const result: factory.transaction.returnOrder.IResult = {
+        // };
+        const potentialActions: factory.cinerino.transaction.returnOrder.IPotentialActions = {
+            returnOrder: returnOrderActionAttributes
+        };
+
         const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
             project: project,
             typeOf: factory.transactionType.ReturnOrder,
@@ -112,7 +178,8 @@ export function confirm(params: {
             expires: endDate,
             startDate: now,
             endDate: endDate,
-            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported
+            tasksExportationStatus: factory.transactionTasksExportationStatus.Unexported,
+            potentialActions: potentialActions
         };
 
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;
@@ -154,14 +221,12 @@ function validateRequest(now: Date, performanceStartDate: Date) {
 
 /**
  * 確定取引についてメールを送信する
- * @param transactionId 取引ID
- * @param emailMessageAttributes Eメールメッセージ属性
  */
 export function sendEmail(
     transactionId: string,
     emailMessageAttributes: factory.creativeWork.message.email.IAttributes
-): ITaskAndTransactionOperation<factory.task.sendEmailNotification.ITask> {
-    return async (taskRepo: cinerino.repository.Task, transactionRepo: TransactionRepo) => {
+): ITaskAndTransactionOperation<factory.cinerino.task.ITask<factory.cinerino.taskName.SendEmailMessage>> {
+    return async (taskRepo: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction) => {
         const returnOrderTransaction: factory.transaction.returnOrder.ITransaction = <any>
             await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
         if (returnOrderTransaction.status !== factory.transactionStatusType.Confirmed) {
@@ -169,6 +234,10 @@ export function sendEmail(
         }
 
         const placeOrderTransaction = returnOrderTransaction.object.transaction;
+        if (placeOrderTransaction.result === undefined) {
+            throw new factory.errors.NotFound('PlaceOrder Transaction Result');
+        }
+        const order = placeOrderTransaction.result.order;
 
         const emailMessage: factory.creativeWork.message.email.ICreativeWork = {
             typeOf: factory.creativeWorkType.EmailMessage,
@@ -189,20 +258,41 @@ export function sendEmail(
         };
 
         // その場で送信ではなく、DBにタスクを登録
-        const taskAttributes: factory.task.sendEmailNotification.IAttributes = {
-            name: <any>factory.taskName.SendEmailNotification,
+        const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage> = {
+            name: factory.cinerino.taskName.SendEmailMessage,
+            project: project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
             numberOfTried: 0,
             executionResults: [],
             data: {
-                transactionId: transactionId,
-                emailMessage: emailMessage
+                actionAttributes: {
+                    agent: {
+                        id: order.seller.id,
+                        name: { ja: order.seller.name, en: '' },
+                        project: project,
+                        typeOf: order.seller.typeOf
+                    },
+                    object: emailMessage,
+                    project: project,
+                    purpose: {
+                        typeOf: order.typeOf,
+                        orderNumber: order.orderNumber
+                    },
+                    recipient: {
+                        id: order.customer.id,
+                        name: order.customer.name,
+                        typeOf: order.customer.typeOf
+                    },
+                    typeOf: factory.cinerino.actionType.SendAction
+                }
+                // transactionId: transactionId,
+                // emailMessage: emailMessage
             }
         };
 
-        return <any>await taskRepo.save(<any>taskAttributes);
+        return <any>await taskRepo.save(taskAttributes);
     };
 }
 
@@ -210,7 +300,7 @@ export function sendEmail(
  * 返品取引のタスクをエクスポートする
  */
 export async function exportTasks(status: factory.transactionStatusType) {
-    const transactionRepo = new TransactionRepo(mongoose.connection);
+    const transactionRepo = new cinerino.repository.Transaction(mongoose.connection);
 
     const statusesTasksExportable = [factory.transactionStatusType.Expired, factory.transactionStatusType.Confirmed];
     if (statusesTasksExportable.indexOf(status) < 0) {
@@ -239,7 +329,7 @@ export async function exportTasks(status: factory.transactionStatusType) {
 }
 
 export async function exportTasksById(transactionId: string): Promise<factory.task.ITask<any>[]> {
-    const transactionRepo = new TransactionRepo(mongoose.connection);
+    const transactionRepo = new cinerino.repository.Transaction(mongoose.connection);
     const taskRepo = new cinerino.repository.Task(mongoose.connection);
 
     const transaction: factory.transaction.returnOrder.ITransaction = <any>
@@ -250,6 +340,7 @@ export async function exportTasksById(transactionId: string): Promise<factory.ta
         case factory.transactionStatusType.Confirmed:
             taskAttributes.push({
                 name: <any>factory.taskName.ReturnOrder,
+                project: project,
                 status: factory.taskStatus.Ready,
                 runsAt: new Date(), // なるはやで実行
                 remainingNumberOfTries: 10,
