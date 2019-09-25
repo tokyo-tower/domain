@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文データから確定予約情報を削除
+
 ### Deprecated
 
 ### Removed

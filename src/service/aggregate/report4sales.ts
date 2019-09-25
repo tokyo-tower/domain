@@ -149,7 +149,7 @@ export function createPlaceOrderReport(params: {
 
         datas.push(
             ...order.acceptedOffers
-                .map((o) => {
+                .map((o, index) => {
                     return reservation2data(
                         {
                             ...<factory.cinerino.order.IReservation>o.itemOffered,
@@ -158,7 +158,8 @@ export function createPlaceOrderReport(params: {
                         order,
                         order.orderDate,
                         AggregateUnit.SalesByEndDate,
-                        purchaserGroup
+                        purchaserGroup,
+                        index
                     );
                 })
         );
@@ -220,7 +221,8 @@ export function createReturnOrderReport(params: {
                     order,
                     <Date>order.dateReturned,
                     AggregateUnit.SalesByEndDate,
-                    purchaserGroup
+                    purchaserGroup,
+                    reservationIndex
                 ),
                 reservationStatus: Status4csv.Cancelled,
                 status_sort: `${r.reservationStatus}_1`,
@@ -239,7 +241,8 @@ export function createReturnOrderReport(params: {
                         order,
                         dateReturned,
                         AggregateUnit.SalesByEndDate,
-                        purchaserGroup
+                        purchaserGroup,
+                        reservationIndex
                     ),
                     seat: {
                         code: '',
@@ -343,36 +346,24 @@ function reservation2data(
     order: factory.order.IOrder,
     targetDate: Date,
     aggregateUnit: AggregateUnit,
-    purchaserGroup: PurchaserGroup
+    purchaserGroup: PurchaserGroup,
+    paymentSeatIndex: number
 ): IData {
-    const underName = r.underName;
-    let age = '';
-    if (underName !== undefined && Array.isArray(underName.identifier)) {
-        const ageProperty = underName.identifier.find((p) => p.name === 'age');
-        if (ageProperty !== undefined) {
-            age = ageProperty.value;
-        }
-    }
+    const age = (typeof order.customer.age === 'string') ? order.customer.age : '';
 
     let username = '';
-    if (underName !== undefined && Array.isArray(underName.identifier)) {
-        const usernameProperty = underName.identifier.find((p) => p.name === 'username');
-        if (usernameProperty !== undefined) {
-            username = usernameProperty.value;
-        }
+    if (order.customer.memberOf !== undefined && typeof order.customer.memberOf.membershipNumber === 'string') {
+        username = order.customer.memberOf.membershipNumber;
     }
 
     let paymentMethod = '';
-    if (underName !== undefined && Array.isArray(underName.identifier)) {
-        const paymentMethodProperty = underName.identifier.find((p) => p.name === 'paymentMethod');
-        if (paymentMethodProperty !== undefined) {
-            paymentMethod = paymentMethodProperty.value;
-        }
+    if (Array.isArray(order.paymentMethods) && order.paymentMethods.length > 0) {
+        paymentMethod = order.paymentMethods[0].name;
     }
 
     // 客層取得 (購入者居住国：2桁、年代：2桁、性別：1桁)
-    const locale = (underName !== undefined && (<any>underName).address !== undefined) ? String((<any>underName).address) : '';
-    const gender = (underName !== undefined && underName.gender !== undefined) ? underName.gender : '';
+    const locale = (typeof order.customer.address === 'string') ? order.customer.address : '';
+    const gender = (typeof order.customer.gender === 'string') ? order.customer.gender : '';
     const customerSegment = (locale !== '' ? locale : '__') + (age !== '' ? age : '__') + (gender !== '' ? gender : '_');
 
     const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
@@ -389,25 +380,20 @@ function reservation2data(
         }
     }
 
-    let paymentSeatIndex: string = ((<any>r).payment_seat_index !== undefined) ? (<any>r).payment_seat_index.toString() : ''; // 互換性維持のため
-    if (Array.isArray(r.additionalProperty)) {
-        const paymentSeatIndexProperty = r.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
-        if (paymentSeatIndexProperty !== undefined) {
-            paymentSeatIndex = paymentSeatIndexProperty.value;
-        }
-    }
+    // let paymentSeatIndex: string = ((<any>r).payment_seat_index !== undefined) ? (<any>r).payment_seat_index.toString() : ''; // 互換性維持のため
+    // if (Array.isArray(r.additionalProperty)) {
+    //     const paymentSeatIndexProperty = r.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
+    //     if (paymentSeatIndexProperty !== undefined) {
+    //         paymentSeatIndex = paymentSeatIndexProperty.value;
+    //     }
+    // }
 
-    let paymentNo = r.reservationNumber; // 互換性維持のため
-    if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-        const paymentNoProperty = r.underName.identifier.find((p) => p.name === 'paymentNo');
-        if (paymentNoProperty !== undefined) {
-            paymentNo = paymentNoProperty.value;
-        }
-    }
+    // tslint:disable-next-line:no-magic-numbers
+    const paymentNo = order.confirmationNumber.slice(-6); // 互換性維持のため
 
     return {
         payment_no: paymentNo,
-        payment_seat_index: paymentSeatIndex,
+        payment_seat_index: String(paymentSeatIndex),
         performance: {
             id: r.reservationFor.id,
             startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
@@ -444,10 +430,10 @@ function reservation2data(
             group: (purchaserGroupStrings[purchaserGroup] !== undefined)
                 ? purchaserGroupStrings[purchaserGroup]
                 : purchaserGroup,
-            givenName: (underName !== undefined && underName.givenName !== undefined) ? underName.givenName : '',
-            familyName: (underName !== undefined && underName.familyName !== undefined) ? underName.familyName : '',
-            email: (underName !== undefined && underName.email !== undefined) ? underName.email : '',
-            telephone: (underName !== undefined && underName.telephone !== undefined) ? underName.telephone : '',
+            givenName: (typeof order.customer.givenName === 'string') ? order.customer.givenName : '',
+            familyName: (typeof order.customer.familyName === 'string') ? order.customer.familyName : '',
+            email: (typeof order.customer.email === 'string') ? order.customer.email : '',
+            telephone: (typeof order.customer.telephone === 'string') ? order.customer.telephone : '',
             segment: customerSegment,
             username: username
         },
