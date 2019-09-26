@@ -225,7 +225,7 @@ export function createReturnOrderReport(params: {
                     reservationIndex
                 ),
                 reservationStatus: Status4csv.Cancelled,
-                status_sort: `${r.reservationStatus}_1`,
+                status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
                 cancellationFee: cancellationFee,
                 orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
             });
@@ -256,7 +256,7 @@ export function createReturnOrderReport(params: {
                     },
                     payment_seat_index: '',
                     reservationStatus: Status4csv.CancellationFee,
-                    status_sort: `${r.reservationStatus}_2`,
+                    status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
                     cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
                     orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
@@ -444,7 +444,7 @@ function reservation2data(
         checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
         checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when).format('YYYY/MM/DD HH:mm:ss') : '',
         reservationStatus: Status4csv.Reserved,
-        status_sort: String(r.reservationStatus),
+        status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
         price: order.price.toString(),
         cancellationFee: 0,
         date_bucket: targetDate,
