@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 注文データから確定予約情報を削除
 - 決済方法タイプをCinerino化
+- 注文レポートから不要な情報(実務上使用されていない情報)を削除
 
 ### Deprecated
 

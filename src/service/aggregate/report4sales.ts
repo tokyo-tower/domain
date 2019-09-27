@@ -380,16 +380,8 @@ function reservation2data(
         }
     }
 
-    // let paymentSeatIndex: string = ((<any>r).payment_seat_index !== undefined) ? (<any>r).payment_seat_index.toString() : ''; // 互換性維持のため
-    // if (Array.isArray(r.additionalProperty)) {
-    //     const paymentSeatIndexProperty = r.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
-    //     if (paymentSeatIndexProperty !== undefined) {
-    //         paymentSeatIndex = paymentSeatIndexProperty.value;
-    //     }
-    // }
-
     // tslint:disable-next-line:no-magic-numbers
-    const paymentNo = order.confirmationNumber.slice(-6); // 互換性維持のため
+    const paymentNo = order.confirmationNumber.slice(-6);
 
     return {
         payment_no: paymentNo,
@@ -399,26 +391,13 @@ function reservation2data(
             startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
             startTime: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('HHmm')
         },
-        theater: {
-            name: r.reservationFor.superEvent.location.name.ja
-        },
-        screen: {
-            id: r.reservationFor.location.branchCode,
-            name: r.reservationFor.location.name.ja
-        },
-        film: (r.reservationFor.superEvent.workPerformed !== undefined && r.reservationFor.superEvent.workPerformed !== null)
-            ? {
-                id: r.reservationFor.superEvent.workPerformed.identifier,
-                name: r.reservationFor.superEvent.workPerformed.name
-            }
-            : {
-                id: r.reservationFor.superEvent.id,
-                name: r.reservationFor.superEvent.name.ja
-            },
+        theater: { name: '' }, // もはやレポート上不要な情報
+        screen: { id: '', name: '' }, // もはやレポート上不要な情報
+        film: { id: '', name: '' }, // もはやレポート上不要な情報
         seat: {
             code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : '',
-            gradeName: 'ノーマルシート',
-            gradeAdditionalCharge: '0'
+            gradeName: '', // もはやレポート上不要な情報
+            gradeAdditionalCharge: '' // もはやレポート上不要な情報
         },
         ticketType: {
             name: r.reservedTicket.ticketType.name.ja,
