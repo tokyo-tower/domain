@@ -48,17 +48,17 @@ interface IData {
         // 入塔予約時刻
         startTime: string;
     };
-    theater: {
+    theater?: {
         // 劇場名称
         name: string;
     };
-    screen: {
+    screen?: {
         // スクリーンID
         id: string;
         // スクリーン名
         name: string;
     };
-    film: {
+    film?: {
         // 作品ID
         id: string;
         // 作品名称
@@ -88,9 +88,9 @@ interface IData {
         // 座席コード
         code: string;
         // 座席グレード名称
-        gradeName: string;
+        gradeName?: string;
         // 座席グレード追加料金
-        gradeAdditionalCharge: string;
+        gradeAdditionalCharge?: string;
     };
     ticketType: {
         // 券種名称
@@ -245,9 +245,9 @@ export function createReturnOrderReport(params: {
                         reservationIndex
                     ),
                     seat: {
-                        code: '',
-                        gradeName: '',
-                        gradeAdditionalCharge: ''
+                        code: ''
+                        // gradeName: '',
+                        // gradeAdditionalCharge: ''
                     },
                     ticketType: {
                         name: '',
@@ -391,13 +391,13 @@ function reservation2data(
             startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
             startTime: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('HHmm')
         },
-        theater: { name: '' }, // もはやレポート上不要な情報
-        screen: { id: '', name: '' }, // もはやレポート上不要な情報
-        film: { id: '', name: '' }, // もはやレポート上不要な情報
+        // theater: { name: '' }, // もはやレポート上不要な情報
+        // screen: { id: '', name: '' }, // もはやレポート上不要な情報
+        // film: { id: '', name: '' }, // もはやレポート上不要な情報
         seat: {
-            code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : '',
-            gradeName: '', // もはやレポート上不要な情報
-            gradeAdditionalCharge: '' // もはやレポート上不要な情報
+            code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : ''
+            // gradeName: '', // もはやレポート上不要な情報
+            // gradeAdditionalCharge: '' // もはやレポート上不要な情報
         },
         ticketType: {
             name: r.reservedTicket.ticketType.name.ja,

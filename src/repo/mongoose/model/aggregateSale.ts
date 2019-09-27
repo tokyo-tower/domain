@@ -14,22 +14,10 @@ const schema = new mongoose.Schema(
             startDay: String,
             startTime: String
         },
-        theater: {
-            name: String
-        },
-        screen: {
-            id: String,
-            name: String
-        },
-        film: {
-            id: String,
-            name: String
-        },
-        seat: {
-            code: String,
-            gradeName: String,
-            gradeAdditionalCharge: String
-        },
+        theater: mongoose.SchemaTypes.Mixed,
+        screen: mongoose.SchemaTypes.Mixed,
+        film: mongoose.SchemaTypes.Mixed,
+        seat: mongoose.SchemaTypes.Mixed,
         ticketType: {
             name: String,
             // リリース当初の間違ったマスターデータをカバーするため
