@@ -2,12 +2,10 @@
  * 売上集計サービス
  */
 import * as factory from '@tokyotower/factory';
-import * as createDebug from 'debug';
 import * as moment from 'moment';
 
 import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
 
-const debug = createDebug('ttts-domain:service');
 const STAFF_CLIENT_ID = process.env.STAFF_CLIENT_ID;
 const CANCELLATION_FEE = 1000;
 
@@ -47,22 +45,6 @@ interface IData {
         startDay: string;
         // 入塔予約時刻
         startTime: string;
-    };
-    theater?: {
-        // 劇場名称
-        name: string;
-    };
-    screen?: {
-        // スクリーンID
-        id: string;
-        // スクリーン名
-        name: string;
-    };
-    film?: {
-        // 作品ID
-        id: string;
-        // 作品名称
-        name: string;
     };
     customer: {
         // 購入者（名）
@@ -163,7 +145,6 @@ export function createPlaceOrderReport(params: {
                     );
                 })
         );
-        debug('creating', datas.length, 'datas...');
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
@@ -264,8 +245,6 @@ export function createReturnOrderReport(params: {
             }
         });
 
-        debug('creating', datas.length, 'datas...');
-
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
             await saveReport(data)(aggregateSaleRepo);
@@ -280,7 +259,7 @@ function saveReport(data: IData) {
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
-        const report = await aggregateSaleRepo.aggregateSaleModel.findOneAndUpdate(
+        await aggregateSaleRepo.aggregateSaleModel.findOneAndUpdate(
             {
                 'performance.id': data.performance.id,
                 payment_no: data.payment_no,
@@ -291,7 +270,6 @@ function saveReport(data: IData) {
             data,
             { new: true, upsert: true }
         ).exec();
-        debug('report created', report._id);
     };
 }
 
@@ -319,7 +297,7 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
             }
         }
 
-        const result = await aggregateSaleRepo.aggregateSaleModel.update(
+        await aggregateSaleRepo.aggregateSaleModel.update(
             {
                 'performance.id': params.reservation.reservationFor.id,
                 payment_no: paymentNo,
@@ -333,7 +311,6 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
             },
             { multi: true }
         ).exec();
-        debug('report updated', result);
     };
 }
 
