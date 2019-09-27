@@ -10,10 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 注文データから確定予約情報を削除
-- 決済方法タイプをCinerino化
-- 注文レポートから不要な情報(実務上使用されていない情報)を削除
-
 ### Deprecated
 
 ### Removed
@@ -21,6 +17,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v31.0.0 - 2019-09-27
+
+### Changed
+
+- 注文データから確定予約情報を削除
+- 決済方法タイプをCinerino化
+- 注文レポートから不要な情報(実務上使用されていない情報)を削除
 
 ## v30.0.0 - 2019-09-24
 
