@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - 注文データのacceptedOffersを最適化
+- 注文データからの予約単価取得に、オファーの価格仕様を使用するように調整
 
 ### Deprecated
 
