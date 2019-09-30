@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 座席予約承認結果にacceptedOffersを追加
+
 ### Changed
 
 - 注文データのacceptedOffersを最適化
