@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文データのacceptedOffersを最適化
 - 注文データからの予約単価取得に、オファーの価格仕様を使用するように調整
 - 座席予約承認結果をCinerino化
+- 注文取引結果生成処理をCinerino化
 
 ### Deprecated
 
