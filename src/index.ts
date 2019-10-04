@@ -3,7 +3,6 @@
  */
 import * as cinerino from '@cinerino/domain';
 import * as GMO from '@motionpicture/gmo-service';
-import * as AWS from 'aws-sdk';
 import * as redis from 'redis';
 
 import * as AdminService from './service/admin';
@@ -40,7 +39,7 @@ export import chevre = chevre;
 /**
  * AWS SDK
  */
-export import AWS = AWS;
+export import AWS = cinerino.AWS;
 
 export namespace service {
     export import admin = AdminService;
