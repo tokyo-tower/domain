@@ -9,36 +9,25 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "2.0.0-alpha.2",
-    "@cinerino/domain": "1.0.0-alpha.356",
+    "@chevre/api-nodejs-client": "^2.0.0",
+    "@cinerino/domain": "1.0.0-alpha.371",
     "@motionpicture/gmo-service": "^4.3.0",
     "@sendgrid/mail": "^6.4.0",
-    "@tokyotower/factory": "^21.0.0",
+    "@tokyotower/factory": "^22.0.0",
     "@types/redis": "^2.8.13",
-    "@waiter/domain": "^3.0.0",
-    "aws-sdk": "^2.501.0",
     "debug": "^3.2.6",
     "email-templates": "^3.6.1",
-    "google-libphonenumber": "^3.2.3",
-    "http-status": "^1.3.2",
-    "jsonwebtoken": "^8.5.1",
     "lodash.difference": "^4.5.0",
     "lodash.uniq": "^4.5.0",
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.26",
     "numeral": "^2.0.6",
-    "redis": "^2.8.0",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.7",
-    "validator": "^9.4.1"
+    "redis": "^2.8.0"
   },
   "description": "TTTS Domain Library for Node.js",
   "devDependencies": {
     "@types/debug": "0.0.30",
     "@types/email-templates": "^3.5.1",
-    "@types/google-libphonenumber": "^7.4.17",
-    "@types/http-status": "^0.2.30",
-    "@types/jsonwebtoken": "^7.2.8",
     "@types/lodash.difference": "^4.5.6",
     "@types/lodash.uniq": "^4.5.6",
     "@types/mocha": "^2.2.48",
@@ -49,13 +38,9 @@
     "@types/numeral": "0.0.20",
     "@types/power-assert": "^1.5.0",
     "@types/redis-mock": "^0.17.0",
-    "@types/request": "^2.48.2",
-    "@types/request-promise-native": "^1.0.16",
     "@types/sinon": "^4.3.3",
     "@types/sinon-mongoose": "^1.3.9",
-    "@types/validator": "^6.3.0",
     "mocha": "^3.5.3",
-    "mongodb": "^3.3.0-beta2",
     "mongoose": "^5.6.7",
     "nock": "^9.6.1",
     "nyc": "^11.9.0",
@@ -110,5 +95,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "31.0.0"
+  "version": "32.0.0"
 }

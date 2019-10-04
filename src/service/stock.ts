@@ -39,29 +39,33 @@ export function cancelSeatReservationAuth(params: factory.cinerino.task.IData<fa
         await Promise.all(authorizeActions.map(async (action) => {
             const event = action.object.event;
 
-            // 在庫を元の状態に戻す
-            const tmpReservations = (<factory.action.authorize.seatReservation.IResult>action.result).tmpReservations;
+            if (action.result !== undefined) {
+                const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
+                const acceptedOffers = (Array.isArray(actionResult.acceptedOffers)) ? actionResult.acceptedOffers : [];
 
-            await Promise.all(tmpReservations.map(async (tmpReservation) => {
-                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
-                if (Array.isArray(tmpReservation.reservedTicket.ticketType.additionalProperty)) {
-                    const categoryProperty =
-                        tmpReservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
-                    if (categoryProperty !== undefined) {
-                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                await Promise.all(acceptedOffers.map(async (acceptedOffer) => {
+                    const reservation = acceptedOffer.itemOffered;
+
+                    let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                    if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
+                        const categoryProperty =
+                            reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                        if (categoryProperty !== undefined) {
+                            ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                        }
                     }
-                }
 
-                if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
-                    const rateLimitKey = {
-                        performanceStartDate: moment(`${event.startDate}`)
-                            .toDate(),
-                        ticketTypeCategory: ticketTypeCategory,
-                        unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                    };
-                    await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
-                }
-            }));
+                    if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
+                        const rateLimitKey = {
+                            performanceStartDate: moment(`${event.startDate}`)
+                                .toDate(),
+                            ticketTypeCategory: ticketTypeCategory,
+                            unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+                        };
+                        await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
+                    }
+                }));
+            }
 
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {

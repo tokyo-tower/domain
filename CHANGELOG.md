@@ -18,6 +18,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v32.0.0 - 2019-10-04
+
+### Added
+
+- 座席予約承認結果にacceptedOffersを追加
+
+### Changed
+
+- 注文データのacceptedOffersを最適化
+- 注文データからの予約単価取得に、オファーの価格仕様を使用するように調整
+- 座席予約承認結果をCinerino化
+- 注文取引結果生成処理をCinerino化
+
 ## v31.0.0 - 2019-09-27
 
 ### Changed

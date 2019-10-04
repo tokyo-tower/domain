@@ -26,6 +26,8 @@ const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_
 
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
+export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
+
 export function createFromTransaction(transactionId: string) {
     return async (orderRepo: cinerino.repository.Order, transactionRepo: cinerino.repository.Transaction) => {
         const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
@@ -541,6 +543,26 @@ export function processReturnAllByPerformance(
     };
 }
 
+function getUnitPriceByAcceptedOffer(offer: factory.order.IAcceptedOffer<any>) {
+    let unitPrice: number = 0;
+
+    if (offer.priceSpecification !== undefined) {
+        const priceSpecification = <ICompoundPriceSpecification>offer.priceSpecification;
+        if (Array.isArray(priceSpecification.priceComponent)) {
+            const unitPriceSpec = priceSpecification.priceComponent.find(
+                (c) => c.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
+            );
+            if (unitPriceSpec !== undefined && unitPriceSpec.price !== undefined && Number.isInteger(unitPriceSpec.price)) {
+                unitPrice = unitPriceSpec.price;
+            }
+        }
+    } else if (offer.price !== undefined && Number.isInteger(offer.price)) {
+        unitPrice = offer.price;
+    }
+
+    return unitPrice;
+}
+
 /**
  * 販売者都合での返品メール作成
  */
@@ -575,9 +597,7 @@ async function createEmailMessage4sellerReason(
     } = {};
     order.acceptedOffers.forEach((o) => {
         const r = <factory.cinerino.order.IReservation>o.itemOffered;
-        const unitPrice = (r.reservedTicket.ticketType.priceSpecification !== undefined)
-            ? r.reservedTicket.ticketType.priceSpecification.price
-            : 0;
+        const unitPrice = getUnitPriceByAcceptedOffer(o);
 
         // チケットタイプごとにチケット情報セット
         if (ticketInfos[r.reservedTicket.ticketType.id] === undefined) {
