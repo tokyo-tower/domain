@@ -17,6 +17,7 @@ export type ITransactionOperation<T> = (repos: {
 export type ITaskAndTransactionOperation<T> = (
     taskRepo: cinerino.repository.Task, transactionRepo: cinerino.repository.Transaction
 ) => Promise<T>;
+export type WebAPIIdentifier = factory.cinerino.service.webAPI.Identifier;
 
 /**
  * 予約キャンセル処理
@@ -53,7 +54,7 @@ export function confirm(params: {
      */
     potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams;
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
-    // tslint:disable-next-line:max-func-body-length
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         invoice: cinerino.repository.Invoice;
         transaction: cinerino.repository.Transaction;
@@ -96,6 +97,92 @@ export function confirm(params: {
 
         const endDate = new Date();
         const cancelName = `${order.customer.familyName} ${order.customer.givenName}`;
+
+        const cancelReservationActions: factory.cinerino.task.IData<factory.cinerino.taskName.CancelReservation>[] = [];
+
+        let cancelReservationParams: factory.cinerino.transaction.returnOrder.ICancelReservationParams[] = [];
+        if (params.potentialActions !== undefined
+            && params.potentialActions.returnOrder !== undefined
+            && params.potentialActions.returnOrder.potentialActions !== undefined
+            && Array.isArray(params.potentialActions.returnOrder.potentialActions.cancelReservation)) {
+            cancelReservationParams = params.potentialActions.returnOrder.potentialActions.cancelReservation;
+        }
+
+        const authorizeSeatReservationActions = <factory.cinerino.action.authorize.offer.seatReservation.IAction<WebAPIIdentifier>[]>
+            transaction.object.authorizeActions
+                .filter((a) => a.object.typeOf === factory.cinerino.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
+                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+        for (const authorizeSeatReservationAction of authorizeSeatReservationActions) {
+            if (authorizeSeatReservationAction.result === undefined) {
+                throw new factory.errors.NotFound('Result of seat reservation authorize action');
+            }
+
+            const responseBody = authorizeSeatReservationAction.result.responseBody;
+
+            if (authorizeSeatReservationAction.instrument === undefined) {
+                authorizeSeatReservationAction.instrument = {
+                    typeOf: 'WebAPI',
+                    identifier: factory.cinerino.service.webAPI.Identifier.Chevre
+                };
+            }
+
+            switch (authorizeSeatReservationAction.instrument.identifier) {
+                default:
+                    // tslint:disable-next-line:max-line-length
+                    const reserveTransaction = <factory.cinerino.action.authorize.offer.seatReservation.IResponseBody<factory.cinerino.service.webAPI.Identifier.Chevre>>responseBody;
+
+                    const cancelReservationAction: factory.cinerino.task.IData<factory.cinerino.taskName.CancelReservation> = {
+                        project: transaction.project,
+                        typeOf: factory.actionType.CancelAction,
+                        object: reserveTransaction,
+                        agent: transaction.agent,
+                        potentialActions: {},
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
+                        instrument: authorizeSeatReservationAction.instrument
+                    };
+
+                    const cancelReservationObjectParams = cancelReservationParams.find((p) => {
+                        // tslint:disable-next-line:max-line-length
+                        const object = <factory.cinerino.transaction.returnOrder.ICancelReservationObject<factory.cinerino.service.webAPI.Identifier.Chevre>>
+                            p.object;
+
+                        return object !== undefined
+                            && object.typeOf === factory.chevre.transactionType.Reserve
+                            && object.id === reserveTransaction.id;
+                    });
+
+                    if (cancelReservationObjectParams !== undefined) {
+                        // 予約取消確定後アクションの指定があれば上書き
+                        if (cancelReservationObjectParams.potentialActions !== undefined
+                            && cancelReservationObjectParams.potentialActions.cancelReservation !== undefined
+                            && cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions !== undefined
+                            && Array.isArray(
+                                cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions.informReservation
+                            )) {
+                            cancelReservationAction.potentialActions = {
+                                cancelReservation: {
+                                    potentialActions: {
+                                        // tslint:disable-next-line:max-line-length
+                                        informReservation: cancelReservationObjectParams.potentialActions.cancelReservation.potentialActions.informReservation
+                                    }
+                                }
+                            };
+                        }
+                    }
+
+                    cancelReservationActions.push(cancelReservationAction);
+            }
+        }
 
         const informOrderActionsOnReturn: factory.cinerino.action.interact.inform.IAttributes<any, any>[] = [];
         if (params.potentialActions !== undefined) {
@@ -143,7 +230,7 @@ export function confirm(params: {
             agent: order.customer,
             recipient: transaction.seller,
             potentialActions: {
-                // cancelReservation: cancelReservationActions,
+                cancelReservation: cancelReservationActions,
                 informOrder: informOrderActionsOnReturn,
                 refundCreditCard: [],
                 refundAccount: [],
@@ -151,8 +238,8 @@ export function confirm(params: {
                 returnPointAward: []
             }
         };
-        // const result: factory.transaction.returnOrder.IResult = {
-        // };
+        const result: factory.transaction.returnOrder.IResult = {
+        };
         const potentialActions: factory.cinerino.transaction.returnOrder.IPotentialActions = {
             returnOrder: returnOrderActionAttributes
         };
@@ -166,7 +253,7 @@ export function confirm(params: {
                 id: params.agentId
             },
             seller: transaction.seller,
-            result: {},
+            result: result,
             object: {
                 clientUser: params.clientUser,
                 order: order,
@@ -185,7 +272,7 @@ export function confirm(params: {
         let returnOrderTransaction: factory.transaction.returnOrder.ITransaction;
         try {
             returnOrderTransaction = await repos.transaction.transactionModel.create(returnOrderAttributes)
-                .then((doc) => <factory.transaction.returnOrder.ITransaction>doc.toObject());
+                .then((doc) => doc.toObject());
         } catch (error) {
             if (error.name === 'MongoError') {
                 // 同一取引に対して返品取引を作成しようとすると、MongoDBでE11000 duplicate key errorが発生する

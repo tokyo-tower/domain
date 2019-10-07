@@ -13,15 +13,16 @@ import * as OrderService from '../order';
  */
 export function call(data: factory.task.returnOrder.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        await OrderService.processReturn(data.transactionId)(
-            new cinerino.repository.Action(settings.connection),
-            new PerformanceRepo(settings.connection),
-            new ReservationRepo(settings.connection),
-            new cinerino.repository.Transaction(settings.connection),
-            new cinerino.repository.rateLimit.TicketTypeCategory(settings.redisClient),
-            new cinerino.repository.Task(settings.connection),
-            new cinerino.repository.Order(settings.connection),
-            new cinerino.repository.Project(settings.connection)
-        );
+        await OrderService.processReturn(data.transactionId)({
+            action: new cinerino.repository.Action(settings.connection),
+            order: new cinerino.repository.Order(settings.connection),
+            ownershipInfo: new cinerino.repository.OwnershipInfo(settings.connection),
+            performance: new PerformanceRepo(settings.connection),
+            transaction: new cinerino.repository.Transaction(settings.connection),
+            task: new cinerino.repository.Task(settings.connection),
+            reservation: new ReservationRepo(settings.connection),
+            ticketTypeCategoryRateLimit: new cinerino.repository.rateLimit.TicketTypeCategory(settings.redisClient),
+            project: new cinerino.repository.Project(settings.connection)
+        });
     };
 }
