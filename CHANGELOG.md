@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 座席予約承認結果からtmpReservationsを削除
+
 ### Deprecated
 
 ### Removed
