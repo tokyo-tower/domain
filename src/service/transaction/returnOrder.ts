@@ -56,7 +56,9 @@ export function confirm(params: {
 }): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
+        action: cinerino.repository.Action;
         invoice: cinerino.repository.Invoice;
+        seller: cinerino.repository.Seller;
         transaction: cinerino.repository.Transaction;
     }) => {
         const now = new Date();
@@ -78,6 +80,10 @@ export function confirm(params: {
 
         const transactionResult = <factory.transaction.placeOrder.IResult>transaction.result;
         const order = transactionResult.order;
+        const seller = await repos.seller.findById(
+            { id: order.seller.id },
+            { paymentAccepted: 0 } // 決済情報は不要
+        );
 
         // 決済がある場合、請求書の状態を検証
         if (order.paymentMethods.length > 0) {
@@ -97,6 +103,102 @@ export function confirm(params: {
 
         const endDate = new Date();
         const cancelName = `${order.customer.familyName} ${order.customer.givenName}`;
+
+        const actionsOnOrder = await repos.action.searchByOrderNumber({ orderNumber: order.orderNumber });
+        const payActions = <factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
+            .filter((a) => a.typeOf === factory.actionType.PayAction)
+            .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+        // クレジットカード返金アクション
+        const refundCreditCardActions =
+            await Promise.all((<factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
+                .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
+                .map(async (a): Promise<factory.cinerino.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
+                    // Eメールカスタマイズの指定を確認
+                    // let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
+
+                    // const refundCreditCardActionParams = (params.potentialActions !== undefined
+                    //     && params.potentialActions.returnOrder !== undefined
+                    //     && params.potentialActions.returnOrder.potentialActions !== undefined
+                    //     && params.potentialActions.returnOrder.potentialActions.refundCreditCard !== undefined)
+                    //     ? params.potentialActions.returnOrder.potentialActions.refundCreditCard
+                    //     : undefined;
+                    // if (refundCreditCardActionParams !== undefined) {
+                    //     const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
+                    //         const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
+                    //             return paymentMethod.paymentMethod.paymentMethodId === a.object[0].paymentMethod.paymentMethodId;
+                    //         });
+
+                    //         return assignedPaymentMethod !== undefined;
+                    //     });
+
+                    //     if (assignedRefundCreditCardAction !== undefined
+                    //         && assignedRefundCreditCardAction.potentialActions !== undefined
+                    //         && assignedRefundCreditCardAction.potentialActions.sendEmailMessage !== undefined
+                    //         && assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object !== undefined) {
+                    //         emailCustomization = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object;
+                    //     }
+                    // }
+
+                    // const emailMessage = await emailMessageBuilder.createRefundMessage({
+                    //     order,
+                    //     paymentMethods: a.object.map((o) => o.paymentMethod),
+                    //     email: emailCustomization
+                    // });
+                    // const sendEmailMessageActionAttributes: factory.cinerino.action.transfer.send.message.email.IAttributes = {
+                    //     project: transaction.project,
+                    //     typeOf: factory.actionType.SendAction,
+                    //     object: emailMessage,
+                    //     agent: {
+                    //         project: transaction.project,
+                    //         typeOf: seller.typeOf,
+                    //         id: seller.id,
+                    //         name: seller.name,
+                    //         url: seller.url
+                    //     },
+                    //     recipient: order.customer,
+                    //     potentialActions: {},
+                    //     purpose: {
+                    //         typeOf: order.typeOf,
+                    //         seller: order.seller,
+                    //         customer: order.customer,
+                    //         confirmationNumber: order.confirmationNumber,
+                    //         orderNumber: order.orderNumber,
+                    //         price: order.price,
+                    //         priceCurrency: order.priceCurrency,
+                    //         orderDate: order.orderDate
+                    //     }
+                    // };
+
+                    return {
+                        project: transaction.project,
+                        typeOf: <factory.actionType.RefundAction>factory.actionType.RefundAction,
+                        object: a,
+                        agent: {
+                            project: transaction.project,
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        purpose: {
+                            project: transaction.project,
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        },
+                        potentialActions: {
+                            // sendEmailMessage: [sendEmailMessageActionAttributes]
+                            sendEmailMessage: []
+                        }
+                    };
+                }));
 
         const cancelReservationActions: factory.cinerino.task.IData<factory.cinerino.taskName.CancelReservation>[] = [];
 
@@ -232,7 +334,7 @@ export function confirm(params: {
             potentialActions: {
                 cancelReservation: cancelReservationActions,
                 informOrder: informOrderActionsOnReturn,
-                refundCreditCard: [],
+                refundCreditCard: refundCreditCardActions,
                 refundAccount: [],
                 refundMovieTicket: [],
                 returnPointAward: []

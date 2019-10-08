@@ -17,7 +17,7 @@ import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as factory from '@tokyotower/factory';
 
-import * as ReserveService from './reserve';
+// import * as ReserveService from './reserve';
 import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
@@ -157,13 +157,11 @@ export function onReturn(
         const taskAttributes: factory.task.IAttributes<any>[] = [];
         const potentialActions = returnActionAttributes.potentialActions;
 
-        await cancelReservations(returnOrderTransactionId)(
-            repos.reservation, repos.transaction, repos.ticketTypeCategoryRateLimit, repos.task, repos.project
-        );
+        // await cancelReservations(returnOrderTransactionId)(
+        //     repos.reservation, repos.transaction, repos.ticketTypeCategoryRateLimit, repos.task, repos.project
+        // );
 
         await returnCreditCardSales(returnOrderTransactionId)(repos.action, repos.performance, repos.transaction);
-
-        await notifyReturnOrder(returnOrderTransactionId)(repos.transaction, repos.task);
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
@@ -176,6 +174,25 @@ export function onReturn(
                         return {
                             project: a.project,
                             name: factory.cinerino.taskName.CancelReservation,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }
+                ));
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.refundCreditCard)) {
+                taskAttributes.push(...potentialActions.refundCreditCard.map(
+                    (a): factory.cinerino.task.IAttributes<factory.cinerino.taskName.RefundCreditCard> => {
+                        return {
+                            project: a.project,
+                            name: factory.cinerino.taskName.RefundCreditCard,
                             status: factory.taskStatus.Ready,
                             runsAt: now, // なるはやで実行
                             remainingNumberOfTries: 10,
@@ -219,39 +236,39 @@ export function onReturn(
  * 返品処理に該当する予約を取り消す
  * @param returnOrderTransactionId 返品取引ID
  */
-export function cancelReservations(returnOrderTransactionId: string) {
-    return async (
-        reservationRepo: ReservationRepo,
-        transactionRepo: cinerino.repository.Transaction,
-        ticketTypeCategoryRateLimitRepo: cinerino.repository.rateLimit.TicketTypeCategory,
-        taskRepo: cinerino.repository.Task,
-        projectRepo: cinerino.repository.Project
-    ) => {
-        debug('finding returnOrder transaction...');
-        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
-            .then((doc) => {
-                if (doc === null) {
-                    throw new factory.errors.NotFound('transaction');
-                }
+// export function cancelReservations(returnOrderTransactionId: string) {
+//     return async (
+//         reservationRepo: ReservationRepo,
+//         transactionRepo: cinerino.repository.Transaction,
+//         ticketTypeCategoryRateLimitRepo: cinerino.repository.rateLimit.TicketTypeCategory,
+//         taskRepo: cinerino.repository.Task,
+//         projectRepo: cinerino.repository.Project
+//     ) => {
+//         debug('finding returnOrder transaction...');
+//         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
+//             .then((doc) => {
+//                 if (doc === null) {
+//                     throw new factory.errors.NotFound('transaction');
+//                 }
 
-                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
-            });
-        debug('processing return order...', returnOrderTransaction);
+//                 return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+//             });
+//         debug('processing return order...', returnOrderTransaction);
 
-        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
+//         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
 
-        await Promise.all(placeOrderTransactionResult.order.acceptedOffers.map(async (o) => {
-            const reservation = <factory.cinerino.order.IReservation>o.itemOffered;
+//         await Promise.all(placeOrderTransactionResult.order.acceptedOffers.map(async (o) => {
+//             const reservation = <factory.cinerino.order.IReservation>o.itemOffered;
 
-            await ReserveService.cancelReservation({ id: reservation.id })({
-                project: projectRepo,
-                reservation: reservationRepo,
-                task: taskRepo,
-                ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
-            });
-        }));
-    };
-}
+//             await ReserveService.cancelReservation({ id: reservation.id })({
+//                 project: projectRepo,
+//                 reservation: reservationRepo,
+//                 task: taskRepo,
+//                 ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
+//             });
+//         }));
+//     };
+// }
 
 /**
  * 返品処理を受け付けたことを購入者へ通知する
@@ -342,6 +359,166 @@ export function notifyReturnOrder(returnOrderTransactionId: string) {
 
             default:
         }
+    };
+}
+
+/**
+ * クレジットカード返金処理を実行する
+ */
+export function refundCreditCard(params: factory.cinerino.task.IData<factory.cinerino.taskName.RefundCreditCard>) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        action: cinerino.repository.Action;
+        order: cinerino.repository.Order;
+        performance: PerformanceRepo;
+        project: cinerino.repository.Project;
+        seller: cinerino.repository.Seller;
+        task: cinerino.repository.Task;
+        transaction: cinerino.repository.Transaction;
+    }) => {
+        const projectDetails = await repos.project.findById({ id: params.project.id });
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (projectDetails.settings === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings undefined');
+        }
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore if */
+        if (projectDetails.settings.gmo === undefined) {
+            throw new factory.errors.ServiceUnavailable('Project settings not found');
+        }
+
+        // const seller = await repos.seller.findById({
+        //     id: params.object.purpose.seller.id
+        // });
+
+        // const { shopId, shopPass } = getGMOInfoFromSeller({ seller: seller });
+
+        const refundActionAttributes = params;
+        const payAction = refundActionAttributes.object;
+        const simpleOrder = refundActionAttributes.purpose;
+
+        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+            limit: 1,
+            typeOf: factory.transactionType.ReturnOrder,
+            object: { order: { orderNumbers: [simpleOrder.orderNumber] } }
+        });
+        const returnOrderTransaction = returnOrderTransactions.shift();
+        if (returnOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('ReturnOrderTransaction');
+        }
+
+        const order = await repos.order.findByOrderNumber({
+            orderNumber: simpleOrder.orderNumber
+        });
+
+        const action = await repos.action.start(refundActionAttributes);
+        const alterTranResult: GMO.services.credit.IAlterTranResult[] = [];
+
+        try {
+            const creditCardService = new GMO.service.Credit({ endpoint: projectDetails.settings.gmo.endpoint });
+            await Promise.all(payAction.object.map(async (paymentMethod) => {
+                const entryTranArgs = paymentMethod.entryTranArgs;
+
+                // 取引状態参照
+                const searchTradeResult = await creditCardService.searchTrade({
+                    shopId: entryTranArgs.shopId,
+                    shopPass: entryTranArgs.shopPass,
+                    orderId: entryTranArgs.orderId
+                });
+                debug('searchTradeResult is', searchTradeResult);
+
+                let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined;
+                if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
+                    creditCardSalesBefore = payAction.result.creditCardSales[0];
+                }
+                if (creditCardSalesBefore === undefined) {
+                    throw new Error('Credit Card Sales not found');
+                }
+
+                // GMO取引状態に変更がなければ金額変更
+                debug('trade already changed?', (searchTradeResult.tranId !== creditCardSalesBefore.tranId));
+                if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
+                    // 手数料0円であれば、決済取り消し(返品)処理
+                    if (returnOrderTransaction.object.cancellationFee === 0) {
+                        alterTranResult.push(await GMO.services.credit.alterTran({
+                            shopId: entryTranArgs.shopId,
+                            shopPass: entryTranArgs.shopPass,
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            jobCd: GMO.utils.util.JobCd.Return
+                        }));
+                        // クレジットカード取引結果を返品取引結果に連携
+                        await repos.transaction.transactionModel.findByIdAndUpdate(
+                            returnOrderTransaction.id,
+                            {
+                                'result.returnCreditCardResult': alterTranResult
+                            }
+                        ).exec();
+
+                        // パフォーマンスに返品済数を連携
+                        await repos.performance.updateOne(
+                            // tslint:disable-next-line:max-line-length
+                            { _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id },
+                            {
+                                $inc: {
+                                    'ttts_extension.refunded_count': 1,
+                                    'ttts_extension.unrefunded_count': -1
+                                },
+                                'ttts_extension.refund_update_at': new Date()
+                            }
+                        );
+
+                        // すべて返金完了したら、返金ステータス変更
+                        await repos.performance.updateOne(
+                            {
+                                // tslint:disable-next-line:max-line-length
+                                _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id,
+                                'ttts_extension.unrefunded_count': 0
+                            },
+                            {
+                                'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
+                                'ttts_extension.refund_update_at': new Date()
+                            }
+                        );
+                    } else {
+                        const changeTranResult = await GMO.services.credit.changeTran({
+                            shopId: entryTranArgs.shopId,
+                            shopPass: entryTranArgs.shopPass,
+                            accessId: searchTradeResult.accessId,
+                            accessPass: searchTradeResult.accessPass,
+                            jobCd: GMO.utils.util.JobCd.Capture,
+                            amount: returnOrderTransaction.object.cancellationFee
+                        });
+                        // クレジットカード取引結果を返品取引結果に連携
+                        await repos.transaction.transactionModel.findByIdAndUpdate(
+                            returnOrderTransaction.id,
+                            {
+                                'result.changeCreditCardAmountResult': changeTranResult
+                            }
+                        ).exec();
+                    }
+                }
+            }));
+        } catch (error) {
+            // actionにエラー結果を追加
+            try {
+                const actionError = { ...error, message: error.message, name: error.name };
+                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+            } catch (__) {
+                // 失敗したら仕方ない
+            }
+
+            throw error;
+        }
+
+        // アクション完了
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
+
+        // 潜在アクション
+        await notifyReturnOrder(returnOrderTransaction.id)(repos.transaction, repos.task);
+
+        // await onRefund(refundActionAttributes)({ task: repos.task });
     };
 }
 
