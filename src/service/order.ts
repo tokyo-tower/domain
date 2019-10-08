@@ -138,7 +138,7 @@ export function processReturn(returnOrderTransactionId: string) {
  * 返品アクション後の処理
  */
 export function onReturn(
-    returnOrderTransactionId: string,
+    _: string,
     returnActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes,
     order: factory.order.IOrder
 ) {
@@ -161,7 +161,7 @@ export function onReturn(
         //     repos.reservation, repos.transaction, repos.ticketTypeCategoryRateLimit, repos.task, repos.project
         // );
 
-        await returnCreditCardSales(returnOrderTransactionId)(repos.action, repos.performance, repos.transaction);
+        // await returnCreditCardSales(returnOrderTransactionId)(repos.action, repos.performance, repos.transaction);
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
