@@ -10,8 +10,10 @@ const CANCELLABLE_DAYS = 3;
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
-export type ITransactionOperation<T> = (repos: {
+export type IConfirmOperation<T> = (repos: {
+    action: cinerino.repository.Action;
     invoice: cinerino.repository.Invoice;
+    seller: cinerino.repository.Seller;
     transaction: cinerino.repository.Transaction;
 }) => Promise<T>;
 export type ITaskAndTransactionOperation<T> = (
@@ -53,7 +55,7 @@ export function confirm(params: {
      * 取引確定後アクション
      */
     potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams;
-}): ITransactionOperation<factory.transaction.returnOrder.ITransaction> {
+}): IConfirmOperation<factory.transaction.returnOrder.ITransaction> {
     // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         action: cinerino.repository.Action;

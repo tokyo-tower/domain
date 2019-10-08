@@ -703,9 +703,11 @@ export function processReturnAllByPerformance(
     potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams
 ) {
     return async (
+        actionRepo: cinerino.repository.Action,
         invoiceRepo: cinerino.repository.Invoice,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo,
+        sellerRepo: cinerino.repository.Seller,
         transactionRepo: cinerino.repository.Transaction
     ) => {
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
@@ -775,7 +777,9 @@ export function processReturnAllByPerformance(
                 reason: factory.transaction.returnOrder.Reason.Seller,
                 potentialActions: potentialActions
             })({
+                action: actionRepo,
                 invoice: invoiceRepo,
+                seller: sellerRepo,
                 transaction: transactionRepo
             });
         }));
