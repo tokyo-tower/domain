@@ -127,6 +127,9 @@ export function processReturn(returnOrderTransactionId: string) {
             throw error;
         }
 
+        const result: factory.cinerino.action.transfer.returnAction.order.IResult = returnedOwnershipInfos;
+        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
+
         await onReturn(returnOrderTransactionId, returnOrderActionAttributes, order)(repos);
     };
 }
