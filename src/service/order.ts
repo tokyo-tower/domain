@@ -168,6 +168,25 @@ export function onReturn(
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
         if (potentialActions !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.cancelReservation)) {
+                taskAttributes.push(...potentialActions.cancelReservation.map(
+                    (a): factory.cinerino.task.IAttributes<factory.cinerino.taskName.CancelReservation> => {
+                        return {
+                            project: a.project,
+                            name: factory.cinerino.taskName.CancelReservation,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: a
+                        };
+                    }
+                ));
+            }
+
             if (Array.isArray(potentialActions.informOrder)) {
                 taskAttributes.push(...potentialActions.informOrder.map(
                     (a): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {

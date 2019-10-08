@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 注文返品後の予約取消タスクを追加
+
 ### Changed
 
 - 座席予約承認結果からtmpReservationsを削除
