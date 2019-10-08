@@ -518,7 +518,71 @@ export function refundCreditCard(params: factory.cinerino.task.IData<factory.cin
         // 潜在アクション
         await notifyReturnOrder(returnOrderTransaction.id)(repos.transaction, repos.task);
 
-        // await onRefund(refundActionAttributes)({ task: repos.task });
+        await onRefund(refundActionAttributes, order)({ task: repos.task });
+    };
+}
+
+/**
+ * 返金後のアクション
+ */
+function onRefund(
+    refundActionAttributes: factory.cinerino.action.trade.refund.IAttributes<factory.paymentMethodType>,
+    order: factory.order.IOrder
+) {
+    return async (repos: { task: cinerino.repository.Task }) => {
+        const potentialActions = refundActionAttributes.potentialActions;
+        const now = new Date();
+        const taskAttributes: factory.task.IAttributes<factory.taskName>[] = [];
+        // tslint:disable-next-line:no-single-line-block-comment
+        /* istanbul ignore else */
+        if (potentialActions !== undefined) {
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray(potentialActions.sendEmailMessage)) {
+                potentialActions.sendEmailMessage.forEach((s) => {
+                    const sendEmailMessageTask: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage> = {
+                        project: s.project,
+                        name: factory.cinerino.taskName.SendEmailMessage,
+                        status: factory.taskStatus.Ready,
+                        runsAt: now, // なるはやで実行
+                        remainingNumberOfTries: 3,
+                        numberOfTried: 0,
+                        executionResults: [],
+                        data: {
+                            actionAttributes: s
+                        }
+                    };
+                    taskAttributes.push(sendEmailMessageTask);
+                });
+            }
+
+            // tslint:disable-next-line:no-single-line-block-comment
+            /* istanbul ignore else */
+            if (Array.isArray((<any>potentialActions).informOrder)) {
+                taskAttributes.push(...(<any>potentialActions).informOrder.map(
+                    (a: any): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {
+                        return {
+                            project: a.project,
+                            name: factory.cinerino.taskName.TriggerWebhook,
+                            status: factory.taskStatus.Ready,
+                            runsAt: now, // なるはやで実行
+                            remainingNumberOfTries: 10,
+                            numberOfTried: 0,
+                            executionResults: [],
+                            data: {
+                                ...a,
+                                object: order
+                            }
+                        };
+                    })
+                );
+            }
+        }
+
+        // タスク保管
+        await Promise.all(taskAttributes.map(async (taskAttribute) => {
+            return repos.task.save<any>(taskAttribute);
+        }));
     };
 }
 

@@ -3,8 +3,11 @@
  */
 import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
+import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
+
+const debug = createDebug('ttts-domain:service');
 
 const CANCELLABLE_DAYS = 3;
 
@@ -115,32 +118,59 @@ export function confirm(params: {
         const refundCreditCardActions =
             await Promise.all((<factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
                 .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
+                // tslint:disable-next-line:max-func-body-length
                 .map(async (a): Promise<factory.cinerino.action.trade.refund.IAttributes<factory.paymentMethodType.CreditCard>> => {
+                    const informOrderActionsOnRefund: factory.cinerino.action.interact.inform.IAttributes<any, any>[] = [];
                     // Eメールカスタマイズの指定を確認
-                    // let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
+                    let emailCustomization: factory.creativeWork.message.email.ICustomization | undefined;
 
-                    // const refundCreditCardActionParams = (params.potentialActions !== undefined
-                    //     && params.potentialActions.returnOrder !== undefined
-                    //     && params.potentialActions.returnOrder.potentialActions !== undefined
-                    //     && params.potentialActions.returnOrder.potentialActions.refundCreditCard !== undefined)
-                    //     ? params.potentialActions.returnOrder.potentialActions.refundCreditCard
-                    //     : undefined;
-                    // if (refundCreditCardActionParams !== undefined) {
-                    //     const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
-                    //         const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
-                    //             return paymentMethod.paymentMethod.paymentMethodId === a.object[0].paymentMethod.paymentMethodId;
-                    //         });
+                    const refundCreditCardActionParams = (params.potentialActions !== undefined
+                        && params.potentialActions.returnOrder !== undefined
+                        && params.potentialActions.returnOrder.potentialActions !== undefined
+                        && params.potentialActions.returnOrder.potentialActions.refundCreditCard !== undefined)
+                        ? params.potentialActions.returnOrder.potentialActions.refundCreditCard
+                        : undefined;
+                    if (refundCreditCardActionParams !== undefined) {
+                        const assignedRefundCreditCardAction = refundCreditCardActionParams.find((refundCreditCardAction) => {
+                            const assignedPaymentMethod = refundCreditCardAction.object.object.find((paymentMethod) => {
+                                return paymentMethod.paymentMethod.paymentMethodId === a.object[0].paymentMethod.paymentMethodId;
+                            });
 
-                    //         return assignedPaymentMethod !== undefined;
-                    //     });
+                            return assignedPaymentMethod !== undefined;
+                        });
 
-                    //     if (assignedRefundCreditCardAction !== undefined
-                    //         && assignedRefundCreditCardAction.potentialActions !== undefined
-                    //         && assignedRefundCreditCardAction.potentialActions.sendEmailMessage !== undefined
-                    //         && assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object !== undefined) {
-                    //         emailCustomization = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object;
-                    //     }
-                    // }
+                        if (assignedRefundCreditCardAction !== undefined
+                            && assignedRefundCreditCardAction.potentialActions !== undefined
+                            && assignedRefundCreditCardAction.potentialActions.sendEmailMessage !== undefined
+                            && assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object !== undefined) {
+                            emailCustomization = assignedRefundCreditCardAction.potentialActions.sendEmailMessage.object;
+                        }
+
+                        if (assignedRefundCreditCardAction !== undefined
+                            && assignedRefundCreditCardAction.potentialActions !== undefined
+                            && Array.isArray((<any>assignedRefundCreditCardAction.potentialActions).informOrder)) {
+                            (<any>assignedRefundCreditCardAction.potentialActions).informOrder.forEach((informOrderParams: any) => {
+                                if (informOrderParams.recipient !== undefined) {
+                                    if (typeof informOrderParams.recipient.url === 'string') {
+                                        informOrderActionsOnRefund.push({
+                                            agent: transaction.seller,
+                                            object: order,
+                                            project: transaction.project,
+                                            // purpose: params.transaction,
+                                            recipient: {
+                                                id: transaction.agent.id,
+                                                name: transaction.agent.name,
+                                                typeOf: transaction.agent.typeOf,
+                                                url: informOrderParams.recipient.url
+                                            },
+                                            typeOf: factory.actionType.InformAction
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    debug('emailCustomization:', emailCustomization);
 
                     // const emailMessage = await emailMessageBuilder.createRefundMessage({
                     //     order,
@@ -197,7 +227,10 @@ export function confirm(params: {
                         },
                         potentialActions: {
                             // sendEmailMessage: [sendEmailMessageActionAttributes]
-                            sendEmailMessage: []
+                            sendEmailMessage: [],
+                            ...{
+                                informOrder: informOrderActionsOnRefund
+                            }
                         }
                     };
                 }));
