@@ -1,13 +1,14 @@
 /**
  * 売上集計サービス
  */
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 
 import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
 
 const STAFF_CLIENT_ID = process.env.STAFF_CLIENT_ID;
-const CANCELLATION_FEE = 1000;
+// const CANCELLATION_FEE = 1000;
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
@@ -186,11 +187,21 @@ export function createReturnOrderReport(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        aggregateSaleRepo: AggregateSaleRepo
+        aggregateSaleRepo: AggregateSaleRepo,
+        transactionRepo: cinerino.repository.Transaction
     ): Promise<void> => {
         const datas: IData[] = [];
 
         const order = params.order;
+        const returnOrderTransactions = await transactionRepo.search<factory.transactionType.ReturnOrder>({
+            limit: 1,
+            typeOf: factory.transactionType.ReturnOrder,
+            object: { order: { orderNumbers: [order.orderNumber] } }
+        });
+        const returnOrderTransaction = returnOrderTransactions.shift();
+        if (returnOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('ReturnOrderTransaction');
+        }
 
         let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
@@ -201,7 +212,7 @@ export function createReturnOrderReport(params: {
         }
 
         const dateReturned = moment(<Date>order.dateReturned).toDate();
-        const cancellationFee = CANCELLATION_FEE;
+        const cancellationFee = Number(returnOrderTransaction.object.cancellationFee);
 
         order.acceptedOffers
             .filter((o) => {

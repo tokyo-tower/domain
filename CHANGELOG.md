@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
+- 販売レポートのキャンセルチャージを調整
+
 ### Security
 
 ## v32.0.0 - 2019-10-04
