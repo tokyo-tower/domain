@@ -7,6 +7,8 @@ import * as createDebug from 'debug';
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
 
+import * as emailMessageBuilder from '../../emailMessageBuilder';
+
 const debug = createDebug('ttts-domain:service');
 
 const CANCELLABLE_DAYS = 3;
@@ -172,35 +174,35 @@ export function confirm(params: {
                     }
                     debug('emailCustomization:', emailCustomization);
 
-                    // const emailMessage = await emailMessageBuilder.createRefundMessage({
-                    //     order,
-                    //     paymentMethods: a.object.map((o) => o.paymentMethod),
-                    //     email: emailCustomization
-                    // });
-                    // const sendEmailMessageActionAttributes: factory.cinerino.action.transfer.send.message.email.IAttributes = {
-                    //     project: transaction.project,
-                    //     typeOf: factory.actionType.SendAction,
-                    //     object: emailMessage,
-                    //     agent: {
-                    //         project: transaction.project,
-                    //         typeOf: seller.typeOf,
-                    //         id: seller.id,
-                    //         name: seller.name,
-                    //         url: seller.url
-                    //     },
-                    //     recipient: order.customer,
-                    //     potentialActions: {},
-                    //     purpose: {
-                    //         typeOf: order.typeOf,
-                    //         seller: order.seller,
-                    //         customer: order.customer,
-                    //         confirmationNumber: order.confirmationNumber,
-                    //         orderNumber: order.orderNumber,
-                    //         price: order.price,
-                    //         priceCurrency: order.priceCurrency,
-                    //         orderDate: order.orderDate
-                    //     }
-                    // };
+                    const emailMessage = await emailMessageBuilder.createRefundMessage({
+                        order,
+                        paymentMethods: a.object.map((o) => o.paymentMethod),
+                        email: emailCustomization
+                    });
+                    const sendEmailMessageActionAttributes: factory.cinerino.action.transfer.send.message.email.IAttributes = {
+                        project: transaction.project,
+                        typeOf: factory.actionType.SendAction,
+                        object: emailMessage,
+                        agent: {
+                            project: transaction.project,
+                            typeOf: seller.typeOf,
+                            id: seller.id,
+                            name: seller.name,
+                            url: seller.url
+                        },
+                        recipient: order.customer,
+                        potentialActions: {},
+                        purpose: {
+                            typeOf: order.typeOf,
+                            seller: order.seller,
+                            customer: order.customer,
+                            confirmationNumber: order.confirmationNumber,
+                            orderNumber: order.orderNumber,
+                            price: order.price,
+                            priceCurrency: order.priceCurrency,
+                            orderDate: order.orderDate
+                        }
+                    };
 
                     return {
                         project: transaction.project,
@@ -226,11 +228,10 @@ export function confirm(params: {
                             orderDate: order.orderDate
                         },
                         potentialActions: {
-                            // sendEmailMessage: [sendEmailMessageActionAttributes]
-                            sendEmailMessage: [],
-                            ...{
-                                informOrder: informOrderActionsOnRefund
-                            }
+                            informOrder: informOrderActionsOnRefund,
+                            sendEmailMessage: (emailCustomization !== undefined)
+                                ? [sendEmailMessageActionAttributes]
+                                : []
                         }
                     };
                 }));
