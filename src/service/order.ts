@@ -813,7 +813,12 @@ export function processReturnAllByPerformance(
                                 },
                                 potentialActions: {
                                     sendEmailMessage: {
-                                        object: emailCustomization
+                                        object: {
+                                            sender: emailCustomization.sender,
+                                            toRecipient: emailCustomization.toRecipient,
+                                            abount: emailCustomization.about,
+                                            template: emailCustomization.text
+                                        }
                                     },
                                     informOrder: []
                                 }
@@ -830,7 +835,6 @@ export function processReturnAllByPerformance(
                     forcibly: true,
                     reason: factory.transaction.returnOrder.Reason.Seller,
                     potentialActions: {
-                        ...potentialActions,
                         returnOrder: {
                             potentialActions: {
                                 refundCreditCard: refundCreditCardActionsParams,
