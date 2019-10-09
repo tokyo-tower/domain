@@ -817,7 +817,8 @@ export function processReturnAllByPerformance(
                                             sender: emailCustomization.sender,
                                             toRecipient: emailCustomization.toRecipient,
                                             abount: emailCustomization.about,
-                                            template: emailCustomization.text
+                                            // template: emailCustomization.text,
+                                            text: emailCustomization.text
                                         }
                                     },
                                     informOrder: []

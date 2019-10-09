@@ -182,7 +182,12 @@ export function confirm(params: {
                     const sendEmailMessageActionAttributes: factory.cinerino.action.transfer.send.message.email.IAttributes = {
                         project: transaction.project,
                         typeOf: factory.actionType.SendAction,
-                        object: emailMessage,
+                        object: {
+                            ...emailMessage,
+                            ...(emailCustomization !== undefined && typeof (<any>emailCustomization).text === 'string')
+                                ? { text: (<any>emailCustomization).text }
+                                : undefined
+                        },
                         agent: {
                             project: transaction.project,
                             typeOf: seller.typeOf,
