@@ -22,24 +22,11 @@ import * as ReturnOrderTransactionService from './transaction/returnOrder';
 
 const debug = createDebug('ttts-domain:service');
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+// const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
 export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
-
-export function createFromTransaction(transactionId: string) {
-    return async (orderRepo: cinerino.repository.Order, transactionRepo: cinerino.repository.Transaction) => {
-        const transaction = await transactionRepo.findById({ typeOf: factory.transactionType.PlaceOrder, id: transactionId });
-
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (transaction.result !== undefined) {
-            await orderRepo.createIfNotExist(transaction.result.order);
-            // await orderRepo.save(transaction.result.order);
-        }
-    };
-}
 
 /**
  * 返品処理を実行する
@@ -273,94 +260,92 @@ export function onReturn(
 /**
  * 返品処理を受け付けたことを購入者へ通知する
  */
-export function notifyReturnOrder(returnOrderTransactionId: string) {
-    return async (
-        transactionRepo: cinerino.repository.Transaction,
-        taskRepo: cinerino.repository.Task
-    ) => {
-        debug('finding returnOrder transaction...');
-        const returnOrderTransaction = <factory.transaction.returnOrder.ITransaction>
-            await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: returnOrderTransactionId });
+// export function notifyReturnOrder(returnOrderTransactionId: string) {
+//     return async (
+//         transactionRepo: cinerino.repository.Transaction,
+//         taskRepo: cinerino.repository.Task
+//     ) => {
+//         debug('finding returnOrder transaction...');
+//         const returnOrderTransaction = <factory.transaction.returnOrder.ITransaction>
+//             await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: returnOrderTransactionId });
 
-        const placeOrderTransaction = returnOrderTransaction.object.transaction;
-        if (placeOrderTransaction.result === undefined) {
-            throw new factory.errors.NotFound('PlaceOrder Transaction Result');
-        }
-        const order = placeOrderTransaction.result.order;
+//         const placeOrderTransaction = returnOrderTransaction.object.transaction;
+//         if (placeOrderTransaction.result === undefined) {
+//             throw new factory.errors.NotFound('PlaceOrder Transaction Result');
+//         }
+//         const order = placeOrderTransaction.result.order;
 
-        let emailMessageAttributes: factory.creativeWork.message.email.IAttributes;
-        let emailMessage: factory.creativeWork.message.email.ICreativeWork;
-        let sendEmailTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage>;
-        switch (returnOrderTransaction.object.reason) {
-            case factory.transaction.returnOrder.Reason.Customer:
-                // no op
+//         let emailMessageAttributes: factory.creativeWork.message.email.IAttributes;
+//         let emailMessage: factory.creativeWork.message.email.ICreativeWork;
+//         let sendEmailTaskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage>;
+//         switch (returnOrderTransaction.object.reason) {
+//             case factory.transaction.returnOrder.Reason.Customer:
+//                 // no op
 
-                break;
+//                 break;
 
-            case factory.transaction.returnOrder.Reason.Seller:
-                // tslint:disable-next-line:no-suspicious-comment
-                // TODO 二重送信対策
-                emailMessageAttributes = await createEmailMessage4sellerReason(returnOrderTransaction.object.transaction);
-                emailMessage = {
-                    typeOf: factory.creativeWorkType.EmailMessage,
-                    identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
-                    name: `returnOrderTransaction-${returnOrderTransactionId}`,
-                    sender: {
-                        typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
-                        name: emailMessageAttributes.sender.name,
-                        email: emailMessageAttributes.sender.email
-                    },
-                    toRecipient: {
-                        typeOf: returnOrderTransaction.object.transaction.agent.typeOf,
-                        name: emailMessageAttributes.toRecipient.name,
-                        email: emailMessageAttributes.toRecipient.email
-                    },
-                    about: emailMessageAttributes.about,
-                    text: emailMessageAttributes.text
-                };
+//             case factory.transaction.returnOrder.Reason.Seller:
+//                 emailMessageAttributes = await createEmailMessage4sellerReason(returnOrderTransaction.object.transaction);
+//                 emailMessage = {
+//                     typeOf: factory.creativeWorkType.EmailMessage,
+//                     identifier: `returnOrderTransaction-${returnOrderTransactionId}`,
+//                     name: `returnOrderTransaction-${returnOrderTransactionId}`,
+//                     sender: {
+//                         typeOf: returnOrderTransaction.object.transaction.seller.typeOf,
+//                         name: emailMessageAttributes.sender.name,
+//                         email: emailMessageAttributes.sender.email
+//                     },
+//                     toRecipient: {
+//                         typeOf: returnOrderTransaction.object.transaction.agent.typeOf,
+//                         name: emailMessageAttributes.toRecipient.name,
+//                         email: emailMessageAttributes.toRecipient.email
+//                     },
+//                     about: emailMessageAttributes.about,
+//                     text: emailMessageAttributes.text
+//                 };
 
-                sendEmailTaskAttributes = {
-                    name: factory.cinerino.taskName.SendEmailMessage,
-                    project: project,
-                    status: factory.taskStatus.Ready,
-                    runsAt: new Date(), // なるはやで実行
-                    remainingNumberOfTries: 10,
-                    numberOfTried: 0,
-                    executionResults: [],
-                    data: {
-                        actionAttributes: {
-                            agent: {
-                                id: order.seller.id,
-                                name: { ja: order.seller.name, en: '' },
-                                project: project,
-                                typeOf: order.seller.typeOf
-                            },
-                            object: emailMessage,
-                            project: project,
-                            purpose: {
-                                typeOf: order.typeOf,
-                                orderNumber: order.orderNumber
-                            },
-                            recipient: {
-                                id: order.customer.id,
-                                name: order.customer.name,
-                                typeOf: order.customer.typeOf
-                            },
-                            typeOf: factory.cinerino.actionType.SendAction
-                        }
-                        // transactionId: returnOrderTransactionId,
-                        // emailMessage: emailMessage
-                    }
-                };
+//                 sendEmailTaskAttributes = {
+//                     name: factory.cinerino.taskName.SendEmailMessage,
+//                     project: project,
+//                     status: factory.taskStatus.Ready,
+//                     runsAt: new Date(), // なるはやで実行
+//                     remainingNumberOfTries: 10,
+//                     numberOfTried: 0,
+//                     executionResults: [],
+//                     data: {
+//                         actionAttributes: {
+//                             agent: {
+//                                 id: order.seller.id,
+//                                 name: { ja: order.seller.name, en: '' },
+//                                 project: project,
+//                                 typeOf: order.seller.typeOf
+//                             },
+//                             object: emailMessage,
+//                             project: project,
+//                             purpose: {
+//                                 typeOf: order.typeOf,
+//                                 orderNumber: order.orderNumber
+//                             },
+//                             recipient: {
+//                                 id: order.customer.id,
+//                                 name: order.customer.name,
+//                                 typeOf: order.customer.typeOf
+//                             },
+//                             typeOf: factory.cinerino.actionType.SendAction
+//                         }
+//                         // transactionId: returnOrderTransactionId,
+//                         // emailMessage: emailMessage
+//                     }
+//                 };
 
-                await taskRepo.save(sendEmailTaskAttributes);
+//                 await taskRepo.save(sendEmailTaskAttributes);
 
-                break;
+//                 break;
 
-            default:
-        }
-    };
-}
+//             default:
+//         }
+//     };
+// }
 
 /**
  * クレジットカード返金処理を実行する
@@ -515,8 +500,7 @@ export function refundCreditCard(params: factory.cinerino.task.IData<factory.cin
         // アクション完了
         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: { alterTranResult } });
 
-        // 潜在アクション
-        await notifyReturnOrder(returnOrderTransaction.id)(repos.transaction, repos.task);
+        // await notifyReturnOrder(returnOrderTransaction.id)(repos.transaction, repos.task);
 
         await onRefund(refundActionAttributes, order)({ task: repos.task });
     };
@@ -589,176 +573,140 @@ function onRefund(
 /**
  * クレジットカード売上があれば取り下げる処理
  */
-export function returnCreditCardSales(returnOrderTransactionId: string) {
-    // tslint:disable-next-line:max-func-body-length
-    return async (
-        actionRepo: cinerino.repository.Action,
-        performanceRepo: PerformanceRepo,
-        transactionRepo: cinerino.repository.Transaction
-    ) => {
-        const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
-            .then((doc) => {
-                if (doc === null) {
-                    throw new factory.errors.NotFound('transaction');
-                }
+// export function returnCreditCardSales(returnOrderTransactionId: string) {
+//     // tslint:disable-next-line:max-func-body-length
+//     return async (
+//         actionRepo: cinerino.repository.Action,
+//         performanceRepo: PerformanceRepo,
+//         transactionRepo: cinerino.repository.Transaction
+//     ) => {
+//         const returnOrderTransaction = await transactionRepo.transactionModel.findById(returnOrderTransactionId)
+//             .then((doc) => {
+//                 if (doc === null) {
+//                     throw new factory.errors.NotFound('transaction');
+//                 }
 
-                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
-            });
+//                 return <factory.transaction.returnOrder.ITransaction>doc.toObject();
+//             });
 
-        const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>
-            returnOrderTransaction.object.transaction.object.authorizeActions
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
-                .find((a) => a.result.entryTranArgs !== undefined);
+//         const creditCardAuthorizeAction = <factory.action.authorize.creditCard.IAction>
+//             returnOrderTransaction.object.transaction.object.authorizeActions
+//                 .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+//                 .find((a) => a.result.entryTranArgs !== undefined);
 
-        // クレジットカードオーソリがなければ何もしない
-        if (creditCardAuthorizeAction === undefined) {
-            return;
-        }
-        // CompletedActionStatusにも関わらずresultがなければ謎のデータ
-        if (creditCardAuthorizeAction.result === undefined) {
-            throw new factory.errors.NotFound('creditCardAuthorizeAction.result', 'クレジットカード承認アクションに結果が見つかりません。');
-        }
+//         // クレジットカードオーソリがなければ何もしない
+//         if (creditCardAuthorizeAction === undefined) {
+//             return;
+//         }
+//         // CompletedActionStatusにも関わらずresultがなければ謎のデータ
+//         if (creditCardAuthorizeAction.result === undefined) {
+//             throw new factory.errors.NotFound('creditCardAuthorizeAction.result', 'クレジットカード承認アクションに結果が見つかりません。');
+//         }
 
-        const entryTranArgs = creditCardAuthorizeAction.result.entryTranArgs;
-        const execTranArgs = creditCardAuthorizeAction.result.execTranArgs;
+//         const entryTranArgs = creditCardAuthorizeAction.result.entryTranArgs;
+//         const execTranArgs = creditCardAuthorizeAction.result.execTranArgs;
 
-        const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
-        const order = placeOrderTransactionResult.order;
+//         const placeOrderTransactionResult = <factory.transaction.placeOrder.IResult>returnOrderTransaction.object.transaction.result;
+//         const order = placeOrderTransactionResult.order;
 
-        let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined = (<any>placeOrderTransactionResult).creditCardSales;
-        if (creditCardSalesBefore === undefined) {
-            const payActions = <factory.cinerino.action.trade.pay.IAction<factory.cinerino.paymentMethodType.CreditCard>[]>
-                await actionRepo.search({
-                    typeOf: factory.actionType.PayAction,
-                    purpose: { typeOf: { $in: ['Order'] }, orderNumber: { $in: [order.orderNumber] } }
-                });
-            const payAction = payActions.shift();
-            if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
-                creditCardSalesBefore = payAction.result.creditCardSales[0];
-            }
-        }
-        if (creditCardSalesBefore === undefined) {
-            throw new Error('Credit Card Sales not found');
-        }
+//         let creditCardSalesBefore: GMO.services.credit.IAlterTranResult | undefined = (<any>placeOrderTransactionResult).creditCardSales;
+//         if (creditCardSalesBefore === undefined) {
+//             const payActions = <factory.cinerino.action.trade.pay.IAction<factory.cinerino.paymentMethodType.CreditCard>[]>
+//                 await actionRepo.search({
+//                     typeOf: factory.actionType.PayAction,
+//                     purpose: { typeOf: { $in: ['Order'] }, orderNumber: { $in: [order.orderNumber] } }
+//                 });
+//             const payAction = payActions.shift();
+//             if (payAction !== undefined && payAction.result !== undefined && payAction.result.creditCardSales !== undefined) {
+//                 creditCardSalesBefore = payAction.result.creditCardSales[0];
+//             }
+//         }
+//         if (creditCardSalesBefore === undefined) {
+//             throw new Error('Credit Card Sales not found');
+//         }
 
-        const reservation = <factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered;
-        let orderId = (<any>reservation).gmo_order_id; // 互換性維持のため
-        if (Array.isArray(order.paymentMethods) && order.paymentMethods.length > 0) {
-            const creditCardPayment = order.paymentMethods.find((p) => p.typeOf === factory.paymentMethodType.CreditCard);
-            if (creditCardPayment !== undefined) {
-                orderId = creditCardPayment.paymentMethodId;
-            }
-        }
+//         const reservation = <factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered;
+//         let orderId = (<any>reservation).gmo_order_id; // 互換性維持のため
+//         if (Array.isArray(order.paymentMethods) && order.paymentMethods.length > 0) {
+//             const creditCardPayment = order.paymentMethods.find((p) => p.typeOf === factory.paymentMethodType.CreditCard);
+//             if (creditCardPayment !== undefined) {
+//                 orderId = creditCardPayment.paymentMethodId;
+//             }
+//         }
 
-        // 取引状態参照
-        const searchTradeResult = await GMO.services.credit.searchTrade({
-            shopId: entryTranArgs.shopId,
-            shopPass: entryTranArgs.shopPass,
-            orderId: orderId
-        });
-        debug('searchTradeResult:', searchTradeResult);
+//         // 取引状態参照
+//         const searchTradeResult = await GMO.services.credit.searchTrade({
+//             shopId: entryTranArgs.shopId,
+//             shopPass: entryTranArgs.shopPass,
+//             orderId: orderId
+//         });
+//         debug('searchTradeResult:', searchTradeResult);
 
-        // GMO取引状態に変更がなければ金額変更
-        debug('trade already changed?', (searchTradeResult.tranId !== creditCardSalesBefore.tranId));
-        if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
-            // 手数料0円であれば、決済取り消し(返品)処理
-            if (returnOrderTransaction.object.cancellationFee === 0) {
-                const alterTranResult = await GMO.services.credit.alterTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    accessId: execTranArgs.accessId,
-                    accessPass: execTranArgs.accessPass,
-                    jobCd: GMO.utils.util.JobCd.Return
-                });
-                // クレジットカード取引結果を返品取引結果に連携
-                await transactionRepo.transactionModel.findByIdAndUpdate(
-                    returnOrderTransaction.id,
-                    {
-                        'result.returnCreditCardResult': alterTranResult
-                    }
-                ).exec();
+//         // GMO取引状態に変更がなければ金額変更
+//         debug('trade already changed?', (searchTradeResult.tranId !== creditCardSalesBefore.tranId));
+//         if (searchTradeResult.tranId === creditCardSalesBefore.tranId) {
+//             // 手数料0円であれば、決済取り消し(返品)処理
+//             if (returnOrderTransaction.object.cancellationFee === 0) {
+//                 const alterTranResult = await GMO.services.credit.alterTran({
+//                     shopId: entryTranArgs.shopId,
+//                     shopPass: entryTranArgs.shopPass,
+//                     accessId: execTranArgs.accessId,
+//                     accessPass: execTranArgs.accessPass,
+//                     jobCd: GMO.utils.util.JobCd.Return
+//                 });
+//                 // クレジットカード取引結果を返品取引結果に連携
+//                 await transactionRepo.transactionModel.findByIdAndUpdate(
+//                     returnOrderTransaction.id,
+//                     {
+//                         'result.returnCreditCardResult': alterTranResult
+//                     }
+//                 ).exec();
 
-                // パフォーマンスに返品済数を連携
-                await performanceRepo.updateOne(
-                    // tslint:disable-next-line:max-line-length
-                    { _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id },
-                    {
-                        $inc: {
-                            'ttts_extension.refunded_count': 1,
-                            'ttts_extension.unrefunded_count': -1
-                        },
-                        'ttts_extension.refund_update_at': new Date()
-                    }
-                );
+//                 // パフォーマンスに返品済数を連携
+//                 await performanceRepo.updateOne(
+//                     // tslint:disable-next-line:max-line-length
+//                     { _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id },
+//                     {
+//                         $inc: {
+//                             'ttts_extension.refunded_count': 1,
+//                             'ttts_extension.unrefunded_count': -1
+//                         },
+//                         'ttts_extension.refund_update_at': new Date()
+//                     }
+//                 );
 
-                // すべて返金完了したら、返金ステータス変更
-                await performanceRepo.updateOne(
-                    {
-                        // tslint:disable-next-line:max-line-length
-                        _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id,
-                        'ttts_extension.unrefunded_count': 0
-                    },
-                    {
-                        'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
-                        'ttts_extension.refund_update_at': new Date()
-                    }
-                );
-            } else {
-                const changeTranResult = await GMO.services.credit.changeTran({
-                    shopId: entryTranArgs.shopId,
-                    shopPass: entryTranArgs.shopPass,
-                    accessId: execTranArgs.accessId,
-                    accessPass: execTranArgs.accessPass,
-                    jobCd: GMO.utils.util.JobCd.Capture,
-                    amount: returnOrderTransaction.object.cancellationFee
-                });
-                // クレジットカード取引結果を返品取引結果に連携
-                await transactionRepo.transactionModel.findByIdAndUpdate(
-                    returnOrderTransaction.id,
-                    {
-                        'result.changeCreditCardAmountResult': changeTranResult
-                    }
-                ).exec();
-            }
-        }
-    };
-}
-
-/**
- * パフォーマンス指定で全注文を返品する
- */
-export function returnAllByPerformance(
-    agentId: string, performanceId: string, clientIds: string[]
-): IPerformanceAndTaskOperation<factory.task.returnOrdersByPerformance.ITask> {
-    return async (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => {
-        // パフォーマンス情報取得
-        const performance = await performanceRepo.findById(performanceId);
-
-        // 終了済かどうか
-        const now = moment();
-        const endDate = moment(performance.endDate);
-        if (endDate >= now) {
-            throw new Error('上映が終了していないので返品処理を実行できません。');
-        }
-
-        const taskAttribute: factory.task.returnOrdersByPerformance.IAttributes = {
-            name: <any>factory.taskName.ReturnOrdersByPerformance,
-            project: project,
-            status: factory.taskStatus.Ready,
-            runsAt: new Date(), // なるはやで実行
-            remainingNumberOfTries: 10,
-            numberOfTried: 0,
-            executionResults: [],
-            data: {
-                agentId: agentId,
-                performanceId: performanceId,
-                clientIds: clientIds
-            }
-        };
-
-        return <any>taskRepo.save(<any>taskAttribute);
-    };
-}
+//                 // すべて返金完了したら、返金ステータス変更
+//                 await performanceRepo.updateOne(
+//                     {
+//                         // tslint:disable-next-line:max-line-length
+//                         _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id,
+//                         'ttts_extension.unrefunded_count': 0
+//                     },
+//                     {
+//                         'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
+//                         'ttts_extension.refund_update_at': new Date()
+//                     }
+//                 );
+//             } else {
+//                 const changeTranResult = await GMO.services.credit.changeTran({
+//                     shopId: entryTranArgs.shopId,
+//                     shopPass: entryTranArgs.shopPass,
+//                     accessId: execTranArgs.accessId,
+//                     accessPass: execTranArgs.accessPass,
+//                     jobCd: GMO.utils.util.JobCd.Capture,
+//                     amount: returnOrderTransaction.object.cancellationFee
+//                 });
+//                 // クレジットカード取引結果を返品取引結果に連携
+//                 await transactionRepo.transactionModel.findByIdAndUpdate(
+//                     returnOrderTransaction.id,
+//                     {
+//                         'result.changeCreditCardAmountResult': changeTranResult
+//                     }
+//                 ).exec();
+//             }
+//         }
+//     };
+// }
 
 export function processReturnAllByPerformance(
     agentId: string,
@@ -766,6 +714,7 @@ export function processReturnAllByPerformance(
     clientIds: string[],
     potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams
 ) {
+    // tslint:disable-next-line:max-func-body-length
     return async (
         actionRepo: cinerino.repository.Action,
         invoiceRepo: cinerino.repository.Invoice,
@@ -830,22 +779,83 @@ export function processReturnAllByPerformance(
 
         // 返品取引作成(実際の返品処理は非同期で実行される)
         await Promise.all(transactionIds.map(async (transactionId) => {
-            await ReturnOrderTransactionService.confirm({
-                // tslint:disable-next-line:no-suspicious-comment
-                // TODO クライアント情報連携
-                clientUser: <any>{},
-                agentId: agentId,
-                transactionId: transactionId,
-                cancellationFee: 0,
-                forcibly: true,
-                reason: factory.transaction.returnOrder.Reason.Seller,
-                potentialActions: potentialActions
-            })({
-                action: actionRepo,
-                invoice: invoiceRepo,
-                seller: sellerRepo,
-                transaction: transactionRepo
+            const placeOrderTransaction = await transactionRepo.findById({
+                typeOf: factory.transactionType.PlaceOrder,
+                id: transactionId
             });
+
+            if (placeOrderTransaction.result !== undefined) {
+                // 返品メール作成
+                const emailCustomization = await createEmailMessage4sellerReason(placeOrderTransaction);
+
+                const order = placeOrderTransaction.result.order;
+
+                // クレジットカード返金アクション
+                const actionsOnOrder = await actionRepo.searchByOrderNumber({ orderNumber: order.orderNumber });
+                const payActions = <factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
+                    .filter((a) => a.typeOf === factory.actionType.PayAction)
+                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+
+                const refundCreditCardActionsParams: factory.cinerino.transaction.returnOrder.IRefundCreditCardParams[] =
+                    await Promise.all((<factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
+                        .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
+                        // tslint:disable-next-line:max-line-length
+                        .map(async (a) => {
+                            return {
+                                object: {
+                                    object: a.object.map((o) => {
+                                        return {
+                                            paymentMethod: {
+                                                paymentMethodId: o.paymentMethod.paymentMethodId
+                                            }
+                                        };
+                                    })
+                                },
+                                potentialActions: {
+                                    sendEmailMessage: {
+                                        object: emailCustomization
+                                    },
+                                    informOrder: []
+                                }
+                            };
+                        }));
+
+                await ReturnOrderTransactionService.confirm({
+                    // tslint:disable-next-line:no-suspicious-comment
+                    // TODO クライアント情報連携
+                    clientUser: <any>{},
+                    agentId: agentId,
+                    transactionId: transactionId,
+                    cancellationFee: 0,
+                    forcibly: true,
+                    reason: factory.transaction.returnOrder.Reason.Seller,
+                    potentialActions: {
+                        ...potentialActions,
+                        returnOrder: {
+                            potentialActions: {
+                                refundCreditCard: refundCreditCardActionsParams,
+                                cancelReservation: (potentialActions !== undefined
+                                    && potentialActions.returnOrder !== undefined
+                                    && potentialActions.returnOrder.potentialActions !== undefined
+                                    && Array.isArray(potentialActions.returnOrder.potentialActions.cancelReservation))
+                                    ? potentialActions.returnOrder.potentialActions.cancelReservation
+                                    : [],
+                                informOrder: (potentialActions !== undefined
+                                    && potentialActions.returnOrder !== undefined
+                                    && potentialActions.returnOrder.potentialActions !== undefined
+                                    && Array.isArray(potentialActions.returnOrder.potentialActions.informOrder))
+                                    ? potentialActions.returnOrder.potentialActions.informOrder
+                                    : []
+                            }
+                        }
+                    }
+                })({
+                    action: actionRepo,
+                    invoice: invoiceRepo,
+                    seller: sellerRepo,
+                    transaction: transactionRepo
+                });
+            }
         }));
     };
 }

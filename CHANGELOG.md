@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 座席予約承認結果からtmpReservationsを削除
 - 注文返品処理時に、クレジットカード返金状態に関わらず注文ステータス変更と予約取消が実行されるように調整
+- 販売者都合での注文返品時、注文返品取引確定時に返金後メールを指定するように調整
 
 ### Deprecated
 
