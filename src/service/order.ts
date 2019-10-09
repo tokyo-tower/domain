@@ -816,7 +816,7 @@ export function processReturnAllByPerformance(
                                         object: {
                                             sender: emailCustomization.sender,
                                             toRecipient: emailCustomization.toRecipient,
-                                            abount: emailCustomization.about,
+                                            about: emailCustomization.about,
                                             // template: emailCustomization.text,
                                             text: emailCustomization.text
                                         }
