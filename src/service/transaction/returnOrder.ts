@@ -13,8 +13,6 @@ const debug = createDebug('ttts-domain:service');
 
 const CANCELLABLE_DAYS = 3;
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
-
 export type IConfirmOperation<T> = (repos: {
     action: cinerino.repository.Action;
     invoice: cinerino.repository.Invoice;
@@ -31,6 +29,7 @@ export type WebAPIIdentifier = factory.cinerino.service.webAPI.Identifier;
  */
 // tslint:disable-next-line:max-func-body-length
 export function confirm(params: {
+    project: factory.project.IProject;
     /**
      * 主体者ID
      */
@@ -358,10 +357,10 @@ export function confirm(params: {
         }
 
         const returnOrderActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes = {
-            project: transaction.project,
+            project: params.project,
             typeOf: factory.actionType.ReturnAction,
             object: {
-                project: project,
+                project: params.project,
                 typeOf: order.typeOf,
                 seller: order.seller,
                 customer: order.customer,
@@ -389,7 +388,7 @@ export function confirm(params: {
         };
 
         const returnOrderAttributes: factory.transaction.returnOrder.IAttributes = {
-            project: project,
+            project: params.project,
             typeOf: factory.transactionType.ReturnOrder,
             status: factory.transactionStatusType.Confirmed,
             agent: {
@@ -491,7 +490,7 @@ export function sendEmail(
         // その場で送信ではなく、DBにタスクを登録
         const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName.SendEmailMessage> = {
             name: factory.cinerino.taskName.SendEmailMessage,
-            project: project,
+            project: returnOrderTransaction.project,
             status: factory.taskStatus.Ready,
             runsAt: new Date(), // なるはやで実行
             remainingNumberOfTries: 10,
@@ -502,11 +501,11 @@ export function sendEmail(
                     agent: {
                         id: order.seller.id,
                         name: { ja: order.seller.name, en: '' },
-                        project: project,
+                        project: returnOrderTransaction.project,
                         typeOf: order.seller.typeOf
                     },
                     object: emailMessage,
-                    project: project,
+                    project: returnOrderTransaction.project,
                     purpose: {
                         typeOf: order.typeOf,
                         orderNumber: order.orderNumber
@@ -566,19 +565,20 @@ export async function exportTasksById(transactionId: string): Promise<factory.ta
     const transaction: factory.transaction.returnOrder.ITransaction = <any>
         await transactionRepo.findById({ typeOf: factory.transactionType.ReturnOrder, id: transactionId });
 
-    const taskAttributes: factory.task.IAttributes<any>[] = [];
+    const taskAttributes: factory.cinerino.task.IAttributes<factory.cinerino.taskName>[] = [];
     switch (transaction.status) {
         case factory.transactionStatusType.Confirmed:
             taskAttributes.push({
-                name: <any>factory.taskName.ReturnOrder,
-                project: project,
+                name: factory.cinerino.taskName.ReturnOrder,
+                project: transaction.project,
                 status: factory.taskStatus.Ready,
                 runsAt: new Date(), // なるはやで実行
                 remainingNumberOfTries: 10,
                 numberOfTried: 0,
                 executionResults: [],
                 data: {
-                    transactionId: transaction.id
+                    project: transaction.project,
+                    orderNumber: transaction.object.order.orderNumber
                 }
             });
 

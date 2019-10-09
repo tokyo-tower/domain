@@ -24,200 +24,183 @@ const debug = createDebug('ttts-domain:service');
 
 // const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
 
-export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
+// export type IPerformanceAndTaskOperation<T> = (performanceRepo: PerformanceRepo, taskRepo: cinerino.repository.Task) => Promise<T>;
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
 /**
  * 返品処理を実行する
  * リトライ可能なように実装すること
- * @param returnOrderTransactionId 返品取引ID
  */
-export function processReturn(returnOrderTransactionId: string) {
-    // tslint:disable-next-line:max-func-body-length
-    return async (repos: {
-        action: cinerino.repository.Action;
-        order: cinerino.repository.Order;
-        ownershipInfo: cinerino.repository.OwnershipInfo;
-        performance: PerformanceRepo;
-        transaction: cinerino.repository.Transaction;
-        task: cinerino.repository.Task;
-        reservation: ReservationRepo;
-        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
-        project: cinerino.repository.Project;
-    }) => {
-        const returnOrderTransaction = await repos.transaction.transactionModel.findById(returnOrderTransactionId)
-            .then((doc) => {
-                if (doc === null) {
-                    throw new factory.errors.NotFound('transaction');
-                }
+// export function processReturn(params: factory.cinerino.task.IData<factory.cinerino.taskName.ReturnOrder>) {
+//     // tslint:disable-next-line:max-func-body-length
+//     return async (repos: {
+//         action: cinerino.repository.Action;
+//         order: cinerino.repository.Order;
+//         ownershipInfo: cinerino.repository.OwnershipInfo;
+//         transaction: cinerino.repository.Transaction;
+//         task: cinerino.repository.Task;
+//     }) => {
+//         const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+//             limit: 1,
+//             typeOf: factory.transactionType.ReturnOrder,
+//             object: {
+//                 order: { orderNumbers: [params.orderNumber] }
+//             },
+//             statuses: [factory.transactionStatusType.Confirmed]
+//         });
+//         const returnOrderTransaction = returnOrderTransactions.shift();
+//         if (returnOrderTransaction === undefined) {
+//             throw new factory.errors.NotFound('Return order transaction');
+//         }
 
-                return <factory.transaction.returnOrder.ITransaction>doc.toObject();
-            });
-        debug('processing return order...', returnOrderTransaction);
+//         const dateReturned = moment(returnOrderTransaction.endDate)
+//             .toDate();
 
-        const dateReturned = moment(returnOrderTransaction.endDate)
-            .toDate();
+//         const potentialActions = returnOrderTransaction.potentialActions;
+//         if (potentialActions === undefined) {
+//             throw new factory.errors.NotFound('PotentialActions of return order transaction');
+//         }
 
-        const potentialActions = returnOrderTransaction.potentialActions;
-        if (potentialActions === undefined) {
-            throw new factory.errors.NotFound('PotentialActions of return order transaction');
-        }
+//         // アクション開始
+//         let order = returnOrderTransaction.object.order;
+//         const returnOrderActionAttributes = potentialActions.returnOrder;
+//         const returnedOwnershipInfos: factory.cinerino.ownershipInfo.IOwnershipInfo<any>[] = [];
 
-        // アクション開始
-        let order = returnOrderTransaction.object.order;
-        const returnOrderActionAttributes = potentialActions.returnOrder;
-        const returnedOwnershipInfos: factory.cinerino.ownershipInfo.IOwnershipInfo<any>[] = [];
+//         const action = await repos.action.start(returnOrderActionAttributes);
 
-        const action = await repos.action.start(returnOrderActionAttributes);
+//         try {
+//             // 所有権の所有期間変更
+//             const sendOrderActions = <factory.cinerino.action.transfer.send.order.IAction[]>await repos.action.search({
+//                 typeOf: factory.actionType.SendAction,
+//                 object: { orderNumber: { $in: [order.orderNumber] } },
+//                 actionStatusTypes: [factory.actionStatusType.CompletedActionStatus]
+//             });
 
-        try {
-            // 所有権の所有期間変更
-            const sendOrderActions = <factory.cinerino.action.transfer.send.order.IAction[]>await repos.action.search({
-                typeOf: factory.actionType.SendAction,
-                object: { orderNumber: { $in: [order.orderNumber] } },
-                actionStatusTypes: [factory.actionStatusType.CompletedActionStatus]
-            });
+//             await Promise.all(sendOrderActions.map(async (a) => {
+//                 const ownershipInfos = a.result;
+//                 if (Array.isArray(ownershipInfos)) {
+//                     await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
+//                         const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
+//                             { _id: ownershipInfo.id },
+//                             { ownedThrough: dateReturned },
+//                             { new: true }
+//                         )
+//                             .select({ __v: 0, createdAt: 0, updatedAt: 0 })
+//                             .exec();
+//                         if (doc !== null) {
+//                             returnedOwnershipInfos.push(doc.toObject());
+//                         }
+//                     }));
+//                 }
+//             }));
 
-            await Promise.all(sendOrderActions.map(async (a) => {
-                const ownershipInfos = a.result;
-                if (Array.isArray(ownershipInfos)) {
-                    await Promise.all(ownershipInfos.map(async (ownershipInfo) => {
-                        const doc = await repos.ownershipInfo.ownershipInfoModel.findOneAndUpdate(
-                            { _id: ownershipInfo.id },
-                            { ownedThrough: dateReturned },
-                            { new: true }
-                        )
-                            .select({ __v: 0, createdAt: 0, updatedAt: 0 })
-                            .exec();
-                        if (doc !== null) {
-                            returnedOwnershipInfos.push(doc.toObject());
-                        }
-                    }));
-                }
-            }));
+//             // 注文ステータス変更
+//             order = await repos.order.returnOrder({
+//                 orderNumber: order.orderNumber,
+//                 dateReturned: dateReturned
+//             });
+//         } catch (error) {
+//             // actionにエラー結果を追加
+//             try {
+//                 const actionError = { ...error, message: error.message, name: error.name };
+//                 await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
+//             } catch (__) {
+//                 // 失敗したら仕方ない
+//             }
 
-            // 注文ステータス変更
-            order = await repos.order.returnOrder({
-                orderNumber: order.orderNumber,
-                dateReturned: dateReturned
-            });
-        } catch (error) {
-            // actionにエラー結果を追加
-            try {
-                const actionError = { ...error, message: error.message, name: error.name };
-                await repos.action.giveUp({ typeOf: action.typeOf, id: action.id, error: actionError });
-            } catch (__) {
-                // 失敗したら仕方ない
-            }
+//             throw error;
+//         }
 
-            throw error;
-        }
+//         const result: factory.cinerino.action.transfer.returnAction.order.IResult = returnedOwnershipInfos;
+//         await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
 
-        const result: factory.cinerino.action.transfer.returnAction.order.IResult = returnedOwnershipInfos;
-        await repos.action.complete({ typeOf: action.typeOf, id: action.id, result: result });
-
-        await onReturn(returnOrderTransactionId, returnOrderActionAttributes, order)(repos);
-    };
-}
+//         await onReturn(returnOrderActionAttributes, order)(repos);
+//     };
+// }
 
 /**
  * 返品アクション後の処理
  */
-export function onReturn(
-    _: string,
-    returnActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes,
-    order: factory.order.IOrder
-) {
-    return async (repos: {
-        action: cinerino.repository.Action;
-        order: cinerino.repository.Order;
-        ownershipInfo: cinerino.repository.OwnershipInfo;
-        performance: PerformanceRepo;
-        transaction: cinerino.repository.Transaction;
-        task: cinerino.repository.Task;
-        reservation: ReservationRepo;
-        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
-        project: cinerino.repository.Project;
-    }) => {
-        const now = new Date();
-        const taskAttributes: factory.task.IAttributes<any>[] = [];
-        const potentialActions = returnActionAttributes.potentialActions;
+// export function onReturn(
+//     returnActionAttributes: factory.cinerino.action.transfer.returnAction.order.IAttributes,
+//     order: factory.order.IOrder
+// ) {
+//     return async (repos: {
+//         task: cinerino.repository.Task;
+//     }) => {
+//         const now = new Date();
+//         const taskAttributes: factory.task.IAttributes<any>[] = [];
+//         const potentialActions = returnActionAttributes.potentialActions;
 
-        // await cancelReservations(returnOrderTransactionId)(
-        //     repos.reservation, repos.transaction, repos.ticketTypeCategoryRateLimit, repos.task, repos.project
-        // );
+//         // tslint:disable-next-line:no-single-line-block-comment
+//         /* istanbul ignore else */
+//         if (potentialActions !== undefined) {
+//             // tslint:disable-next-line:no-single-line-block-comment
+//             /* istanbul ignore else */
+//             if (Array.isArray(potentialActions.cancelReservation)) {
+//                 taskAttributes.push(...potentialActions.cancelReservation.map(
+//                     (a): factory.cinerino.task.IAttributes<factory.cinerino.taskName.CancelReservation> => {
+//                         return {
+//                             project: a.project,
+//                             name: factory.cinerino.taskName.CancelReservation,
+//                             status: factory.taskStatus.Ready,
+//                             runsAt: now, // なるはやで実行
+//                             remainingNumberOfTries: 10,
+//                             numberOfTried: 0,
+//                             executionResults: [],
+//                             data: a
+//                         };
+//                     }
+//                 ));
+//             }
 
-        // await returnCreditCardSales(returnOrderTransactionId)(repos.action, repos.performance, repos.transaction);
+//             // tslint:disable-next-line:no-single-line-block-comment
+//             /* istanbul ignore else */
+//             if (Array.isArray(potentialActions.refundCreditCard)) {
+//                 taskAttributes.push(...potentialActions.refundCreditCard.map(
+//                     (a): factory.cinerino.task.IAttributes<factory.cinerino.taskName.RefundCreditCard> => {
+//                         return {
+//                             project: a.project,
+//                             name: factory.cinerino.taskName.RefundCreditCard,
+//                             status: factory.taskStatus.Ready,
+//                             runsAt: now, // なるはやで実行
+//                             remainingNumberOfTries: 10,
+//                             numberOfTried: 0,
+//                             executionResults: [],
+//                             data: a
+//                         };
+//                     }
+//                 ));
+//             }
 
-        // tslint:disable-next-line:no-single-line-block-comment
-        /* istanbul ignore else */
-        if (potentialActions !== undefined) {
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.cancelReservation)) {
-                taskAttributes.push(...potentialActions.cancelReservation.map(
-                    (a): factory.cinerino.task.IAttributes<factory.cinerino.taskName.CancelReservation> => {
-                        return {
-                            project: a.project,
-                            name: factory.cinerino.taskName.CancelReservation,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }
-                ));
-            }
+//             if (Array.isArray(potentialActions.informOrder)) {
+//                 taskAttributes.push(...potentialActions.informOrder.map(
+//                     (a): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {
+//                         return {
+//                             project: a.project,
+//                             name: factory.cinerino.taskName.TriggerWebhook,
+//                             status: factory.taskStatus.Ready,
+//                             runsAt: now, // なるはやで実行
+//                             remainingNumberOfTries: 10,
+//                             numberOfTried: 0,
+//                             executionResults: [],
+//                             data: {
+//                                 ...a,
+//                                 object: order
+//                             }
+//                         };
+//                     })
+//                 );
+//             }
+//         }
 
-            // tslint:disable-next-line:no-single-line-block-comment
-            /* istanbul ignore else */
-            if (Array.isArray(potentialActions.refundCreditCard)) {
-                taskAttributes.push(...potentialActions.refundCreditCard.map(
-                    (a): factory.cinerino.task.IAttributes<factory.cinerino.taskName.RefundCreditCard> => {
-                        return {
-                            project: a.project,
-                            name: factory.cinerino.taskName.RefundCreditCard,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: a
-                        };
-                    }
-                ));
-            }
-
-            if (Array.isArray(potentialActions.informOrder)) {
-                taskAttributes.push(...potentialActions.informOrder.map(
-                    (a): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {
-                        return {
-                            project: a.project,
-                            name: factory.cinerino.taskName.TriggerWebhook,
-                            status: factory.taskStatus.Ready,
-                            runsAt: now, // なるはやで実行
-                            remainingNumberOfTries: 10,
-                            numberOfTried: 0,
-                            executionResults: [],
-                            data: {
-                                ...a,
-                                object: order
-                            }
-                        };
-                    })
-                );
-            }
-        }
-
-        // タスク保管
-        await Promise.all(taskAttributes.map(async (taskAttribute) => {
-            return repos.task.save<any>(taskAttribute);
-        }));
-    };
-}
+//         // タスク保管
+//         await Promise.all(taskAttributes.map(async (taskAttribute) => {
+//             return repos.task.save<any>(taskAttribute);
+//         }));
+//     };
+// }
 
 /**
  * 返品処理に該当する予約を取り消す
@@ -827,6 +810,7 @@ export function processReturnAllByPerformance(
                         }));
 
                 await ReturnOrderTransactionService.confirm({
+                    project: placeOrderTransaction.project,
                     // tslint:disable-next-line:no-suspicious-comment
                     // TODO クライアント情報連携
                     clientUser: <any>{},
