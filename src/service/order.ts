@@ -558,8 +558,8 @@ function onRefund(
 
             // tslint:disable-next-line:no-single-line-block-comment
             /* istanbul ignore else */
-            if (Array.isArray((<any>potentialActions).informOrder)) {
-                taskAttributes.push(...(<any>potentialActions).informOrder.map(
+            if (Array.isArray(potentialActions.informOrder)) {
+                taskAttributes.push(...potentialActions.informOrder.map(
                     (a: any): factory.task.IAttributes<factory.cinerino.taskName.TriggerWebhook> => {
                         return {
                             project: a.project,

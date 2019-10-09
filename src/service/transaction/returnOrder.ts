@@ -148,8 +148,8 @@ export function confirm(params: {
 
                         if (assignedRefundCreditCardAction !== undefined
                             && assignedRefundCreditCardAction.potentialActions !== undefined
-                            && Array.isArray((<any>assignedRefundCreditCardAction.potentialActions).informOrder)) {
-                            (<any>assignedRefundCreditCardAction.potentialActions).informOrder.forEach((informOrderParams: any) => {
+                            && Array.isArray(assignedRefundCreditCardAction.potentialActions.informOrder)) {
+                            assignedRefundCreditCardAction.potentialActions.informOrder.forEach((informOrderParams) => {
                                 if (informOrderParams.recipient !== undefined) {
                                     if (typeof informOrderParams.recipient.url === 'string') {
                                         informOrderActionsOnRefund.push({
@@ -293,9 +293,10 @@ export function confirm(params: {
                         const object = <factory.cinerino.transaction.returnOrder.ICancelReservationObject<factory.cinerino.service.webAPI.Identifier.Chevre>>
                             p.object;
 
-                        return object !== undefined
-                            && object.typeOf === factory.chevre.transactionType.Reserve
-                            && object.id === reserveTransaction.id;
+                        return object === undefined
+                            || (object !== undefined
+                                && object.typeOf === factory.chevre.transactionType.Reserve
+                                && object.id === reserveTransaction.id);
                     });
 
                     if (cancelReservationObjectParams !== undefined) {
