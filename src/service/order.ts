@@ -699,6 +699,8 @@ export function processReturnAllByPerformance(
         actionRepo: cinerino.repository.Action,
         invoiceRepo: cinerino.repository.Invoice,
         performanceRepo: PerformanceRepo,
+        projectRepo: cinerino.repository.Project,
+        orderRepo: cinerino.repository.Order,
         reservationRepo: ReservationRepo,
         sellerRepo: cinerino.repository.Seller,
         transactionRepo: cinerino.repository.Transaction
@@ -806,16 +808,23 @@ export function processReturnAllByPerformance(
                             };
                         }));
 
+                const expires = moment()
+                    .add(1, 'minute')
+                    .toDate();
+
                 await cinerino.service.transaction.returnOrder4ttts.confirm4ttts({
                     project: placeOrderTransaction.project,
                     // tslint:disable-next-line:no-suspicious-comment
                     // TODO クライアント情報連携
                     clientUser: <any>{},
                     agentId: agentId,
-                    transactionId: transactionId,
+                    expires: expires,
+                    order: { orderNumber: order.orderNumber },
+                    // transactionId: transactionId,
                     cancellationFee: 0,
-                    forcibly: true,
+                    // forcibly: true,
                     reason: factory.transaction.returnOrder.Reason.Seller,
+                    seller: { typeOf: order.seller.typeOf, id: order.seller.id },
                     potentialActions: {
                         returnOrder: {
                             potentialActions: {
@@ -838,6 +847,8 @@ export function processReturnAllByPerformance(
                 })({
                     action: actionRepo,
                     invoice: invoiceRepo,
+                    order: orderRepo,
+                    project: projectRepo,
                     seller: sellerRepo,
                     transaction: transactionRepo
                 });
