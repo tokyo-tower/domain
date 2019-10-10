@@ -17,9 +17,6 @@ import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as factory from '@tokyotower/factory';
 
-// import * as ReserveService from './reserve';
-import * as ReturnOrderTransactionService from './transaction/returnOrder';
-
 const debug = createDebug('ttts-domain:service');
 
 // const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
@@ -809,7 +806,7 @@ export function processReturnAllByPerformance(
                             };
                         }));
 
-                await ReturnOrderTransactionService.confirm({
+                await cinerino.service.transaction.returnOrder4ttts.confirm4ttts({
                     project: placeOrderTransaction.project,
                     // tslint:disable-next-line:no-suspicious-comment
                     // TODO クライアント情報連携
