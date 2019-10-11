@@ -3,8 +3,6 @@ import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
-import * as OrderService from '../order';
-
 /**
  * タスク実行関数
  */
@@ -17,7 +15,7 @@ export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName
         const taskRepo = new cinerino.repository.Task(settings.connection);
         const transactionRepo = new cinerino.repository.Transaction(settings.connection);
 
-        await OrderService.refundCreditCard(data)({
+        await cinerino.service.payment.creditCard.refundCreditCard(data)({
             action: actionRepo,
             order: orderRepo,
             project: projectRepo,
