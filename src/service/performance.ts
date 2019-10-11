@@ -1,11 +1,10 @@
-/**
- * パフォーマンスサービス
- */
+import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
-import * as repository from '../repository';
+import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
+import { MongoRepository as PerformanceRepo } from '../repo/performance';
 
 const debug = createDebug('ttts-domain:service');
 
@@ -21,8 +20,8 @@ export interface ISearchResult {
 }
 
 export type ISearchOperation<T> = (
-    performanceRepo: repository.Performance,
-    eventWithAggregation: repository.EventWithAggregation
+    performanceRepo: PerformanceRepo,
+    eventWithAggregationRepo: EventWithAggregationRepo
 ) => Promise<T>;
 
 /**
@@ -31,8 +30,8 @@ export type ISearchOperation<T> = (
 export function search(searchConditions: factory.performance.ISearchConditions): ISearchOperation<ISearchResult> {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        performanceRepo: repository.Performance,
-        eventWithAggregationRepo: repository.EventWithAggregation
+        performanceRepo: PerformanceRepo,
+        eventWithAggregationRepo: EventWithAggregationRepo
     ) => {
         // 作品件数取得
         const filmIds = await performanceRepo.distinct('superEvent.workPerformed.identifier', searchConditions);
@@ -138,5 +137,60 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             numberOfPerformances: performancesCount,
             filmIds: filmIds
         };
+    };
+}
+
+/**
+ * 注文返品時の情報連携
+ */
+export function onOrderReturned(params: {
+    orderNumber: string;
+}) {
+    return async (repos: {
+        order: cinerino.repository.Order;
+        performance: PerformanceRepo;
+        transaction: cinerino.repository.Transaction;
+    }) => {
+        const order = await repos.order.findByOrderNumber({ orderNumber: params.orderNumber });
+
+        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
+            limit: 1,
+            typeOf: factory.transactionType.ReturnOrder,
+            object: { order: { orderNumbers: [order.orderNumber] } }
+        });
+        const returnOrderTransaction = returnOrderTransactions.shift();
+        if (returnOrderTransaction === undefined) {
+            throw new factory.errors.NotFound('ReturnOrderTransaction');
+        }
+
+        // 販売者都合の手数料なし返品であれば、情報連携
+        if (returnOrderTransaction.object.reason === factory.transaction.returnOrder.Reason.Seller
+            && returnOrderTransaction.object.cancellationFee === 0) {
+            // パフォーマンスに返品済数を連携
+            await repos.performance.updateOne(
+                // tslint:disable-next-line:max-line-length
+                { _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id },
+                {
+                    $inc: {
+                        'ttts_extension.refunded_count': 1,
+                        'ttts_extension.unrefunded_count': -1
+                    },
+                    'ttts_extension.refund_update_at': new Date()
+                }
+            );
+
+            // すべて返金完了したら、返金ステータス変更
+            await repos.performance.updateOne(
+                {
+                    // tslint:disable-next-line:max-line-length
+                    _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id,
+                    'ttts_extension.unrefunded_count': 0
+                },
+                {
+                    'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
+                    'ttts_extension.refund_update_at': new Date()
+                }
+            );
+        }
     };
 }

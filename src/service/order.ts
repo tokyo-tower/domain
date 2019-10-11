@@ -29,7 +29,6 @@ export function refundCreditCard(params: factory.cinerino.task.IData<factory.cin
     return async (repos: {
         action: cinerino.repository.Action;
         order: cinerino.repository.Order;
-        performance: PerformanceRepo;
         project: cinerino.repository.Project;
         seller: cinerino.repository.Seller;
         task: cinerino.repository.Task;
@@ -107,39 +106,6 @@ export function refundCreditCard(params: factory.cinerino.task.IData<factory.cin
                             accessPass: searchTradeResult.accessPass,
                             jobCd: GMO.utils.util.JobCd.Return
                         }));
-                        // クレジットカード取引結果を返品取引結果に連携
-                        await repos.transaction.transactionModel.findByIdAndUpdate(
-                            returnOrderTransaction.id,
-                            {
-                                'result.returnCreditCardResult': alterTranResult
-                            }
-                        ).exec();
-
-                        // パフォーマンスに返品済数を連携
-                        await repos.performance.updateOne(
-                            // tslint:disable-next-line:max-line-length
-                            { _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id },
-                            {
-                                $inc: {
-                                    'ttts_extension.refunded_count': 1,
-                                    'ttts_extension.unrefunded_count': -1
-                                },
-                                'ttts_extension.refund_update_at': new Date()
-                            }
-                        );
-
-                        // すべて返金完了したら、返金ステータス変更
-                        await repos.performance.updateOne(
-                            {
-                                // tslint:disable-next-line:max-line-length
-                                _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id,
-                                'ttts_extension.unrefunded_count': 0
-                            },
-                            {
-                                'ttts_extension.refund_status': factory.performance.RefundStatus.Compeleted,
-                                'ttts_extension.refund_update_at': new Date()
-                            }
-                        );
                     } else {
                         const changeTranResult = await GMO.services.credit.changeTran({
                             shopId: entryTranArgs.shopId,
@@ -150,14 +116,6 @@ export function refundCreditCard(params: factory.cinerino.task.IData<factory.cin
                             amount: returnOrderTransaction.object.cancellationFee
                         });
                         alterTranResult.push(changeTranResult);
-
-                        // クレジットカード取引結果を返品取引結果に連携
-                        await repos.transaction.transactionModel.findByIdAndUpdate(
-                            returnOrderTransaction.id,
-                            {
-                                'result.changeCreditCardAmountResult': changeTranResult
-                            }
-                        ).exec();
                     }
                 }
             }));
@@ -360,7 +318,12 @@ export function processReturnAllByPerformance(
                                             text: emailCustomization.text
                                         }
                                     },
-                                    informOrder: []
+                                    informOrder: (potentialActions !== undefined
+                                        && potentialActions.returnOrder !== undefined
+                                        && potentialActions.returnOrder.potentialActions !== undefined
+                                        && Array.isArray(potentialActions.returnOrder.potentialActions.informOrder))
+                                        ? potentialActions.returnOrder.potentialActions.informOrder
+                                        : []
                                 }
                             };
                         }));
@@ -378,12 +341,6 @@ export function processReturnAllByPerformance(
                                 && potentialActions.returnOrder.potentialActions !== undefined
                                 && Array.isArray(potentialActions.returnOrder.potentialActions.cancelReservation))
                                 ? potentialActions.returnOrder.potentialActions.cancelReservation
-                                : [],
-                            informOrder: (potentialActions !== undefined
-                                && potentialActions.returnOrder !== undefined
-                                && potentialActions.returnOrder.potentialActions !== undefined
-                                && Array.isArray(potentialActions.returnOrder.potentialActions.informOrder))
-                                ? potentialActions.returnOrder.potentialActions.informOrder
                                 : []
                         }
                     }
