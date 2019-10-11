@@ -12,11 +12,13 @@ export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName
         const actionRepo = new cinerino.repository.Action(settings.connection);
         const invoiceRepo = new cinerino.repository.Invoice(settings.connection);
         const projectRepo = new cinerino.repository.Project(settings.connection);
+        const sellerRepo = new cinerino.repository.Seller(settings.connection);
 
         await cinerino.service.payment.creditCard.payCreditCard(data)({
             action: actionRepo,
             invoice: invoiceRepo,
-            project: projectRepo
+            project: projectRepo,
+            seller: sellerRepo
         });
     };
 }

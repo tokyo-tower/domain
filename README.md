@@ -19,11 +19,6 @@ npm install --save @tokyo-tower/domain
 var ttts = require("@tokyo-tower/domain");
 ```
 
-* mongoose default connection
-```Javascript
-ttts.mongoose.connect();
-```
-
 ### Environment variables
 
 | Name                              | Required | Value         | Purpose                                   |

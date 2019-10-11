@@ -3,25 +3,17 @@ import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
-import { MongoRepository as PerformanceRepo } from '../../repo/performance';
-import { MongoRepository as ReservationRepo } from '../../repo/reservation';
-
-import * as OrderService from '../order';
-
 /**
  * タスク実行関数
  */
-export function call(data: factory.task.returnOrder.IData): IOperation<void> {
+export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName.ReturnOrder>): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        await OrderService.processReturn(data.transactionId)(
-            new cinerino.repository.Action(settings.connection),
-            new PerformanceRepo(settings.connection),
-            new ReservationRepo(settings.connection),
-            new cinerino.repository.Transaction(settings.connection),
-            new cinerino.repository.rateLimit.TicketTypeCategory(settings.redisClient),
-            new cinerino.repository.Task(settings.connection),
-            new cinerino.repository.Order(settings.connection),
-            new cinerino.repository.Project(settings.connection)
-        );
+        await cinerino.service.order.returnOrder(data)({
+            action: new cinerino.repository.Action(settings.connection),
+            order: new cinerino.repository.Order(settings.connection),
+            ownershipInfo: new cinerino.repository.OwnershipInfo(settings.connection),
+            transaction: new cinerino.repository.Transaction(settings.connection),
+            task: new cinerino.repository.Task(settings.connection)
+        });
     };
 }

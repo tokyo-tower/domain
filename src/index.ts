@@ -13,7 +13,6 @@ import * as PerformanceService from './service/performance';
 import * as ReserveService from './service/reserve';
 import * as StockService from './service/stock';
 import * as TaskService from './service/task';
-import * as ReturnOrderTransactionService from './service/transaction/returnOrder';
 
 import * as factory from '@tokyotower/factory';
 
@@ -55,7 +54,7 @@ export namespace service {
     export namespace transaction {
         export import placeOrder = cinerino.service.transaction.placeOrder;
         export import placeOrderInProgress = cinerino.service.transaction.placeOrderInProgress4ttts;
-        export import returnOrder = ReturnOrderTransactionService;
+        export import returnOrder = cinerino.service.transaction.returnOrder4ttts;
     }
     export import util = cinerino.service.util;
 }
