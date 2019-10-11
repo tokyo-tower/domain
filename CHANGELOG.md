@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v33.0.0 - 2019-10-11
+
+### Added
+
 - 注文返品後の予約取消タスクを追加
 - 注文返品後のクレジットカード返金タスクを追加
 
@@ -20,15 +34,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文返品取引インターフェースをCinerino化
 - 注文返品取引サービスをCinerino化
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - 販売レポートのキャンセルチャージを調整
-
-### Security
 
 ## v32.0.0 - 2019-10-04
 
