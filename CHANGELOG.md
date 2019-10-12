@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- 取引ウェブフック設定を追加
+
 ### Changed
 
 - イベントの注文返金数連携を、返金後のウェブフックで対応するように調整
