@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - イベントの注文返金数連携を、返金後のウェブフックで対応するように調整
 - 取引失効時の在庫調整を、失効時ウェブフックで対応するように調整
+- 購入番号リポジトリを@cinerino/domainへ移行
 
 ### Deprecated
 
