@@ -106,7 +106,7 @@ export function onTransactionVoided(params: {
         })
             .then((actions) => actions
                 .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
-                .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
+                // .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             );
 
         await Promise.all(authorizeActions.map(async (action) => {
