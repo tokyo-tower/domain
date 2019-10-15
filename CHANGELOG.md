@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v34.0.0 - 2019-10-15
+
+### Added
+
 - 取引ウェブフック設定を追加
 
 ### Changed
@@ -16,15 +30,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 取引失効時の在庫調整を、失効時ウェブフックで対応するように調整
 - 購入番号リポジトリを@cinerino/domainへ移行
 
-### Deprecated
-
 ### Removed
 
 - クレジットカード返金取引結果の注文返品取引へのデータ連携を削除
-
-### Fixed
-
-### Security
 
 ## v33.0.0 - 2019-10-11
 
