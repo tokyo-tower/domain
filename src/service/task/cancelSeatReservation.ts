@@ -3,8 +3,6 @@ import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
-import * as StockService from '../stock';
-
 /**
  * タスク実行関数
  */
@@ -12,14 +10,10 @@ export function call(data: factory.cinerino.task.IData<factory.cinerino.taskName
     return async (settings: IConnectionSettings) => {
         const actionRepo = new cinerino.repository.Action(settings.connection);
         const projectRepo = new cinerino.repository.Project(settings.connection);
-        const taskRepo = new cinerino.repository.Task(settings.connection);
-        const ticketTypeCategoryRateLimitRepo = new cinerino.repository.rateLimit.TicketTypeCategory(settings.redisClient);
 
-        await StockService.cancelSeatReservationAuth(data)({
+        await cinerino.service.stock.cancelSeatReservationAuth(data)({
             action: actionRepo,
-            project: projectRepo,
-            task: taskRepo,
-            ticketTypeCategoryRateLimit: ticketTypeCategoryRateLimitRepo
+            project: projectRepo
         });
     };
 }

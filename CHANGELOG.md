@@ -18,6 +18,22 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v34.0.0 - 2019-10-15
+
+### Added
+
+- 取引ウェブフック設定を追加
+
+### Changed
+
+- イベントの注文返金数連携を、返金後のウェブフックで対応するように調整
+- 取引失効時の在庫調整を、失効時ウェブフックで対応するように調整
+- 購入番号リポジトリを@cinerino/domainへ移行
+
+### Removed
+
+- クレジットカード返金取引結果の注文返品取引へのデータ連携を削除
+
 ## v33.0.0 - 2019-10-11
 
 ### Added
