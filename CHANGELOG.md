@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 取引に関する非同期タスクを削除(Cinerino移行)
+
 ### Fixed
 
 ### Security
