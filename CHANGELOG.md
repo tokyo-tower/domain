@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v35.1.0 - 2019-10-21
+
+### Changed
+
+- 代理予約による注文判定をcustomer識別子で行うように調整(代理予約クライアントIDへの依存排除)
+
 ## v35.0.0 - 2019-10-16
 
 ### Removed

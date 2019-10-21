@@ -7,9 +7,6 @@ import * as moment from 'moment';
 
 import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
 
-const STAFF_CLIENT_ID = process.env.STAFF_CLIENT_ID;
-// const CANCELLATION_FEE = 1000;
-
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
 /**
@@ -72,10 +69,6 @@ interface IData {
     seat: {
         // 座席コード
         code: string;
-        // 座席グレード名称
-        gradeName?: string;
-        // 座席グレード追加料金
-        gradeAdditionalCharge?: string;
     };
     ticketType: {
         // 券種名称
@@ -108,8 +101,8 @@ enum Status4csv {
 
 // 集計単位
 enum AggregateUnit {
-    SalesByEndDate = 'SalesByEndDate',
-    SalesByEventStartDate = 'SalesByEventStartDate'
+    SalesByEndDate = 'SalesByEndDate'
+    // SalesByEventStartDate = 'SalesByEventStartDate'
 }
 
 function getUnitPriceByAcceptedOffer(offer: factory.order.IAcceptedOffer<any>) {
@@ -144,11 +137,11 @@ export function createPlaceOrderReport(params: {
         const datas: IData[] = [];
         const order = params.order;
 
-        let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
+        let purchaserGroup: string = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
-            const clientIdProperty = order.customer.identifier.find((i) => i.name === 'clientId');
-            if (clientIdProperty !== undefined && clientIdProperty.value === STAFF_CLIENT_ID) {
-                purchaserGroup = PurchaserGroup.Staff;
+            const customerGroupProperty = order.customer.identifier.find((i) => i.name === 'customerGroup');
+            if (customerGroupProperty !== undefined && typeof customerGroupProperty.value === 'string') {
+                purchaserGroup = customerGroupProperty.value;
             }
         }
 
@@ -203,11 +196,11 @@ export function createReturnOrderReport(params: {
             throw new factory.errors.NotFound('ReturnOrderTransaction');
         }
 
-        let purchaserGroup: PurchaserGroup = PurchaserGroup.Customer;
+        let purchaserGroup: string = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
-            const clientIdProperty = order.customer.identifier.find((i) => i.name === 'clientId');
-            if (clientIdProperty !== undefined && clientIdProperty.value === STAFF_CLIENT_ID) {
-                purchaserGroup = PurchaserGroup.Staff;
+            const customerGroupProperty = order.customer.identifier.find((i) => i.name === 'customerGroup');
+            if (customerGroupProperty !== undefined && typeof customerGroupProperty.value === 'string') {
+                purchaserGroup = customerGroupProperty.value;
             }
         }
 
@@ -268,8 +261,6 @@ export function createReturnOrderReport(params: {
                         ),
                         seat: {
                             code: ''
-                            // gradeName: '',
-                            // gradeAdditionalCharge: ''
                         },
                         ticketType: {
                             name: '',
@@ -358,14 +349,14 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
 /**
  * 予約データをcsvデータ型に変換する
  */
-// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
+// tslint:disable-next-line:cyclomatic-complexity
 function reservation2data(
     r: factory.reservation.event.IReservation,
     unitPrice: number,
     order: factory.order.IOrder,
     targetDate: Date,
     aggregateUnit: AggregateUnit,
-    purchaserGroup: PurchaserGroup,
+    purchaserGroup: string,
     paymentSeatIndex: number
 ): IData {
     const age = (typeof order.customer.age === 'string') ? order.customer.age : '';
@@ -406,13 +397,8 @@ function reservation2data(
             startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
             startTime: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('HHmm')
         },
-        // theater: { name: '' }, // もはやレポート上不要な情報
-        // screen: { id: '', name: '' }, // もはやレポート上不要な情報
-        // film: { id: '', name: '' }, // もはやレポート上不要な情報
         seat: {
             code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : ''
-            // gradeName: '', // もはやレポート上不要な情報
-            // gradeAdditionalCharge: '' // もはやレポート上不要な情報
         },
         ticketType: {
             name: r.reservedTicket.ticketType.name.ja,
