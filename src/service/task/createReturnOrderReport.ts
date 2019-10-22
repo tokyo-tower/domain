@@ -1,4 +1,3 @@
-import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
@@ -14,8 +13,7 @@ export function call(data: factory.task.createReturnOrderReport.IData): IOperati
     return async (settings: IConnectionSettings) => {
         const aggregateSaleRepo = new AggregateSaleRepo(settings.connection);
         await AggregateService.report4sales.createReturnOrderReport(data)(
-            aggregateSaleRepo,
-            new cinerino.repository.Transaction(settings.connection)
+            aggregateSaleRepo
         );
     };
 }
