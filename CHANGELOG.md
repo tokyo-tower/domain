@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 取引サービスを削除
+- 決済サービスを削除
+
 ### Fixed
 
 ### Security
