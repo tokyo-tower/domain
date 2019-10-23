@@ -14,13 +14,8 @@ import * as OrderService from '../order';
 export function call(data: factory.task.returnOrdersByPerformance.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const actionRepo = new cinerino.repository.Action(settings.connection);
-        // const invoiceRepo = new cinerino.repository.Invoice(settings.connection);
         const performanceRepo = new PerformanceRepo(settings.connection);
-        // const projectRepo = new cinerino.repository.Project(settings.connection);
-        // const orderRepo = new cinerino.repository.Order(settings.connection);
         const reservationRepo = new ReservationRepo(settings.connection);
-        // const sellerRepo = new cinerino.repository.Seller(settings.connection);
-        // const transactionRepo = new cinerino.repository.Transaction(settings.connection);
 
         await OrderService.processReturnAllByPerformance(
             (<any>data).credentials,
@@ -30,13 +25,8 @@ export function call(data: factory.task.returnOrdersByPerformance.IData): IOpera
             data.potentialActions
         )(
             actionRepo,
-            // invoiceRepo,
             performanceRepo,
-            // projectRepo,
-            // orderRepo,
             reservationRepo
-            // sellerRepo,
-            // transactionRepo
         );
     };
 }
