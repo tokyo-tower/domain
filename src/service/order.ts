@@ -53,9 +53,11 @@ export function processReturnAllByPerformance(
         });
         authClient.setCredentials(credentials);
         const placeOrderService = new cinerinoapi.service.transaction.PlaceOrder({
+            auth: authClient,
             endpoint: <string>process.env.CINERINO_API_ENDPOINT
         });
         const returnOrderService = new cinerinoapi.service.transaction.ReturnOrder({
+            auth: authClient,
             endpoint: <string>process.env.CINERINO_API_ENDPOINT
         });
 
