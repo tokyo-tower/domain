@@ -19,6 +19,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 取引サービスを削除
 - 決済サービスを削除
+- 取引リポジトリを削除
+- 注文リポジトリを削除
+- 注文番号リポジトリを削除
+- 請求書リポジトリを削除
+- 購入番号リポジトリを削除
+- 販売者リポジトリを削除
 
 ### Fixed
 

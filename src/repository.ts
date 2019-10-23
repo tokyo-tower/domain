@@ -28,19 +28,19 @@ export class EventWithAggregation extends EventWithAggregationRepo { }
 /**
  * 請求書リポジトリ
  */
-export class Invoice extends cinerino.repository.Invoice { }
+// export class Invoice extends cinerino.repository.Invoice { }
 
 export import rateLimit = cinerino.repository.rateLimit;
 
 /**
  * 注文リポジトリ
  */
-export class Order extends cinerino.repository.Order { }
+// export class Order extends cinerino.repository.Order { }
 
 /**
  * 注文番号リポジトリ
  */
-export class OrderNumber extends cinerino.repository.OrderNumber { }
+// export class OrderNumber extends cinerino.repository.OrderNumber { }
 
 export namespace place {
     /**
@@ -52,7 +52,7 @@ export namespace place {
 /**
  * 購入番号リポジトリ
  */
-export class PaymentNo extends cinerino.repository.PaymentNo { }
+// export class PaymentNo extends cinerino.repository.PaymentNo { }
 
 /**
  * パフォーマンスリポジトリ
@@ -73,7 +73,7 @@ export class Reservation extends ReservationRepo { }
 /**
  * 販売者リポジトリ
  */
-export class Seller extends cinerino.repository.Seller { }
+// export class Seller extends cinerino.repository.Seller { }
 /**
  * タスクリポジトリ
  */
@@ -85,4 +85,4 @@ export class Token extends cinerino.repository.Token { }
 /**
  * 取引リポジトリ
  */
-export class Transaction extends cinerino.repository.Transaction { }
+// export class Transaction extends cinerino.repository.Transaction { }
