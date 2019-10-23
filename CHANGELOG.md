@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - 返品レポート作成時の手数料を注文データから取得するように調整
 - 注文返品時のイベント情報連携処理から注文リポジトリと取引リポジトリを削除
+- イベントに対する全注文返品処理をCinerino SDKで再構築
 
 ### Deprecated
 

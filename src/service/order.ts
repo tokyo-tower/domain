@@ -1,8 +1,8 @@
 /**
  * 注文サービス
  */
+import * as cinerinoapi from '@cinerino/api-nodejs-client';
 import * as cinerino from '@cinerino/domain';
-// import * as GMO from '@motionpicture/gmo-service';
 import * as createDebug from 'debug';
 import * as Email from 'email-templates';
 // @ts-ignore
@@ -22,6 +22,16 @@ const debug = createDebug('ttts-domain:service');
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
 export function processReturnAllByPerformance(
+    credentials: {
+        /**
+         * リフレッシュトークン
+         */
+        refresh_token?: string;
+        /**
+         * アクセストークン
+         */
+        access_token?: string;
+    },
     agentId: string,
     performanceId: string,
     clientIds: string[],
@@ -30,14 +40,25 @@ export function processReturnAllByPerformance(
     // tslint:disable-next-line:max-func-body-length
     return async (
         actionRepo: cinerino.repository.Action,
-        invoiceRepo: cinerino.repository.Invoice,
+        // invoiceRepo: cinerino.repository.Invoice,
         performanceRepo: PerformanceRepo,
-        projectRepo: cinerino.repository.Project,
-        orderRepo: cinerino.repository.Order,
-        reservationRepo: ReservationRepo,
-        sellerRepo: cinerino.repository.Seller,
-        transactionRepo: cinerino.repository.Transaction
+        // projectRepo: cinerino.repository.Project,
+        // orderRepo: cinerino.repository.Order,
+        reservationRepo: ReservationRepo
+        // sellerRepo: cinerino.repository.Seller,
+        // transactionRepo: cinerino.repository.Transaction
     ) => {
+        const authClient = new cinerinoapi.auth.OAuth2({
+            domain: <string>process.env.CINERINO_API_AUTHORIZE_DOMAIN
+        });
+        authClient.setCredentials(credentials);
+        const placeOrderService = new cinerinoapi.service.transaction.PlaceOrder({
+            endpoint: <string>process.env.CINERINO_API_ENDPOINT
+        });
+        const returnOrderService = new cinerinoapi.service.transaction.ReturnOrder({
+            endpoint: <string>process.env.CINERINO_API_ENDPOINT
+        });
+
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = (clientIds.length > 0)
             ? await reservationRepo.search(
@@ -92,15 +113,21 @@ export function processReturnAllByPerformance(
             }
         );
 
-        // 返品取引進行(実際の返品処理は非同期で実行される)
+        // 返品取引進行(実際の返品処理は非同期で実行される
+
         // tslint:disable-next-line:max-func-body-length
         await Promise.all(transactionIds.map(async (transactionId) => {
-            const placeOrderTransaction = await transactionRepo.findById({
+            const searchTransactionResult = await placeOrderService.search({
                 typeOf: factory.transactionType.PlaceOrder,
-                id: transactionId
+                ids: [transactionId]
             });
+            const placeOrderTransaction = searchTransactionResult.data.shift();
+            // const placeOrderTransaction = await transactionRepo.findById({
+            //     typeOf: factory.transactionType.PlaceOrder,
+            //     id: transactionId
+            // });
 
-            if (placeOrderTransaction.result !== undefined) {
+            if (placeOrderTransaction !== undefined && placeOrderTransaction.result !== undefined) {
                 // 返品メール作成
                 const emailCustomization = await createEmailMessage4sellerReason(placeOrderTransaction);
 
@@ -165,41 +192,64 @@ export function processReturnAllByPerformance(
                     }
                 };
 
-                // 注文返品取引開始
-                const returnOrderTransaction = await cinerino.service.transaction.returnOrder4ttts.start({
-                    project: placeOrderTransaction.project,
-                    agent: {
-                        typeOf: factory.personType.Person,
-                        id: agentId,
-                        identifier: [
-                            { name: 'reason', value: factory.transaction.returnOrder.Reason.Seller }
-                        ]
-                    },
+                const returnOrderTransaction = await returnOrderService.start({
                     expires: expires,
                     object: {
-                        cancellationFee: 0,
-                        order: { orderNumber: order.orderNumber },
-                        reason: factory.transaction.returnOrder.Reason.Seller
+                        order: { orderNumber: order.orderNumber }
                     },
-                    seller: { typeOf: order.seller.typeOf, id: order.seller.id }
-                })({
-                    action: actionRepo,
-                    invoice: invoiceRepo,
-                    order: orderRepo,
-                    project: projectRepo,
-                    seller: sellerRepo,
-                    transaction: transactionRepo
+                    ...{
+                        agent: {
+                            typeOf: factory.personType.Person,
+                            id: agentId,
+                            identifier: [
+                                { name: 'reason', value: factory.transaction.returnOrder.Reason.Seller }
+                            ]
+                        }
+                    }
                 });
-
-                // 取引確定
-                await cinerino.service.transaction.returnOrder4ttts.confirm({
+                await returnOrderService.confirm({
                     id: returnOrderTransaction.id,
                     potentialActions: potentialActionParams
-                })({
-                    action: actionRepo,
-                    seller: sellerRepo,
-                    transaction: transactionRepo
+                    // agent?: {
+                    //     id?: string;
+                    // };
                 });
+
+                // 注文返品取引開始
+                // const returnOrderTransaction = await cinerino.service.transaction.returnOrder4ttts.start({
+                //     project: placeOrderTransaction.project,
+                //     agent: {
+                //         typeOf: factory.personType.Person,
+                //         id: agentId,
+                //         identifier: [
+                //             { name: 'reason', value: factory.transaction.returnOrder.Reason.Seller }
+                //         ]
+                //     },
+                //     expires: expires,
+                //     object: {
+                //         cancellationFee: 0,
+                //         order: { orderNumber: order.orderNumber },
+                //         reason: factory.transaction.returnOrder.Reason.Seller
+                //     },
+                //     seller: { typeOf: order.seller.typeOf, id: order.seller.id }
+                // })({
+                //     action: actionRepo,
+                //     invoice: invoiceRepo,
+                //     order: orderRepo,
+                //     project: projectRepo,
+                //     seller: sellerRepo,
+                //     transaction: transactionRepo
+                // });
+
+                // 取引確定
+                // await cinerino.service.transaction.returnOrder4ttts.confirm({
+                //     id: returnOrderTransaction.id,
+                //     potentialActions: potentialActionParams
+                // })({
+                //     action: actionRepo,
+                //     seller: sellerRepo,
+                //     transaction: transactionRepo
+                // });
             }
         }));
     };
