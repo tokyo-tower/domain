@@ -1,7 +1,6 @@
 /**
  * 売上集計サービス
  */
-import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 
@@ -180,21 +179,10 @@ export function createReturnOrderReport(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        aggregateSaleRepo: AggregateSaleRepo,
-        transactionRepo: cinerino.repository.Transaction
+        aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
         const datas: IData[] = [];
-
         const order = params.order;
-        const returnOrderTransactions = await transactionRepo.search<factory.transactionType.ReturnOrder>({
-            limit: 1,
-            typeOf: factory.transactionType.ReturnOrder,
-            object: { order: { orderNumbers: [order.orderNumber] } }
-        });
-        const returnOrderTransaction = returnOrderTransactions.shift();
-        if (returnOrderTransaction === undefined) {
-            throw new factory.errors.NotFound('ReturnOrderTransaction');
-        }
 
         let purchaserGroup: string = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
@@ -205,7 +193,16 @@ export function createReturnOrderReport(params: {
         }
 
         const dateReturned = moment(<Date>order.dateReturned).toDate();
-        const cancellationFee = Number(returnOrderTransaction.object.cancellationFee);
+        let cancellationFee = 0;
+        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
+            const returner = (<any>order).returner;
+            if (Array.isArray(returner.identifier)) {
+                const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
+                if (cancellationFeeProperty !== undefined) {
+                    cancellationFee = Number(cancellationFeeProperty.value);
+                }
+            }
+        }
 
         order.acceptedOffers
             .filter((o) => {

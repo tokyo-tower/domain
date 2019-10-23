@@ -1,4 +1,3 @@
-import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
@@ -143,33 +142,40 @@ export function search(searchConditions: factory.performance.ISearchConditions):
 /**
  * 注文返品時の情報連携
  */
-export function onOrderReturned(params: {
-    orderNumber: string;
-}) {
+export function onOrderReturned(params: factory.order.IOrder) {
     return async (repos: {
-        order: cinerino.repository.Order;
         performance: PerformanceRepo;
-        transaction: cinerino.repository.Transaction;
     }) => {
-        const order = await repos.order.findByOrderNumber({ orderNumber: params.orderNumber });
-
-        const returnOrderTransactions = await repos.transaction.search<factory.transactionType.ReturnOrder>({
-            limit: 1,
-            typeOf: factory.transactionType.ReturnOrder,
-            object: { order: { orderNumbers: [order.orderNumber] } }
-        });
-        const returnOrderTransaction = returnOrderTransactions.shift();
-        if (returnOrderTransaction === undefined) {
-            throw new factory.errors.NotFound('ReturnOrderTransaction');
-        }
+        const order = params;
+        const event = (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor;
 
         // 販売者都合の手数料なし返品であれば、情報連携
-        if (returnOrderTransaction.object.reason === factory.transaction.returnOrder.Reason.Seller
-            && returnOrderTransaction.object.cancellationFee === 0) {
+        let cancellationFee = 0;
+        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
+            const returner = (<any>order).returner;
+            if (Array.isArray(returner.identifier)) {
+                const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
+                if (cancellationFeeProperty !== undefined) {
+                    cancellationFee = Number(cancellationFeeProperty.value);
+                }
+            }
+        }
+
+        let reason: string = factory.transaction.returnOrder.Reason.Customer;
+        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
+            const returner = (<any>order).returner;
+            if (Array.isArray(returner.identifier)) {
+                const reasonProperty = returner.identifier.find((p: any) => p.name === 'reason');
+                if (reasonProperty !== undefined) {
+                    reason = reasonProperty.value;
+                }
+            }
+        }
+
+        if (reason === factory.transaction.returnOrder.Reason.Seller && cancellationFee === 0) {
             // パフォーマンスに返品済数を連携
             await repos.performance.updateOne(
-                // tslint:disable-next-line:max-line-length
-                { _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id },
+                { _id: event.id },
                 {
                     $inc: {
                         'ttts_extension.refunded_count': 1,
@@ -182,8 +188,7 @@ export function onOrderReturned(params: {
             // すべて返金完了したら、返金ステータス変更
             await repos.performance.updateOne(
                 {
-                    // tslint:disable-next-line:max-line-length
-                    _id: (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor.id,
+                    _id: event.id,
                     'ttts_extension.unrefunded_count': 0
                 },
                 {
