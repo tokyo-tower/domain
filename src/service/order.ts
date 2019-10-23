@@ -168,7 +168,13 @@ export function processReturnAllByPerformance(
                 // 注文返品取引開始
                 const returnOrderTransaction = await cinerino.service.transaction.returnOrder4ttts.start({
                     project: placeOrderTransaction.project,
-                    agent: { typeOf: factory.personType.Person, id: agentId },
+                    agent: {
+                        typeOf: factory.personType.Person,
+                        id: agentId,
+                        identifier: [
+                            { name: 'reason', value: factory.transaction.returnOrder.Reason.Seller }
+                        ]
+                    },
                     expires: expires,
                     object: {
                         cancellationFee: 0,
