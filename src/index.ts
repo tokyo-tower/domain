@@ -10,7 +10,6 @@ import * as AggregateService from './service/aggregate';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReserveService from './service/reserve';
-import * as StockService from './service/stock';
 import * as TaskService from './service/task';
 
 import * as factory from '@tokyotower/factory';
@@ -20,13 +19,6 @@ import * as repository from './repository';
 
 /**
  * Redis Cacheクライアント
- * @example
- * const client = ttts.redis.createClient({
- *      host: process.env.REDIS_HOST,
- *      port: process.env.REDIS_PORT,
- *      password: process.env.REDIS_KEY,
- *      tls: { servername: process.env.TEST_REDIS_HOST }
- * });
  */
 export import redis = redis;
 
@@ -46,7 +38,6 @@ export namespace service {
     export import performance = PerformanceService;
     export import reserve = ReserveService;
     export import aggregate = AggregateService;
-    export import stock = StockService;
     export import task = TaskService;
     export import util = cinerino.service.util;
 }

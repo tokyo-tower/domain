@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - イベントに対する全注文返品処理からアクションリポジトリを削除
+- 取引失効時処理を予約取消時処理へ変更
 
 ### Deprecated
 

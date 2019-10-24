@@ -143,3 +143,51 @@ export function cancelReservation(params: { id: string }) {
         await repos.task.save(<any>task);
     };
 }
+
+/**
+ * 予約取消時処理
+ */
+export function onReservationCancelled(params: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>) {
+    return async (repos: {
+        action: cinerino.repository.Action;
+        task: cinerino.repository.Task;
+        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
+    }) => {
+        const reservation = params;
+        const event = reservation.reservationFor;
+
+        let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+        if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
+            const categoryProperty =
+                reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+            if (categoryProperty !== undefined) {
+                ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+            }
+        }
+
+        if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
+            const rateLimitKey = {
+                performanceStartDate: moment(`${event.startDate}`)
+                    .toDate(),
+                ticketTypeCategory: ticketTypeCategory,
+                unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+            };
+            await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
+        }
+
+        // 集計タスク作成
+        const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
+            name: <any>factory.taskName.AggregateEventReservations,
+            project: { typeOf: 'Project', id: params.project.id },
+            status: factory.taskStatus.Ready,
+            // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
+            // tslint:disable-next-line:no-magic-numbers
+            runsAt: moment().add(10, 'seconds').toDate(),
+            remainingNumberOfTries: 3,
+            numberOfTried: 0,
+            executionResults: [],
+            data: { id: event.id }
+        };
+        await repos.task.save(<any>aggregateTask);
+    };
+}
