@@ -35,7 +35,7 @@ export function processReturnAllByPerformance(
     agentId: string,
     performanceId: string,
     clientIds: string[],
-    potentialActions?: factory.cinerino.transaction.returnOrder.IPotentialActionsParams
+    potentialActions?: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams
 ) {
     // tslint:disable-next-line:max-func-body-length
     return async (
@@ -115,7 +115,7 @@ export function processReturnAllByPerformance(
         // tslint:disable-next-line:max-func-body-length
         await Promise.all(transactionIds.map(async (transactionId) => {
             const searchTransactionResult = await placeOrderService.search({
-                typeOf: factory.transactionType.PlaceOrder,
+                typeOf: cinerinoapi.factory.transactionType.PlaceOrder,
                 ids: [transactionId]
             });
             const placeOrderTransaction = searchTransactionResult.data.shift();
@@ -128,50 +128,52 @@ export function processReturnAllByPerformance(
 
                 // クレジットカード返金アクション
                 const actionsOnOrder = await actionRepo.searchByOrderNumber({ orderNumber: order.orderNumber });
-                const payActions = <factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType>[]>actionsOnOrder
-                    .filter((a) => a.typeOf === factory.actionType.PayAction)
-                    .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus);
+                const payActions = <cinerinoapi.factory.action.trade.pay.IAction<cinerinoapi.factory.paymentMethodType>[]>actionsOnOrder
+                    .filter((a) => a.typeOf === cinerinoapi.factory.actionType.PayAction)
+                    .filter((a) => a.actionStatus === cinerinoapi.factory.actionStatusType.CompletedActionStatus);
 
-                const refundCreditCardActionsParams: factory.cinerino.transaction.returnOrder.IRefundCreditCardParams[] =
-                    await Promise.all((<factory.cinerino.action.trade.pay.IAction<factory.paymentMethodType.CreditCard>[]>payActions)
-                        .filter((a) => a.object[0].paymentMethod.typeOf === factory.paymentMethodType.CreditCard)
-                        // tslint:disable-next-line:max-line-length
-                        .map(async (a) => {
-                            return {
-                                object: {
-                                    object: a.object.map((o) => {
-                                        return {
-                                            paymentMethod: {
-                                                paymentMethodId: o.paymentMethod.paymentMethodId
-                                            }
-                                        };
-                                    })
-                                },
-                                potentialActions: {
-                                    sendEmailMessage: {
-                                        object: {
-                                            sender: emailCustomization.sender,
-                                            toRecipient: emailCustomization.toRecipient,
-                                            about: emailCustomization.about,
-                                            // template: emailCustomization.text,
-                                            text: emailCustomization.text
-                                        }
+                const refundCreditCardActionsParams: cinerinoapi.factory.transaction.returnOrder.IRefundCreditCardParams[] =
+                    await Promise.all(
+                        (<cinerinoapi.factory.action.trade.pay.IAction<cinerinoapi.factory.paymentMethodType.CreditCard>[]>payActions)
+                            .filter((a) => a.object[0].paymentMethod.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
+                            // tslint:disable-next-line:max-line-length
+                            .map(async (a) => {
+                                return {
+                                    object: {
+                                        object: a.object.map((o) => {
+                                            return {
+                                                paymentMethod: {
+                                                    paymentMethodId: o.paymentMethod.paymentMethodId
+                                                }
+                                            };
+                                        })
                                     },
-                                    informOrder: (potentialActions !== undefined
-                                        && potentialActions.returnOrder !== undefined
-                                        && potentialActions.returnOrder.potentialActions !== undefined
-                                        && Array.isArray(potentialActions.returnOrder.potentialActions.informOrder))
-                                        ? potentialActions.returnOrder.potentialActions.informOrder
-                                        : []
-                                }
-                            };
-                        }));
+                                    potentialActions: {
+                                        sendEmailMessage: {
+                                            object: {
+                                                sender: emailCustomization.sender,
+                                                toRecipient: emailCustomization.toRecipient,
+                                                about: emailCustomization.about,
+                                                // template: emailCustomization.text,
+                                                text: emailCustomization.text
+                                            }
+                                        },
+                                        informOrder: (potentialActions !== undefined
+                                            && potentialActions.returnOrder !== undefined
+                                            && potentialActions.returnOrder.potentialActions !== undefined
+                                            && Array.isArray(potentialActions.returnOrder.potentialActions.informOrder))
+                                            ? potentialActions.returnOrder.potentialActions.informOrder
+                                            : []
+                                    }
+                                };
+                            })
+                    );
 
                 const expires = moment()
                     .add(1, 'minute')
                     .toDate();
 
-                const potentialActionParams: factory.transaction.returnOrder.IPotentialActionsParams = {
+                const potentialActionParams: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams = {
                     returnOrder: {
                         potentialActions: {
                             refundCreditCard: refundCreditCardActionsParams,
@@ -195,7 +197,7 @@ export function processReturnAllByPerformance(
                             typeOf: factory.personType.Person,
                             id: agentId,
                             identifier: [
-                                { name: 'reason', value: factory.transaction.returnOrder.Reason.Seller }
+                                { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
                             ]
                         }
                     }
@@ -209,7 +211,7 @@ export function processReturnAllByPerformance(
     };
 }
 
-function getUnitPriceByAcceptedOffer(offer: factory.order.IAcceptedOffer<any>) {
+function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedOffer<any>) {
     let unitPrice: number = 0;
 
     if (offer.priceSpecification !== undefined) {
@@ -233,11 +235,11 @@ function getUnitPriceByAcceptedOffer(offer: factory.order.IAcceptedOffer<any>) {
  * 販売者都合での返品メール作成
  */
 async function createEmailMessage4sellerReason(
-    placeOrderTransaction: factory.transaction.placeOrder.ITransaction
-): Promise<factory.creativeWork.message.email.IAttributes> {
-    const transactionResult = <factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
+    placeOrderTransaction: cinerinoapi.factory.transaction.placeOrder.ITransaction
+): Promise<cinerinoapi.factory.creativeWork.message.email.IAttributes> {
+    const transactionResult = <cinerinoapi.factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
     const order = transactionResult.order;
-    const reservation = <factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered;
+    const reservation = <cinerinoapi.factory.order.IReservation>order.acceptedOffers[0].itemOffered;
 
     const email = new Email({
         views: { root: `${__dirname}/../../emails` },
@@ -262,7 +264,7 @@ async function createEmailMessage4sellerReason(
         };
     } = {};
     order.acceptedOffers.forEach((o) => {
-        const r = <factory.cinerino.order.IReservation>o.itemOffered;
+        const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
         const unitPrice = getUnitPriceByAcceptedOffer(o);
 
         // チケットタイプごとにチケット情報セット
@@ -302,9 +304,9 @@ async function createEmailMessage4sellerReason(
     });
 
     return {
-        typeOf: factory.creativeWorkType.EmailMessage,
+        typeOf: cinerinoapi.factory.creativeWorkType.EmailMessage,
         sender: {
-            typeOf: factory.organizationType.Corporation,
+            typeOf: cinerinoapi.factory.organizationType.Corporation,
             name: 'Tokyo Tower TOP DECK TOUR Online Ticket',
             email: 'noreply@tokyotower.co.jp'
         },

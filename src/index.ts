@@ -7,7 +7,6 @@ import * as redis from 'redis';
 
 import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
-import * as OfferService from './service/offer';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReserveService from './service/reserve';
@@ -43,7 +42,6 @@ export import AWS = cinerino.AWS;
 export namespace service {
     export import admin = AdminService;
     export import notification = cinerino.service.notification;
-    export import offer = OfferService;
     export import order = OrderService;
     export import performance = PerformanceService;
     export import reserve = ReserveService;

@@ -1,3 +1,4 @@
+import * as cinerinoapi from '@cinerino/api-nodejs-client';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
@@ -142,12 +143,12 @@ export function search(searchConditions: factory.performance.ISearchConditions):
 /**
  * 注文返品時の情報連携
  */
-export function onOrderReturned(params: factory.order.IOrder) {
+export function onOrderReturned(params: cinerinoapi.factory.order.IOrder) {
     return async (repos: {
         performance: PerformanceRepo;
     }) => {
         const order = params;
-        const event = (<factory.cinerino.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor;
+        const event = (<cinerinoapi.factory.order.IReservation>order.acceptedOffers[0].itemOffered).reservationFor;
 
         // 販売者都合の手数料なし返品であれば、情報連携
         let cancellationFee = 0;
@@ -161,7 +162,7 @@ export function onOrderReturned(params: factory.order.IOrder) {
             }
         }
 
-        let reason: string = factory.transaction.returnOrder.Reason.Customer;
+        let reason: string = cinerinoapi.factory.transaction.returnOrder.Reason.Customer;
         if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
             const returner = (<any>order).returner;
             if (Array.isArray(returner.identifier)) {
@@ -172,7 +173,7 @@ export function onOrderReturned(params: factory.order.IOrder) {
             }
         }
 
-        if (reason === factory.transaction.returnOrder.Reason.Seller && cancellationFee === 0) {
+        if (reason === cinerinoapi.factory.transaction.returnOrder.Reason.Seller && cancellationFee === 0) {
             // パフォーマンスに返品済数を連携
             await repos.performance.updateOne(
                 { _id: event.id },

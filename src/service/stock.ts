@@ -13,7 +13,7 @@ const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
  */
 export function onTransactionVoided(params: {
     project: { id: string };
-    typeOf: factory.transactionType;
+    typeOf: cinerino.factory.transactionType;
     id: string;
 }) {
     return async (repos: {
@@ -23,14 +23,14 @@ export function onTransactionVoided(params: {
     }) => {
         // 座席仮予約アクションを取得
         const authorizeActions = await repos.action.searchByPurpose({
-            typeOf: factory.actionType.AuthorizeAction,
+            typeOf: cinerino.factory.actionType.AuthorizeAction,
             purpose: {
                 typeOf: params.typeOf,
                 id: params.id
             }
         })
             .then((actions) => actions
-                .filter((a) => a.object.typeOf === factory.action.authorize.seatReservation.ObjectType.SeatReservation)
+                .filter((a) => a.object.typeOf === cinerino.factory.action.authorize.offer.seatReservation.ObjectType.SeatReservation)
                 // .filter((a) => a.actionStatus === factory.actionStatusType.CompletedActionStatus)
             );
 
@@ -38,7 +38,9 @@ export function onTransactionVoided(params: {
             const event = action.object.event;
 
             if (action.result !== undefined) {
-                const actionResult = <factory.action.authorize.seatReservation.IResult>action.result;
+                const actionResult
+                    // tslint:disable-next-line:max-line-length
+                    = <cinerino.factory.action.authorize.offer.seatReservation.IResult<cinerino.factory.service.webAPI.Identifier.Chevre>>action.result;
                 const acceptedOffers = (Array.isArray(actionResult.acceptedOffers)) ? actionResult.acceptedOffers : [];
 
                 await Promise.all(acceptedOffers.map(async (acceptedOffer) => {
