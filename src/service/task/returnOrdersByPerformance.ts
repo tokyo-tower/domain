@@ -1,4 +1,4 @@
-import * as cinerino from '@cinerino/domain';
+// import * as cinerino from '@cinerino/domain';
 import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
@@ -13,7 +13,7 @@ import * as OrderService from '../order';
  */
 export function call(data: factory.task.returnOrdersByPerformance.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        const actionRepo = new cinerino.repository.Action(settings.connection);
+        // const actionRepo = new cinerino.repository.Action(settings.connection);
         const performanceRepo = new PerformanceRepo(settings.connection);
         const reservationRepo = new ReservationRepo(settings.connection);
 
@@ -24,7 +24,7 @@ export function call(data: factory.task.returnOrdersByPerformance.IData): IOpera
             data.clientIds,
             data.potentialActions
         )(
-            actionRepo,
+            // actionRepo,
             performanceRepo,
             reservationRepo
         );
