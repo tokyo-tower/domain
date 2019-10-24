@@ -10,9 +10,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- update @cinerino/domain
+- update @tokyotower/factory
+
 ### Deprecated
 
 ### Removed
+
+- オファーサービスを削除
 
 ### Fixed
 

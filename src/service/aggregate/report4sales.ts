@@ -1,6 +1,7 @@
 /**
  * 売上集計サービス
  */
+import * as cinerinoapi from '@cinerino/api-nodejs-client';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 
@@ -104,7 +105,7 @@ enum AggregateUnit {
     // SalesByEventStartDate = 'SalesByEventStartDate'
 }
 
-function getUnitPriceByAcceptedOffer(offer: factory.order.IAcceptedOffer<any>) {
+function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedOffer<any>) {
     let unitPrice: number = 0;
 
     if (offer.priceSpecification !== undefined) {
@@ -128,7 +129,7 @@ function getUnitPriceByAcceptedOffer(offer: factory.order.IAcceptedOffer<any>) {
  * 注文取引からレポートを作成する
  */
 export function createPlaceOrderReport(params: {
-    order: factory.order.IOrder;
+    order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (
         aggregateSaleRepo: AggregateSaleRepo
@@ -151,7 +152,7 @@ export function createPlaceOrderReport(params: {
 
                     return reservation2data(
                         {
-                            ...<factory.cinerino.order.IReservation>o.itemOffered,
+                            ...<cinerinoapi.factory.order.IReservation>o.itemOffered,
                             checkins: []
                         },
                         unitPrice,
@@ -175,7 +176,7 @@ export function createPlaceOrderReport(params: {
  * 注文返品取引からレポートを作成する
  */
 export function createReturnOrderReport(params: {
-    order: factory.order.IOrder;
+    order: cinerinoapi.factory.order.IOrder;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (
@@ -206,7 +207,7 @@ export function createReturnOrderReport(params: {
 
         order.acceptedOffers
             .filter((o) => {
-                const r = <factory.cinerino.order.IReservation>o.itemOffered;
+                const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
                 // 余分確保分を除く
                 let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
                 if (r.additionalProperty !== undefined) {
@@ -218,7 +219,7 @@ export function createReturnOrderReport(params: {
                     || extraProperty.value !== '1';
             })
             .forEach((o, reservationIndex) => {
-                const r = <factory.cinerino.order.IReservation>o.itemOffered;
+                const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
                 const unitPrice = getUnitPriceByAcceptedOffer(o);
 
                 // 座席分のキャンセルデータ
@@ -350,7 +351,7 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
 function reservation2data(
     r: factory.reservation.event.IReservation,
     unitPrice: number,
-    order: factory.order.IOrder,
+    order: cinerinoapi.factory.order.IOrder,
     targetDate: Date,
     aggregateUnit: AggregateUnit,
     purchaserGroup: string,
