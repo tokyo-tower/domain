@@ -149,7 +149,6 @@ export function cancelReservation(params: { id: string }) {
  */
 export function onReservationCancelled(params: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>) {
     return async (repos: {
-        action: cinerino.repository.Action;
         task: cinerino.repository.Task;
         ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
     }) => {
