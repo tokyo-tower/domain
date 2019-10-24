@@ -10,18 +10,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @cinerino/domain
-- update @tokyotower/factory
-
 ### Deprecated
 
 ### Removed
 
-- オファーサービスを削除
-
 ### Fixed
 
 ### Security
+
+## v37.0.0 - 2019-10-24
+
+### Changed
+
+- update @cinerino/domain
+- update @tokyotower/factory
+
+### Removed
+
+- オファーサービスを削除
 
 ## v36.0.0 - 2019-10-23
 
