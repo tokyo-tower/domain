@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - アクションリポジトリを削除
+- GMOサービスクライアントを削除
+- ユーティリティサービスを削除
 
 ### Fixed
 

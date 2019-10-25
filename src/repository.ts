@@ -16,11 +16,6 @@ import { MongoRepository as ReservationRepo } from './repo/reservation';
 export class AggregateSale extends AggregateSaleRepo { }
 
 /**
- * アクションリポジトリ
- */
-// export class Action extends cinerino.repository.Action { }
-
-/**
  * 集計データ付きイベントリポジトリ
  */
 export class EventWithAggregation extends EventWithAggregationRepo { }

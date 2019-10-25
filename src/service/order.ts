@@ -2,7 +2,6 @@
  * 注文サービス
  */
 import * as cinerinoapi from '@cinerino/api-nodejs-client';
-// import * as cinerino from '@cinerino/domain';
 import * as createDebug from 'debug';
 import * as Email from 'email-templates';
 // @ts-ignore
@@ -39,7 +38,6 @@ export function processReturnAllByPerformance(
 ) {
     // tslint:disable-next-line:max-func-body-length
     return async (
-        // actionRepo: cinerino.repository.Action,
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo
     ) => {
@@ -126,30 +124,15 @@ export function processReturnAllByPerformance(
 
                 const order = placeOrderTransaction.result.order;
 
-                // クレジットカード返金アクション
-                // const actionsOnOrder = await actionRepo.searchByOrderNumber({ orderNumber: order.orderNumber });
-                // const payActions = <cinerinoapi.factory.action.trade.pay.IAction<cinerinoapi.factory.paymentMethodType>[]>actionsOnOrder
-                //     .filter((a) => a.typeOf === cinerinoapi.factory.actionType.PayAction)
-                //     .filter((a) => a.actionStatus === cinerinoapi.factory.actionStatusType.CompletedActionStatus);
-
                 const paymentMethods = order.paymentMethods;
                 const refundCreditCardActionsParams: cinerinoapi.factory.transaction.returnOrder.IRefundCreditCardParams[] =
                     await Promise.all(
-                        // (<cinerinoapi.factory.action.trade.pay.IAction<cinerinoapi.factory.paymentMethodType.CreditCard>[]>payActions)
-                        //     .filter((a) => a.object[0].paymentMethod.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
                         paymentMethods
                             .filter((p) => p.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
                             // tslint:disable-next-line:max-line-length
                             .map(async (p) => {
                                 return {
                                     object: {
-                                        // object: a.object.map((o) => {
-                                        //     return {
-                                        //         paymentMethod: {
-                                        //             paymentMethodId: o.paymentMethod.paymentMethodId
-                                        //         }
-                                        //     };
-                                        // })
                                         object: [{
                                             paymentMethod: {
                                                 paymentMethodId: p.paymentMethodId
@@ -162,7 +145,6 @@ export function processReturnAllByPerformance(
                                                 sender: emailCustomization.sender,
                                                 toRecipient: emailCustomization.toRecipient,
                                                 about: emailCustomization.about,
-                                                // template: emailCustomization.text,
                                                 text: emailCustomization.text
                                             }
                                         },

@@ -2,7 +2,6 @@
  * index module
  */
 import * as cinerino from '@cinerino/domain';
-import * as GMO from '@motionpicture/gmo-service';
 import * as redis from 'redis';
 
 import * as AdminService from './service/admin';
@@ -22,8 +21,6 @@ import * as repository from './repository';
  */
 export import redis = redis;
 
-export import GMO = GMO;
-
 export import chevre = chevre;
 
 /**
@@ -39,7 +36,6 @@ export namespace service {
     export import reserve = ReserveService;
     export import aggregate = AggregateService;
     export import task = TaskService;
-    export import util = cinerino.service.util;
 }
 
 export import factory = factory;
