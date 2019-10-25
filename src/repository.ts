@@ -18,7 +18,7 @@ export class AggregateSale extends AggregateSaleRepo { }
 /**
  * アクションリポジトリ
  */
-export class Action extends cinerino.repository.Action { }
+// export class Action extends cinerino.repository.Action { }
 
 /**
  * 集計データ付きイベントリポジトリ
