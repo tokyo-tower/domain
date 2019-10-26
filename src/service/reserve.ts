@@ -147,46 +147,97 @@ export function cancelReservation(params: { id: string }) {
 /**
  * 予約取消時処理
  */
-export function onReservationCancelled(params: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>) {
+export function onReservationStatusChanged(
+    params: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>
+) {
     return async (repos: {
+        reservation: ReservationRepo;
         task: cinerino.repository.Task;
         ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
     }) => {
         const reservation = params;
-        const event = reservation.reservationFor;
 
-        let ticketTypeCategory = factory.ticketTypeCategory.Normal;
-        if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
-            const categoryProperty =
-                reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
-            if (categoryProperty !== undefined) {
-                ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+        // 余分確保分を除く
+        let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+        if (reservation.additionalProperty !== undefined) {
+            extraProperty = reservation.additionalProperty.find((p) => p.name === 'extra');
+        }
+        const isExtra = extraProperty !== undefined && extraProperty.value === '1';
+
+        if (!isExtra) {
+            switch (reservation.reservationStatus) {
+                case factory.chevre.reservationStatusType.ReservationCancelled:
+                    // 車椅子券種であれば、レート制限解除
+                    let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                    if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
+                        const categoryProperty =
+                            reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
+                        if (categoryProperty !== undefined) {
+                            ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                        }
+                    }
+
+                    if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
+                        const rateLimitKey = {
+                            performanceStartDate: moment(`${reservation.reservationFor}.startDate}`)
+                                .toDate(),
+                            ticketTypeCategory: ticketTypeCategory,
+                            unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+                        };
+                        await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
+                    }
+
+                    // 東京タワーDB側の予約もステータス変更
+                    await repos.reservation.cancel({ id: reservation.id });
+
+                    break;
+
+                case factory.chevre.reservationStatusType.ReservationConfirmed:
+                    // 予約データを作成する
+                    const tttsResevation: factory.reservation.event.IReservation = {
+                        ...reservation,
+                        reservationFor: {
+                            ...reservation.reservationFor,
+                            doorTime: (reservation.reservationFor.doorTime !== undefined)
+                                ? moment(reservation.reservationFor.doorTime)
+                                    .toDate()
+                                : undefined,
+                            endDate: moment(reservation.reservationFor.endDate)
+                                .toDate(),
+                            startDate: moment(reservation.reservationFor.startDate)
+                                .toDate()
+                        },
+                        checkins: []
+                    };
+                    await repos.reservation.saveEventReservation(tttsResevation);
+
+                    break;
+
+                case factory.chevre.reservationStatusType.ReservationHold:
+                    // 車椅子予約であれば、レート制限
+
+                    break;
+
+                case factory.chevre.reservationStatusType.ReservationPending:
+                    break;
+
+                default:
             }
-        }
 
-        if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
-            const rateLimitKey = {
-                performanceStartDate: moment(`${event.startDate}`)
-                    .toDate(),
-                ticketTypeCategory: ticketTypeCategory,
-                unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+            // 集計タスク作成
+            const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
+                name: <any>factory.taskName.AggregateEventReservations,
+                project: { typeOf: 'Project', id: params.project.id },
+                status: factory.taskStatus.Ready,
+                // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
+                // tslint:disable-next-line:no-magic-numbers
+                runsAt: moment().add(10, 'seconds').toDate(),
+                remainingNumberOfTries: 3,
+                numberOfTried: 0,
+                executionResults: [],
+                data: { id: reservation.reservationFor.id }
             };
-            await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
+            await repos.task.save(<any>aggregateTask);
         }
-
-        // 集計タスク作成
-        const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
-            name: <any>factory.taskName.AggregateEventReservations,
-            project: { typeOf: 'Project', id: params.project.id },
-            status: factory.taskStatus.Ready,
-            // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
-            // tslint:disable-next-line:no-magic-numbers
-            runsAt: moment().add(10, 'seconds').toDate(),
-            remainingNumberOfTries: 3,
-            numberOfTried: 0,
-            executionResults: [],
-            data: { id: event.id }
-        };
-        await repos.task.save(<any>aggregateTask);
     };
 }
