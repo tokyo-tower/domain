@@ -140,7 +140,7 @@ export function onReservationStatusChanged(
 
                     if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
                         const rateLimitKey = {
-                            performanceStartDate: moment(`${reservation.reservationFor}.startDate}`)
+                            performanceStartDate: moment(reservation.reservationFor.startDate)
                                 .toDate(),
                             ticketTypeCategory: ticketTypeCategory,
                             unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
