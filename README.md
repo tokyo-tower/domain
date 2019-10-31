@@ -30,7 +30,6 @@ var ttts = require("@tokyo-tower/domain");
 | `CHEVRE_CLIENT_ID`                | true     |               | Chevre API Settings                       |
 | `CHEVRE_CLIENT_SECRET`            | true     |               | Chevre API Settings                       |
 | `PROJECT_ID`                      | true     |               | Project ID                                |
-| `TRANSACTION_WEBHOOK_URL`         | true     |               | 取引ウェブフックURL                       |
 
 ## License
 
