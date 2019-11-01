@@ -18,6 +18,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v38.0.0 - 2019-11-01
+
+### Changed
+
+- イベントに対する全注文返品処理からアクションリポジトリを削除
+- 取引失効時処理を予約取消時処理へ変更
+- 予約ステータス変更時イベントを最適化
+
+### Removed
+
+- アクションリポジトリを削除
+- GMOサービスクライアントを削除
+- ユーティリティサービスを削除
+
 ## v37.0.0 - 2019-10-24
 
 ### Changed
