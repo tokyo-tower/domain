@@ -49,7 +49,3 @@ export class Reservation extends ReservationRepo { }
  * タスクリポジトリ
  */
 export class Task extends cinerino.repository.Task { }
-/**
- * トークンリポジトリ
- */
-export class Token extends cinerino.repository.Token { }

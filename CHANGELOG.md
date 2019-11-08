@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v39.0.0 - 2019-11-08
+
+### Removed
+
+- 印刷トークンリポジトリを削除
+
 ## v38.0.0 - 2019-11-01
 
 ### Changed
