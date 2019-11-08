@@ -11,7 +11,7 @@
   "dependencies": {
     "@chevre/api-nodejs-client": "^2.0.0",
     "@cinerino/api-nodejs-client": "2.0.0-alpha.33",
-    "@cinerino/domain": "1.0.0-alpha.396",
+    "@cinerino/domain": "1.0.0-alpha.409",
     "@sendgrid/mail": "^6.4.0",
     "@tokyotower/factory": "^26.1.0",
     "@types/redis": "^2.8.13",
