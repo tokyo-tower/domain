@@ -6,6 +6,7 @@ import * as cinerino from '@cinerino/domain';
 
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
+import { RedisRepository as PaymentNoRepo } from './repo/paymentNo';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
@@ -28,6 +29,11 @@ export namespace place {
      */
     export class CheckinGate extends CheckinGateRepo { }
 }
+
+/**
+ * 購入番号リポジトリ
+ */
+export class PaymentNo extends PaymentNoRepo { }
 
 /**
  * パフォーマンスリポジトリ
