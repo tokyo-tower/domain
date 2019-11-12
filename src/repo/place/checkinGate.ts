@@ -6,7 +6,7 @@ import * as factory from '@tokyotower/factory';
 const debug = createDebug('ttts-domain:repository');
 
 /**
- * Redis Cacheリポジトリー
+ * 入場ゲートリポジトリ
  */
 export class RedisRepository {
     public static KEY_PREFIX: string = 'checkinGates';

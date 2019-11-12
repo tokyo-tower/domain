@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v39.1.0 - 2019-11-12
+
+### Added
+
+- 購入番号リポジトリを追加
+
 ## v39.0.0 - 2019-11-08
 
 ### Removed
