@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v39.2.0 - 2019-11-13
+
+### Changed
+
+- 購入番号を注文識別子から取得するように調整
+
 ## v39.1.0 - 2019-11-12
 
 ### Added
