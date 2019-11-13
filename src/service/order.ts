@@ -280,11 +280,19 @@ async function createEmailMessage4sellerReason(
         return `${ticketInfo.name.en} ${ticketInfo.charge} × ${ticketInfo.count} ticket(s)`;
     }).join('\n');
 
+    let paymentNo = '';
+    if (Array.isArray((<any>order).identifier)) {
+        const confirmationNumberProperty = (<any>order).identifier.find((p: any) => p.name === 'confirmationNumber');
+        if (confirmationNumberProperty !== undefined) {
+            // tslint:disable-next-line:no-magic-numbers
+            paymentNo = confirmationNumberProperty.value.slice(-6);
+        }
+    }
+
     const message = await email.render('returnOrderBySeller', {
         purchaserNameJa: `${order.customer.familyName} ${order.customer.givenName}`,
         purchaserNameEn: order.customer.name,
-        // tslint:disable-next-line:no-magic-numbers
-        paymentNo: order.confirmationNumber.slice(-6),
+        paymentNo: paymentNo,
         day: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('YYYY/MM/DD'),
         startTime: moment(reservation.reservationFor.startDate).tz('Asia/Tokyo').format('HH:mm'),
         amount: numeral(order.price).format('0,0'),

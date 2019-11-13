@@ -384,8 +384,14 @@ function reservation2data(
         }
     }
 
-    // tslint:disable-next-line:no-magic-numbers
-    const paymentNo = order.confirmationNumber.slice(-6);
+    let paymentNo = '';
+    if (Array.isArray((<any>order).identifier)) {
+        const confirmationNumberProperty = (<any>order).identifier.find((p: any) => p.name === 'confirmationNumber');
+        if (confirmationNumberProperty !== undefined) {
+            // tslint:disable-next-line:no-magic-numbers
+            paymentNo = confirmationNumberProperty.value.slice(-6);
+        }
+    }
 
     return {
         payment_no: paymentNo,
