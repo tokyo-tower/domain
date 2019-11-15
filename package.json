@@ -97,5 +97,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "39.2.0"
+  "version": "39.3.0-alpha.0"
 }
