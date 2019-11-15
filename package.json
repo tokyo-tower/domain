@@ -13,7 +13,7 @@
     "@cinerino/api-nodejs-client": "2.0.0-alpha.33",
     "@cinerino/domain": "1.0.0-alpha.409",
     "@sendgrid/mail": "^6.4.0",
-    "@tokyotower/factory": "^26.1.0",
+    "@tokyotower/factory": "^26.2.0",
     "@types/redis": "^2.8.13",
     "debug": "^3.2.6",
     "email-templates": "^3.6.1",
