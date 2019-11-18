@@ -44,11 +44,9 @@ export {
 /**
  * 特定のイベントに関する集計を行う
  */
-// tslint:disable-next-line:max-func-body-length
 export function aggregateEventReservations(params: {
     id: string;
 }) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         checkinGate: repository.place.CheckinGate;
         eventWithAggregation: repository.EventWithAggregation;
@@ -57,8 +55,52 @@ export function aggregateEventReservations(params: {
         reservation: repository.Reservation;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
-        const performance = await repos.performance.findById(params.id);
-        debug('performance', performance.id, 'found');
+        const event = await repos.performance.findById(params.id);
+        debug('event', event.id, 'found');
+
+        // 同日の、同時刻隊のツアーに関しても集計する(車椅子残席数が影響し合うため)
+        const startFrom = moment(event.startDate)
+            .startOf('hour')
+            .toDate();
+        const startThrough = moment(startFrom)
+            .add(1, 'hour')
+            .add(-1, 'second')
+            .toDate();
+        debug('searching aggregating events...', startFrom, '-', startThrough);
+        const aggregatingEvents = await repos.performance.search({
+            limit: 100,
+            startFrom: startFrom,
+            startThrough: startThrough
+        });
+        debug(aggregatingEvents.length, 'aggregatingEvents found');
+
+        // 入場ゲート取得
+        const checkGates = await repos.checkinGate.findAll();
+        debug(checkGates.length, 'checkGates found');
+
+        for (const aggregatingEvent of aggregatingEvents) {
+            await aggregateByEvent({ checkGates: checkGates, event: aggregatingEvent })(repos);
+        }
+        debug('aggregated', aggregatingEvents.map((e) => e.id));
+    };
+}
+
+/**
+ * イベント指定で集計する
+ */
+function aggregateByEvent(params: {
+    checkGates: factory.place.checkinGate.IPlace[];
+    event: factory.performance.IPerformanceWithDetails;
+}) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        eventWithAggregation: repository.EventWithAggregation;
+        project: repository.Project;
+        reservation: repository.Reservation;
+        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
+    }) => {
+        const checkGates = params.checkGates;
+        const performance = params.event;
 
         // 予約情報取得
         const reservations = await repos.reservation.search(
@@ -79,10 +121,6 @@ export function aggregateEventReservations(params: {
             }
         );
         debug(reservations.length, 'reservations found');
-
-        // 入場ゲート取得
-        const checkGates = await repos.checkinGate.findAll();
-        debug(checkGates.length, 'checkGates found');
 
         debug('creating aggregation...');
         let aggregation: factory.performance.IPerformanceWithAggregation;
@@ -156,7 +194,6 @@ export function aggregateEventReservations(params: {
                 offers: offersAggregation,
                 ...{ tourNumber: tourNumber } // 互換性維持のため
             };
-
             debug('aggregated!', aggregation);
 
             // 保管
