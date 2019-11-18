@@ -10,9 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- イベント予約集計時に、車椅子残席数が受けるイベントに関しても同時に集計するように調整
-- update @tokyotower/factory
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v39.3.0 - 2019-11-18
+
+### Changed
+
+- イベント予約集計時に、車椅子残席数が受けるイベントに関しても同時に集計するように調整
+- update @tokyotower/factory
 
 ## v39.2.0 - 2019-11-13
 
