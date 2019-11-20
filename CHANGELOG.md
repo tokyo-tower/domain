@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v40.0.0 - 2019-11-20
+
+### Changed
+
+- 注文返品レポート作成処理と返品手数料レポート作成処理を分離
+
 ## v39.3.0 - 2019-11-18
 
 ### Changed

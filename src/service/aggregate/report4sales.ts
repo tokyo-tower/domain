@@ -205,24 +205,109 @@ export function createReturnOrderReport(params: {
             }
         }
 
-        order.acceptedOffers
-            .filter((o) => {
-                const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
-                // 余分確保分を除く
-                let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
-                if (r.additionalProperty !== undefined) {
-                    extraProperty = r.additionalProperty.find((p) => p.name === 'extra');
+        order.acceptedOffers.forEach((o, reservationIndex) => {
+            const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
+            const unitPrice = getUnitPriceByAcceptedOffer(o);
+
+            // 座席分のキャンセルデータ
+            datas.push({
+                ...reservation2data(
+                    {
+                        ...r,
+                        checkins: []
+                    },
+                    unitPrice,
+                    order,
+                    <Date>order.dateReturned,
+                    AggregateUnit.SalesByEndDate,
+                    purchaserGroup,
+                    reservationIndex
+                ),
+                reservationStatus: Status4csv.Cancelled,
+                status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
+                cancellationFee: cancellationFee,
+                orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
+            });
+
+            // 購入分のキャンセル料データ
+            // if (reservationIndex === 0) {
+            //     datas.push({
+            //         ...reservation2data(
+            //             {
+            //                 ...r,
+            //                 checkins: []
+            //             },
+            //             unitPrice,
+            //             order,
+            //             dateReturned,
+            //             AggregateUnit.SalesByEndDate,
+            //             purchaserGroup,
+            //             reservationIndex
+            //         ),
+            //         seat: {
+            //             code: ''
+            //         },
+            //         ticketType: {
+            //             name: '',
+            //             charge: cancellationFee.toString(),
+            //             csvCode: ''
+            //         },
+            //         payment_seat_index: '',
+            //         reservationStatus: Status4csv.CancellationFee,
+            //         status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
+            //         cancellationFee: cancellationFee,
+            //         price: cancellationFee.toString(),
+            //         orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
+            //     });
+            // }
+        });
+
+        // 冪等性の確保!
+        await Promise.all(datas.map(async (data) => {
+            await saveReport(data)(aggregateSaleRepo);
+        }));
+    };
+}
+
+/**
+ * 注文返金レポートを作成する
+ */
+export function createRefundOrderReport(params: {
+    order: cinerinoapi.factory.order.IOrder;
+}) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (
+        aggregateSaleRepo: AggregateSaleRepo
+    ): Promise<void> => {
+        const datas: IData[] = [];
+        const order = params.order;
+
+        let purchaserGroup: string = PurchaserGroup.Customer;
+        if (Array.isArray(order.customer.identifier)) {
+            const customerGroupProperty = order.customer.identifier.find((i) => i.name === 'customerGroup');
+            if (customerGroupProperty !== undefined && typeof customerGroupProperty.value === 'string') {
+                purchaserGroup = customerGroupProperty.value;
+            }
+        }
+
+        const dateReturned = moment(<Date>order.dateReturned).toDate();
+        let cancellationFee = 0;
+        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
+            const returner = (<any>order).returner;
+            if (Array.isArray(returner.identifier)) {
+                const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
+                if (cancellationFeeProperty !== undefined) {
+                    cancellationFee = Number(cancellationFeeProperty.value);
                 }
+            }
+        }
 
-                return r.additionalProperty === undefined
-                    || extraProperty === undefined
-                    || extraProperty.value !== '1';
-            })
-            .forEach((o, reservationIndex) => {
-                const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
-                const unitPrice = getUnitPriceByAcceptedOffer(o);
+        order.acceptedOffers.forEach((o, reservationIndex) => {
+            const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
+            const unitPrice = getUnitPriceByAcceptedOffer(o);
 
-                // 座席分のキャンセルデータ
+            // 購入分のキャンセル料データ
+            if (reservationIndex === 0) {
                 datas.push({
                     ...reservation2data(
                         {
@@ -231,49 +316,28 @@ export function createReturnOrderReport(params: {
                         },
                         unitPrice,
                         order,
-                        <Date>order.dateReturned,
+                        dateReturned,
                         AggregateUnit.SalesByEndDate,
                         purchaserGroup,
                         reservationIndex
                     ),
-                    reservationStatus: Status4csv.Cancelled,
-                    status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
+                    seat: {
+                        code: ''
+                    },
+                    ticketType: {
+                        name: '',
+                        charge: cancellationFee.toString(),
+                        csvCode: ''
+                    },
+                    payment_seat_index: '',
+                    reservationStatus: Status4csv.CancellationFee,
+                    status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
                     cancellationFee: cancellationFee,
+                    price: cancellationFee.toString(),
                     orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
                 });
-
-                // 購入分のキャンセル料データ
-                if (reservationIndex === 0) {
-                    datas.push({
-                        ...reservation2data(
-                            {
-                                ...r,
-                                checkins: []
-                            },
-                            unitPrice,
-                            order,
-                            dateReturned,
-                            AggregateUnit.SalesByEndDate,
-                            purchaserGroup,
-                            reservationIndex
-                        ),
-                        seat: {
-                            code: ''
-                        },
-                        ticketType: {
-                            name: '',
-                            charge: cancellationFee.toString(),
-                            csvCode: ''
-                        },
-                        payment_seat_index: '',
-                        reservationStatus: Status4csv.CancellationFee,
-                        status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
-                        cancellationFee: cancellationFee,
-                        price: cancellationFee.toString(),
-                        orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
-                    });
-                }
-            });
+            }
+        });
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
