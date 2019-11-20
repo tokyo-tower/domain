@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 注文返品レポート作成処理と返品手数料レポート作成処理を分離
+
 ### Deprecated
 
 ### Removed
