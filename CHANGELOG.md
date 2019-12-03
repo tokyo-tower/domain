@@ -10,9 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 予約ステータス変更時処理において、進行中の取引については券種カテゴリーレート制限を解除しないように調整
-- update @cinerino/domain
-
 ### Deprecated
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v40.1.0 - 2019-12-03
+
+### Changed
+
+- 予約ステータス変更時処理において、進行中の取引については券種カテゴリーレート制限を解除しないように調整
+- update @cinerino/domain
 
 ## v40.0.0 - 2019-11-20
 
