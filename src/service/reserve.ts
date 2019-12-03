@@ -6,6 +6,7 @@ import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
+import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as chevre from '../chevre';
@@ -31,7 +32,7 @@ export function cancelReservation(params: { id: string }) {
         project: cinerino.repository.Project;
         reservation: ReservationRepo;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
+        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const projectDetails = await repos.project.findById({ id: project.id });
         if (projectDetails.settings === undefined) {
@@ -107,14 +108,14 @@ export function cancelReservation(params: { id: string }) {
 /**
  * 予約取消時処理
  */
-// tslint:disable-next-line:max-func-body-length
 export function onReservationStatusChanged(
     params: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>
 ) {
+    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     return async (repos: {
         reservation: ReservationRepo;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: cinerino.repository.rateLimit.TicketTypeCategory;
+        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const reservation = params;
 
@@ -155,8 +156,24 @@ export function onReservationStatusChanged(
                                 transactionId = transactionProperty.value;
                             }
                         }
-                        if (holder === transactionId) {
-                            await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
+
+                        let transactionExpires: Date | undefined;
+                        if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
+                            const transactionExpiresProperty = reservation.underName.identifier.find(
+                                (p) => p.name === 'transactionExpires'
+                            );
+                            if (transactionExpiresProperty !== undefined) {
+                                transactionExpires = moment(transactionExpiresProperty.value)
+                                    .toDate();
+                            }
+                        }
+
+                        // 取引期限なし(確定予約からの取消)、あるいは、取引期限を超過している場合
+                        if (transactionExpires === undefined
+                            || moment(reservation.modifiedTime).isAfter(moment(transactionExpires))) {
+                            if (holder === transactionId) {
+                                await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
+                            }
                         }
                     }
 
