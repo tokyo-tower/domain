@@ -2,6 +2,7 @@
  * 集計サービス
  * このサービスは集計後の責任は負わないこと。
  */
+import * as cinerinoapi from '@cinerino/api-nodejs-client';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
@@ -15,7 +16,10 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+const project: factory.project.IProject = {
+    typeOf: cinerinoapi.factory.organizationType.Project,
+    id: <string>process.env.PROJECT_ID
+};
 
 const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
     ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)

@@ -77,7 +77,7 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.reservationNumber !== undefined) {
+        if (typeof params.reservationNumber === 'string') {
             andConditions.push({
                 reservationNumber: {
                     $regex: new RegExp(params.reservationNumber, 'i')
@@ -371,7 +371,7 @@ export class MongoRepository {
 
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore else */
-        if (params.additionalTicketText !== undefined) {
+        if (typeof params.additionalTicketText === 'string') {
             andConditions.push({
                 additionalTicketText: {
                     $exists: true,
