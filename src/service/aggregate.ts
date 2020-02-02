@@ -212,6 +212,7 @@ function aggregateByEvent(params: {
 /**
  * 残席数を集計する
  */
+// tslint:disable-next-line:max-func-body-length
 function aggregateRemainingAttendeeCapacity(params: {
     performance: factory.performance.IPerformanceWithDetails;
     project: factory.project.IProject;
@@ -239,8 +240,10 @@ function aggregateRemainingAttendeeCapacity(params: {
         // maximumAttendeeCapacityは一般座席数
         const maximumAttendeeCapacity = sectionOffer.containsPlace.filter(
             (p) => {
-                return p.seatingType !== undefined
-                    && <any>(p.seatingType.typeOf) === factory.place.movieTheater.SeatingType.Normal;
+                return (typeof p.seatingType === 'string' && p.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                    || (typeof p.seatingType !== 'string'
+                        && typeof p.seatingType !== undefined
+                        && (<any>p.seatingType).typeOf === factory.place.movieTheater.SeatingType.Normal);
             }
         ).length;
         let remainingAttendeeCapacity = maximumAttendeeCapacity;
@@ -251,17 +254,23 @@ function aggregateRemainingAttendeeCapacity(params: {
             const availableSeats = sectionOffer.containsPlace.map((p) => {
                 return {
                     branchCode: p.branchCode,
-                    seatingType: <factory.place.movieTheater.ISeatingType><unknown>p.seatingType
+                    seatingType: <any><unknown>p.seatingType
                 };
             });
 
             // 一般座席
             const normalSeats = availableSeats.filter(
-                (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                    || (typeof s.seatingType !== 'string'
+                        && typeof s.seatingType !== undefined
+                        && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal)
             );
             // 全車椅子座席
             const wheelChairSeats = availableSeats.filter(
-                (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                    || (typeof s.seatingType !== 'string'
+                        && typeof s.seatingType !== undefined
+                        && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair)
             );
 
             const seats = sectionOffer.containsPlace;
