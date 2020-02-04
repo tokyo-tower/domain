@@ -267,7 +267,7 @@ function aggregateRemainingAttendeeCapacity(params: {
             );
             // 全車椅子座席
             const wheelChairSeats = availableSeats.filter(
-                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Wheelchair)
                     || (typeof s.seatingType !== 'string'
                         && typeof s.seatingType !== undefined
                         && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair)
