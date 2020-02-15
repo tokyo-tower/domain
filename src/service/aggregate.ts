@@ -31,7 +31,7 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     // tslint:disable-next-line:no-magic-numbers
     : 6;
 
-const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
+// const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -212,11 +212,11 @@ function aggregateByEvent(params: {
 /**
  * 残席数を集計する
  */
-// tslint:disable-next-line:max-func-body-length
 function aggregateRemainingAttendeeCapacity(params: {
     performance: factory.performance.IPerformanceWithDetails;
     project: factory.project.IProject;
 }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         project: repository.Project;
         ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
@@ -235,6 +235,8 @@ function aggregateRemainingAttendeeCapacity(params: {
         });
 
         const screeningRoomSectionOffers = await eventService.searchOffers({ id: params.performance.id });
+        const ticketOffers = await eventService.searchTicketOffers({ id: params.performance.id });
+
         const sectionOffer = screeningRoomSectionOffers[0];
 
         // maximumAttendeeCapacityは一般座席数
@@ -301,18 +303,33 @@ function aggregateRemainingAttendeeCapacity(params: {
             }
 
             // 流入制限保持者がいれば車椅子在庫は0
-            let rateLimitHolder: string | null;
-            if (WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS > 0) {
-                rateLimitHolder = await repos.ticketTypeCategoryRateLimit.getHolder({
-                    performanceStartDate: moment(params.performance.startDate).toDate(),
-                    ticketTypeCategory: factory.ticketTypeCategory.Wheelchair,
-                    unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                });
-                debug('rateLimitHolder:', rateLimitHolder);
-                if (rateLimitHolder !== null) {
-                    remainingAttendeeCapacityForWheelchair = 0;
+            const wheelChairOffer = ticketOffers.find((o) => {
+                let ticketTypeCategory = ''; // 互換性維持のため
+                if (Array.isArray(o.additionalProperty)) {
+                    const categoryProperty = o.additionalProperty.find((p) => p.name === 'category');
+                    if (categoryProperty !== undefined) {
+                        ticketTypeCategory = categoryProperty.value;
+                    }
                 }
+
+                return ticketTypeCategory === factory.ticketTypeCategory.Wheelchair;
+            });
+            if (wheelChairOffer !== undefined && wheelChairOffer.availability === factory.chevre.itemAvailability.OutOfStock) {
+                remainingAttendeeCapacityForWheelchair = 0;
             }
+
+            // let rateLimitHolder: string | null;
+            // if (WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS > 0) {
+            //     rateLimitHolder = await repos.ticketTypeCategoryRateLimit.getHolder({
+            //         performanceStartDate: moment(params.performance.startDate).toDate(),
+            //         ticketTypeCategory: factory.ticketTypeCategory.Wheelchair,
+            //         unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
+            //     });
+            //     debug('rateLimitHolder:', rateLimitHolder);
+            //     if (rateLimitHolder !== null) {
+            //         remainingAttendeeCapacityForWheelchair = 0;
+            //     }
+            // }
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error(error);

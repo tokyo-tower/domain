@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - イベントに対する全注文返品処理において、該当注文の検索を注文取引検索から注文検索へ変更
 - update @cinerino/factory
 - String型のseatingTypeに対応
+- 車椅子レート制限をChevreへ移行
 
 ### Deprecated
 
