@@ -6,7 +6,6 @@ import { IConnectionSettings, IOperation } from '../task';
 import { RedisRepository as EventWithAggregationRepo } from '../../repo/event';
 import { MongoRepository as PerformanceRepo } from '../../repo/performance';
 import { RedisRepository as CheckinGateRepo } from '../../repo/place/checkinGate';
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../../repo/reservation';
 
 import * as AggregateService from '../aggregate';
@@ -21,8 +20,7 @@ export function call(data: factory.task.aggregateEventReservations.IData): IOper
             eventWithAggregation: new EventWithAggregationRepo(settings.redisClient),
             performance: new PerformanceRepo(settings.connection),
             project: new cinerino.repository.Project(settings.connection),
-            reservation: new ReservationRepo(settings.connection),
-            ticketTypeCategoryRateLimit: new TicketTypeCategoryRateLimitRepo(settings.redisClient)
+            reservation: new ReservationRepo(settings.connection)
         });
     };
 }

@@ -57,7 +57,6 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         project: repository.Project;
         reservation: repository.Reservation;
-        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const event = await repos.performance.findById(params.id);
         debug('event', event.id, 'found');
@@ -101,7 +100,6 @@ function aggregateByEvent(params: {
         eventWithAggregation: repository.EventWithAggregation;
         project: repository.Project;
         reservation: repository.Reservation;
-        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const checkGates = params.checkGates;
         const performance = params.event;
@@ -219,7 +217,6 @@ function aggregateRemainingAttendeeCapacity(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         project: repository.Project;
-        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const projectDetails = await repos.project.findById({ id: params.project.id });
         if (projectDetails.settings === undefined) {
