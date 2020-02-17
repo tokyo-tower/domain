@@ -31,8 +31,6 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     // tslint:disable-next-line:no-magic-numbers
     : 6;
 
-// const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
-
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
@@ -314,19 +312,6 @@ function aggregateRemainingAttendeeCapacity(params: {
             if (wheelChairOffer !== undefined && wheelChairOffer.availability === factory.chevre.itemAvailability.OutOfStock) {
                 remainingAttendeeCapacityForWheelchair = 0;
             }
-
-            // let rateLimitHolder: string | null;
-            // if (WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS > 0) {
-            //     rateLimitHolder = await repos.ticketTypeCategoryRateLimit.getHolder({
-            //         performanceStartDate: moment(params.performance.startDate).toDate(),
-            //         ticketTypeCategory: factory.ticketTypeCategory.Wheelchair,
-            //         unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-            //     });
-            //     debug('rateLimitHolder:', rateLimitHolder);
-            //     if (rateLimitHolder !== null) {
-            //         remainingAttendeeCapacityForWheelchair = 0;
-            //     }
-            // }
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error(error);

@@ -10,20 +10,26 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v41.0.0 - 2020-02-17
+
+### Changed
+
 - イベントに対する全注文返品処理において、該当注文の検索を注文取引検索から注文検索へ変更
 - update @cinerino/factory
 - String型のseatingTypeに対応
 - 車椅子レート制限をChevreへ移行
 
-### Deprecated
-
 ### Removed
 
 - 購入番号リポジトリを削除
-
-### Fixed
-
-### Security
 
 ## v40.1.0 - 2019-12-03
 
