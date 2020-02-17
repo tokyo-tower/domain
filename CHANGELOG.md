@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 購入番号リポジトリを削除
+
 ### Fixed
 
 ### Security
