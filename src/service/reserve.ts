@@ -1,20 +1,18 @@
 /**
  * 予約サービス
  */
+import * as cinerinoapi from '@cinerino/api-nodejs-client';
 import * as cinerino from '@cinerino/domain';
 import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
 
-import { RedisRepository as TicketTypeCategoryRateLimitRepo } from '../repo/rateLimit/ticketTypeCategory';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as chevre from '../chevre';
 import { credentials } from '../credentials';
 
 const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
-
-const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -32,7 +30,6 @@ export function cancelReservation(params: { id: string }) {
         project: cinerino.repository.Project;
         reservation: ReservationRepo;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const projectDetails = await repos.project.findById({ id: project.id });
         if (projectDetails.settings === undefined) {
@@ -115,7 +112,6 @@ export function onReservationStatusChanged(
     return async (repos: {
         reservation: ReservationRepo;
         task: cinerino.repository.Task;
-        ticketTypeCategoryRateLimit: TicketTypeCategoryRateLimitRepo;
     }) => {
         const reservation = params;
 
@@ -129,54 +125,6 @@ export function onReservationStatusChanged(
         if (!isExtra) {
             switch (reservation.reservationStatus) {
                 case factory.chevre.reservationStatusType.ReservationCancelled:
-                    // 車椅子券種であれば、レート制限解除
-                    let ticketTypeCategory = factory.ticketTypeCategory.Normal;
-                    if (Array.isArray(reservation.reservedTicket.ticketType.additionalProperty)) {
-                        const categoryProperty =
-                            reservation.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'category');
-                        if (categoryProperty !== undefined) {
-                            ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
-                        }
-                    }
-
-                    if (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair) {
-                        const rateLimitKey = {
-                            performanceStartDate: moment(reservation.reservationFor.startDate)
-                                .toDate(),
-                            ticketTypeCategory: ticketTypeCategory,
-                            unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                        };
-
-                        // 保持者が取引IDであれば、車椅子流入制限解除
-                        const holder = await repos.ticketTypeCategoryRateLimit.getHolder(rateLimitKey);
-                        let transactionId: string | undefined;
-                        if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
-                            const transactionProperty = reservation.underName.identifier.find((p) => p.name === 'transaction');
-                            if (transactionProperty !== undefined) {
-                                transactionId = transactionProperty.value;
-                            }
-                        }
-
-                        let transactionExpires: Date | undefined;
-                        if (reservation.underName !== undefined && Array.isArray(reservation.underName.identifier)) {
-                            const transactionExpiresProperty = reservation.underName.identifier.find(
-                                (p) => p.name === 'transactionExpires'
-                            );
-                            if (transactionExpiresProperty !== undefined) {
-                                transactionExpires = moment(transactionExpiresProperty.value)
-                                    .toDate();
-                            }
-                        }
-
-                        // 取引期限なし(確定予約からの取消)、あるいは、取引期限を超過している場合
-                        if (transactionExpires === undefined
-                            || moment(reservation.modifiedTime).isAfter(moment(transactionExpires))) {
-                            if (holder === transactionId) {
-                                await repos.ticketTypeCategoryRateLimit.unlock(rateLimitKey);
-                            }
-                        }
-                    }
-
                     // 東京タワーDB側の予約もステータス変更
                     await repos.reservation.cancel({ id: reservation.id });
 
@@ -217,7 +165,7 @@ export function onReservationStatusChanged(
             // 集計タスク作成
             const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
                 name: <any>factory.taskName.AggregateEventReservations,
-                project: { typeOf: 'Project', id: params.project.id },
+                project: { typeOf: cinerinoapi.factory.organizationType.Project, id: params.project.id },
                 status: factory.taskStatus.Ready,
                 // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
                 // tslint:disable-next-line:no-magic-numbers

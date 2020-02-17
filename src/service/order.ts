@@ -45,7 +45,8 @@ export function processReturnAllByPerformance(
             domain: <string>process.env.CINERINO_API_AUTHORIZE_DOMAIN
         });
         authClient.setCredentials(credentials);
-        const placeOrderService = new cinerinoapi.service.transaction.PlaceOrder({
+
+        const orderService = new cinerinoapi.service.Order({
             auth: authClient,
             endpoint: <string>process.env.CINERINO_API_ENDPOINT
         });
@@ -71,58 +72,51 @@ export function processReturnAllByPerformance(
             : [];
 
         // 入場履歴なしの取引IDを取り出す
-        let transactionIds = reservations.map((r) => {
-            let transactionId = (<any>r).transaction; // 互換性維持のため
+        let orderNumbers = reservations.map((r) => {
+            let orderNumber: string | undefined;
             if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-                const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
-                if (transactionProperty !== undefined) {
-                    transactionId = transactionProperty.value;
+                const orderNumberProperty = r.underName.identifier.find((p) => p.name === 'orderNumber');
+                if (orderNumberProperty !== undefined) {
+                    orderNumber = orderNumberProperty.value;
                 }
             }
 
-            return transactionId;
+            return orderNumber;
         });
-        const transactionsIdsWithCheckins = reservations.filter((r) => (r.checkins.length > 0))
+        const orderNumbersWithCheckins = reservations.filter((r) => (r.checkins.length > 0))
             .map((r) => {
-                let transactionId = (<any>r).transaction; // 互換性維持のため
+                let orderNumber: string | undefined;
                 if (r.underName !== undefined && Array.isArray(r.underName.identifier)) {
-                    const transactionProperty = r.underName.identifier.find((p) => p.name === 'transaction');
-                    if (transactionProperty !== undefined) {
-                        transactionId = transactionProperty.value;
+                    const orderNumberProperty = r.underName.identifier.find((p) => p.name === 'orderNumber');
+                    if (orderNumberProperty !== undefined) {
+                        orderNumber = orderNumberProperty.value;
                     }
                 }
 
-                return transactionId;
+                return orderNumber;
             });
-        transactionIds = uniq(difference(transactionIds, transactionsIdsWithCheckins));
-        debug('confirming returnOrderTransactions...', transactionIds);
+        orderNumbers = uniq(difference(orderNumbers, orderNumbersWithCheckins));
+        debug('confirming returnOrderTransactions...', orderNumbers);
 
         // パフォーマンスに返金対対象数を追加する
         await performanceRepo.updateOne(
             { _id: performanceId },
             {
                 'ttts_extension.refunded_count': 0, // 返金済数は最初0
-                'ttts_extension.unrefunded_count': transactionIds.length, // 未返金数をセット
+                'ttts_extension.unrefunded_count': orderNumbers.length, // 未返金数をセット
                 'ttts_extension.refund_status': factory.performance.RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }
         );
 
         // 返品取引進行(実際の返品処理は非同期で実行される
-
         // tslint:disable-next-line:max-func-body-length
-        await Promise.all(transactionIds.map(async (transactionId) => {
-            const searchTransactionResult = await placeOrderService.search({
-                typeOf: cinerinoapi.factory.transactionType.PlaceOrder,
-                ids: [transactionId]
-            });
-            const placeOrderTransaction = searchTransactionResult.data.shift();
+        await Promise.all(orderNumbers.map(async (orderNumber) => {
+            if (typeof orderNumber === 'string') {
+                const order = await orderService.findByOrderNumber({ orderNumber: orderNumber });
 
-            if (placeOrderTransaction !== undefined && placeOrderTransaction.result !== undefined) {
                 // 返品メール作成
-                const emailCustomization = await createEmailMessage4sellerReason(placeOrderTransaction);
-
-                const order = placeOrderTransaction.result.order;
+                const emailCustomization = await createEmailMessage4sellerReason(order);
 
                 const paymentMethods = order.paymentMethods;
                 const refundCreditCardActionsParams: cinerinoapi.factory.transaction.returnOrder.IRefundCreditCardParams[] =
@@ -182,13 +176,13 @@ export function processReturnAllByPerformance(
                     object: {
                         order: { orderNumber: order.orderNumber }
                     },
-                    ...{
-                        agent: {
-                            typeOf: factory.personType.Person,
-                            id: agentId,
-                            identifier: [
-                                { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
-                            ]
+                    agent: {
+                        identifier: [
+                            { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
+                        ],
+                        ...{
+                            typeOf: cinerinoapi.factory.personType.Person,
+                            id: agentId
                         }
                     }
                 });
@@ -225,10 +219,11 @@ function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedO
  * 販売者都合での返品メール作成
  */
 async function createEmailMessage4sellerReason(
-    placeOrderTransaction: cinerinoapi.factory.transaction.placeOrder.ITransaction
+    // placeOrderTransaction: cinerinoapi.factory.transaction.placeOrder.ITransaction
+    order: cinerinoapi.factory.order.IOrder
 ): Promise<cinerinoapi.factory.creativeWork.message.email.IAttributes> {
-    const transactionResult = <cinerinoapi.factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
-    const order = transactionResult.order;
+    // const transactionResult = <cinerinoapi.factory.transaction.placeOrder.IResult>placeOrderTransaction.result;
+    // const order = transactionResult.order;
     const reservation = <cinerinoapi.factory.order.IReservation>order.acceptedOffers[0].itemOffered;
 
     const email = new Email({

@@ -2,6 +2,7 @@
  * 集計サービス
  * このサービスは集計後の責任は負わないこと。
  */
+import * as cinerinoapi from '@cinerino/api-nodejs-client';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
@@ -15,7 +16,10 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
-const project = { typeOf: <'Project'>'Project', id: <string>process.env.PROJECT_ID };
+const project: factory.project.IProject = {
+    typeOf: cinerinoapi.factory.organizationType.Project,
+    id: <string>process.env.PROJECT_ID
+};
 
 const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
     ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)
@@ -26,8 +30,6 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     ? Number(process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS)
     // tslint:disable-next-line:no-magic-numbers
     : 6;
-
-const WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS = 3600;
 
 const chevreAuthClient = new chevre.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
@@ -53,7 +55,6 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         project: repository.Project;
         reservation: repository.Reservation;
-        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const event = await repos.performance.findById(params.id);
         debug('event', event.id, 'found');
@@ -97,7 +98,6 @@ function aggregateByEvent(params: {
         eventWithAggregation: repository.EventWithAggregation;
         project: repository.Project;
         reservation: repository.Reservation;
-        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const checkGates = params.checkGates;
         const performance = params.event;
@@ -212,9 +212,9 @@ function aggregateRemainingAttendeeCapacity(params: {
     performance: factory.performance.IPerformanceWithDetails;
     project: factory.project.IProject;
 }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         project: repository.Project;
-        ticketTypeCategoryRateLimit: repository.rateLimit.TicketTypeCategory;
     }) => {
         const projectDetails = await repos.project.findById({ id: params.project.id });
         if (projectDetails.settings === undefined) {
@@ -230,13 +230,17 @@ function aggregateRemainingAttendeeCapacity(params: {
         });
 
         const screeningRoomSectionOffers = await eventService.searchOffers({ id: params.performance.id });
+        const ticketOffers = await eventService.searchTicketOffers({ id: params.performance.id });
+
         const sectionOffer = screeningRoomSectionOffers[0];
 
         // maximumAttendeeCapacityは一般座席数
         const maximumAttendeeCapacity = sectionOffer.containsPlace.filter(
             (p) => {
-                return p.seatingType !== undefined
-                    && <any>(p.seatingType.typeOf) === factory.place.movieTheater.SeatingType.Normal;
+                return (typeof p.seatingType === 'string' && p.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                    || (typeof p.seatingType !== 'string'
+                        && typeof p.seatingType !== undefined
+                        && (<any>p.seatingType).typeOf === factory.place.movieTheater.SeatingType.Normal);
             }
         ).length;
         let remainingAttendeeCapacity = maximumAttendeeCapacity;
@@ -247,17 +251,23 @@ function aggregateRemainingAttendeeCapacity(params: {
             const availableSeats = sectionOffer.containsPlace.map((p) => {
                 return {
                     branchCode: p.branchCode,
-                    seatingType: <factory.place.movieTheater.ISeatingType><unknown>p.seatingType
+                    seatingType: <any><unknown>p.seatingType
                 };
             });
 
             // 一般座席
             const normalSeats = availableSeats.filter(
-                (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                    || (typeof s.seatingType !== 'string'
+                        && typeof s.seatingType !== undefined
+                        && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal)
             );
             // 全車椅子座席
             const wheelChairSeats = availableSeats.filter(
-                (s) => s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Wheelchair)
+                    || (typeof s.seatingType !== 'string'
+                        && typeof s.seatingType !== undefined
+                        && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair)
             );
 
             const seats = sectionOffer.containsPlace;
@@ -288,17 +298,19 @@ function aggregateRemainingAttendeeCapacity(params: {
             }
 
             // 流入制限保持者がいれば車椅子在庫は0
-            let rateLimitHolder: string | null;
-            if (WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS > 0) {
-                rateLimitHolder = await repos.ticketTypeCategoryRateLimit.getHolder({
-                    performanceStartDate: moment(params.performance.startDate).toDate(),
-                    ticketTypeCategory: factory.ticketTypeCategory.Wheelchair,
-                    unitInSeconds: WHEEL_CHAIR_RATE_LIMIT_UNIT_IN_SECONDS
-                });
-                debug('rateLimitHolder:', rateLimitHolder);
-                if (rateLimitHolder !== null) {
-                    remainingAttendeeCapacityForWheelchair = 0;
+            const wheelChairOffer = ticketOffers.find((o) => {
+                let ticketTypeCategory = ''; // 互換性維持のため
+                if (Array.isArray(o.additionalProperty)) {
+                    const categoryProperty = o.additionalProperty.find((p) => p.name === 'category');
+                    if (categoryProperty !== undefined) {
+                        ticketTypeCategory = categoryProperty.value;
+                    }
                 }
+
+                return ticketTypeCategory === factory.ticketTypeCategory.Wheelchair;
+            });
+            if (wheelChairOffer !== undefined && wheelChairOffer.availability === factory.chevre.itemAvailability.OutOfStock) {
+                remainingAttendeeCapacityForWheelchair = 0;
             }
         } catch (error) {
             // tslint:disable-next-line:no-console
