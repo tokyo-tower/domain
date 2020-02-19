@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Fixed
 
+- Array型の座席タイプに対応
+
 ### Security
 
 ## v41.0.0 - 2020-02-17
