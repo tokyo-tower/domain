@@ -241,8 +241,8 @@ async function createEmailMessage4sellerReason(
     const ticketInfos: {
         [ticketTypeId: string]: {
             name: {
-                ja: string;
-                en: string;
+                ja?: string;
+                en?: string;
             };
             charge: string;
             count: number;

@@ -469,7 +469,7 @@ function reservation2data(
             code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : ''
         },
         ticketType: {
-            name: r.reservedTicket.ticketType.name.ja,
+            name: (typeof r.reservedTicket.ticketType.name.ja === 'string') ? r.reservedTicket.ticketType.name.ja : '',
             // リリース当初の間違ったマスターデータをカバーするため
             csvCode: (csvCode === '0000000000231') ? '10031' : csvCode,
             charge: unitPrice.toString()

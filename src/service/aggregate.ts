@@ -238,9 +238,8 @@ function aggregateRemainingAttendeeCapacity(params: {
         const maximumAttendeeCapacity = sectionOffer.containsPlace.filter(
             (p) => {
                 return (typeof p.seatingType === 'string' && p.seatingType === factory.place.movieTheater.SeatingType.Normal)
-                    || (typeof p.seatingType !== 'string'
-                        && typeof p.seatingType !== undefined
-                        && (<any>p.seatingType).typeOf === factory.place.movieTheater.SeatingType.Normal);
+                    || (Array.isArray(p.seatingType) &&
+                        (<any>p.seatingType).includes(<string>factory.place.movieTheater.SeatingType.Normal));
             }
         ).length;
         let remainingAttendeeCapacity = maximumAttendeeCapacity;
@@ -258,16 +257,14 @@ function aggregateRemainingAttendeeCapacity(params: {
             // 一般座席
             const normalSeats = availableSeats.filter(
                 (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Normal)
-                    || (typeof s.seatingType !== 'string'
-                        && typeof s.seatingType !== undefined
-                        && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Normal)
+                    || (Array.isArray(s.seatingType) &&
+                        (<any>s.seatingType).includes(<string>factory.place.movieTheater.SeatingType.Normal))
             );
             // 全車椅子座席
             const wheelChairSeats = availableSeats.filter(
                 (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Wheelchair)
-                    || (typeof s.seatingType !== 'string'
-                        && typeof s.seatingType !== undefined
-                        && s.seatingType.typeOf === factory.place.movieTheater.SeatingType.Wheelchair)
+                    || (Array.isArray(s.seatingType) &&
+                        (<any>s.seatingType).includes(<string>factory.place.movieTheater.SeatingType.Wheelchair))
             );
 
             const seats = sectionOffer.containsPlace;

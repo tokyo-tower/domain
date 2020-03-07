@@ -18,6 +18,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v41.1.0 - 2020-03-07
+
+### Changed
+
+- update @chevre/api-nodejs-client
+
+### Fixed
+
+- Array型の座席タイプに対応
+
 ## v41.0.0 - 2020-02-17
 
 ### Changed
