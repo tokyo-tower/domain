@@ -253,15 +253,15 @@ async function createEmailMessage4sellerReason(
         const unitPrice = getUnitPriceByAcceptedOffer(o);
 
         // チケットタイプごとにチケット情報セット
-        if (ticketInfos[r.reservedTicket.ticketType.id] === undefined) {
-            ticketInfos[r.reservedTicket.ticketType.id] = {
-                name: r.reservedTicket.ticketType.name,
+        if (ticketInfos[<string>r.reservedTicket.ticketType.id] === undefined) {
+            ticketInfos[<string>r.reservedTicket.ticketType.id] = {
+                name: <any>r.reservedTicket.ticketType.name,
                 charge: `\\${numeral(unitPrice).format('0,0')}`,
                 count: 0
             };
         }
 
-        ticketInfos[r.reservedTicket.ticketType.id].count += 1;
+        ticketInfos[<string>r.reservedTicket.ticketType.id].count += 1;
     });
     // 券種ごとの表示情報編集 (sort順を変えないよう同期Loop:"for of")
     const ticketInfoJa = Object.keys(ticketInfos).map((ticketTypeId) => {
