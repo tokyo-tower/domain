@@ -50,7 +50,7 @@ export function cancelReservation(params: { id: string }) {
         });
 
         const reservation = await repos.reservation.findById(params);
-        let extraReservations: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>[] = [];
+        let extraReservations: chevre.factory.reservation.IReservation<factory.chevre.reservationType.EventReservation>[] = [];
 
         // 車椅子余分確保があればそちらもキャンセル
         if (reservation.additionalProperty !== undefined) {
