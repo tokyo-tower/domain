@@ -148,7 +148,7 @@ function aggregateByEvent(params: {
                 }
 
                 return {
-                    id: offer.id,
+                    id: <string>offer.id,
                     remainingAttendeeCapacity: (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair)
                         ? remainingAttendeeCapacityForWheelchair
                         : remainingAttendeeCapacity,
@@ -324,7 +324,7 @@ function aggregateRemainingAttendeeCapacity(params: {
 function aggregateCheckinCount(
     checkinGates: factory.place.checkinGate.IPlace[],
     reservations: factory.reservation.event.IReservation[],
-    offers: factory.chevre.ticketType.ITicketType[]
+    offers: factory.chevre.offer.IUnitPriceOffer[]
 ): {
     checkinCount: number;
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
@@ -350,7 +350,7 @@ function aggregateCheckinCount(
                 .map((c) => {
                     return {
                         ...c,
-                        ticketType: b.reservedTicket.ticketType.id,
+                        ticketType: <string>b.reservedTicket.ticketType.id,
                         ticketCategory: ticketTypeCategory
                     };
                 });
@@ -377,7 +377,7 @@ function aggregateCheckinCount(
                 }
 
                 return {
-                    ticketType: offer.id,
+                    ticketType: <string>offer.id,
                     ticketCategory: ticketTypeCategory,
                     // この券種の入場履歴数を集計
                     count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
