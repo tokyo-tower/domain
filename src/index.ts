@@ -1,11 +1,12 @@
 /**
  * index module
  */
-import * as cinerino from '@cinerino/domain';
+import * as AWS from 'aws-sdk';
 import * as redis from 'redis';
 
 import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
+import * as NotificationService from './service/notification';
 import * as OrderService from './service/order';
 import * as PerformanceService from './service/performance';
 import * as ReserveService from './service/reserve';
@@ -26,11 +27,11 @@ export import chevre = chevre;
 /**
  * AWS SDK
  */
-export import AWS = cinerino.AWS;
+export import AWS = AWS;
 
 export namespace service {
     export import admin = AdminService;
-    export import notification = cinerino.service.notification;
+    export import notification = NotificationService;
     export import order = OrderService;
     export import performance = PerformanceService;
     export import reserve = ReserveService;

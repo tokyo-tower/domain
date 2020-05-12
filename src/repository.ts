@@ -2,13 +2,13 @@
 /**
  * リポジトリ
  */
-import * as cinerino from '@cinerino/domain';
-
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
+import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
+import { MongoRepository as TaskRepo } from './repo/task';
 
 /**
  * 売上集計リポジトリ
@@ -32,13 +32,9 @@ export namespace place {
  */
 export class Performance extends PerformanceRepo { }
 /**
- * 会員リポジトリ
- */
-export class Person extends cinerino.repository.Person { }
-/**
  * プロジェクトリポジトリ
  */
-export class Project extends cinerino.repository.Project { }
+export class Project extends ProjectRepo { }
 /**
  * 予約リポジトリ
  */
@@ -46,4 +42,4 @@ export class Reservation extends ReservationRepo { }
 /**
  * タスクリポジトリ
  */
-export class Task extends cinerino.repository.Task { }
+export class Task extends TaskRepo { }

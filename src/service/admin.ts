@@ -2,7 +2,7 @@
  * 管理者サービス
  * 管理ユーザーをAmazon Cognitoで管理しているので、基本的にCognitoとの連携を担うサービス
  */
-import { AWS } from '@cinerino/domain';
+import * as AWS from 'aws-sdk';
 import * as crypto from 'crypto';
 import * as createDebug from 'debug';
 
