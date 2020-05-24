@@ -9,10 +9,10 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "3.0.0-alpha.27",
-    "@cinerino/api-nodejs-client": "2.0.0-alpha.73",
+    "@chevre/api-nodejs-client": "^3.9.0",
+    "@cinerino/api-nodejs-client": "2.0.0-alpha.91",
     "@sendgrid/mail": "^6.4.0",
-    "@tokyotower/factory": "^26.6.0",
+    "@tokyotower/factory": "^26.7.0",
     "@types/redis": "^2.8.13",
     "aws-sdk": "^2.673.0",
     "debug": "^3.2.6",
