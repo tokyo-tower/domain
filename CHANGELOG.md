@@ -10,10 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @chevre/api-nodejs-client
-- update @cinerino/api-nodejs-client
-- update @tokyotower/factory
-
 ### Deprecated
 
 ### Removed
@@ -21,6 +17,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v42.1.0 - 2020-05-24
+
+### Changed
+
+- update @chevre/api-nodejs-client
+- update @cinerino/api-nodejs-client
+- update @tokyotower/factory
 
 ## v42.0.0 - 2020-05-12
 
