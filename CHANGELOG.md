@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- 予約取消処理を削除
+
 ### Fixed
 
 ### Security

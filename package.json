@@ -9,7 +9,6 @@
     }
   ],
   "dependencies": {
-    "@chevre/api-nodejs-client": "^3.9.0",
     "@cinerino/api-nodejs-client": "2.0.0-alpha.91",
     "@sendgrid/mail": "^6.4.0",
     "@tokyotower/factory": "^26.7.0",
