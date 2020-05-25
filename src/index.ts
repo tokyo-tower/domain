@@ -14,15 +14,12 @@ import * as TaskService from './service/task';
 
 import * as factory from '@tokyotower/factory';
 
-import * as chevre from './chevre';
 import * as repository from './repository';
 
 /**
  * Redis Cacheクライアント
  */
 export import redis = redis;
-
-export import chevre = chevre;
 
 /**
  * AWS SDK

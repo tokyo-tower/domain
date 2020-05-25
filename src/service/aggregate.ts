@@ -7,7 +7,6 @@ import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';
 
-import * as chevre from '../chevre';
 import * as repository from '../repository';
 
 import * as Report4SalesService from './aggregate/report4sales';
@@ -31,7 +30,7 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     // tslint:disable-next-line:no-magic-numbers
     : 6;
 
-const chevreAuthClient = new chevre.auth.ClientCredentials({
+const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.chevre.authorizeServerDomain,
     clientId: credentials.chevre.clientId,
     clientSecret: credentials.chevre.clientSecret,
@@ -213,24 +212,34 @@ function aggregateRemainingAttendeeCapacity(params: {
     project: factory.project.IProject;
 }) {
     // tslint:disable-next-line:max-func-body-length
-    return async (repos: {
+    return async (__: {
         project: repository.Project;
     }) => {
-        const projectDetails = await repos.project.findById({ id: params.project.id });
-        if (projectDetails.settings === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings undefined');
-        }
-        if (projectDetails.settings.chevre === undefined) {
-            throw new factory.errors.ServiceUnavailable('Project settings not found');
-        }
-
-        const eventService = new chevre.service.Event({
-            endpoint: projectDetails.settings.chevre.endpoint,
-            auth: chevreAuthClient
+        const eventService = new cinerinoapi.service.Event({
+            endpoint: <string>process.env.CINERINO_API_ENDPOINT,
+            auth: cinerinoAuthClient,
+            project: { id: params.project.id }
         });
 
-        const screeningRoomSectionOffers = await eventService.searchOffers({ id: params.performance.id });
-        const ticketOffers = await eventService.searchTicketOffers({ id: params.performance.id });
+        const event = await eventService.findById({ id: params.performance.id });
+        const seller = event.offers?.seller;
+        if (seller === undefined) {
+            throw new factory.errors.NotFound('Event Seller');
+        }
+
+        const screeningRoomSectionOffers = await eventService.searchOffers({ event: { id: params.performance.id } });
+        const ticketOffers = await eventService.searchTicketOffers({
+            event: {
+                id: params.performance.id
+            },
+            seller: {
+                typeOf: <cinerinoapi.factory.organizationType>seller.typeOf,
+                id: <string>seller.id
+            },
+            store: {
+                id: credentials.chevre.clientId
+            }
+        });
 
         const sectionOffer = screeningRoomSectionOffers[0];
 
@@ -271,7 +280,7 @@ function aggregateRemainingAttendeeCapacity(params: {
             const unavailableSeats = seats.filter((s) => {
                 return Array.isArray(s.offers)
                     && s.offers.length > 0
-                    && s.offers[0].availability === chevre.factory.itemAvailability.OutOfStock;
+                    && s.offers[0].availability === cinerinoapi.factory.chevre.itemAvailability.OutOfStock;
             }).map((s) => {
                 return {
                     seatSection: sectionOffer.branchCode,
