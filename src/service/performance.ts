@@ -5,6 +5,9 @@ import * as moment from 'moment-timezone';
 
 import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
+import { MongoRepository as TaskRepo } from '../repo/task';
+
+import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
@@ -12,6 +15,14 @@ const MAXIMUM_ATTENDEE_CAPACITY = (process.env.MAXIMUM_ATTENDEE_CAPACITY !== und
     ? Number(process.env.MAXIMUM_ATTENDEE_CAPACITY)
     // tslint:disable-next-line:no-magic-numbers
     : 41;
+
+const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
+    domain: credentials.chevre.authorizeServerDomain,
+    clientId: credentials.chevre.clientId,
+    clientSecret: credentials.chevre.clientSecret,
+    scopes: [],
+    state: ''
+});
 
 export interface ISearchResult {
     performances: factory.performance.IPerformanceWithAvailability[];
@@ -23,6 +34,121 @@ export type ISearchOperation<T> = (
     performanceRepo: PerformanceRepo,
     eventWithAggregationRepo: EventWithAggregationRepo
 ) => Promise<T>;
+
+// 作成情報取得
+const setting = {
+    offerCodes: [
+        '001',
+        '002',
+        '003',
+        '004',
+        '005',
+        '006'
+    ]
+};
+
+export function importFromCinerino(params: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>) {
+    // tslint:disable-next-line:max-func-body-length
+    return async (repos: {
+        performance: PerformanceRepo;
+        task: TaskRepo;
+    }) => {
+        const event = params;
+
+        const eventService = new cinerinoapi.service.Event({
+            endpoint: <string>process.env.CINERINO_API_ENDPOINT,
+            auth: cinerinoAuthClient,
+            project: { id: event.project.id }
+        });
+
+        const offerCodes = setting.offerCodes;
+
+        // ひとつめのイベントのオファー検索
+        const offers = await eventService.searchTicketOffers({
+            event: { id: event.id },
+            seller: {
+                typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
+                id: <string>event.offers?.seller?.id
+            },
+            store: {
+                id: <string>process.env.CHEVRE_CLIENT_ID
+            }
+        });
+
+        const unitPriceOffers: cinerinoapi.factory.chevre.offer.IUnitPriceOffer[] = offers
+            // 指定のオファーコードに限定する
+            .filter((o) => offerCodes.includes(o.identifier))
+            .map((o) => {
+                // tslint:disable-next-line:max-line-length
+                const unitPriceSpec = <cinerinoapi.factory.chevre.priceSpecification.IPriceSpecification<cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                    o.priceSpecification.priceComponent.find(
+                        (p) => p.typeOf === cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification
+                    );
+
+                return {
+                    ...o,
+                    priceSpecification: unitPriceSpec
+                };
+            });
+
+        let tourNumber = '';
+        if (Array.isArray(event.additionalProperty)) {
+            const tourNumberProperty = event.additionalProperty.find((p) => p.name === 'tourNumber');
+            if (tourNumberProperty !== undefined) {
+                tourNumber = tourNumberProperty.value;
+            }
+        }
+
+        // パフォーマンス登録
+        const performance: factory.performance.IPerformance = {
+            id: event.id,
+            doorTime: moment(event.doorTime)
+                .toDate(),
+            startDate: moment(event.startDate)
+                .toDate(),
+            endDate: moment(event.endDate)
+                .toDate(),
+            duration: <string>event.superEvent.duration,
+            superEvent: event.superEvent,
+            location: {
+                id: event.location.branchCode,
+                branchCode: event.location.branchCode,
+                name: <any>event.location.name
+            },
+            additionalProperty: event.additionalProperty,
+            ttts_extension: {
+                tour_number: tourNumber,
+                ev_service_status: factory.performance.EvServiceStatus.Normal,
+                ev_service_update_user: '',
+                online_sales_status: factory.performance.OnlineSalesStatus.Normal,
+                online_sales_update_user: '',
+                refund_status: factory.performance.RefundStatus.None,
+                refund_update_user: '',
+                refunded_count: 0
+            },
+            ticket_type_group: {
+                id: <string>event.hasOfferCatalog?.id,
+                ticket_types: unitPriceOffers,
+                name: { ja: 'トップデッキツアー料金改定', en: 'Top Deck Tour' }
+            }
+        };
+
+        await repos.performance.saveIfNotExists(performance);
+
+        // 集計タスク作成
+        const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
+            name: <any>factory.taskName.AggregateEventReservations,
+            project: { typeOf: cinerinoapi.factory.organizationType.Project, id: event.project.id },
+            status: factory.taskStatus.Ready,
+            runsAt: new Date(),
+            remainingNumberOfTries: 3,
+            numberOfTried: 0,
+            executionResults: [],
+            data: { id: performance.id }
+        };
+        await repos.task.save(<any>aggregateTask);
+    };
+}
 
 /**
  * 検索する

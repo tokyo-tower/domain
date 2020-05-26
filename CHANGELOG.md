@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- Cinerinoイベントインポートタスクを追加
+
 ### Changed
 
 - 予約集計処理をCinerino使用へ変更

@@ -12,6 +12,10 @@
         "inlineSourceMap": false,
         "inlineSources": false,
         "isolatedModules": false,
+        "lib": [
+            "es6",
+            "es2017"
+        ],
         "listEmittedFiles": false,
         "listFiles": false,
         "locale": "en-us",
