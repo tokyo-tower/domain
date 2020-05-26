@@ -8,21 +8,29 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v43.0.0 - 2020-05-26
+
+### Added
+
 - Cinerinoイベントインポートタスクを追加
 
 ### Changed
 
 - 予約集計処理をCinerino使用へ変更
 
-### Deprecated
-
 ### Removed
 
 - 予約取消処理を削除
-
-### Fixed
-
-### Security
 
 ## v42.1.0 - 2020-05-24
 
