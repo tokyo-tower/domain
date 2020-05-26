@@ -18,6 +18,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v43.0.0 - 2020-05-26
+
+### Added
+
+- Cinerinoイベントインポートタスクを追加
+
+### Changed
+
+- 予約集計処理をCinerino使用へ変更
+
+### Removed
+
+- 予約取消処理を削除
+
 ## v42.1.0 - 2020-05-24
 
 ### Changed
