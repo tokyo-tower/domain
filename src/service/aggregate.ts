@@ -82,6 +82,36 @@ export function aggregateEventReservations(params: {
             await aggregateByEvent({ checkGates: checkGates, event: aggregatingEvent })(repos);
         }
         debug('aggregated', aggregatingEvents.map((e) => e.id));
+
+        // 不要な集計データをクリーンアップ
+        try {
+            await makeAggregationsExpired()(repos);
+        } catch (error) {
+            // no op
+        }
+    };
+}
+
+function makeAggregationsExpired() {
+    return async (repos: {
+        eventWithAggregation: repository.EventWithAggregation;
+        performance: repository.Performance;
+    }) => {
+        // 過去のイベントを検索
+        const startThrough = moment()
+            .add(-1, 'week')
+            .toDate();
+        const startFrom = moment(startThrough)
+            .add(-1, 'week')
+            .toDate();
+        const eventIds = await repos.performance.distinct('_id', {
+            startFrom: startFrom,
+            startThrough: startThrough
+        });
+
+        if (eventIds.length > 0) {
+            await repos.eventWithAggregation.deleteByIds({ ids: eventIds });
+        }
     };
 }
 
