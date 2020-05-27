@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 不要なイベント集計データ削除を集計処理後に実行するように調整
+- 入場ゲートリポジトリをプロセス起動時に初期化するように変更
+
 ### Deprecated
 
 ### Removed
