@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v44.1.0 - 2020-05-28
+
+### Changed
+
+- イベントに対する注文返品処理時の不要なパラメータ指定を削除
+
 ## v44.0.0 - 2020-05-27
 
 ### Changed

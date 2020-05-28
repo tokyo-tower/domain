@@ -33,8 +33,7 @@ export function processReturnAllByPerformance(
     },
     agentId: string,
     performanceId: string,
-    clientIds: string[],
-    potentialActions?: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams
+    clientIds: string[]
 ) {
     // tslint:disable-next-line:max-func-body-length
     return async (
@@ -141,13 +140,7 @@ export function processReturnAllByPerformance(
                                                 about: emailCustomization.about,
                                                 text: emailCustomization.text
                                             }
-                                        },
-                                        informOrder: (potentialActions !== undefined
-                                            && potentialActions.returnOrder !== undefined
-                                            && potentialActions.returnOrder.potentialActions !== undefined
-                                            && Array.isArray(potentialActions.returnOrder.potentialActions.informOrder))
-                                            ? potentialActions.returnOrder.potentialActions.informOrder
-                                            : []
+                                        }
                                     }
                                 };
                             })
@@ -160,13 +153,7 @@ export function processReturnAllByPerformance(
                 const potentialActionParams: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams = {
                     returnOrder: {
                         potentialActions: {
-                            refundCreditCard: refundCreditCardActionsParams,
-                            cancelReservation: (potentialActions !== undefined
-                                && potentialActions.returnOrder !== undefined
-                                && potentialActions.returnOrder.potentialActions !== undefined
-                                && Array.isArray(potentialActions.returnOrder.potentialActions.cancelReservation))
-                                ? potentialActions.returnOrder.potentialActions.cancelReservation
-                                : []
+                            refundCreditCard: refundCreditCardActionsParams
                         }
                     }
                 };
