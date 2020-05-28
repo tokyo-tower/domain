@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- イベントに対する注文返品処理時の不要なパラメータ指定を削除
+
 ### Deprecated
 
 ### Removed

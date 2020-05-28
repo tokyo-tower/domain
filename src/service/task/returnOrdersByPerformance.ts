@@ -19,8 +19,7 @@ export function call(data: factory.task.returnOrdersByPerformance.IData): IOpera
             data.credentials,
             data.agentId,
             data.performanceId,
-            data.clientIds,
-            data.potentialActions
+            data.clientIds
         )(
             performanceRepo,
             reservationRepo
