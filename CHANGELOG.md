@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
+- Eメール送信タスクを追加
+
 ### Changed
 
 ### Deprecated

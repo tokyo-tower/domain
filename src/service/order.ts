@@ -119,32 +119,30 @@ export function processReturnAllByPerformance(
 
                 const paymentMethods = order.paymentMethods;
                 const refundCreditCardActionsParams: cinerinoapi.factory.transaction.returnOrder.IRefundCreditCardParams[] =
-                    await Promise.all(
-                        paymentMethods
-                            .filter((p) => p.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
-                            // tslint:disable-next-line:max-line-length
-                            .map(async (p) => {
-                                return {
-                                    object: {
-                                        object: [{
-                                            paymentMethod: {
-                                                paymentMethodId: p.paymentMethodId
-                                            }
-                                        }]
-                                    },
-                                    potentialActions: {
-                                        sendEmailMessage: {
-                                            object: {
-                                                sender: emailCustomization.sender,
-                                                toRecipient: emailCustomization.toRecipient,
-                                                about: emailCustomization.about,
-                                                text: emailCustomization.text
-                                            }
+                    paymentMethods
+                        .filter((p) => p.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
+                        .map((p) => {
+                            return {
+                                object: {
+                                    object: [{
+                                        paymentMethod: {
+                                            paymentMethodId: p.paymentMethodId
+                                        }
+                                    }]
+                                },
+                                potentialActions: {
+                                    sendEmailMessage: {
+                                        object: {
+                                            sender: emailCustomization.sender,
+                                            toRecipient: emailCustomization.toRecipient,
+                                            about: emailCustomization.about,
+                                            text: emailCustomization.text
                                         }
                                     }
-                                };
-                            })
-                    );
+                                }
+                            };
+                        })
+                    ;
 
                 const expires = moment()
                     .add(1, 'minute')
