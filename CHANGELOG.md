@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v44.2.0 - 2020-06-01
+
+### Added
+
+- Eメール送信タスクを追加
+
 ## v44.1.0 - 2020-05-28
 
 ### Changed
