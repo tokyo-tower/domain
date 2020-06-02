@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- イベントの注文返品をまとめて実行するように調整
+
 ### Deprecated
 
 ### Removed

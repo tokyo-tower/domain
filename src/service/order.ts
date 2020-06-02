@@ -108,6 +108,9 @@ export function processReturnAllByPerformance(
             }
         );
 
+        const returnableOrders: any[] = [];
+        const returnOrderActions: any[] = [];
+
         // 返品取引進行(実際の返品処理は非同期で実行される
         // tslint:disable-next-line:max-func-body-length
         await Promise.all(orderNumbers.map(async (orderNumber) => {
@@ -144,39 +147,73 @@ export function processReturnAllByPerformance(
                         })
                     ;
 
-                const expires = moment()
-                    .add(1, 'minute')
-                    .toDate();
-
-                const potentialActionParams: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams = {
-                    returnOrder: {
-                        potentialActions: {
-                            refundCreditCard: refundCreditCardActionsParams
-                        }
-                    }
-                };
-
-                const returnOrderTransaction = await returnOrderService.start({
-                    expires: expires,
-                    object: {
-                        order: { orderNumber: order.orderNumber }
-                    },
-                    agent: {
-                        identifier: [
-                            { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
-                        ],
-                        ...{
-                            typeOf: cinerinoapi.factory.personType.Person,
-                            id: agentId
-                        }
+                returnableOrders.push({ orderNumber: order.orderNumber });
+                returnOrderActions.push({
+                    object: { orderNumber: order.orderNumber },
+                    potentialActions: {
+                        refundCreditCard: refundCreditCardActionsParams
                     }
                 });
-                await returnOrderService.confirm({
-                    id: returnOrderTransaction.id,
-                    potentialActions: potentialActionParams
-                });
+
+                // const expires = moment()
+                //     .add(1, 'minute')
+                //     .toDate();
+
+                // const potentialActionParams: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams = {
+                //     returnOrder: {
+                //         potentialActions: {
+                //             refundCreditCard: refundCreditCardActionsParams
+                //         }
+                //     }
+                // };
+
+                // const returnOrderTransaction = await returnOrderService.start({
+                //     expires: expires,
+                //     object: {
+                //         order: { orderNumber: order.orderNumber }
+                //     },
+                //     agent: {
+                //         identifier: [
+                //             { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
+                //         ],
+                //         ...{
+                //             typeOf: cinerinoapi.factory.personType.Person,
+                //             id: agentId
+                //         }
+                //     }
+                // });
+                // await returnOrderService.confirm({
+                //     id: returnOrderTransaction.id,
+                //     potentialActions: potentialActionParams
+                // });
             }
         }));
+
+        const expires = moment()
+            .add(1, 'minute')
+            .toDate();
+
+        const returnOrderTransaction = await returnOrderService.start({
+            expires: expires,
+            object: {
+                order: <any>returnableOrders
+            },
+            agent: {
+                identifier: [
+                    { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
+                ],
+                ...{
+                    typeOf: cinerinoapi.factory.personType.Person,
+                    id: agentId
+                }
+            }
+        });
+        await returnOrderService.confirm({
+            id: returnOrderTransaction.id,
+            potentialActions: {
+                returnOrder: <any>returnOrderActions
+            }
+        });
     };
 }
 
