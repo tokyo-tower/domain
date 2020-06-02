@@ -2,7 +2,6 @@
  * 注文サービス
  */
 import * as cinerinoapi from '@cinerino/api-nodejs-client';
-import * as createDebug from 'debug';
 import * as Email from 'email-templates';
 // @ts-ignore
 import * as difference from 'lodash.difference';
@@ -15,8 +14,6 @@ import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { MongoRepository as ReservationRepo } from '../repo/reservation';
 
 import * as factory from '@tokyotower/factory';
-
-const debug = createDebug('ttts-domain:service');
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
@@ -35,25 +32,10 @@ export function processReturnAllByPerformance(
     performanceId: string,
     clientIds: string[]
 ) {
-    // tslint:disable-next-line:max-func-body-length
     return async (
         performanceRepo: PerformanceRepo,
         reservationRepo: ReservationRepo
     ) => {
-        const authClient = new cinerinoapi.auth.OAuth2({
-            domain: <string>process.env.CINERINO_API_AUTHORIZE_DOMAIN
-        });
-        authClient.setCredentials(credentials);
-
-        const orderService = new cinerinoapi.service.Order({
-            auth: authClient,
-            endpoint: <string>process.env.CINERINO_API_ENDPOINT
-        });
-        const returnOrderService = new cinerinoapi.service.transaction.ReturnOrder({
-            auth: authClient,
-            endpoint: <string>process.env.CINERINO_API_ENDPOINT
-        });
-
         // パフォーマンスに対する取引リストを、予約コレクションから検索する
         const reservations = (clientIds.length > 0)
             ? await reservationRepo.search(
@@ -95,126 +77,122 @@ export function processReturnAllByPerformance(
                 return orderNumber;
             });
         orderNumbers = uniq(difference(orderNumbers, orderNumbersWithCheckins));
-        debug('confirming returnOrderTransactions...', orderNumbers);
+
+        const returningOrderNumbers = <string[]>orderNumbers.filter((orderNumber) => typeof orderNumber === 'string');
 
         // パフォーマンスに返金対対象数を追加する
         await performanceRepo.updateOne(
             { _id: performanceId },
             {
                 'ttts_extension.refunded_count': 0, // 返金済数は最初0
-                'ttts_extension.unrefunded_count': orderNumbers.length, // 未返金数をセット
+                'ttts_extension.unrefunded_count': returningOrderNumbers.length, // 未返金数をセット
                 'ttts_extension.refund_status': factory.performance.RefundStatus.Instructed,
                 'ttts_extension.refund_update_at': new Date()
             }
         );
 
-        const returnableOrders: any[] = [];
-        const returnOrderActions: any[] = [];
-
-        // 返品取引進行(実際の返品処理は非同期で実行される
-        // tslint:disable-next-line:max-func-body-length
-        await Promise.all(orderNumbers.map(async (orderNumber) => {
-            if (typeof orderNumber === 'string') {
-                const order = await orderService.findByOrderNumber({ orderNumber: orderNumber });
-
-                // 返品メール作成
-                const emailCustomization = await createEmailMessage4sellerReason(order);
-
-                const paymentMethods = order.paymentMethods;
-                const refundCreditCardActionsParams: cinerinoapi.factory.transaction.returnOrder.IRefundCreditCardParams[] =
-                    paymentMethods
-                        .filter((p) => p.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
-                        .map((p) => {
-                            return {
-                                object: {
-                                    object: [{
-                                        paymentMethod: {
-                                            paymentMethodId: p.paymentMethodId
-                                        }
-                                    }]
-                                },
-                                potentialActions: {
-                                    sendEmailMessage: {
-                                        object: {
-                                            sender: emailCustomization.sender,
-                                            toRecipient: emailCustomization.toRecipient,
-                                            about: emailCustomization.about,
-                                            text: emailCustomization.text
-                                        }
-                                    }
-                                }
-                            };
-                        })
-                    ;
-
-                returnableOrders.push({ orderNumber: order.orderNumber });
-                returnOrderActions.push({
-                    object: { orderNumber: order.orderNumber },
-                    potentialActions: {
-                        refundCreditCard: refundCreditCardActionsParams
-                    }
-                });
-
-                // const expires = moment()
-                //     .add(1, 'minute')
-                //     .toDate();
-
-                // const potentialActionParams: cinerinoapi.factory.transaction.returnOrder.IPotentialActionsParams = {
-                //     returnOrder: {
-                //         potentialActions: {
-                //             refundCreditCard: refundCreditCardActionsParams
-                //         }
-                //     }
-                // };
-
-                // const returnOrderTransaction = await returnOrderService.start({
-                //     expires: expires,
-                //     object: {
-                //         order: { orderNumber: order.orderNumber }
-                //     },
-                //     agent: {
-                //         identifier: [
-                //             { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
-                //         ],
-                //         ...{
-                //             typeOf: cinerinoapi.factory.personType.Person,
-                //             id: agentId
-                //         }
-                //     }
-                // });
-                // await returnOrderService.confirm({
-                //     id: returnOrderTransaction.id,
-                //     potentialActions: potentialActionParams
-                // });
-            }
-        }));
-
-        const expires = moment()
-            .add(1, 'minute')
-            .toDate();
-
-        const returnOrderTransaction = await returnOrderService.start({
-            expires: expires,
-            object: {
-                order: <any>returnableOrders
-            },
-            agent: {
-                identifier: [
-                    { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
-                ],
-                ...{
-                    typeOf: cinerinoapi.factory.personType.Person,
-                    id: agentId
-                }
-            }
-        });
-        await returnOrderService.confirm({
-            id: returnOrderTransaction.id,
-            potentialActions: {
-                returnOrder: <any>returnOrderActions
-            }
+        // 返品取引進行
+        await processReturnOrders({
+            credentials: credentials,
+            agentId: agentId,
+            orderNumbers: returningOrderNumbers
         });
     };
+}
+
+async function processReturnOrders(params: {
+    orderNumbers: string[];
+    credentials: {
+        refresh_token?: string;
+        access_token?: string;
+    };
+    agentId: string;
+}) {
+    const authClient = new cinerinoapi.auth.OAuth2({
+        domain: <string>process.env.CINERINO_API_AUTHORIZE_DOMAIN
+    });
+    authClient.setCredentials(params.credentials);
+
+    const orderService = new cinerinoapi.service.Order({
+        auth: authClient,
+        endpoint: <string>process.env.CINERINO_API_ENDPOINT
+    });
+    const returnOrderService = new cinerinoapi.service.transaction.ReturnOrder({
+        auth: authClient,
+        endpoint: <string>process.env.CINERINO_API_ENDPOINT
+    });
+
+    const returnableOrders: any[] = [];
+    const returnOrderActions: any[] = [];
+
+    const searchOrdersResult = await orderService.search({
+        limit: 100,
+        orderNumbers: params.orderNumbers
+    });
+
+    await Promise.all(searchOrdersResult.data.map(async (order) => {
+        // 返品メール作成
+        const emailCustomization = await createEmailMessage4sellerReason(order);
+
+        const paymentMethods = order.paymentMethods;
+        const refundCreditCardActionsParams: cinerinoapi.factory.transaction.returnOrder.IRefundCreditCardParams[] =
+            paymentMethods
+                .filter((p) => p.typeOf === cinerinoapi.factory.paymentMethodType.CreditCard)
+                .map((p) => {
+                    return {
+                        object: {
+                            object: [{
+                                paymentMethod: {
+                                    paymentMethodId: p.paymentMethodId
+                                }
+                            }]
+                        },
+                        potentialActions: {
+                            sendEmailMessage: {
+                                object: {
+                                    sender: emailCustomization.sender,
+                                    toRecipient: emailCustomization.toRecipient,
+                                    about: emailCustomization.about,
+                                    text: emailCustomization.text
+                                }
+                            }
+                        }
+                    };
+                })
+            ;
+
+        returnableOrders.push({ orderNumber: order.orderNumber });
+        returnOrderActions.push({
+            object: { orderNumber: order.orderNumber },
+            potentialActions: {
+                refundCreditCard: refundCreditCardActionsParams
+            }
+        });
+    }));
+
+    const returnOrderTransaction = await returnOrderService.start({
+        expires: moment()
+            .add(1, 'minute')
+            .toDate(),
+        object: {
+            order: <any>returnableOrders
+        },
+        agent: {
+            identifier: [
+                { name: 'reason', value: cinerinoapi.factory.transaction.returnOrder.Reason.Seller }
+            ],
+            ...{
+                typeOf: cinerinoapi.factory.personType.Person,
+                id: params.agentId
+            }
+        }
+    });
+    await returnOrderService.confirm({
+        id: returnOrderTransaction.id,
+        potentialActions: {
+            returnOrder: <any>returnOrderActions
+        }
+    });
 }
 
 function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedOffer<any>) {
