@@ -122,8 +122,8 @@ async function processReturnOrders(params: {
         endpoint: <string>process.env.CINERINO_API_ENDPOINT
     });
 
-    const returnableOrders: any[] = [];
-    const returnOrderActions: any[] = [];
+    const returnableOrders: cinerinoapi.factory.transaction.returnOrder.IReturnableOrder[] = [];
+    const returnOrderActions: cinerinoapi.factory.transaction.returnOrder.IReturnOrderActionParams[] = [];
 
     const searchOrdersResult = await orderService.search({
         limit: 100,
@@ -175,7 +175,7 @@ async function processReturnOrders(params: {
             .add(1, 'minute')
             .toDate(),
         object: {
-            order: <any>returnableOrders
+            order: returnableOrders
         },
         agent: {
             identifier: [
@@ -190,7 +190,7 @@ async function processReturnOrders(params: {
     await returnOrderService.confirm({
         id: returnOrderTransaction.id,
         potentialActions: {
-            returnOrder: <any>returnOrderActions
+            returnOrder: returnOrderActions
         }
     });
 }
@@ -255,7 +255,7 @@ async function createEmailMessage4sellerReason(
         // チケットタイプごとにチケット情報セット
         if (ticketInfos[<string>r.reservedTicket.ticketType.id] === undefined) {
             ticketInfos[<string>r.reservedTicket.ticketType.id] = {
-                name: <any>r.reservedTicket.ticketType.name,
+                name: <cinerinoapi.factory.chevre.multilingualString>r.reservedTicket.ticketType.name,
                 charge: `\\${numeral(unitPrice).format('0,0')}`,
                 count: 0
             };
@@ -276,8 +276,8 @@ async function createEmailMessage4sellerReason(
     }).join('\n');
 
     let paymentNo = '';
-    if (Array.isArray((<any>order).identifier)) {
-        const confirmationNumberProperty = (<any>order).identifier.find((p: any) => p.name === 'confirmationNumber');
+    if (Array.isArray(order.identifier)) {
+        const confirmationNumberProperty = order.identifier.find((p: any) => p.name === 'confirmationNumber');
         if (confirmationNumberProperty !== undefined) {
             // tslint:disable-next-line:no-magic-numbers
             paymentNo = confirmationNumberProperty.value.slice(-6);

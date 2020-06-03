@@ -9,9 +9,9 @@
     }
   ],
   "dependencies": {
-    "@cinerino/api-nodejs-client": "2.0.0-alpha.91",
+    "@cinerino/api-nodejs-client": "2.0.0-alpha.93",
     "@sendgrid/mail": "6.4.0",
-    "@tokyotower/factory": "^26.7.0",
+    "@tokyotower/factory": "^26.8.0",
     "@types/redis": "^2.8.13",
     "aws-sdk": "^2.673.0",
     "debug": "^3.2.6",

@@ -278,8 +278,8 @@ export function onOrderReturned(params: cinerinoapi.factory.order.IOrder) {
 
         // 販売者都合の手数料なし返品であれば、情報連携
         let cancellationFee = 0;
-        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
-            const returner = (<any>order).returner;
+        if (order.returner !== undefined && order.returner !== null) {
+            const returner = order.returner;
             if (Array.isArray(returner.identifier)) {
                 const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
                 if (cancellationFeeProperty !== undefined) {
@@ -289,8 +289,8 @@ export function onOrderReturned(params: cinerinoapi.factory.order.IOrder) {
         }
 
         let reason: string = cinerinoapi.factory.transaction.returnOrder.Reason.Customer;
-        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
-            const returner = (<any>order).returner;
+        if (order.returner !== undefined && order.returner !== null) {
+            const returner = order.returner;
             if (Array.isArray(returner.identifier)) {
                 const reasonProperty = returner.identifier.find((p: any) => p.name === 'reason');
                 if (reasonProperty !== undefined) {
