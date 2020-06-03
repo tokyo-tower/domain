@@ -195,8 +195,8 @@ export function createReturnOrderReport(params: {
 
         const dateReturned = moment(<Date>order.dateReturned).toDate();
         let cancellationFee = 0;
-        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
-            const returner = (<any>order).returner;
+        if (order.returner !== undefined && order.returner !== null) {
+            const returner = order.returner;
             if (Array.isArray(returner.identifier)) {
                 const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
                 if (cancellationFeeProperty !== undefined) {
@@ -292,8 +292,8 @@ export function createRefundOrderReport(params: {
 
         const dateReturned = moment(<Date>order.dateReturned).toDate();
         let cancellationFee = 0;
-        if ((<any>order).returner !== undefined && (<any>order).returner !== null) {
-            const returner = (<any>order).returner;
+        if (order.returner !== undefined && order.returner !== null) {
+            const returner = order.returner;
             if (Array.isArray(returner.identifier)) {
                 const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
                 if (cancellationFeeProperty !== undefined) {
@@ -449,8 +449,8 @@ function reservation2data(
     }
 
     let paymentNo = '';
-    if (Array.isArray((<any>order).identifier)) {
-        const confirmationNumberProperty = (<any>order).identifier.find((p: any) => p.name === 'confirmationNumber');
+    if (Array.isArray(order.identifier)) {
+        const confirmationNumberProperty = order.identifier.find((p: any) => p.name === 'confirmationNumber');
         if (confirmationNumberProperty !== undefined) {
             // tslint:disable-next-line:no-magic-numbers
             paymentNo = confirmationNumberProperty.value.slice(-6);
