@@ -6,10 +6,10 @@ export const credentials = {
         accessKeyId: <string>process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: <string>process.env.AWS_SECRET_ACCESS_KEY
     },
-    chevre: {
-        authorizeServerDomain: <string>process.env.CHEVRE_AUTHORIZE_SERVER_DOMAIN,
-        clientId: <string>process.env.CHEVRE_CLIENT_ID,
-        clientSecret: <string>process.env.CHEVRE_CLIENT_SECRET
+    cinerino: {
+        authorizeServerDomain: <string>process.env.CINERINO_AUTHORIZE_SERVER_DOMAIN,
+        clientId: <string>process.env.CINERINO_CLIENT_ID,
+        clientSecret: <string>process.env.CINERINO_CLIENT_SECRET
     },
     lineNotify: {
         url: <string>process.env.LINE_NOTIFY_URL,

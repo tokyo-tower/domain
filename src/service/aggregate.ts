@@ -31,9 +31,9 @@ const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONA
     : 6;
 
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
+    domain: credentials.cinerino.authorizeServerDomain,
+    clientId: credentials.cinerino.clientId,
+    clientSecret: credentials.cinerino.clientSecret,
     scopes: [],
     state: ''
 });
@@ -267,7 +267,7 @@ function aggregateRemainingAttendeeCapacity(params: {
                 id: <string>seller.id
             },
             store: {
-                id: credentials.chevre.clientId
+                id: credentials.cinerino.clientId
             }
         });
 

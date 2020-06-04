@@ -20,9 +20,9 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
-        if (Array.isArray((<any>params).ids)) {
+        if (Array.isArray(params.ids)) {
             andConditions.push({
-                _id: { $in: (<any>params).ids }
+                _id: { $in: params.ids }
             });
         }
 
@@ -66,7 +66,7 @@ export class MongoRepository {
     /**
      * 予約検索
      */
-    public async  search(
+    public async search(
         params: ISearchConditions, projection?: any | null
     ): Promise<factory.performance.IPerformanceWithDetails[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
@@ -97,7 +97,7 @@ export class MongoRepository {
             .then((docs) => docs.map((doc) => doc.toObject()));
     }
 
-    public async  distinct(field: string, params: ISearchConditions): Promise<any[]> {
+    public async distinct(field: string, params: ISearchConditions): Promise<any[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.performanceModel.distinct(
