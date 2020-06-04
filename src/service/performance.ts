@@ -17,9 +17,9 @@ const MAXIMUM_ATTENDEE_CAPACITY = (process.env.MAXIMUM_ATTENDEE_CAPACITY !== und
     : 41;
 
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
-    domain: credentials.chevre.authorizeServerDomain,
-    clientId: credentials.chevre.clientId,
-    clientSecret: credentials.chevre.clientSecret,
+    domain: credentials.cinerino.authorizeServerDomain,
+    clientId: credentials.cinerino.clientId,
+    clientSecret: credentials.cinerino.clientSecret,
     scopes: [],
     state: ''
 });
@@ -71,7 +71,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 id: <string>event.offers?.seller?.id
             },
             store: {
-                id: <string>process.env.CHEVRE_CLIENT_ID
+                id: credentials.cinerino.clientId
             }
         });
 

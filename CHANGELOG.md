@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- イベントに対する注文返品タスクを削除
+- Chevre認証情報をCinerinoに変更
+
 ### Deprecated
 
 ### Removed
