@@ -1,10 +1,8 @@
 /**
  * index module
  */
-import * as AWS from 'aws-sdk';
 import * as redis from 'redis';
 
-import * as AdminService from './service/admin';
 import * as AggregateService from './service/aggregate';
 import * as NotificationService from './service/notification';
 import * as PerformanceService from './service/performance';
@@ -20,13 +18,7 @@ import * as repository from './repository';
  */
 export import redis = redis;
 
-/**
- * AWS SDK
- */
-export import AWS = AWS;
-
 export namespace service {
-    export import admin = AdminService;
     export import notification = NotificationService;
     export import performance = PerformanceService;
     export import reserve = ReserveService;

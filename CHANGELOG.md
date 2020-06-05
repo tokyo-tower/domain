@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v46.0.0 - 2020-06-05
+
+### Removed
+
+- 管理者サービスを削除
+
 ## v45.0.0 - 2020-06-04
 
 ### Changed
