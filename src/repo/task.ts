@@ -177,6 +177,32 @@ export class MongoRepository {
             .exec();
     }
 
+    public async cleanUp(params: {
+        project?: { id: string };
+        storagePeriodInDays: number;
+    }) {
+        const runsAtLt = moment()
+            .add(-params.storagePeriodInDays, 'days')
+            .toDate();
+
+        await this.taskModel.deleteMany(
+            {
+                ...(params.project !== undefined)
+                    ? {
+                        'project.id': {
+                            $exists: true,
+                            $eq: params.project.id
+                        }
+                    } : undefined,
+                status: { $in: [factory.taskStatus.Aborted, factory.taskStatus.Executed] },
+                runsAt: {
+                    $lt: runsAtLt
+                }
+            }
+        )
+            .exec();
+    }
+
     public async abortOne(params: {
         project?: { id: string };
         intervalInMinutes: number;
