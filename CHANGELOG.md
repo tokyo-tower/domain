@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- update @cinerino/api-nodejs-client
+- update @tokyotower/factory
+- 不要なパッケージを削除
+
 ### Deprecated
 
 ### Removed

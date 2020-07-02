@@ -11,7 +11,6 @@ import * as createDebug from 'debug';
 import { ACCEPTED, OK } from 'http-status';
 import * as request from 'request';
 import * as util from 'util';
-import * as validator from 'validator';
 
 import { credentials } from '../credentials';
 
@@ -82,8 +81,7 @@ export function report2developers(subject: string, content: string, imageThumbna
             throw new Error('Environment variable LINE_NOTIFY_ACCESS_TOKEN not set');
         }
 
-        const message = `
-env[${process.env.NODE_ENV}]
+        const message = `NODE_ENV[${process.env.NODE_ENV}]
 ------------------------
 ${subject}
 ------------------------
@@ -91,21 +89,11 @@ ${content}`
             ;
 
         // LINE通知APIにPOST
-        const formData: any = { message: message };
-        if (imageThumbnail !== undefined) {
-            if (!validator.isURL(imageThumbnail)) {
-                throw new factory.errors.Argument('imageThumbnail', 'imageThumbnail should be URL');
-            }
-
-            formData.imageThumbnail = imageThumbnail;
-        }
-        if (imageFullsize !== undefined) {
-            if (!validator.isURL(imageFullsize)) {
-                throw new factory.errors.Argument('imageFullsize', 'imageFullsize should be URL');
-            }
-
-            formData.imageFullsize = imageFullsize;
-        }
+        const formData: any = {
+            message: message,
+            ...(typeof imageThumbnail === 'string') ? { imageThumbnail } : undefined,
+            ...(typeof imageFullsize === 'string') ? { imageFullsize } : undefined
+        };
 
         return new Promise<void>((resolve, reject) => {
             request.post(

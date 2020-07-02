@@ -23,7 +23,7 @@ export function onReservationStatusChanged(
         const reservation = params;
 
         // 余分確保分を除く
-        let extraProperty: factory.propertyValue.IPropertyValue<string> | undefined;
+        let extraProperty: factory.chevre.propertyValue.IPropertyValue<string> | undefined;
         if (reservation.additionalProperty !== undefined) {
             extraProperty = reservation.additionalProperty.find((p) => p.name === 'extra');
         }
