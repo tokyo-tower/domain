@@ -8,13 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- タスク実行後にクリーンアップ処理を追加
-
 ### Changed
-
-- install @cinerino/sdk
-- update @tokyotower/factory
-- 不要なパッケージを削除
 
 ### Deprecated
 
@@ -23,6 +17,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v46.1.0 - 2020-07-07
+
+### Added
+
+- タスク実行後にクリーンアップ処理を追加
+
+### Changed
+
+- install @cinerino/sdk
+- update @tokyotower/factory
+- 不要なパッケージを削除
 
 ## v46.0.0 - 2020-06-05
 
