@@ -2,7 +2,7 @@
  * 集計サービス
  * このサービスは集計後の責任は負わないこと。
  */
-import * as cinerinoapi from '@cinerino/api-nodejs-client';
+import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment';

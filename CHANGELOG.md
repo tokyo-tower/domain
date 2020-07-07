@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @cinerino/api-nodejs-client
+- install @cinerino/sdk
 - update @tokyotower/factory
 - 不要なパッケージを削除
 

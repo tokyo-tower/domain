@@ -1,7 +1,7 @@
 /**
  * 予約サービス
  */
-import * as cinerinoapi from '@cinerino/api-nodejs-client';
+import * as cinerinoapi from '@cinerino/sdk';
 import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';

@@ -1,7 +1,7 @@
 /**
  * 通知サービス
  */
-import * as cinerinoapi from '@cinerino/api-nodejs-client';
+import * as cinerinoapi from '@cinerino/sdk';
 // tslint:disable-next-line:no-implicit-dependencies no-submodule-imports
 import { MailData } from '@sendgrid/helpers/classes/mail';
 // tslint:disable-next-line:no-require-imports
