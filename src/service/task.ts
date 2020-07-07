@@ -11,6 +11,11 @@ import * as factory from '@tokyotower/factory';
 
 import * as NotificationService from './notification';
 
+const TASK_STORAGE_PERIOD_IN_DAYS = (typeof process.env.TASK_STORAGE_PERIOD_IN_DAYS === 'string')
+    ? Number(process.env.TASK_STORAGE_PERIOD_IN_DAYS)
+    // tslint:disable-next-line:no-magic-numbers
+    : 365;
+
 export interface IConnectionSettings {
     /**
      * MongoDBコネクション
@@ -49,6 +54,24 @@ export function executeByName<T extends factory.taskName>(params: {
         if (task !== null) {
             await execute(task)(settings);
         }
+
+        try {
+            await onExecuted(params)({ task: taskRepo });
+        } catch (error) {
+            // no op
+        }
+    };
+}
+
+function onExecuted(params: {
+    project?: { id: string };
+    name: factory.taskName;
+}): TaskOperation<void> {
+    return async (repos: { task: TaskRepo }) => {
+        await repos.task.cleanUp({
+            ...params,
+            storagePeriodInDays: TASK_STORAGE_PERIOD_IN_DAYS
+        });
     };
 }
 

@@ -1,7 +1,7 @@
 /**
  * 売上集計サービス
  */
-import * as cinerinoapi from '@cinerino/api-nodejs-client';
+import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment';
 

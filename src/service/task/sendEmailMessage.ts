@@ -1,4 +1,4 @@
-import * as cinerinoapi from '@cinerino/api-nodejs-client';
+import * as cinerinoapi from '@cinerino/sdk';
 import { IConnectionSettings, IOperation } from '../task';
 
 import * as NotificationService from '../notification';
