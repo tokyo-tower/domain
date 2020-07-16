@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 購入番号として注文のpaymentNoを参照するように変更
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v46.1.1 - 2020-07-16
+
+### Changed
+
+- 購入番号として注文のpaymentNoを参照するように変更
 
 ## v46.1.0 - 2020-07-07
 
