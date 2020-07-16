@@ -450,10 +450,9 @@ function reservation2data(
 
     let paymentNo = '';
     if (Array.isArray(order.identifier)) {
-        const confirmationNumberProperty = order.identifier.find((p: any) => p.name === 'confirmationNumber');
-        if (confirmationNumberProperty !== undefined) {
-            // tslint:disable-next-line:no-magic-numbers
-            paymentNo = confirmationNumberProperty.value.slice(-6);
+        const paymentNoProperty = order.identifier.find((p: any) => p.name === 'paymentNo');
+        if (paymentNoProperty !== undefined) {
+            paymentNo = paymentNoProperty.value;
         }
     }
 
