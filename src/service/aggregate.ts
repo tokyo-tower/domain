@@ -52,7 +52,6 @@ export function aggregateEventReservations(params: {
         checkinGate: repository.place.CheckinGate;
         eventWithAggregation: repository.EventWithAggregation;
         performance: repository.Performance;
-        project: repository.Project;
         reservation: repository.Reservation;
     }) => {
         const event = await repos.performance.findById(params.id);
@@ -125,7 +124,6 @@ function aggregateByEvent(params: {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         eventWithAggregation: repository.EventWithAggregation;
-        project: repository.Project;
         reservation: repository.Reservation;
     }) => {
         const checkGates = params.checkGates;
@@ -243,7 +241,6 @@ function aggregateRemainingAttendeeCapacity(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (__: {
-        project: repository.Project;
     }) => {
         const eventService = new cinerinoapi.service.Event({
             endpoint: <string>process.env.CINERINO_API_ENDPOINT,

@@ -6,7 +6,6 @@ import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
 import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
-import { MongoRepository as ProjectRepo } from './repo/project';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as TaskRepo } from './repo/task';
 
@@ -31,10 +30,6 @@ export namespace place {
  * パフォーマンスリポジトリ
  */
 export class Performance extends PerformanceRepo { }
-/**
- * プロジェクトリポジトリ
- */
-export class Project extends ProjectRepo { }
 /**
  * 予約リポジトリ
  */

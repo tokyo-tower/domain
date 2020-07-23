@@ -18,6 +18,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v47.0.0 - 2020-07-23
+
+### Changed
+
+- update @cinerino/factory
+- update @cinerino/sdk
+- チェックインゲート情報をハードコーディング対応
+
+### Removed
+
+- プロジェクトリポジトリを削除
+
 ## v46.1.1 - 2020-07-16
 
 ### Changed
