@@ -88,5 +88,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "46.1.1"
+  "version": "47.0.0"
 }
