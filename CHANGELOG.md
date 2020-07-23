@@ -10,9 +10,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- update @cinerino/factory
+- update @cinerino/sdk
+- チェックインゲート情報をハードコーディング対応
+
 ### Deprecated
 
 ### Removed
+
+- プロジェクトリポジトリを削除
 
 ### Fixed
 
