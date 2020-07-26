@@ -5,7 +5,6 @@
 import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { RedisRepository as EventWithAggregationRepo } from './repo/event';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
-import { RedisRepository as CheckinGateRepo } from './repo/place/checkinGate';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as TaskRepo } from './repo/task';
 
@@ -19,21 +18,16 @@ export class AggregateSale extends AggregateSaleRepo { }
  */
 export class EventWithAggregation extends EventWithAggregationRepo { }
 
-export namespace place {
-    /**
-     * 入場場所リポジトリ
-     */
-    export class CheckinGate extends CheckinGateRepo { }
-}
-
 /**
  * パフォーマンスリポジトリ
  */
 export class Performance extends PerformanceRepo { }
+
 /**
  * 予約リポジトリ
  */
 export class Reservation extends ReservationRepo { }
+
 /**
  * タスクリポジトリ
  */
