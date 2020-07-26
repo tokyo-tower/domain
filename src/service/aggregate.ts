@@ -49,7 +49,6 @@ export function aggregateEventReservations(params: {
     id: string;
 }) {
     return async (repos: {
-        checkinGate: repository.place.CheckinGate;
         eventWithAggregation: repository.EventWithAggregation;
         performance: repository.Performance;
         reservation: repository.Reservation;
@@ -74,7 +73,26 @@ export function aggregateEventReservations(params: {
         debug(aggregatingEvents.length, 'aggregatingEvents found');
 
         // 入場ゲート取得
-        const checkGates = await repos.checkinGate.findAll();
+        const placeService = new cinerinoapi.service.Place({
+            endpoint: <string>process.env.CINERINO_API_ENDPOINT,
+            auth: cinerinoAuthClient,
+            project: { id: project.id }
+        });
+        const searchMovieTheatersResult = await placeService.searchMovieTheaters({ branchCodes: [event.superEvent.location.branchCode] });
+        const movieTheater = searchMovieTheatersResult.data.shift();
+        if (movieTheater === undefined) {
+            throw new factory.errors.NotFound('MovieTheater');
+        }
+
+        let checkGates: factory.place.checkinGate.IPlace[] = [];
+        if (Array.isArray(movieTheater.hasEntranceGate)) {
+            checkGates = movieTheater.hasEntranceGate.map((g) => {
+                return {
+                    identifier: String(g.identifier),
+                    name: (typeof g.name === 'string') ? g.name : String(g.name?.ja)
+                };
+            });
+        }
         debug(checkGates.length, 'checkGates found');
 
         for (const aggregatingEvent of aggregatingEvents) {

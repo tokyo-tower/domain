@@ -23,8 +23,6 @@ var ttts = require("@tokyo-tower/domain");
 
 | Name                               | Required | Value         | Purpose                 |
 | ---------------------------------- | -------- | ------------- | ----------------------- |
-| `AWS_ACCESS_KEY_ID`                | true     |               | AWS Credentials         |
-| `AWS_SECRET_ACCESS_KEY`            | true     |               | AWS Credentials         |
 | `CINERINO_AUTHORIZE_SERVER_DOMAIN` | true     |               | Chevre API Settings     |
 | `CINERINO_CLIENT_ID`               | true     |               | Chevre API Settings     |
 | `CINERINO_CLIENT_SECRET`           | true     |               | Chevre API Settings     |

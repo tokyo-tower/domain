@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v47.1.0 - 2020-07-26
+
+### Changed
+
+- 入場ゲート管理をChevreへ移行
+
 ## v47.0.0 - 2020-07-23
 
 ### Changed
