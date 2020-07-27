@@ -68,22 +68,6 @@ const schema = new mongoose.Schema(
     }
 );
 
-schema.index(
-    { performance_day: 1, status: 1 }
-);
-
-// 予約検索
-schema.index(
-    {
-        status: 1,
-        performance_day: 1,
-        performance_start_time: 1,
-        payment_no: 1,
-        ticket_type: 1
-    },
-    { name: 'findAndSortReservations' }
-);
-
 // 予約管理アプリケーションでの新しい予約検索
 schema.index(
     {
@@ -103,19 +87,6 @@ schema.index(
             'reservedTicket.ticketedSeat.seatNumber': { $exists: true }
         }
     }
-);
-
-// backendでのレポートダウンロード時に使用
-schema.index(
-    { order_number: 1 }
-);
-schema.index(
-    { performance_start_date: 1 },
-    { name: 'searchByPerformanceStartDate' }
-);
-schema.index(
-    { purchased_at: 1 },
-    { name: 'searchByPurchasedAt' }
 );
 
 schema.index(
