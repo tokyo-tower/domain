@@ -152,10 +152,10 @@ function aggregateByEvent(params: {
             {
                 typeOf: factory.chevre.reservationType.EventReservation,
                 reservationStatuses: [factory.chevre.reservationStatusType.ReservationConfirmed],
-                reservationFor: { id: performance.id },
-                additionalProperty: {
-                    $nin: [{ name: 'extra', value: '1' }]
-                }
+                reservationFor: { id: performance.id }
+                // additionalProperty: {
+                //     $nin: [{ name: 'extra', value: '1' }]
+                // }
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {

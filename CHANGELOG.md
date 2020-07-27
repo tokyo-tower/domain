@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v47.1.2 - 2020-07-27
+
+### Changed
+
+- 余分確保分予約を除外する処理を削除
+
 ## v47.1.1 - 2020-07-27
 
 ### Changed
