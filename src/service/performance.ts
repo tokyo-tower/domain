@@ -197,8 +197,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 open_time: moment(performance.doorTime).tz('Asia/Tokyo').format('HHmm'),
                 start_time: moment(performance.startDate).tz('Asia/Tokyo').format('HHmm'),
                 end_time: moment(performance.endDate).tz('Asia/Tokyo').format('HHmm'),
-                // start_date: performance.startDate,
-                // end_date: performance.endDate,
                 seat_status: (eventWithAggregation !== undefined)
                     ? eventWithAggregation.remainingAttendeeCapacity
                     : undefined,
@@ -232,6 +230,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
             };
 
             return {
+                ...performance,
                 id: performance.id,
                 doorTime: performance.doorTime,
                 startDate: performance.startDate,
