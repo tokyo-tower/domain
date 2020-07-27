@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- イベント集計データをperformancesコレクションにも保管するように調整
+
 ### Deprecated
 
 ### Removed

@@ -143,6 +143,7 @@ function aggregateByEvent(params: {
     return async (repos: {
         eventWithAggregation: repository.EventWithAggregation;
         reservation: repository.Reservation;
+        performance: repository.Performance;
     }) => {
         const checkGates = params.checkGates;
         const performance = params.event;
@@ -243,10 +244,47 @@ function aggregateByEvent(params: {
 
             // 保管
             await repos.eventWithAggregation.store([aggregation], EVENT_AGGREGATION_EXPIRES_IN_SECONDS);
+
+            // パフォーマンスリポジトリにも保管
+            await saveAggregation2performance(aggregation)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error('couldn\'t create aggregation on event', performance.id, error);
         }
+    };
+}
+
+/**
+ * パフォーマンスコレクションに集計データを保管する
+ */
+function saveAggregation2performance(params: factory.performance.IPerformanceWithAggregation) {
+    return async (repos: {
+        performance: repository.Performance;
+    }) => {
+        // 値がundefinedの場合に更新しないように注意
+        const update: any = {
+            $set: {
+                updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
+                evServiceStatus: params.evServiceStatus,
+                onlineSalesStatus: params.onlineSalesStatus,
+                maximumAttendeeCapacity: params.maximumAttendeeCapacity,
+                remainingAttendeeCapacity: params.remainingAttendeeCapacity,
+                remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair,
+                reservationCount: params.reservationCount,
+                checkinCount: params.checkinCount,
+                reservationCountsByTicketType: params.reservationCountsByTicketType,
+                checkinCountsByWhere: params.checkinCountsByWhere,
+                tourNumber: (<any>params).tourNumber,
+                ...(Array.isArray(params.offers)) ? { offers: params.offers } : undefined
+            },
+            $unset: {
+                noExistingAttributeName: 1, // $unsetは空だとエラーになるので
+                ...(!Array.isArray(params.offers)) ? { offers: '' } : undefined
+            }
+        };
+
+        // 保管
+        await repos.performance.updateOne({ _id: params.id }, update);
     };
 }
 
