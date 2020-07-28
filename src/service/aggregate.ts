@@ -30,10 +30,10 @@ export enum TicketTypeCategory {
     Wheelchair = 'Wheelchair'
 }
 
-const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
-    ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)
-    // tslint:disable-next-line:no-magic-numbers
-    : 86400;
+// const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
+//     ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)
+//     // tslint:disable-next-line:no-magic-numbers
+//     : 86400;
 
 const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS !== undefined)
     ? Number(process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS)
@@ -59,7 +59,7 @@ export function aggregateEventReservations(params: {
     id: string;
 }) {
     return async (repos: {
-        eventWithAggregation: repository.EventWithAggregation;
+        // eventWithAggregation: repository.EventWithAggregation;
         performance: repository.Performance;
         reservation: repository.Reservation;
     }) => {
@@ -112,35 +112,35 @@ export function aggregateEventReservations(params: {
 
         // 不要な集計データをクリーンアップ
         try {
-            await makeAggregationsExpired()(repos);
+            // await makeAggregationsExpired()(repos);
         } catch (error) {
             // no op
         }
     };
 }
 
-function makeAggregationsExpired() {
-    return async (repos: {
-        eventWithAggregation: repository.EventWithAggregation;
-        performance: repository.Performance;
-    }) => {
-        // 過去のイベントを検索
-        const startThrough = moment()
-            .add(-1, 'week')
-            .toDate();
-        const startFrom = moment(startThrough)
-            .add(-1, 'week')
-            .toDate();
-        const eventIds = await repos.performance.distinct('_id', {
-            startFrom: startFrom,
-            startThrough: startThrough
-        });
+// function makeAggregationsExpired() {
+//     return async (repos: {
+//         eventWithAggregation: repository.EventWithAggregation;
+//         performance: repository.Performance;
+//     }) => {
+//         // 過去のイベントを検索
+//         const startThrough = moment()
+//             .add(-1, 'week')
+//             .toDate();
+//         const startFrom = moment(startThrough)
+//             .add(-1, 'week')
+//             .toDate();
+//         const eventIds = await repos.performance.distinct('_id', {
+//             startFrom: startFrom,
+//             startThrough: startThrough
+//         });
 
-        if (eventIds.length > 0) {
-            await repos.eventWithAggregation.deleteByIds({ ids: eventIds });
-        }
-    };
-}
+//         if (eventIds.length > 0) {
+//             await repos.eventWithAggregation.deleteByIds({ ids: eventIds });
+//         }
+//     };
+// }
 
 /**
  * イベント指定で集計する
@@ -151,7 +151,7 @@ function aggregateByEvent(params: {
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
-        eventWithAggregation: repository.EventWithAggregation;
+        // eventWithAggregation: repository.EventWithAggregation;
         reservation: repository.Reservation;
         performance: repository.Performance;
     }) => {
@@ -253,7 +253,7 @@ function aggregateByEvent(params: {
             debug('aggregated!', aggregation);
 
             // 保管
-            await repos.eventWithAggregation.store([aggregation], EVENT_AGGREGATION_EXPIRES_IN_SECONDS);
+            // await repos.eventWithAggregation.store([aggregation], EVENT_AGGREGATION_EXPIRES_IN_SECONDS);
 
             // パフォーマンスリポジトリにも保管
             await saveAggregation2performance(aggregation)(repos);

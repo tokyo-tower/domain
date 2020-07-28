@@ -6,6 +6,8 @@ import PerformanceModel from './mongoose/model/performance';
 
 export type ISearchConditions = factory.performance.ISearchConditions;
 
+export type IPerformance = factory.performance.IPerformance & factory.performance.IPerformanceWithAggregation;
+
 /**
  * イベントリポジトリ
  */
@@ -68,7 +70,7 @@ export class MongoRepository {
      */
     public async search(
         params: ISearchConditions, projection?: any | null
-    ): Promise<factory.performance.IPerformance[]> {
+    ): Promise<IPerformance[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.performanceModel.find(
@@ -109,7 +111,7 @@ export class MongoRepository {
             .exec();
     }
 
-    public async findById(id: string): Promise<factory.performance.IPerformance> {
+    public async findById(id: string): Promise<IPerformance> {
         const doc = await this.performanceModel.findById(id)
             .exec();
 
