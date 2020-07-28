@@ -15,10 +15,20 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
-const project: factory.project.IProject = {
+const project: cinerinoapi.factory.project.IProject = {
     typeOf: cinerinoapi.factory.organizationType.Project,
     id: <string>process.env.PROJECT_ID
 };
+
+export enum SeatingType {
+    Normal = 'Normal',
+    Wheelchair = 'Wheelchair'
+}
+
+export enum TicketTypeCategory {
+    Normal = 'Normal',
+    Wheelchair = 'Wheelchair'
+}
 
 const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
     ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)
@@ -137,7 +147,7 @@ function makeAggregationsExpired() {
  */
 function aggregateByEvent(params: {
     checkGates: factory.place.checkinGate.IPlace[];
-    event: factory.performance.IPerformanceWithDetails;
+    event: factory.performance.IPerformance;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (repos: {
@@ -185,17 +195,17 @@ function aggregateByEvent(params: {
 
             // オファーごとの集計
             const offersAggregation = await Promise.all(offers.map(async (offer) => {
-                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                let ticketTypeCategory = TicketTypeCategory.Normal;
                 if (Array.isArray(offer.additionalProperty)) {
                     const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
                     if (categoryProperty !== undefined) {
-                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                        ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
                     }
                 }
 
                 return {
                     id: <string>offer.id,
-                    remainingAttendeeCapacity: (ticketTypeCategory === factory.ticketTypeCategory.Wheelchair)
+                    remainingAttendeeCapacity: (ticketTypeCategory === TicketTypeCategory.Wheelchair)
                         ? remainingAttendeeCapacityForWheelchair
                         : remainingAttendeeCapacity,
                     reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
@@ -292,8 +302,8 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
  * 残席数を集計する
  */
 function aggregateRemainingAttendeeCapacity(params: {
-    performance: factory.performance.IPerformanceWithDetails;
-    project: factory.project.IProject;
+    performance: factory.performance.IPerformance;
+    project: cinerinoapi.factory.project.IProject;
 }) {
     // tslint:disable-next-line:max-func-body-length
     return async (__: {
@@ -329,9 +339,9 @@ function aggregateRemainingAttendeeCapacity(params: {
         // maximumAttendeeCapacityは一般座席数
         const maximumAttendeeCapacity = sectionOffer.containsPlace.filter(
             (p) => {
-                return (typeof p.seatingType === 'string' && p.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                return (typeof p.seatingType === 'string' && p.seatingType === SeatingType.Normal)
                     || (Array.isArray(p.seatingType) &&
-                        (<any>p.seatingType).includes(<string>factory.place.movieTheater.SeatingType.Normal));
+                        (<any>p.seatingType).includes(<string>SeatingType.Normal));
             }
         ).length;
         let remainingAttendeeCapacity = maximumAttendeeCapacity;
@@ -348,15 +358,15 @@ function aggregateRemainingAttendeeCapacity(params: {
 
             // 一般座席
             const normalSeats = availableSeats.filter(
-                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Normal)
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === SeatingType.Normal)
                     || (Array.isArray(s.seatingType) &&
-                        (<any>s.seatingType).includes(<string>factory.place.movieTheater.SeatingType.Normal))
+                        (<any>s.seatingType).includes(<string>SeatingType.Normal))
             );
             // 全車椅子座席
             const wheelChairSeats = availableSeats.filter(
-                (s) => (typeof s.seatingType === 'string' && s.seatingType === factory.place.movieTheater.SeatingType.Wheelchair)
+                (s) => (typeof s.seatingType === 'string' && s.seatingType === SeatingType.Wheelchair)
                     || (Array.isArray(s.seatingType) &&
-                        (<any>s.seatingType).includes(<string>factory.place.movieTheater.SeatingType.Wheelchair))
+                        (<any>s.seatingType).includes(<string>SeatingType.Wheelchair))
             );
 
             const seats = sectionOffer.containsPlace;
@@ -396,7 +406,7 @@ function aggregateRemainingAttendeeCapacity(params: {
                     }
                 }
 
-                return ticketTypeCategory === factory.ticketTypeCategory.Wheelchair;
+                return ticketTypeCategory === TicketTypeCategory.Wheelchair;
             });
             if (wheelChairOffer !== undefined && wheelChairOffer.availability === factory.chevre.itemAvailability.OutOfStock) {
                 remainingAttendeeCapacityForWheelchair = 0;
@@ -460,11 +470,11 @@ function aggregateCheckinCount(
         return {
             where: checkinGate.identifier,
             checkinCountsByTicketType: offers.map((offer) => {
-                let ticketTypeCategory = factory.ticketTypeCategory.Normal;
+                let ticketTypeCategory = TicketTypeCategory.Normal;
                 if (Array.isArray(offer.additionalProperty)) {
                     const categoryProperty = offer.additionalProperty.find((p) => p.name === 'category');
                     if (categoryProperty !== undefined) {
-                        ticketTypeCategory = <factory.ticketTypeCategory>categoryProperty.value;
+                        ticketTypeCategory = <TicketTypeCategory>categoryProperty.value;
                     }
                 }
 

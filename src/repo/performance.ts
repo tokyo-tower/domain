@@ -10,7 +10,7 @@ export type ISearchConditions = factory.performance.ISearchConditions;
  * イベントリポジトリ
  */
 export class MongoRepository {
-    private readonly performanceModel: typeof PerformanceModel;
+    public readonly performanceModel: typeof PerformanceModel;
 
     constructor(connection: Connection) {
         this.performanceModel = connection.model(PerformanceModel.modelName);
@@ -68,7 +68,7 @@ export class MongoRepository {
      */
     public async search(
         params: ISearchConditions, projection?: any | null
-    ): Promise<factory.performance.IPerformanceWithDetails[]> {
+    ): Promise<factory.performance.IPerformance[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.performanceModel.find(
@@ -109,7 +109,7 @@ export class MongoRepository {
             .exec();
     }
 
-    public async findById(id: string): Promise<factory.performance.IPerformanceWithDetails> {
+    public async findById(id: string): Promise<factory.performance.IPerformance> {
         const doc = await this.performanceModel.findById(id)
             .exec();
 
@@ -117,7 +117,7 @@ export class MongoRepository {
             throw new factory.errors.NotFound('performance');
         }
 
-        return <factory.performance.IPerformanceWithDetails>doc.toObject();
+        return doc.toObject();
     }
 
     /**
