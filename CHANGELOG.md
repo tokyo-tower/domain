@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Removed
 
 - 一時イベントリポジトリを削除
+- redisクライアントのエクスポートを削除
 
 ### Fixed
 

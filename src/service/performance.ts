@@ -3,7 +3,6 @@ import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
-// import { RedisRepository as EventWithAggregationRepo } from '../repo/event';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
@@ -32,7 +31,6 @@ export interface ISearchResult {
 
 export type ISearchOperation<T> = (
     performanceRepo: PerformanceRepo
-    // eventWithAggregationRepo: EventWithAggregationRepo
 ) => Promise<T>;
 
 // 作成情報取得
@@ -157,7 +155,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
     // tslint:disable-next-line:max-func-body-length
     return async (
         performanceRepo: PerformanceRepo
-        // eventWithAggregationRepo: EventWithAggregationRepo
     ) => {
         // 作品件数取得
         const filmIds = await performanceRepo.distinct('superEvent.workPerformed.identifier', searchConditions);
@@ -176,13 +173,8 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         });
         debug(performances.length, 'performances found.');
 
-        // 空席情報を追加
-        // const eventsWithAggregation = await eventWithAggregationRepo.findAll();
-        // debug(eventsWithAggregation.length, 'eventsWithAggregation found.');
-
         const data: factory.performance.IPerformanceWithAvailability[] = performances.map((performance) => {
             const ticketTypes = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : [];
-            // const eventWithAggregation = eventsWithAggregation.find((e) => e.id === performance.id);
 
             let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
             if (performance.additionalProperty !== undefined) {

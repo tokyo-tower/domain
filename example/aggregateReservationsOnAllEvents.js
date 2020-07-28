@@ -13,6 +13,7 @@ async function main() {
 
     const cursor = await performanceRepo.performanceModel.find(
         {
+            // _id: { $eq: '200728001001012200' },
             startDate: {
                 $gte: moment()
                     .add(-1, 'week')
