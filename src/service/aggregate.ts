@@ -30,11 +30,6 @@ export enum TicketTypeCategory {
     Wheelchair = 'Wheelchair'
 }
 
-// const EVENT_AGGREGATION_EXPIRES_IN_SECONDS = (process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS !== undefined)
-//     ? Number(process.env.EVENT_AGGREGATION_EXPIRES_IN_SECONDS)
-//     // tslint:disable-next-line:no-magic-numbers
-//     : 86400;
-
 const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = (process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS !== undefined)
     ? Number(process.env.WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS)
     // tslint:disable-next-line:no-magic-numbers
@@ -132,9 +127,6 @@ function aggregateByEvent(params: {
                 typeOf: factory.chevre.reservationType.EventReservation,
                 reservationStatuses: [factory.chevre.reservationStatusType.ReservationConfirmed],
                 reservationFor: { id: performance.id }
-                // additionalProperty: {
-                //     $nin: [{ name: 'extra', value: '1' }]
-                // }
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
@@ -345,7 +337,7 @@ function aggregateRemainingAttendeeCapacity(params: {
                     seatNumber: s.branchCode
                 };
             });
-            // const unavailableSeats = await repos.stock.findUnavailableOffersByEventId({ eventId: params.performance.id });
+
             const unavailableSeatNumbers = unavailableSeats.map((s) => s.seatNumber);
             debug('unavailableSeatNumbers:', unavailableSeatNumbers.length);
 
