@@ -3,7 +3,6 @@
  */
 import * as moment from 'moment';
 import * as mongoose from 'mongoose';
-import * as redis from 'redis';
 
 import { MongoRepository as TaskRepo } from '../repo/task';
 
@@ -21,10 +20,6 @@ export interface IConnectionSettings {
      * MongoDBコネクション
      */
     connection: mongoose.Connection;
-    /**
-     * Redisクライアント
-     */
-    redisClient: redis.RedisClient;
 }
 
 export type TaskOperation<T> = (repos: { task: TaskRepo }) => Promise<T>;

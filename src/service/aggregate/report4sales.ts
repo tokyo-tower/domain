@@ -16,11 +16,7 @@ export enum PurchaserGroup {
     /**
      * 一般
      */
-    Customer = 'Customer',
-    /**
-     * 内部関係者
-     */
-    Staff = 'Staff'
+    Customer = 'Customer'
 }
 
 const purchaserGroupStrings: any = {
@@ -228,38 +224,6 @@ export function createReturnOrderReport(params: {
                 cancellationFee: cancellationFee,
                 orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
             });
-
-            // 購入分のキャンセル料データ
-            // if (reservationIndex === 0) {
-            //     datas.push({
-            //         ...reservation2data(
-            //             {
-            //                 ...r,
-            //                 checkins: []
-            //             },
-            //             unitPrice,
-            //             order,
-            //             dateReturned,
-            //             AggregateUnit.SalesByEndDate,
-            //             purchaserGroup,
-            //             reservationIndex
-            //         ),
-            //         seat: {
-            //             code: ''
-            //         },
-            //         ticketType: {
-            //             name: '',
-            //             charge: cancellationFee.toString(),
-            //             csvCode: ''
-            //         },
-            //         payment_seat_index: '',
-            //         reservationStatus: Status4csv.CancellationFee,
-            //         status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
-            //         cancellationFee: cancellationFee,
-            //         price: cancellationFee.toString(),
-            //         orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
-            //     });
-            // }
         });
 
         // 冪等性の確保!
