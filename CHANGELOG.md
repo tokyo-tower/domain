@@ -10,20 +10,26 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v48.1.0 - 2020-07-31
+
+### Changed
+
 - イベント集計データをperformancesコレクションにも保管するように調整
 - update @tokyotower/factory
 - パフォーマンス検索を最適化
-
-### Deprecated
 
 ### Removed
 
 - 一時イベントリポジトリを削除
 - redisクライアントのエクスポートを削除
-
-### Fixed
-
-### Security
 
 ## v47.1.2 - 2020-07-27
 
