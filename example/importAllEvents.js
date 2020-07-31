@@ -48,17 +48,17 @@ async function main() {
 
     const tasks = [];
     for (const event of events) {
-        const aggregateTask = {
-            name: ttts.factory.taskName.AggregateEventReservations,
+        const importTask = {
+            name: ttts.factory.taskName.ImportEvent,
             project: project,
             status: ttts.factory.taskStatus.Ready,
             runsAt: new Date(),
             remainingNumberOfTries: 3,
             numberOfTried: 0,
             executionResults: [],
-            data: { id: event.id }
+            data: event
         };
-        tasks.push(aggregateTask);
+        tasks.push(importTask);
         console.log('task created', event.id);
     }
 

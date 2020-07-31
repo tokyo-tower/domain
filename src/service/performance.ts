@@ -23,11 +23,7 @@ const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     state: ''
 });
 
-export interface ISearchResult {
-    performances: factory.performance.IPerformanceWithAvailability[];
-    numberOfPerformances: number;
-    filmIds: string[];
-}
+export type ISearchResult = factory.performance.IPerformanceWithAvailability[];
 
 export type ISearchOperation<T> = (
     performanceRepo: PerformanceRepo
@@ -152,16 +148,9 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
  * 検索する
  */
 export function search(searchConditions: factory.performance.ISearchConditions): ISearchOperation<ISearchResult> {
-    // tslint:disable-next-line:max-func-body-length
     return async (
         performanceRepo: PerformanceRepo
     ) => {
-        // 作品件数取得
-        const filmIds = await performanceRepo.distinct('superEvent.workPerformed.identifier', searchConditions);
-
-        // 総数検索
-        const performancesCount = await performanceRepo.count(searchConditions);
-
         const performances = await performanceRepo.search({
             ...searchConditions,
             // tslint:disable-next-line:no-magic-numbers
@@ -173,7 +162,7 @@ export function search(searchConditions: factory.performance.ISearchConditions):
         });
         debug(performances.length, 'performances found.');
 
-        const data: factory.performance.IPerformanceWithAvailability[] = performances.map((performance) => {
+        return performances.map((performance) => {
             const ticketTypes = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : [];
 
             let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
@@ -248,12 +237,6 @@ export function search(searchConditions: factory.performance.ISearchConditions):
                 attributes: attributes
             };
         });
-
-        return {
-            performances: data,
-            numberOfPerformances: performancesCount,
-            filmIds: filmIds
-        };
     };
 }
 
