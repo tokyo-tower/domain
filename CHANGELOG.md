@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - イベント集計データをperformancesコレクションにも保管するように調整
 - update @tokyotower/factory
+- パフォーマンス検索を最適化
 
 ### Deprecated
 
