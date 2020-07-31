@@ -1,19 +1,11 @@
 import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
-import * as createDebug from 'debug';
 import * as moment from 'moment-timezone';
 
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
 import { credentials } from '../credentials';
-
-const debug = createDebug('ttts-domain:service');
-
-const MAXIMUM_ATTENDEE_CAPACITY = (process.env.MAXIMUM_ATTENDEE_CAPACITY !== undefined)
-    ? Number(process.env.MAXIMUM_ATTENDEE_CAPACITY)
-    // tslint:disable-next-line:no-magic-numbers
-    : 41;
 
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.cinerino.authorizeServerDomain,
@@ -25,9 +17,9 @@ const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
 
 export type ISearchResult = factory.performance.IPerformanceWithAvailability[];
 
-export type ISearchOperation<T> = (
-    performanceRepo: PerformanceRepo
-) => Promise<T>;
+export type ISearchOperation<T> = (repos: {
+    performance: PerformanceRepo;
+}) => Promise<T>;
 
 // 作成情報取得
 const setting = {
@@ -42,7 +34,6 @@ const setting = {
 };
 
 export function importFromCinerino(params: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         performance: PerformanceRepo;
         task: TaskRepo;
@@ -54,8 +45,6 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             auth: cinerinoAuthClient,
             project: { id: event.project.id }
         });
-
-        const offerCodes = setting.offerCodes;
 
         // ひとつめのイベントのオファー検索
         const offers = await eventService.searchTicketOffers({
@@ -71,7 +60,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
 
         const unitPriceOffers: cinerinoapi.factory.chevre.offer.IUnitPriceOffer[] = offers
             // 指定のオファーコードに限定する
-            .filter((o) => offerCodes.includes(o.identifier))
+            .filter((o) => setting.offerCodes.includes(o.identifier))
             .map((o) => {
                 // tslint:disable-next-line:max-line-length
                 const unitPriceSpec = <cinerinoapi.factory.chevre.priceSpecification.IPriceSpecification<cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification>>
@@ -85,13 +74,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 };
             });
 
-        let tourNumber = '';
-        if (Array.isArray(event.additionalProperty)) {
-            const tourNumberProperty = event.additionalProperty.find((p) => p.name === 'tourNumber');
-            if (tourNumberProperty !== undefined) {
-                tourNumber = tourNumberProperty.value;
-            }
-        }
+        const tourNumber = event.additionalProperty?.find((p) => p.name === 'tourNumber')?.value;
 
         // パフォーマンス登録
         const performance: factory.performance.IPerformance = {
@@ -111,7 +94,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             },
             additionalProperty: event.additionalProperty,
             ttts_extension: {
-                tour_number: tourNumber,
+                tour_number: (typeof tourNumber === 'string') ? tourNumber : '',
                 ev_service_status: factory.performance.EvServiceStatus.Normal,
                 ev_service_update_user: '',
                 online_sales_status: factory.performance.OnlineSalesStatus.Normal,
@@ -148,95 +131,78 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
  * 検索する
  */
 export function search(searchConditions: factory.performance.ISearchConditions): ISearchOperation<ISearchResult> {
-    return async (
-        performanceRepo: PerformanceRepo
-    ) => {
-        const performances = await performanceRepo.search({
-            ...searchConditions,
-            // tslint:disable-next-line:no-magic-numbers
-            limit: (searchConditions.limit !== undefined) ? searchConditions.limit : 1000,
-            page: (searchConditions.page !== undefined) ? searchConditions.page : 1,
-            sort: (searchConditions.sort !== undefined)
-                ? searchConditions.sort
-                : { startDate: 1 }
-        });
-        debug(performances.length, 'performances found.');
+    return async (repos: {
+        performance: PerformanceRepo;
+    }) => {
+        const performances = await repos.performance.search(searchConditions);
 
-        return performances.map((performance) => {
-            const ticketTypes = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : [];
+        return performances.map(performance2result);
+    };
+}
 
-            let tourNumber: string = (<any>performance).tour_number; // 古いデーターに対する互換性対応
-            if (performance.additionalProperty !== undefined) {
-                const tourNumberProperty = performance.additionalProperty.find((p) => p.name === 'tourNumber');
-                if (tourNumberProperty !== undefined) {
-                    tourNumber = tourNumberProperty.value;
-                }
-            }
+function performance2result(
+    performance: factory.performance.IPerformance & factory.performance.IPerformanceWithAggregation
+): factory.performance.IPerformanceWithAvailability {
+    const ticketTypes = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : [];
+    const tourNumber = performance.additionalProperty?.find((p) => p.name === 'tourNumber')?.value;
+    const attributes: any = {
+        day: moment(performance.startDate)
+            .tz('Asia/Tokyo')
+            .format('YYYYMMDD'),
+        open_time: moment(performance.doorTime)
+            .tz('Asia/Tokyo')
+            .format('HHmm'),
+        start_time: moment(performance.startDate)
+            .tz('Asia/Tokyo')
+            .format('HHmm'),
+        end_time: moment(performance.endDate)
+            .tz('Asia/Tokyo')
+            .format('HHmm'),
+        seat_status: (typeof performance.remainingAttendeeCapacity === 'number')
+            ? performance.remainingAttendeeCapacity
+            : undefined,
+        tour_number: tourNumber,
+        wheelchair_available: (typeof performance.remainingAttendeeCapacityForWheelchair === 'number')
+            ? performance.remainingAttendeeCapacityForWheelchair
+            : undefined,
+        ticket_types: ticketTypes.map((ticketType) => {
+            const offerAggregation = (Array.isArray(performance.offers))
+                ? performance.offers.find((o) => o.id === ticketType.id)
+                : undefined;
 
-            const attributes = {
-                day: moment(performance.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
-                open_time: moment(performance.doorTime).tz('Asia/Tokyo').format('HHmm'),
-                start_time: moment(performance.startDate).tz('Asia/Tokyo').format('HHmm'),
-                end_time: moment(performance.endDate).tz('Asia/Tokyo').format('HHmm'),
-                seat_status: (typeof performance.remainingAttendeeCapacity === 'number')
-                    ? performance.remainingAttendeeCapacity
-                    : undefined,
-                tour_number: tourNumber,
-                wheelchair_available: (typeof performance.remainingAttendeeCapacityForWheelchair === 'number')
-                    ? performance.remainingAttendeeCapacityForWheelchair
-                    : undefined,
-                ticket_types: ticketTypes.map((ticketType) => {
-                    const offerAggregation = (Array.isArray(performance.offers))
-                        ? performance.offers.find((o) => o.id === ticketType.id)
-                        : undefined;
-
-                    const unitPriceSpec = ticketType.priceSpecification;
-
-                    return {
-                        name: ticketType.name,
-                        id: ticketType.identifier, // POSに受け渡すのは券種IDでなく券種コードなので要注意
-                        // POSに対するAPI互換性維持のため、charge属性追加
-                        charge: (unitPriceSpec !== undefined) ? unitPriceSpec.price : undefined,
-                        available_num: (offerAggregation !== undefined) ? offerAggregation.remainingAttendeeCapacity : undefined
-                    };
-                }),
-                online_sales_status: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.online_sales_status : factory.performance.OnlineSalesStatus.Normal,
-                refunded_count: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.refunded_count : undefined,
-                refund_status: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.refund_status : undefined,
-                ev_service_status: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.ev_service_status : undefined
-            };
+            const unitPriceSpec = ticketType.priceSpecification;
 
             return {
-                ...performance,
-                id: performance.id,
-                doorTime: performance.doorTime,
-                startDate: performance.startDate,
-                endDate: performance.endDate,
-                duration: performance.duration,
-                tourNumber: tourNumber,
-                evServiceStatus: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.ev_service_status
-                    : factory.performance.EvServiceStatus.Normal,
-                onlineSalesStatus: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.online_sales_status
-                    : factory.performance.OnlineSalesStatus.Normal,
-                maximumAttendeeCapacity: MAXIMUM_ATTENDEE_CAPACITY,
-                remainingAttendeeCapacity: (typeof performance.remainingAttendeeCapacity === 'number')
-                    ? performance.remainingAttendeeCapacity
-                    : undefined,
-                remainingAttendeeCapacityForWheelchair: (typeof performance.remainingAttendeeCapacityForWheelchair === 'number')
-                    ? performance.remainingAttendeeCapacityForWheelchair
-                    : undefined,
-                extension: (performance.ttts_extension !== undefined) ? performance.ttts_extension : <any>{},
-                additionalProperty: performance.additionalProperty,
-                // attributes属性は、POSに対するAPI互換性維持のため
-                attributes: attributes
+                name: ticketType.name,
+                id: ticketType.identifier, // POSに受け渡すのは券種IDでなく券種コードなので要注意
+                // POSに対するAPI互換性維持のため、charge属性追加
+                charge: (unitPriceSpec !== undefined) ? unitPriceSpec.price : undefined,
+                available_num: (offerAggregation !== undefined) ? offerAggregation.remainingAttendeeCapacity : undefined
             };
-        });
+        }),
+        online_sales_status: (performance.ttts_extension !== undefined)
+            ? performance.ttts_extension.online_sales_status : factory.performance.OnlineSalesStatus.Normal,
+        refunded_count: (performance.ttts_extension !== undefined)
+            ? performance.ttts_extension.refunded_count : undefined,
+        refund_status: (performance.ttts_extension !== undefined)
+            ? performance.ttts_extension.refund_status : undefined,
+        ev_service_status: (performance.ttts_extension !== undefined)
+            ? performance.ttts_extension.ev_service_status : undefined
+    };
+
+    return {
+        ...performance,
+        evServiceStatus: (performance.ttts_extension !== undefined)
+            ? performance.ttts_extension.ev_service_status
+            : factory.performance.EvServiceStatus.Normal,
+        onlineSalesStatus: (performance.ttts_extension !== undefined)
+            ? performance.ttts_extension.online_sales_status
+            : factory.performance.OnlineSalesStatus.Normal,
+        extension: performance.ttts_extension,
+        ...{
+            attributes: attributes, // attributes属性は、POSに対するAPI互換性維持のため
+            tourNumber: tourNumber
+        }
     };
 }
 
