@@ -41,7 +41,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
         const event = params;
 
         const eventService = new cinerinoapi.service.Event({
-            endpoint: <string>process.env.CINERINO_API_ENDPOINT,
+            endpoint: credentials.cinerino.endpoint,
             auth: cinerinoAuthClient,
             project: { id: event.project.id }
         });

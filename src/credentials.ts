@@ -5,7 +5,8 @@ export const credentials = {
     cinerino: {
         authorizeServerDomain: <string>process.env.CINERINO_AUTHORIZE_SERVER_DOMAIN,
         clientId: <string>process.env.CINERINO_CLIENT_ID,
-        clientSecret: <string>process.env.CINERINO_CLIENT_SECRET
+        clientSecret: <string>process.env.CINERINO_CLIENT_SECRET,
+        endpoint: <string>process.env.CINERINO_API_ENDPOINT
     },
     lineNotify: {
         url: <string>process.env.LINE_NOTIFY_URL,
