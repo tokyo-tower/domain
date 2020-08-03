@@ -413,13 +413,17 @@ export class MongoRepository {
     /**
      * 予約検索
      */
-    public async  search(params: ISearchConditions, projection?: any | null): Promise<IReservation[]> {
+    public async search(params: ISearchConditions, projection?: any | null): Promise<IReservation[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.reservationModel.find(
             (andConditions.length > 0) ? { $and: andConditions } : {},
             {
-                ...(projection === undefined || projection === null) ? { __v: 0 } : undefined,
+                ...(projection === undefined || projection === null) ? {
+                    __v: 0,
+                    created_at: 0,
+                    updated_at: 0
+                } : undefined,
                 ...projection
             }
         );
@@ -445,7 +449,7 @@ export class MongoRepository {
     /**
      * 予約検索
      */
-    public async  distinct(field: string, params: ISearchConditions): Promise<any[]> {
+    public async distinct(field: string, params: ISearchConditions): Promise<any[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.reservationModel.distinct(
@@ -460,8 +464,15 @@ export class MongoRepository {
     /**
      * 予約取得
      */
-    public async  findById(params: { id: string }): Promise<IReservation> {
-        const doc = await this.reservationModel.findById(params.id)
+    public async findById(params: { id: string }): Promise<IReservation> {
+        const doc = await this.reservationModel.findById(
+            params.id,
+            {
+                __v: 0,
+                created_at: 0,
+                updated_at: 0
+            }
+        )
             .exec();
 
         if (doc === null) {
@@ -474,7 +485,7 @@ export class MongoRepository {
     /**
      * 予約確定
      */
-    public async  confirm(params: IReservation) {
+    public async confirm(params: IReservation) {
         await this.saveEventReservation(params);
     }
 

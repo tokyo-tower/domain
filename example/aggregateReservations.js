@@ -8,7 +8,7 @@ async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
 
     await ttts.service.aggregate.aggregateEventReservations({
-        id: '191115001001011745'
+        id: '200901001001010900'
     })({
         performance: new ttts.repository.Performance(mongoose.connection),
         reservation: new ttts.repository.Reservation(mongoose.connection)
