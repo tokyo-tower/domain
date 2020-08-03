@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- イベント予約集計処理を最適化
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v48.2.1 - 2020-08-03
+
+### Changed
+
+- イベント予約集計処理を最適化
 
 ## v48.2.0 - 2020-07-31
 
