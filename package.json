@@ -9,7 +9,7 @@
     }
   ],
   "dependencies": {
-    "@cinerino/sdk": "^1.3.2",
+    "@cinerino/sdk": "^1.4.0",
     "@sendgrid/mail": "6.4.0",
     "@tokyotower/factory": "^28.2.0",
     "debug": "^3.2.6",
