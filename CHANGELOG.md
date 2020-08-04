@@ -10,17 +10,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @cinerino/sdk
-
 ### Deprecated
 
 ### Removed
 
-- パフォーマンス検索サービスを削除
-
 ### Fixed
 
 ### Security
+
+## v48.3.0 - 2020-08-04
+
+### Changed
+
+- update @cinerino/sdk
+
+### Removed
+
+- パフォーマンス検索サービスを削除
 
 ## v48.2.1 - 2020-08-03
 
