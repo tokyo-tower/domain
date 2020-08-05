@@ -134,7 +134,7 @@ export class MongoRepository {
             superEvent: performance.superEvent,
             location: performance.location,
             additionalProperty: performance.additionalProperty,
-            ticket_type_group: performance.ticket_type_group
+            ...(performance.ticket_type_group !== undefined) ? { ticket_type_group: performance.ticket_type_group } : undefined
         };
 
         const setOnInsert = performance;
@@ -145,7 +145,9 @@ export class MongoRepository {
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        delete setOnInsert.ticket_type_group;
+        if (setOnInsert.ticket_type_group !== undefined) {
+            delete setOnInsert.ticket_type_group;
+        }
 
         await this.performanceModel.findByIdAndUpdate(
             performance.id,

@@ -7,6 +7,8 @@ import { MongoRepository as TaskRepo } from '../repo/task';
 
 import { credentials } from '../credentials';
 
+const USE_IMPORT_OFFERS = process.env.USE_IMPORT_OFFERS === '1';
+
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.cinerino.authorizeServerDomain,
     clientId: credentials.cinerino.clientId,
@@ -27,6 +29,7 @@ const setting = {
     ]
 };
 
+// tslint:disable-next-line:max-func-body-length
 export function importFromCinerino(params: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>) {
     return async (repos: {
         performance: PerformanceRepo;
@@ -40,33 +43,37 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             project: { id: event.project.id }
         });
 
-        // ひとつめのイベントのオファー検索
-        const offers = await eventService.searchTicketOffers({
-            event: { id: event.id },
-            seller: {
-                typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
-                id: <string>event.offers?.seller?.id
-            },
-            store: {
-                id: credentials.cinerino.clientId
-            }
-        });
+        let unitPriceOffers: cinerinoapi.factory.chevre.offer.IUnitPriceOffer[] | undefined;
 
-        const unitPriceOffers: cinerinoapi.factory.chevre.offer.IUnitPriceOffer[] = offers
-            // 指定のオファーコードに限定する
-            .filter((o) => setting.offerCodes.includes(o.identifier))
-            .map((o) => {
-                // tslint:disable-next-line:max-line-length
-                const unitPriceSpec = <cinerinoapi.factory.chevre.priceSpecification.IPriceSpecification<cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification>>
-                    o.priceSpecification.priceComponent.find(
-                        (p) => p.typeOf === cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification
-                    );
-
-                return {
-                    ...o,
-                    priceSpecification: unitPriceSpec
-                };
+        if (USE_IMPORT_OFFERS) {
+            // ひとつめのイベントのオファー検索
+            const offers = await eventService.searchTicketOffers({
+                event: { id: event.id },
+                seller: {
+                    typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
+                    id: <string>event.offers?.seller?.id
+                },
+                store: {
+                    id: credentials.cinerino.clientId
+                }
             });
+
+            unitPriceOffers = offers
+                // 指定のオファーコードに限定する
+                .filter((o) => setting.offerCodes.includes(o.identifier))
+                .map((o) => {
+                    // tslint:disable-next-line:max-line-length
+                    const unitPriceSpec = <cinerinoapi.factory.chevre.priceSpecification.IPriceSpecification<cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification>>
+                        o.priceSpecification.priceComponent.find(
+                            (p) => p.typeOf === cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification
+                        );
+
+                    return {
+                        ...o,
+                        priceSpecification: unitPriceSpec
+                    };
+                });
+        }
 
         const tourNumber = event.additionalProperty?.find((p) => p.name === 'tourNumber')?.value;
 
@@ -97,11 +104,16 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 refund_update_user: '',
                 refunded_count: 0
             },
-            ticket_type_group: {
-                id: <string>event.hasOfferCatalog?.id,
-                ticket_types: unitPriceOffers,
-                name: { ja: 'トップデッキツアー料金改定', en: 'Top Deck Tour' }
-            }
+            ...(Array.isArray(unitPriceOffers))
+                ? {
+                    ticket_type_group: {
+                        id: <string>event.hasOfferCatalog?.id,
+                        ticket_types: unitPriceOffers,
+                        name: { ja: 'トップデッキツアー料金改定', en: 'Top Deck Tour' }
+                    }
+                }
+                : undefined
+
         };
 
         await repos.performance.saveIfNotExists(performance);
