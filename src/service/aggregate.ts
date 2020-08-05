@@ -105,10 +105,12 @@ export function aggregateEventReservations(params: {
 /**
  * イベント指定で集計する
  */
+// tslint:disable-next-line:max-func-body-length
 function aggregateByEvent(params: {
     checkGates: factory.place.checkinGate.IPlace[];
     event: factory.performance.IPerformance;
 }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         reservation: repository.Reservation;
         performance: repository.Performance;
@@ -137,16 +139,29 @@ function aggregateByEvent(params: {
         let aggregation: factory.performance.IPerformanceWithAggregation;
 
         try {
+            // Chevreでイベント取得
+            const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: performance.id });
+
             const {
                 maximumAttendeeCapacity,
                 remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair
-            } = await aggregateRemainingAttendeeCapacity({ performance: { id: performance.id } })();
+            } = await aggregateRemainingAttendeeCapacity({ event })();
 
-            let offers = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : undefined;
-            if (offers === undefined) {
-                offers = [];
-            }
+            // オファーリストをchevreで検索
+            const offers = await eventService.searchTicketOffers({
+                event: { id: performance.id },
+                seller: {
+                    typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
+                    id: <string>event.offers?.seller?.id
+                },
+                store: { id: credentials.cinerino.clientId }
+            });
+
+            // let offers = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : undefined;
+            // if (offers === undefined) {
+            //     offers = [];
+            // }
 
             // オファーごとの集計
             const offersAggregation = await Promise.all(offers.map(async (offer) => {
@@ -248,10 +263,11 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
  * 残席数を集計する
  */
 function aggregateRemainingAttendeeCapacity(params: {
-    performance: { id: string };
+    event: cinerinoapi.factory.chevre.event.screeningEvent.IEvent;
 }) {
     return async () => {
-        const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: params.performance.id });
+        const event = params.event;
+        // const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: params.performance.id });
 
         // Chevreのオファーごと集計を利用する場合は↓
         const aggregateOffer = event.aggregateOffer;
@@ -330,7 +346,7 @@ function aggregateRemainingAttendeeCapacity(params: {
 function aggregateCheckinCount(
     checkinGates: factory.place.checkinGate.IPlace[],
     reservations: factory.reservation.event.IReservation[],
-    offers: factory.chevre.offer.IUnitPriceOffer[]
+    offers: cinerinoapi.factory.chevre.event.screeningEvent.ITicketOffer[]
 ): {
     checkinCount: number;
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
