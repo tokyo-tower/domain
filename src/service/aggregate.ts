@@ -105,7 +105,6 @@ export function aggregateEventReservations(params: {
 /**
  * イベント指定で集計する
  */
-// tslint:disable-next-line:max-func-body-length
 function aggregateByEvent(params: {
     checkGates: factory.place.checkinGate.IPlace[];
     event: factory.performance.IPerformance;

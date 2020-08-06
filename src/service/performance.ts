@@ -102,6 +102,10 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 refund_update_user: '',
                 refunded_count: 0
             },
+            ...{
+                evServiceStatus: factory.performance.EvServiceStatus.Normal,
+                onlineSalesStatus: factory.performance.OnlineSalesStatus.Normal
+            },
             ...(Array.isArray(unitPriceOffers))
                 ? {
                     ticket_type_group: {
