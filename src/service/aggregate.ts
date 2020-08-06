@@ -128,8 +128,6 @@ function aggregateByEvent(params: {
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
                 checkins: 1,
-                // ticket_ttts_extension: 1,
-                // reservationFor: 1,
                 reservedTicket: 1
             }
         );
@@ -142,12 +140,6 @@ function aggregateByEvent(params: {
             // Chevreでイベント取得
             const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: performance.id });
 
-            const {
-                maximumAttendeeCapacity,
-                remainingAttendeeCapacity,
-                remainingAttendeeCapacityForWheelchair
-            } = await aggregateRemainingAttendeeCapacity({ event })();
-
             // オファーリストをchevreで検索
             const offers = await eventService.searchTicketOffers({
                 event: { id: performance.id },
@@ -158,6 +150,12 @@ function aggregateByEvent(params: {
                 store: { id: credentials.cinerino.clientId }
             });
 
+            const {
+                maximumAttendeeCapacity,
+                remainingAttendeeCapacity,
+                remainingAttendeeCapacityForWheelchair
+            } = await aggregateRemainingAttendeeCapacity({ event })();
+
             // let offers = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : undefined;
             // if (offers === undefined) {
             //     offers = [];
@@ -165,14 +163,14 @@ function aggregateByEvent(params: {
 
             // オファーごとの集計
             const offersAggregation = await Promise.all(offers.map(async (offer) => {
-                const ticketTypeCategory = offer.additionalProperty?.find((p) => p.name === 'category')?.value;
+                const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
+                // const ticketTypeCategory = offer.additionalProperty?.find((p) => p.name === 'category')?.value;
 
                 return {
                     id: <string>offer.id,
-                    remainingAttendeeCapacity: (ticketTypeCategory === TicketTypeCategory.Wheelchair)
-                        ? remainingAttendeeCapacityForWheelchair
-                        : remainingAttendeeCapacity,
-                    reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
+                    remainingAttendeeCapacity: aggregationByOffer?.remainingAttendeeCapacity,
+                    reservationCount: aggregationByOffer?.aggregateReservation?.reservationCount
+                    // reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
                 };
             }));
 
@@ -196,12 +194,13 @@ function aggregateByEvent(params: {
                 maximumAttendeeCapacity: <number>maximumAttendeeCapacity,
                 remainingAttendeeCapacity: <number>remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: <number>remainingAttendeeCapacityForWheelchair,
-                reservationCount: reservations.length,
+                reservationCount: <number>event.aggregateReservation?.reservationCount,
+                // reservationCount: reservations.length,
                 checkinCount: checkinCountAggregation.checkinCount,
                 reservationCountsByTicketType: offersAggregation.map((offer) => {
                     return {
                         ticketType: offer.id,
-                        count: offer.reservationCount
+                        count: <number>offer.reservationCount
                     };
                 }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere,
@@ -232,11 +231,13 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
                 updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
                 evServiceStatus: params.evServiceStatus,
                 onlineSalesStatus: params.onlineSalesStatus,
-                reservationCount: params.reservationCount,
                 checkinCount: params.checkinCount,
                 reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
                 tourNumber: (<any>params).tourNumber,
+                ...(typeof params.reservationCount === 'number')
+                    ? { reservationCount: params.reservationCount }
+                    : undefined,
                 ...(typeof params.maximumAttendeeCapacity === 'number')
                     ? { maximumAttendeeCapacity: params.maximumAttendeeCapacity }
                     : undefined,
