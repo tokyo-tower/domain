@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v48.5.0 - 2020-08-06
+
+### Changed
+
+- パフォーマンスへのオファー情報のインポートを停止
+
 ## v48.4.0 - 2020-08-06
 
 ### Changed

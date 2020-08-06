@@ -146,9 +146,6 @@ export class MongoRepository {
             additionalProperty: performance.additionalProperty,
             ...(performance.eventStatus !== undefined)
                 ? { eventStatus: performance.eventStatus }
-                : undefined,
-            ...((<any>performance).ticket_type_group !== undefined)
-                ? { ticket_type_group: (<any>performance).ticket_type_group }
                 : undefined
         };
 
@@ -162,9 +159,6 @@ export class MongoRepository {
         delete setOnInsert.additionalProperty;
         if (setOnInsert.eventStatus !== undefined) {
             delete setOnInsert.eventStatus;
-        }
-        if ((<any>setOnInsert).ticket_type_group !== undefined) {
-            delete (<any>setOnInsert).ticket_type_group;
         }
 
         await this.performanceModel.findByIdAndUpdate(
