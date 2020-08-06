@@ -24,7 +24,7 @@ export enum TicketTypeCategory {
     Wheelchair = 'Wheelchair'
 }
 
-const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = 6;
+// const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = 6;
 
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.cinerino.authorizeServerDomain,
@@ -109,6 +109,7 @@ function aggregateByEvent(params: {
     checkGates: factory.place.checkinGate.IPlace[];
     event: factory.performance.IPerformance;
 }) {
+    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         reservation: repository.Reservation;
         performance: repository.Performance;
@@ -126,8 +127,6 @@ function aggregateByEvent(params: {
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
                 checkins: 1,
-                // ticket_ttts_extension: 1,
-                // reservationFor: 1,
                 reservedTicket: 1
             }
         );
@@ -137,27 +136,35 @@ function aggregateByEvent(params: {
         let aggregation: factory.performance.IPerformanceWithAggregation;
 
         try {
+            // Chevreでイベント取得
+            const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: performance.id });
+
+            // オファーリストをchevreで検索
+            const offers = await eventService.searchTicketOffers({
+                event: { id: performance.id },
+                seller: {
+                    typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
+                    id: <string>event.offers?.seller?.id
+                },
+                store: { id: credentials.cinerino.clientId }
+            });
+
             const {
                 maximumAttendeeCapacity,
                 remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair
-            } = await aggregateRemainingAttendeeCapacity({ performance: { id: performance.id } })();
-
-            let offers = (performance.ticket_type_group !== undefined) ? performance.ticket_type_group.ticket_types : undefined;
-            if (offers === undefined) {
-                offers = [];
-            }
+            } = await aggregateRemainingAttendeeCapacity({ event })();
 
             // オファーごとの集計
             const offersAggregation = await Promise.all(offers.map(async (offer) => {
-                const ticketTypeCategory = offer.additionalProperty?.find((p) => p.name === 'category')?.value;
+                const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
+                // const ticketTypeCategory = offer.additionalProperty?.find((p) => p.name === 'category')?.value;
 
                 return {
                     id: <string>offer.id,
-                    remainingAttendeeCapacity: (ticketTypeCategory === TicketTypeCategory.Wheelchair)
-                        ? remainingAttendeeCapacityForWheelchair
-                        : remainingAttendeeCapacity,
-                    reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
+                    remainingAttendeeCapacity: aggregationByOffer?.remainingAttendeeCapacity,
+                    reservationCount: aggregationByOffer?.aggregateReservation?.reservationCount
+                    // reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
                 };
             }));
 
@@ -178,15 +185,16 @@ function aggregateByEvent(params: {
                 onlineSalesStatus: (performance.ttts_extension !== undefined)
                     ? performance.ttts_extension.online_sales_status
                     : factory.performance.OnlineSalesStatus.Normal,
-                maximumAttendeeCapacity: maximumAttendeeCapacity,
-                remainingAttendeeCapacity: remainingAttendeeCapacity,
-                remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
-                reservationCount: reservations.length,
+                maximumAttendeeCapacity: <number>maximumAttendeeCapacity,
+                remainingAttendeeCapacity: <number>remainingAttendeeCapacity,
+                remainingAttendeeCapacityForWheelchair: <number>remainingAttendeeCapacityForWheelchair,
+                reservationCount: <number>event.aggregateReservation?.reservationCount,
+                // reservationCount: reservations.length,
                 checkinCount: checkinCountAggregation.checkinCount,
                 reservationCountsByTicketType: offersAggregation.map((offer) => {
                     return {
                         ticketType: offer.id,
-                        count: offer.reservationCount
+                        count: <number>offer.reservationCount
                     };
                 }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere,
@@ -217,14 +225,22 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
                 updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
                 evServiceStatus: params.evServiceStatus,
                 onlineSalesStatus: params.onlineSalesStatus,
-                maximumAttendeeCapacity: params.maximumAttendeeCapacity,
-                remainingAttendeeCapacity: params.remainingAttendeeCapacity,
-                remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair,
-                reservationCount: params.reservationCount,
                 checkinCount: params.checkinCount,
                 reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
                 tourNumber: (<any>params).tourNumber,
+                ...(typeof params.reservationCount === 'number')
+                    ? { reservationCount: params.reservationCount }
+                    : undefined,
+                ...(typeof params.maximumAttendeeCapacity === 'number')
+                    ? { maximumAttendeeCapacity: params.maximumAttendeeCapacity }
+                    : undefined,
+                ...(typeof params.remainingAttendeeCapacity === 'number')
+                    ? { remainingAttendeeCapacity: params.remainingAttendeeCapacity }
+                    : undefined,
+                ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
+                    ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
+                    : undefined,
                 ...(Array.isArray(params.offers)) ? { offers: params.offers } : undefined
             },
             $unset: {
@@ -242,67 +258,17 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
  * 残席数を集計する
  */
 function aggregateRemainingAttendeeCapacity(params: {
-    performance: { id: string };
+    event: cinerinoapi.factory.chevre.event.screeningEvent.IEvent;
 }) {
     return async () => {
-        const event = await eventService.findById({ id: params.performance.id });
-        const seller = event.offers?.seller;
-        if (seller === undefined) {
-            throw new factory.errors.NotFound('Event Seller');
-        }
+        const event = params.event;
 
-        const screeningRoomSectionOffers = await eventService.searchOffers({ event: { id: event.id } });
-        const ticketOffers = await eventService.searchTicketOffers({
-            event: { id: event.id },
-            seller: {
-                typeOf: <cinerinoapi.factory.organizationType>seller.typeOf,
-                id: <string>seller.id
-            },
-            store: { id: credentials.cinerino.clientId }
-        });
-
-        const sectionOffer = screeningRoomSectionOffers[0];
-
-        // 一般座席
-        const normalSeats = sectionOffer.containsPlace.filter(
-            (s) => (typeof s.seatingType === 'string' && s.seatingType === SeatingType.Normal)
-                || (Array.isArray(s.seatingType) && s.seatingType.includes(SeatingType.Normal))
-        );
-        // 全車椅子座席
-        const wheelChairSeats = sectionOffer.containsPlace.filter(
-            (s) => (typeof s.seatingType === 'string' && s.seatingType === SeatingType.Wheelchair)
-                || (Array.isArray(s.seatingType) && s.seatingType.includes(SeatingType.Wheelchair))
-        );
-
-        // maximumAttendeeCapacityは一般座席数
-        const maximumAttendeeCapacity = normalSeats.length;
-        let remainingAttendeeCapacity = maximumAttendeeCapacity;
-        let remainingAttendeeCapacityForWheelchair = wheelChairSeats.length;
-
-        const availableSeatNumbers = sectionOffer.containsPlace.filter((s) => {
-            return Array.isArray(s.offers)
-                && s.offers.length > 0
-                && s.offers[0]?.availability === cinerinoapi.factory.chevre.itemAvailability.InStock;
-        }).map((s) => s.branchCode);
-        debug('availableSeatNumbers:', availableSeatNumbers.length);
-
-        remainingAttendeeCapacity = normalSeats.filter((s) => availableSeatNumbers.includes(s.branchCode)).length;
-        remainingAttendeeCapacityForWheelchair = wheelChairSeats.filter((s) => availableSeatNumbers.includes(s.branchCode)).length;
-
-        // 車椅子確保分が一般座席になければ車椅子は0(同伴者考慮)
-        if (remainingAttendeeCapacity < WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS + 1) {
-            remainingAttendeeCapacityForWheelchair = 0;
-        }
-
-        // 流入制限保持者がいれば車椅子在庫は0
-        const wheelChairOffer = ticketOffers.find((o) => {
-            const ticketTypeCategory = o.additionalProperty?.find((p) => p.name === 'category')?.value;
-
-            return ticketTypeCategory === TicketTypeCategory.Wheelchair;
-        });
-        if (wheelChairOffer?.availability === factory.chevre.itemAvailability.OutOfStock) {
-            remainingAttendeeCapacityForWheelchair = 0;
-        }
+        // Chevreのオファーごと集計を利用する場合は↓
+        const aggregateOffer = event.aggregateOffer;
+        const maximumAttendeeCapacity = aggregateOffer?.offers?.find((o) => o.identifier === '001')?.maximumAttendeeCapacity;
+        const remainingAttendeeCapacity = aggregateOffer?.offers?.find((o) => o.identifier === '001')?.remainingAttendeeCapacity;
+        const remainingAttendeeCapacityForWheelchair =
+            aggregateOffer?.offers?.find((o) => o.identifier === '004')?.remainingAttendeeCapacity;
 
         return { maximumAttendeeCapacity, remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
     };
@@ -314,7 +280,7 @@ function aggregateRemainingAttendeeCapacity(params: {
 function aggregateCheckinCount(
     checkinGates: factory.place.checkinGate.IPlace[],
     reservations: factory.reservation.event.IReservation[],
-    offers: factory.chevre.offer.IUnitPriceOffer[]
+    offers: cinerinoapi.factory.chevre.event.screeningEvent.ITicketOffer[]
 ): {
     checkinCount: number;
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];

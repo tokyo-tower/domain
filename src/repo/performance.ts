@@ -76,7 +76,13 @@ export class MongoRepository {
         const query = this.performanceModel.find(
             (andConditions.length > 0) ? { $and: andConditions } : {},
             {
-                ...(projection === undefined || projection === null) ? { __v: 0 } : undefined,
+                ...(projection === undefined || projection === null)
+                    ? {
+                        __v: 0,
+                        created_at: 0,
+                        updated_at: 0
+                    }
+                    : undefined,
                 ...projection
             }
         );
@@ -112,7 +118,11 @@ export class MongoRepository {
     }
 
     public async findById(id: string): Promise<IPerformance> {
-        const doc = await this.performanceModel.findById(id)
+        const doc = await this.performanceModel.findById(id, {
+            __v: 0,
+            created_at: 0,
+            updated_at: 0
+        })
             .exec();
 
         if (doc === null) {
@@ -134,7 +144,12 @@ export class MongoRepository {
             superEvent: performance.superEvent,
             location: performance.location,
             additionalProperty: performance.additionalProperty,
-            ticket_type_group: performance.ticket_type_group
+            ...(performance.eventStatus !== undefined)
+                ? { eventStatus: performance.eventStatus }
+                : undefined,
+            ...((<any>performance).ticket_type_group !== undefined)
+                ? { ticket_type_group: (<any>performance).ticket_type_group }
+                : undefined
         };
 
         const setOnInsert = performance;
@@ -145,7 +160,12 @@ export class MongoRepository {
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        delete setOnInsert.ticket_type_group;
+        if (setOnInsert.eventStatus !== undefined) {
+            delete setOnInsert.eventStatus;
+        }
+        if ((<any>setOnInsert).ticket_type_group !== undefined) {
+            delete (<any>setOnInsert).ticket_type_group;
+        }
 
         await this.performanceModel.findByIdAndUpdate(
             performance.id,
