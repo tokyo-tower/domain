@@ -5,75 +5,12 @@ import * as moment from 'moment-timezone';
 import { MongoRepository as PerformanceRepo } from '../repo/performance';
 import { MongoRepository as TaskRepo } from '../repo/task';
 
-import { credentials } from '../credentials';
-
-const USE_IMPORT_OFFERS = process.env.USE_IMPORT_OFFERS === '1';
-
-const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
-    domain: credentials.cinerino.authorizeServerDomain,
-    clientId: credentials.cinerino.clientId,
-    clientSecret: credentials.cinerino.clientSecret,
-    scopes: [],
-    state: ''
-});
-
-// 作成情報取得
-const setting = {
-    offerCodes: [
-        '001',
-        '002',
-        '003',
-        '004',
-        '005',
-        '006'
-    ]
-};
-
-// tslint:disable-next-line:max-func-body-length
 export function importFromCinerino(params: factory.chevre.event.IEvent<factory.chevre.eventType.ScreeningEvent>) {
     return async (repos: {
         performance: PerformanceRepo;
         task: TaskRepo;
     }) => {
         const event = params;
-
-        const eventService = new cinerinoapi.service.Event({
-            endpoint: credentials.cinerino.endpoint,
-            auth: cinerinoAuthClient,
-            project: { id: event.project.id }
-        });
-
-        let unitPriceOffers: cinerinoapi.factory.chevre.offer.IUnitPriceOffer[] | undefined;
-
-        if (USE_IMPORT_OFFERS) {
-            // ひとつめのイベントのオファー検索
-            const offers = await eventService.searchTicketOffers({
-                event: { id: event.id },
-                seller: {
-                    typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
-                    id: <string>event.offers?.seller?.id
-                },
-                store: {
-                    id: credentials.cinerino.clientId
-                }
-            });
-
-            unitPriceOffers = offers
-                // 指定のオファーコードに限定する
-                .filter((o) => setting.offerCodes.includes(o.identifier))
-                .map((o) => {
-                    // tslint:disable-next-line:max-line-length
-                    const unitPriceSpec = <cinerinoapi.factory.chevre.priceSpecification.IPriceSpecification<cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification>>
-                        o.priceSpecification.priceComponent.find(
-                            (p) => p.typeOf === cinerinoapi.factory.chevre.priceSpecificationType.UnitPriceSpecification
-                        );
-
-                    return {
-                        ...o,
-                        priceSpecification: unitPriceSpec
-                    };
-                });
-        }
 
         // パフォーマンス登録
         const performance: factory.performance.IPerformance = {
@@ -105,17 +42,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             ...{
                 evServiceStatus: factory.performance.EvServiceStatus.Normal,
                 onlineSalesStatus: factory.performance.OnlineSalesStatus.Normal
-            },
-            ...(Array.isArray(unitPriceOffers))
-                ? {
-                    ticket_type_group: {
-                        id: <string>event.hasOfferCatalog?.id,
-                        ticket_types: unitPriceOffers,
-                        name: { ja: 'トップデッキツアー料金改定', en: 'Top Deck Tour' }
-                    }
-                }
-                : undefined
-
+            }
         };
 
         await repos.performance.saveIfNotExists(performance);
