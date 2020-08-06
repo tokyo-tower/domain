@@ -75,8 +75,6 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 });
         }
 
-        const tourNumber = event.additionalProperty?.find((p) => p.name === 'tourNumber')?.value;
-
         // パフォーマンス登録
         const performance: factory.performance.IPerformance = {
             id: event.id,
@@ -87,6 +85,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             endDate: moment(event.endDate)
                 .toDate(),
             duration: <string>event.superEvent.duration,
+            eventStatus: event.eventStatus,
             superEvent: event.superEvent,
             location: {
                 id: event.location.branchCode,
@@ -95,7 +94,6 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             },
             additionalProperty: event.additionalProperty,
             ttts_extension: {
-                tour_number: (typeof tourNumber === 'string') ? tourNumber : '',
                 ev_service_status: factory.performance.EvServiceStatus.Normal,
                 ev_service_update_user: '',
                 online_sales_status: factory.performance.OnlineSalesStatus.Normal,
