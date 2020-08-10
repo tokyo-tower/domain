@@ -12,6 +12,8 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
     }) => {
         const event = params;
 
+        const tourNumber = event.additionalProperty?.find((p) => p.name === 'tourNumber')?.value;
+
         // パフォーマンス登録
         const performance: factory.performance.IPerformance = {
             id: event.id,
@@ -41,7 +43,8 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             },
             ...{
                 evServiceStatus: factory.performance.EvServiceStatus.Normal,
-                onlineSalesStatus: factory.performance.OnlineSalesStatus.Normal
+                onlineSalesStatus: factory.performance.OnlineSalesStatus.Normal,
+                tourNumber: tourNumber
             }
         };
 
