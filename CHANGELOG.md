@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- イベント予約集計時にevServiceStatus,onlineSalesStatus,tourNumberを更新しないように調整
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v48.6.0 - 2020-08-10
+
+### Changed
+
+- イベント予約集計時にevServiceStatus,onlineSalesStatus,tourNumberを更新しないように調整
 
 ## v48.5.0 - 2020-08-06
 
