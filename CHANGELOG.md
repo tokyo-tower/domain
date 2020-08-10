@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v48.7.0 - 2020-08-10
+
+### Changed
+
+- パフォーマンスインターフェースを最適化
+
 ## v48.6.0 - 2020-08-10
 
 ### Changed

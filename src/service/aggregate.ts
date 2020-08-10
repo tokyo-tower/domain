@@ -133,7 +133,7 @@ function aggregateByEvent(params: {
         debug(reservations.length, 'reservations found');
 
         debug('creating aggregation...');
-        let aggregation: factory.performance.IPerformanceWithAggregation;
+        let aggregation: factory.performance.IPerformanceAggregation;
 
         try {
             // Chevreでイベント取得
@@ -171,16 +171,6 @@ function aggregateByEvent(params: {
 
             aggregation = {
                 id: performance.id,
-                doorTime: performance.doorTime,
-                startDate: performance.startDate,
-                endDate: performance.endDate,
-                duration: performance.duration,
-                evServiceStatus: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.ev_service_status
-                    : factory.performance.EvServiceStatus.Normal,
-                onlineSalesStatus: (performance.ttts_extension !== undefined)
-                    ? performance.ttts_extension.online_sales_status
-                    : factory.performance.OnlineSalesStatus.Normal,
                 maximumAttendeeCapacity: <number>maximumAttendeeCapacity,
                 remainingAttendeeCapacity: <number>remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: <number>remainingAttendeeCapacityForWheelchair,
@@ -209,7 +199,7 @@ function aggregateByEvent(params: {
 /**
  * パフォーマンスコレクションに集計データを保管する
  */
-function saveAggregation2performance(params: factory.performance.IPerformanceWithAggregation) {
+function saveAggregation2performance(params: factory.performance.IPerformanceAggregation) {
     return async (repos: {
         performance: repository.Performance;
     }) => {
@@ -217,12 +207,9 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
         const update: any = {
             $set: {
                 updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
-                // evServiceStatus: params.evServiceStatus,
-                // onlineSalesStatus: params.onlineSalesStatus,
                 checkinCount: params.checkinCount,
                 reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
-                // tourNumber: (<any>params).tourNumber,
                 ...(typeof params.reservationCount === 'number')
                     ? { reservationCount: params.reservationCount }
                     : undefined,
