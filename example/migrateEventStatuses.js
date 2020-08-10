@@ -49,13 +49,20 @@ async function main() {
         i += 1;
         const performance = doc.toObject();
 
-        if (performance.ttts_extension.online_sales_status === ttts.factory.performance.OnlineSalesStatus.Suspended) {
-            console.log('updating...', performance.id, performance.ttts_extension.online_sales_status);
+        let eventStatus;
+        if (performance.ttts_extension.ev_service_status === ttts.factory.performance.EvServiceStatus.Suspended) {
+            eventStatus = cinerino.factory.chevre.eventStatusType.EventCancelled;
+        } else if (performance.ttts_extension.ev_service_status === ttts.factory.performance.EvServiceStatus.Slowdown) {
+            eventStatus = cinerino.factory.chevre.eventStatusType.EventPostponed;
+        }
+
+        if (eventStatus !== undefined) {
+            console.log('updating...', performance.id, performance.ttts_extension.ev_service_status, '->', eventStatus);
             updateCount += 1;
 
             await eventService.updatePartially({
                 id: performance.id,
-                eventStatus: cinerino.factory.chevre.eventStatusType.EventCancelled
+                eventStatus: eventStatus
             });
             console.log('updated', performance.id, i);
         }

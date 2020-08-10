@@ -158,20 +158,16 @@ function aggregateByEvent(params: {
             // オファーごとの集計
             const offersAggregation = await Promise.all(offers.map(async (offer) => {
                 const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
-                // const ticketTypeCategory = offer.additionalProperty?.find((p) => p.name === 'category')?.value;
 
                 return {
                     id: <string>offer.id,
                     remainingAttendeeCapacity: aggregationByOffer?.remainingAttendeeCapacity,
                     reservationCount: aggregationByOffer?.aggregateReservation?.reservationCount
-                    // reservationCount: reservations.filter((r) => r.reservedTicket.ticketType.id === offer.id).length
                 };
             }));
 
             // 入場数の集計を行う
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
-
-            const tourNumber = performance.additionalProperty?.find((p) => p.name === 'tourNumber')?.value;
 
             aggregation = {
                 id: performance.id,
@@ -189,7 +185,6 @@ function aggregateByEvent(params: {
                 remainingAttendeeCapacity: <number>remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: <number>remainingAttendeeCapacityForWheelchair,
                 reservationCount: <number>event.aggregateReservation?.reservationCount,
-                // reservationCount: reservations.length,
                 checkinCount: checkinCountAggregation.checkinCount,
                 reservationCountsByTicketType: offersAggregation.map((offer) => {
                     return {
@@ -198,8 +193,7 @@ function aggregateByEvent(params: {
                     };
                 }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere,
-                offers: offersAggregation,
-                ...{ tourNumber: tourNumber } // 互換性維持のため
+                offers: offersAggregation
             };
             debug('aggregated!', aggregation);
 
@@ -223,12 +217,12 @@ function saveAggregation2performance(params: factory.performance.IPerformanceWit
         const update: any = {
             $set: {
                 updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
-                evServiceStatus: params.evServiceStatus,
-                onlineSalesStatus: params.onlineSalesStatus,
+                // evServiceStatus: params.evServiceStatus,
+                // onlineSalesStatus: params.onlineSalesStatus,
                 checkinCount: params.checkinCount,
                 reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
-                tourNumber: (<any>params).tourNumber,
+                // tourNumber: (<any>params).tourNumber,
                 ...(typeof params.reservationCount === 'number')
                     ? { reservationCount: params.reservationCount }
                     : undefined,
