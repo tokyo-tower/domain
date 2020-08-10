@@ -6,8 +6,6 @@ import PerformanceModel from './mongoose/model/performance';
 
 export type ISearchConditions = factory.performance.ISearchConditions;
 
-export type IPerformance = factory.performance.IPerformance & factory.performance.IPerformanceWithAggregation;
-
 /**
  * イベントリポジトリ
  */
@@ -70,7 +68,7 @@ export class MongoRepository {
      */
     public async search(
         params: ISearchConditions, projection?: any | null
-    ): Promise<IPerformance[]> {
+    ): Promise<factory.performance.IPerformance[]> {
         const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
 
         const query = this.performanceModel.find(
@@ -117,7 +115,7 @@ export class MongoRepository {
             .exec();
     }
 
-    public async findById(id: string): Promise<IPerformance> {
+    public async findById(id: string): Promise<factory.performance.IPerformance> {
         const doc = await this.performanceModel.findById(id, {
             __v: 0,
             created_at: 0,
@@ -143,10 +141,10 @@ export class MongoRepository {
             duration: performance.duration,
             superEvent: performance.superEvent,
             location: performance.location,
-            additionalProperty: performance.additionalProperty,
-            ...(performance.eventStatus !== undefined)
-                ? { eventStatus: performance.eventStatus }
-                : undefined
+            additionalProperty: performance.additionalProperty
+            // ...(performance.eventStatus !== undefined)
+            //     ? { eventStatus: performance.eventStatus }
+            //     : undefined
         };
 
         const setOnInsert = performance;
@@ -157,9 +155,9 @@ export class MongoRepository {
         delete setOnInsert.superEvent;
         delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        if (setOnInsert.eventStatus !== undefined) {
-            delete setOnInsert.eventStatus;
-        }
+        // if (setOnInsert.eventStatus !== undefined) {
+        //     delete setOnInsert.eventStatus;
+        // }
 
         await this.performanceModel.findByIdAndUpdate(
             performance.id,
