@@ -14,12 +14,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
-- パフォーマンスからエレベータ運行ステータスを削除
-- パフォーマンスからオンライン販売ステータスを削除
-
 ### Fixed
 
 ### Security
+
+## v48.8.0 - 2020-08-11
+
+### Removed
+
+- パフォーマンスからエレベータ運行ステータスを削除
+- パフォーマンスからオンライン販売ステータスを削除
 
 ## v48.7.0 - 2020-08-10
 
