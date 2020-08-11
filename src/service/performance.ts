@@ -31,16 +31,17 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
             },
             additionalProperty: event.additionalProperty,
             ttts_extension: {
-                ev_service_status: factory.performance.EvServiceStatus.Normal,
                 ev_service_update_user: '',
-                online_sales_status: factory.performance.OnlineSalesStatus.Normal,
                 online_sales_update_user: '',
                 refund_status: factory.performance.RefundStatus.None,
                 refund_update_user: '',
-                refunded_count: 0
-            },
-            evServiceStatus: factory.performance.EvServiceStatus.Normal,
-            onlineSalesStatus: factory.performance.OnlineSalesStatus.Normal
+                refunded_count: 0,
+                // 暫定対応、不要になったら削除
+                ...{
+                    ev_service_status: factory.performance.EvServiceStatus.Normal,
+                    online_sales_status: factory.performance.OnlineSalesStatus.Normal
+                }
+            }
         };
 
         await repos.performance.saveIfNotExists(performance);
