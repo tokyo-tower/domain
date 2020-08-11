@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- パフォーマンスからエレベータ運行ステータスを削除
+- パフォーマンスからオンライン販売ステータスを削除
+
 ### Fixed
 
 ### Security
