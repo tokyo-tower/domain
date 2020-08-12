@@ -110,7 +110,6 @@ function aggregateByEvent(params: {
     checkGates: factory.place.checkinGate.IPlace[];
     event: factory.performance.IPerformance;
 }) {
-    // tslint:disable-next-line:max-func-body-length
     return async (repos: {
         reservation: repository.Reservation;
         performance: repository.Performance;
@@ -157,15 +156,15 @@ function aggregateByEvent(params: {
             } = await aggregateRemainingAttendeeCapacity({ event })();
 
             // オファーごとの集計
-            const offersAggregation = await Promise.all(offers.map(async (offer) => {
-                const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
+            // const offersAggregation = offers.map((offer) => {
+            //     const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
 
-                return {
-                    id: <string>offer.id,
-                    remainingAttendeeCapacity: aggregationByOffer?.remainingAttendeeCapacity,
-                    reservationCount: aggregationByOffer?.aggregateReservation?.reservationCount
-                };
-            }));
+            //     return {
+            //         id: <string>offer.id,
+            //         remainingAttendeeCapacity: aggregationByOffer?.remainingAttendeeCapacity,
+            //         reservationCount: aggregationByOffer?.aggregateReservation?.reservationCount
+            //     };
+            // });
 
             // 入場数の集計を行う
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
@@ -177,14 +176,22 @@ function aggregateByEvent(params: {
                 remainingAttendeeCapacityForWheelchair: <number>remainingAttendeeCapacityForWheelchair,
                 reservationCount: <number>event.aggregateReservation?.reservationCount,
                 checkinCount: checkinCountAggregation.checkinCount,
-                reservationCountsByTicketType: offersAggregation.map((offer) => {
+                reservationCountsByTicketType: offers.map((offer) => {
+                    const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
+
                     return {
-                        ticketType: offer.id,
-                        count: <number>offer.reservationCount
+                        ticketType: <string>offer.id,
+                        count: <number>aggregationByOffer?.aggregateReservation?.reservationCount
                     };
                 }),
-                checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere,
-                offers: offersAggregation
+                // reservationCountsByTicketType: offersAggregation.map((offer) => {
+                //     return {
+                //         ticketType: offer.id,
+                //         count: <number>offer.reservationCount
+                //     };
+                // }),
+                checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere
+                // offers: offersAggregation
             };
             debug('aggregated!', aggregation);
 
@@ -222,12 +229,13 @@ function saveAggregation2performance(params: factory.performance.IPerformanceAgg
                     : undefined,
                 ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
                     ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
-                    : undefined,
-                ...(Array.isArray(params.offers)) ? { offers: params.offers } : undefined
+                    : undefined
+                // ...(Array.isArray(params.offers)) ? { offers: params.offers } : undefined
             },
             $unset: {
                 noExistingAttributeName: 1, // $unsetは空だとエラーになるので
-                ...(!Array.isArray(params.offers)) ? { offers: '' } : undefined
+                offers: 1
+                // ...(!Array.isArray(params.offers)) ? { offers: '' } : undefined
             }
         };
 

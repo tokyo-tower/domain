@@ -38,9 +38,9 @@ export class MongoRepository {
         }
 
         if (params.ttts_extension !== undefined) {
-            if (params.ttts_extension.online_sales_status !== undefined) {
-                andConditions.push({ 'ttts_extension.online_sales_status': params.ttts_extension.online_sales_status });
-            }
+            // if (params.ttts_extension.online_sales_status !== undefined) {
+            //     andConditions.push({ 'ttts_extension.online_sales_status': params.ttts_extension.online_sales_status });
+            // }
 
             if (params.ttts_extension.online_sales_update_at !== undefined) {
                 andConditions.push({ 'ttts_extension.online_sales_update_at': params.ttts_extension.online_sales_update_at });
