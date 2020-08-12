@@ -16,7 +16,6 @@ export class MongoRepository {
         this.performanceModel = connection.model(PerformanceModel.modelName);
     }
 
-    // tslint:disable-next-line:cyclomatic-complexity max-func-body-length
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
@@ -50,6 +49,12 @@ export class MongoRepository {
             if (params.ttts_extension.refund_status !== undefined) {
                 andConditions.push({ 'ttts_extension.refund_status': params.ttts_extension.refund_status });
             }
+        }
+
+        // イベントステータス
+        const eventStatusIn = params.eventStatus?.$in;
+        if (Array.isArray(eventStatusIn)) {
+            andConditions.push({ eventStatus: { $in: eventStatusIn } });
         }
 
         return andConditions;
