@@ -23,12 +23,12 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 .toDate(),
             duration: <string>event.superEvent.duration,
             eventStatus: event.eventStatus,
-            superEvent: event.superEvent,
-            location: {
-                id: event.location.branchCode,
-                branchCode: event.location.branchCode,
-                name: <any>event.location.name
-            },
+            // superEvent: event.superEvent,
+            // location: {
+            //     id: event.location.branchCode,
+            //     branchCode: event.location.branchCode,
+            //     name: <any>event.location.name
+            // },
             additionalProperty: event.additionalProperty,
             ttts_extension: {
                 ev_service_update_user: '',

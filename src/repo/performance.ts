@@ -144,8 +144,8 @@ export class MongoRepository {
             startDate: performance.startDate,
             endDate: performance.endDate,
             duration: performance.duration,
-            superEvent: performance.superEvent,
-            location: performance.location,
+            // superEvent: performance.superEvent,
+            // location: performance.location,
             additionalProperty: performance.additionalProperty
             // ...(performance.eventStatus !== undefined)
             //     ? { eventStatus: performance.eventStatus }
@@ -157,8 +157,8 @@ export class MongoRepository {
         delete setOnInsert.startDate;
         delete setOnInsert.endDate;
         delete setOnInsert.duration;
-        delete setOnInsert.superEvent;
-        delete setOnInsert.location;
+        // delete setOnInsert.superEvent;
+        // delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
         // if (setOnInsert.eventStatus !== undefined) {
         //     delete setOnInsert.eventStatus;
