@@ -58,7 +58,8 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         reservation: repository.Reservation;
     }) => {
-        const event = await repos.performance.findById(params.id);
+        // const event = await repos.performance.findById(params.id);
+        const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: params.id });
         debug('event', event.id, 'found');
 
         // 同日の、同時刻隊のツアーに関しても集計する(車椅子残席数が影響し合うため)
