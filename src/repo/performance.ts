@@ -38,10 +38,6 @@ export class MongoRepository {
         }
 
         if (params.ttts_extension !== undefined) {
-            // if (params.ttts_extension.online_sales_status !== undefined) {
-            //     andConditions.push({ 'ttts_extension.online_sales_status': params.ttts_extension.online_sales_status });
-            // }
-
             if (params.ttts_extension.online_sales_update_at !== undefined) {
                 andConditions.push({ 'ttts_extension.online_sales_update_at': params.ttts_extension.online_sales_update_at });
             }
@@ -144,12 +140,7 @@ export class MongoRepository {
             startDate: performance.startDate,
             endDate: performance.endDate,
             duration: performance.duration,
-            // superEvent: performance.superEvent,
-            // location: performance.location,
             additionalProperty: performance.additionalProperty
-            // ...(performance.eventStatus !== undefined)
-            //     ? { eventStatus: performance.eventStatus }
-            //     : undefined
         };
 
         const setOnInsert = performance;
@@ -157,12 +148,7 @@ export class MongoRepository {
         delete setOnInsert.startDate;
         delete setOnInsert.endDate;
         delete setOnInsert.duration;
-        // delete setOnInsert.superEvent;
-        // delete setOnInsert.location;
         delete setOnInsert.additionalProperty;
-        // if (setOnInsert.eventStatus !== undefined) {
-        //     delete setOnInsert.eventStatus;
-        // }
 
         await this.performanceModel.findByIdAndUpdate(
             performance.id,

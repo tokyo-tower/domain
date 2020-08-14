@@ -36,20 +36,6 @@ const schema = new mongoose.Schema(
 );
 
 schema.index(
-    {
-        day: 1,
-        start_time: 1
-    }
-);
-schema.index({ start_date: 1 });
-schema.index({ end_date: 1 });
-
-schema.index(
-    { day: 1, start_time: 1, start_date: 1 },
-    { name: 'searchPerformances-v2' }
-);
-
-schema.index(
     { startDate: 1 },
     { name: 'searchByStartDate' }
 );
@@ -72,11 +58,6 @@ schema.index(
 schema.index(
     { endDate: 1, startDate: 1 },
     { name: 'searchByEndDate' }
-);
-
-schema.index(
-    { 'ttts_extension.online_sales_status': 1, startDate: 1 },
-    { name: 'searchByOnlineSalesStatus' }
 );
 
 schema.index(
