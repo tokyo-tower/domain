@@ -23,24 +23,13 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
                 .toDate(),
             duration: <string>event.superEvent.duration,
             eventStatus: event.eventStatus,
-            // superEvent: event.superEvent,
-            // location: {
-            //     id: event.location.branchCode,
-            //     branchCode: event.location.branchCode,
-            //     name: <any>event.location.name
-            // },
             additionalProperty: event.additionalProperty,
             ttts_extension: {
                 ev_service_update_user: '',
                 online_sales_update_user: '',
                 refund_status: factory.performance.RefundStatus.None,
                 refund_update_user: '',
-                refunded_count: 0,
-                // 暫定対応、不要になったら削除
-                ...{
-                    ev_service_status: factory.performance.EvServiceStatus.Normal,
-                    online_sales_status: factory.performance.OnlineSalesStatus.Normal
-                }
+                refunded_count: 0
             }
         };
 

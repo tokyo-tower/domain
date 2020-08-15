@@ -58,7 +58,6 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         reservation: repository.Reservation;
     }) => {
-        // const event = await repos.performance.findById(params.id);
         const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: params.id });
         debug('event', event.id, 'found');
 
@@ -155,17 +154,6 @@ function aggregateByEvent(params: {
                 remainingAttendeeCapacityForWheelchair
             } = await aggregateRemainingAttendeeCapacity({ event })();
 
-            // オファーごとの集計
-            // const offersAggregation = offers.map((offer) => {
-            //     const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
-
-            //     return {
-            //         id: <string>offer.id,
-            //         remainingAttendeeCapacity: aggregationByOffer?.remainingAttendeeCapacity,
-            //         reservationCount: aggregationByOffer?.aggregateReservation?.reservationCount
-            //     };
-            // });
-
             // 入場数の集計を行う
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
 
@@ -184,14 +172,7 @@ function aggregateByEvent(params: {
                         count: <number>aggregationByOffer?.aggregateReservation?.reservationCount
                     };
                 }),
-                // reservationCountsByTicketType: offersAggregation.map((offer) => {
-                //     return {
-                //         ticketType: offer.id,
-                //         count: <number>offer.reservationCount
-                //     };
-                // }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere
-                // offers: offersAggregation
             };
             debug('aggregated!', aggregation);
 
@@ -230,12 +211,9 @@ function saveAggregation2performance(params: factory.performance.IPerformanceAgg
                 ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
                     ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
                     : undefined
-                // ...(Array.isArray(params.offers)) ? { offers: params.offers } : undefined
             },
             $unset: {
-                noExistingAttributeName: 1, // $unsetは空だとエラーになるので
-                offers: 1
-                // ...(!Array.isArray(params.offers)) ? { offers: '' } : undefined
+                noExistingAttributeName: 1 // $unsetは空だとエラーになるので
             }
         };
 
