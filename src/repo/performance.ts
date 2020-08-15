@@ -136,18 +136,14 @@ export class MongoRepository {
      */
     public async saveIfNotExists(performance: factory.performance.IPerformance) {
         const update: any = {
-            doorTime: performance.doorTime,
             startDate: performance.startDate,
             endDate: performance.endDate,
-            duration: performance.duration,
             additionalProperty: performance.additionalProperty
         };
 
         const setOnInsert = performance;
-        delete setOnInsert.doorTime;
         delete setOnInsert.startDate;
         delete setOnInsert.endDate;
-        delete setOnInsert.duration;
         delete setOnInsert.additionalProperty;
 
         await this.performanceModel.findByIdAndUpdate(

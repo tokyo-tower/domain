@@ -15,13 +15,10 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
         // パフォーマンス登録
         const performance: factory.performance.IPerformance = {
             id: event.id,
-            doorTime: moment(event.doorTime)
-                .toDate(),
             startDate: moment(event.startDate)
                 .toDate(),
             endDate: moment(event.endDate)
                 .toDate(),
-            duration: <string>event.superEvent.duration,
             eventStatus: event.eventStatus,
             additionalProperty: event.additionalProperty,
             ttts_extension: {
