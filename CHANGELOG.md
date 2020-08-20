@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- Cinerinoサービス使用時にプロジェクトIDを明示的に指定
+
 ### Deprecated
 
 ### Removed

@@ -14,17 +14,15 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
-export enum SeatingType {
-    Normal = 'Normal',
-    Wheelchair = 'Wheelchair'
-}
+// export enum SeatingType {
+//     Normal = 'Normal',
+//     Wheelchair = 'Wheelchair'
+// }
 
-export enum TicketTypeCategory {
-    Normal = 'Normal',
-    Wheelchair = 'Wheelchair'
-}
-
-// const WHEEL_CHAIR_NUM_ADDITIONAL_STOCKS = 6;
+// export enum TicketTypeCategory {
+//     Normal = 'Normal',
+//     Wheelchair = 'Wheelchair'
+// }
 
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.cinerino.authorizeServerDomain,
@@ -36,12 +34,14 @@ const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
 
 const eventService = new cinerinoapi.service.Event({
     endpoint: credentials.cinerino.endpoint,
-    auth: cinerinoAuthClient
+    auth: cinerinoAuthClient,
+    project: { id: <string>process.env.PROJECT_ID }
 });
 
 const placeService = new cinerinoapi.service.Place({
     endpoint: credentials.cinerino.endpoint,
-    auth: cinerinoAuthClient
+    auth: cinerinoAuthClient,
+    project: { id: <string>process.env.PROJECT_ID }
 });
 
 export {
