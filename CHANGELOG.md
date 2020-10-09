@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - update @cinerino/sdk
 - update @tokyotower/factory
+- 予約集計時に、イベントステータス最終更新時の予約について未入場数を算出するように調整
 
 ### Deprecated
 
