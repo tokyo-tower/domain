@@ -63,7 +63,7 @@ export function onReservationStatusChanged(
         // 集計タスク作成
         const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
             name: <any>factory.taskName.AggregateEventReservations,
-            project: { typeOf: cinerinoapi.factory.organizationType.Project, id: params.project.id },
+            project: { typeOf: cinerinoapi.factory.chevre.organizationType.Project, id: params.project.id },
             status: factory.taskStatus.Ready,
             // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
             // tslint:disable-next-line:no-magic-numbers

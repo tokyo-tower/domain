@@ -35,7 +35,7 @@ export function importFromCinerino(params: factory.chevre.event.IEvent<factory.c
         // 集計タスク作成
         const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
             name: <any>factory.taskName.AggregateEventReservations,
-            project: { typeOf: cinerinoapi.factory.organizationType.Project, id: event.project.id },
+            project: { typeOf: cinerinoapi.factory.chevre.organizationType.Project, id: event.project.id },
             status: factory.taskStatus.Ready,
             runsAt: new Date(),
             remainingNumberOfTries: 3,

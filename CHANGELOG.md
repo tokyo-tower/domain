@@ -10,9 +10,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- update @cinerino/sdk
+- update @tokyotower/factory
+
 ### Deprecated
 
 ### Removed
+
+- Eメール送信タスクを削除
 
 ### Fixed
 

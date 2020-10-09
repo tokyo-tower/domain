@@ -142,7 +142,7 @@ function aggregateByEvent(params: {
             const offers = await eventService.searchTicketOffers({
                 event: { id: performance.id },
                 seller: {
-                    typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
+                    typeOf: <cinerinoapi.factory.chevre.organizationType>event.offers?.seller?.typeOf,
                     id: <string>event.offers?.seller?.id
                 },
                 store: { id: credentials.cinerino.clientId }
