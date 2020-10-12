@@ -30,7 +30,6 @@ var ttts = require("@tokyo-tower/domain");
 | `LINE_NOTIFY_ACCESS_TOKEN`         | true     |               | LINE Notify Credentials |
 | `LINE_NOTIFY_URL`                  | true     |               | LINE Notify Credentials |
 | `PROJECT_ID`                       | true     |               | Project ID              |
-| `SENDGRID_API_KEY`                 | true     |               | SendGrid Credentials    |
 
 ## License
 

@@ -142,7 +142,7 @@ function aggregateByEvent(params: {
             const offers = await eventService.searchTicketOffers({
                 event: { id: performance.id },
                 seller: {
-                    typeOf: <cinerinoapi.factory.organizationType>event.offers?.seller?.typeOf,
+                    typeOf: <cinerinoapi.factory.chevre.organizationType>event.offers?.seller?.typeOf,
                     id: <string>event.offers?.seller?.id
                 },
                 store: { id: credentials.cinerino.clientId }
@@ -156,6 +156,9 @@ function aggregateByEvent(params: {
 
             // 入場数の集計を行う
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
+
+            // イベントステータス最終更新時の予約について未入場数を算出する
+            const { checkedReservations } = aggregateUncheckedReservations(reservations, event);
 
             aggregation = {
                 id: performance.id,
@@ -177,7 +180,7 @@ function aggregateByEvent(params: {
             debug('aggregated!', aggregation);
 
             // パフォーマンスリポジトリにも保管
-            await saveAggregation2performance(aggregation)(repos);
+            await saveAggregation2performance(aggregation, checkedReservations)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error('couldn\'t create aggregation on event', performance.id, error);
@@ -188,7 +191,10 @@ function aggregateByEvent(params: {
 /**
  * パフォーマンスコレクションに集計データを保管する
  */
-function saveAggregation2performance(params: factory.performance.IPerformanceAggregation) {
+function saveAggregation2performance(
+    params: factory.performance.IPerformanceAggregation,
+    checkedReservations: factory.reservation.event.IReservation[]
+) {
     return async (repos: {
         performance: repository.Performance;
     }) => {
@@ -210,7 +216,14 @@ function saveAggregation2performance(params: factory.performance.IPerformanceAgg
                     : undefined,
                 ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
                     ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
-                    : undefined
+                    : undefined,
+                'ttts_extension.checkedReservations': checkedReservations.map((r) => {
+                    return {
+                        typeOf: r.typeOf,
+                        id: r.id,
+                        underName: r.underName
+                    };
+                })
             },
             $unset: {
                 noExistingAttributeName: 1 // $unsetは空だとエラーになるので
@@ -299,5 +312,27 @@ function aggregateCheckinCount(
     return {
         checkinCount: allUniqueCheckins.length,
         checkinCountsByWhere: checkinCountsByWhere
+    };
+}
+
+function aggregateUncheckedReservations(
+    reservations: factory.reservation.event.IReservation[],
+    __: factory.performance.IPerformance
+) {
+    let checkedReservations: factory.reservation.event.IReservation[] = [];
+
+    // 入場予約を検索
+    // const targetReservationIds = reservationsAtLastUpdateDate.map((r) => r.id);
+    checkedReservations = reservations
+        // .filter((r) => targetReservationIds.includes(r.id))
+        .filter((r) => r.checkins.length > 0);
+    // uncheckedReservations = await repos.re.search({
+    //     typeOf: factory.chevre.reservationType.EventReservation,
+    //     ids: targetReservationIds,
+    //     checkins: { $size: 0 } // $sizeが0より大きい、という検索は現時点ではMongoDBが得意ではない
+    // });
+
+    return {
+        checkedReservations
     };
 }
