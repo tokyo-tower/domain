@@ -10,19 +10,25 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- update @cinerino/sdk
-- update @tokyotower/factory
-- 予約集計時に、入場済予約をイベントに保管するように調整
-
 ### Deprecated
 
 ### Removed
 
-- Eメール送信タスクを削除
-
 ### Fixed
 
 ### Security
+
+## v48.15.0 - 2020-10-12
+
+### Changed
+
+- update @cinerino/sdk
+- update @tokyotower/factory
+- 予約集計時に、入場済予約をイベントに保管するように調整
+
+### Removed
+
+- Eメール送信タスクを削除
 
 ## v48.14.0 - 2020-08-20
 
