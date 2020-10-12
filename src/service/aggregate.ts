@@ -158,7 +158,7 @@ function aggregateByEvent(params: {
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
 
             // イベントステータス最終更新時の予約について未入場数を算出する
-            const { uncheckedReservations } = aggregateUncheckedReservations(reservations, event);
+            const { checkedReservations } = aggregateUncheckedReservations(reservations, event);
 
             aggregation = {
                 id: performance.id,
@@ -180,7 +180,7 @@ function aggregateByEvent(params: {
             debug('aggregated!', aggregation);
 
             // パフォーマンスリポジトリにも保管
-            await saveAggregation2performance(aggregation, uncheckedReservations)(repos);
+            await saveAggregation2performance(aggregation, checkedReservations)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error('couldn\'t create aggregation on event', performance.id, error);
@@ -193,7 +193,7 @@ function aggregateByEvent(params: {
  */
 function saveAggregation2performance(
     params: factory.performance.IPerformanceAggregation,
-    uncheckedReservations: factory.reservation.event.IReservation[]
+    checkedReservations: factory.reservation.event.IReservation[]
 ) {
     return async (repos: {
         performance: repository.Performance;
@@ -217,7 +217,7 @@ function saveAggregation2performance(
                 ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
                     ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
                     : undefined,
-                'ttts_extension.uncheckedReservations': uncheckedReservations.map((r) => {
+                'ttts_extension.checkedReservations': checkedReservations.map((r) => {
                     return {
                         typeOf: r.typeOf,
                         id: r.id,
@@ -317,30 +317,22 @@ function aggregateCheckinCount(
 
 function aggregateUncheckedReservations(
     reservations: factory.reservation.event.IReservation[],
-    event: factory.performance.IPerformance
+    __: factory.performance.IPerformance
 ) {
-    let uncheckedReservations: factory.reservation.event.IReservation[] = [];
+    let checkedReservations: factory.reservation.event.IReservation[] = [];
 
-    const extension = event.ttts_extension;
-
-    // 時点での予約
-    const reservationsAtLastUpdateDate = extension?.reservationsAtLastUpdateDate;
-    if (Array.isArray(reservationsAtLastUpdateDate)) {
-        // 時点での予約が存在していれば、そのうちの未入場数を検索
-        if (reservationsAtLastUpdateDate.length > 0) {
-            const targetReservationIds = reservationsAtLastUpdateDate.map((r) => r.id);
-            uncheckedReservations = reservations
-                .filter((r) => targetReservationIds.includes(r.id))
-                .filter((r) => r.checkins.length === 0);
-            // uncheckedReservations = await repos.re.search({
-            //     typeOf: factory.chevre.reservationType.EventReservation,
-            //     ids: targetReservationIds,
-            //     checkins: { $size: 0 } // $sizeが0より大きい、という検索は現時点ではMongoDBが得意ではない
-            // });
-        }
-    }
+    // 入場予約を検索
+    // const targetReservationIds = reservationsAtLastUpdateDate.map((r) => r.id);
+    checkedReservations = reservations
+        // .filter((r) => targetReservationIds.includes(r.id))
+        .filter((r) => r.checkins.length > 0);
+    // uncheckedReservations = await repos.re.search({
+    //     typeOf: factory.chevre.reservationType.EventReservation,
+    //     ids: targetReservationIds,
+    //     checkins: { $size: 0 } // $sizeが0より大きい、という検索は現時点ではMongoDBが得意ではない
+    // });
 
     return {
-        uncheckedReservations
+        checkedReservations
     };
 }
