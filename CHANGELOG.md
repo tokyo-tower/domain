@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 購入番号としてorder.confirmationNumberを使用するように調整
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v48.15.1 - 2020-10-13
+
+### Changed
+
+- 購入番号としてorder.confirmationNumberを使用するように調整
 
 ## v48.15.0 - 2020-10-12
 
