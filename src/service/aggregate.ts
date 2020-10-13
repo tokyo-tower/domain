@@ -126,7 +126,8 @@ function aggregateByEvent(params: {
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
                 checkins: 1,
-                reservedTicket: 1
+                reservedTicket: 1,
+                underName: 1
             }
         );
         debug(reservations.length, 'reservations found');
@@ -219,7 +220,6 @@ function saveAggregation2performance(
                     : undefined,
                 'ttts_extension.checkedReservations': checkedReservations.map((r) => {
                     return {
-                        typeOf: r.typeOf,
                         id: r.id,
                         underName: r.underName
                     };
