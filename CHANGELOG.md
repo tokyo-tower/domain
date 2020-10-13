@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- 予約集計時に、入場済予約をイベントに保管するように調整
+
 ### Deprecated
 
 ### Removed
