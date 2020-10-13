@@ -412,13 +412,7 @@ function reservation2data(
         }
     }
 
-    let paymentNo = '';
-    if (Array.isArray(order.identifier)) {
-        const paymentNoProperty = order.identifier.find((p: any) => p.name === 'paymentNo');
-        if (paymentNoProperty !== undefined) {
-            paymentNo = paymentNoProperty.value;
-        }
-    }
+    const paymentNo = order.confirmationNumber;
 
     return {
         payment_no: paymentNo,
