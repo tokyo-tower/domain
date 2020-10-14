@@ -40,7 +40,7 @@ export function executeByName<T extends factory.taskName>(params: {
         // 未実行のタスクを取得
         let task: factory.task.ITask<any> | null = null;
         try {
-            task = <any>await taskRepo.executeOneByName<any>(params);
+            task = await taskRepo.executeOneByName<any>(params);
         } catch (error) {
             // no op
         }

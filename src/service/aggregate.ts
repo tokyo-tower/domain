@@ -14,16 +14,6 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
-// export enum SeatingType {
-//     Normal = 'Normal',
-//     Wheelchair = 'Wheelchair'
-// }
-
-// export enum TicketTypeCategory {
-//     Normal = 'Normal',
-//     Wheelchair = 'Wheelchair'
-// }
-
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.cinerino.authorizeServerDomain,
     clientId: credentials.cinerino.clientId,
@@ -58,7 +48,7 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         reservation: repository.Reservation;
     }) => {
-        const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: params.id });
+        const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: params.id });
         debug('event', event.id, 'found');
 
         // 同日の、同時刻隊のツアーに関しても集計する(車椅子残席数が影響し合うため)
@@ -137,13 +127,13 @@ function aggregateByEvent(params: {
 
         try {
             // Chevreでイベント取得
-            const event = await eventService.findById<cinerinoapi.factory.chevre.eventType.ScreeningEvent>({ id: performance.id });
+            const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: performance.id });
 
             // オファーリストをchevreで検索
             const offers = await eventService.searchTicketOffers({
                 event: { id: performance.id },
                 seller: {
-                    typeOf: <cinerinoapi.factory.chevre.organizationType>event.offers?.seller?.typeOf,
+                    typeOf: <factory.chevre.organizationType>event.offers?.seller?.typeOf,
                     id: <string>event.offers?.seller?.id
                 },
                 store: { id: credentials.cinerino.clientId }
@@ -239,7 +229,7 @@ function saveAggregation2performance(
  * 残席数を集計する
  */
 function aggregateRemainingAttendeeCapacity(params: {
-    event: cinerinoapi.factory.chevre.event.screeningEvent.IEvent;
+    event: factory.chevre.event.screeningEvent.IEvent;
 }) {
     return async () => {
         const event = params.event;
@@ -261,7 +251,7 @@ function aggregateRemainingAttendeeCapacity(params: {
 function aggregateCheckinCount(
     checkinGates: factory.place.checkinGate.IPlace[],
     reservations: factory.reservation.event.IReservation[],
-    offers: cinerinoapi.factory.chevre.event.screeningEvent.ITicketOffer[]
+    offers: factory.chevre.event.screeningEvent.ITicketOffer[]
 ): {
     checkinCount: number;
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];

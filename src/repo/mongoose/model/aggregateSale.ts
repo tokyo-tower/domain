@@ -7,32 +7,23 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
-        payment_no: String, // 購入番号
+        /**
+         * 予約ID
+         */
+        reservation: mongoose.SchemaTypes.Mixed,
+        /**
+         * 購入番号
+         */
+        payment_no: String,
+        /**
+         * 購入座席インデックス
+         * @deprecated
+         */
         payment_seat_index: Number, // 購入座席インデックス
-        performance: {
-            id: String,
-            startDay: String,
-            startTime: String
-        },
-        theater: mongoose.SchemaTypes.Mixed,
-        screen: mongoose.SchemaTypes.Mixed,
-        film: mongoose.SchemaTypes.Mixed,
+        performance: mongoose.SchemaTypes.Mixed,
         seat: mongoose.SchemaTypes.Mixed,
-        ticketType: {
-            name: String,
-            // リリース当初の間違ったマスターデータをカバーするため
-            csvCode: String,
-            charge: String
-        },
-        customer: {
-            group: String,
-            givenName: String,
-            familyName: String,
-            email: String,
-            telephone: String,
-            segment: String,
-            username: String
-        },
+        ticketType: mongoose.SchemaTypes.Mixed,
+        customer: mongoose.SchemaTypes.Mixed,
         orderDate: Date,
         paymentMethod: String,
         checkedin: String,
@@ -41,8 +32,7 @@ const schema = new mongoose.Schema(
         status_sort: String,
         price: String,
         cancellationFee: Number,
-        date_bucket: Date,
-        aggregateUnit: String
+        date_bucket: Date
     },
     {
         collection: 'aggregateSales',
@@ -54,13 +44,13 @@ const schema = new mongoose.Schema(
             updatedAt: 'updated_at'
         },
         toJSON: {
-            getters: true,
-            virtuals: true,
+            getters: false,
+            virtuals: false,
             minimize: false,
             versionKey: false
         },
         toObject: {
-            getters: true,
+            getters: false,
             virtuals: true,
             minimize: false,
             versionKey: false
@@ -70,23 +60,13 @@ const schema = new mongoose.Schema(
 
 // 検索
 schema.index(
-    {
-        date_bucket: 1,
-        aggregateUnit: 1
-    },
-    {
-        name: 'findByDateBucket'
-    }
+    { date_bucket: 1 },
+    { name: 'searchByDateBucket' }
 );
 
 schema.index(
-    {
-        'performance.startDay': 1,
-        aggregateUnit: 1
-    },
-    {
-        name: 'findByEventStartDate'
-    }
+    { 'performance.startDay': 1 },
+    { name: 'searchByPerformanceStartDay' }
 );
 
 // ソートindex
