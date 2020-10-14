@@ -156,13 +156,15 @@ export class MongoRepository {
                 upsert: true,
                 new: true
             }
-        ).exec();
+        )
+            .exec();
     }
 
     public async updateOne(conditions: any, update: any) {
         await this.performanceModel.findOneAndUpdate(
             conditions,
             update
-        ).exec();
+        )
+            .exec();
     }
 }

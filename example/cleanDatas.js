@@ -7,7 +7,7 @@ async function main() {
 
     const now = new Date();
     const createdThrough = moment(now)
-        .add(-1, 'year')
+        .add(-15, 'months')
         .toDate();
 
     console.log('deleting...createdThrough:', createdThrough);

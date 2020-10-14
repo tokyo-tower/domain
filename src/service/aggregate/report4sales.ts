@@ -31,9 +31,10 @@ const paymentMethodStrings: any = {
  * CSVデータインターフェース
  */
 interface IData {
+    reservation: { id: string };
     // 購入番号
     payment_no: string;
-    payment_seat_index: string;
+    payment_seat_index?: number;
     performance: {
         // パフォーマンスID
         id: string;
@@ -85,7 +86,6 @@ interface IData {
     // 予約ステータス
     reservationStatus: Status4csv;
     date_bucket: Date;
-    aggregateUnit: AggregateUnit;
 }
 // CSV用のステータスコード
 enum Status4csv {
@@ -93,12 +93,6 @@ enum Status4csv {
     Cancelled = 'CANCELLED',
     // キャンセル行ステータス
     CancellationFee = 'CANCELLATION_FEE'
-}
-
-// 集計単位
-enum AggregateUnit {
-    SalesByEndDate = 'SalesByEndDate'
-    // SalesByEventStartDate = 'SalesByEventStartDate'
 }
 
 function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedOffer<any>) {
@@ -135,9 +129,9 @@ export function createPlaceOrderReport(params: {
 
         let purchaserGroup: string = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
-            const customerGroupProperty = order.customer.identifier.find((i) => i.name === 'customerGroup');
-            if (customerGroupProperty !== undefined && typeof customerGroupProperty.value === 'string') {
-                purchaserGroup = customerGroupProperty.value;
+            const customerGroupValue = order.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
+            if (typeof customerGroupValue === 'string') {
+                purchaserGroup = customerGroupValue;
             }
         }
 
@@ -154,7 +148,6 @@ export function createPlaceOrderReport(params: {
                         unitPrice,
                         order,
                         order.orderDate,
-                        AggregateUnit.SalesByEndDate,
                         purchaserGroup,
                         index
                     );
@@ -183,21 +176,19 @@ export function createReturnOrderReport(params: {
 
         let purchaserGroup: string = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
-            const customerGroupProperty = order.customer.identifier.find((i) => i.name === 'customerGroup');
-            if (customerGroupProperty !== undefined && typeof customerGroupProperty.value === 'string') {
-                purchaserGroup = customerGroupProperty.value;
+            const customerGroupValue = order.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
+            if (typeof customerGroupValue === 'string') {
+                purchaserGroup = customerGroupValue;
             }
         }
 
-        const dateReturned = moment(<Date>order.dateReturned).toDate();
+        const dateReturned = moment(<Date>order.dateReturned)
+            .toDate();
         let cancellationFee = 0;
-        if (order.returner !== undefined && order.returner !== null) {
-            const returner = order.returner;
-            if (Array.isArray(returner.identifier)) {
-                const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
-                if (cancellationFeeProperty !== undefined) {
-                    cancellationFee = Number(cancellationFeeProperty.value);
-                }
+        if (Array.isArray(order.returner?.identifier)) {
+            const cancellationFeeValue = order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
+            if (cancellationFeeValue !== undefined) {
+                cancellationFee = Number(cancellationFeeValue);
             }
         }
 
@@ -215,14 +206,14 @@ export function createReturnOrderReport(params: {
                     unitPrice,
                     order,
                     <Date>order.dateReturned,
-                    AggregateUnit.SalesByEndDate,
                     purchaserGroup,
                     reservationIndex
                 ),
                 reservationStatus: Status4csv.Cancelled,
                 status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
                 cancellationFee: cancellationFee,
-                orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
+                orderDate: moment(dateReturned)
+                    .format('YYYY/MM/DD HH:mm:ss')
             });
         });
 
@@ -248,21 +239,19 @@ export function createRefundOrderReport(params: {
 
         let purchaserGroup: string = PurchaserGroup.Customer;
         if (Array.isArray(order.customer.identifier)) {
-            const customerGroupProperty = order.customer.identifier.find((i) => i.name === 'customerGroup');
-            if (customerGroupProperty !== undefined && typeof customerGroupProperty.value === 'string') {
-                purchaserGroup = customerGroupProperty.value;
+            const customerGroupValue = order.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
+            if (typeof customerGroupValue === 'string') {
+                purchaserGroup = customerGroupValue;
             }
         }
 
-        const dateReturned = moment(<Date>order.dateReturned).toDate();
+        const dateReturned = moment(<Date>order.dateReturned)
+            .toDate();
         let cancellationFee = 0;
-        if (order.returner !== undefined && order.returner !== null) {
-            const returner = order.returner;
-            if (Array.isArray(returner.identifier)) {
-                const cancellationFeeProperty = returner.identifier.find((p: any) => p.name === 'cancellationFee');
-                if (cancellationFeeProperty !== undefined) {
-                    cancellationFee = Number(cancellationFeeProperty.value);
-                }
+        if (Array.isArray(order.returner?.identifier)) {
+            const cancellationFeeValue = order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
+            if (cancellationFeeValue !== undefined) {
+                cancellationFee = Number(cancellationFeeValue);
             }
         }
 
@@ -281,9 +270,8 @@ export function createRefundOrderReport(params: {
                         unitPrice,
                         order,
                         dateReturned,
-                        AggregateUnit.SalesByEndDate,
-                        purchaserGroup,
-                        reservationIndex
+                        purchaserGroup
+                        // reservationIndex // 返品手数料行にはpayment_seat_indexなし
                     ),
                     seat: {
                         code: ''
@@ -293,12 +281,13 @@ export function createRefundOrderReport(params: {
                         charge: cancellationFee.toString(),
                         csvCode: ''
                     },
-                    payment_seat_index: '',
+                    // payment_seat_index: '',
                     reservationStatus: Status4csv.CancellationFee,
                     status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
                     cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
-                    orderDate: moment(dateReturned).format('YYYY/MM/DD HH:mm:ss')
+                    orderDate: moment(dateReturned)
+                        .format('YYYY/MM/DD HH:mm:ss')
                 });
             }
         });
@@ -322,12 +311,12 @@ function saveReport(data: IData) {
                 'performance.id': data.performance.id,
                 payment_no: data.payment_no,
                 payment_seat_index: data.payment_seat_index,
-                reservationStatus: data.reservationStatus,
-                aggregateUnit: data.aggregateUnit
+                reservationStatus: data.reservationStatus
             },
             data,
             { new: true, upsert: true }
-        ).exec();
+        )
+            .exec();
     };
 }
 
@@ -339,20 +328,14 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
-        let paymentSeatIndex = (<any>params.reservation).payment_seat_index; // 互換性維持のため
-        if (Array.isArray(params.reservation.additionalProperty)) {
-            const paymentSeatIndexProperty = params.reservation.additionalProperty.find((p) => p.name === 'paymentSeatIndex');
-            if (paymentSeatIndexProperty !== undefined) {
-                paymentSeatIndex = paymentSeatIndexProperty.value;
-            }
+        let paymentSeatIndex = params.reservation.additionalProperty?.find((p) => p.name === 'paymentSeatIndex')?.value;
+        if (typeof paymentSeatIndex !== 'string') {
+            paymentSeatIndex = 'NoValue';
         }
 
-        let paymentNo = params.reservation.reservationNumber; // 互換性維持のため
-        if (params.reservation.underName !== undefined && Array.isArray(params.reservation.underName.identifier)) {
-            const paymentNoProperty = params.reservation.underName.identifier.find((p) => p.name === 'paymentNo');
-            if (paymentNoProperty !== undefined) {
-                paymentNo = paymentNoProperty.value;
-            }
+        let paymentNo = params.reservation.underName?.identifier?.find((p) => p.name === 'paymentNo')?.value;
+        if (typeof paymentNo !== 'string') {
+            paymentNo = 'NoValue';
         }
 
         await aggregateSaleRepo.aggregateSaleModel.update(
@@ -364,11 +347,13 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
             {
                 checkedin: params.reservation.checkins.length > 0 ? 'TRUE' : 'FALSE',
                 checkinDate: params.reservation.checkins.length > 0
-                    ? moment(params.reservation.checkins[0].when).format('YYYY/MM/DD HH:mm:ss')
+                    ? moment(params.reservation.checkins[0].when)
+                        .format('YYYY/MM/DD HH:mm:ss')
                     : ''
             },
             { multi: true }
-        ).exec();
+        )
+            .exec();
     };
 }
 
@@ -381,9 +366,8 @@ function reservation2data(
     unitPrice: number,
     order: cinerinoapi.factory.order.IOrder,
     targetDate: Date,
-    aggregateUnit: AggregateUnit,
     purchaserGroup: string,
-    paymentSeatIndex: number
+    paymentSeatIndex?: number
 ): IData {
     const age = (typeof order.customer.age === 'string') ? order.customer.age : '';
 
@@ -402,25 +386,25 @@ function reservation2data(
     const gender = (typeof order.customer.gender === 'string') ? order.customer.gender : '';
     const customerSegment = (locale !== '' ? locale : '__') + (age !== '' ? age : '__') + (gender !== '' ? gender : '_');
 
-    let csvCode = ((<any>r).ticket_ttts_extension !== undefined)
-        ? (<any>r).ticket_ttts_extension.csv_code
-        : ''; // 互換性維持のため
-    if (Array.isArray(r.reservedTicket.ticketType.additionalProperty)) {
-        const csvCodeProperty = r.reservedTicket.ticketType.additionalProperty.find((p) => p.name === 'csvCode');
-        if (csvCodeProperty !== undefined) {
-            csvCode = csvCodeProperty.value;
-        }
+    let csvCode = r.reservedTicket.ticketType.additionalProperty?.find((p) => p.name === 'csvCode')?.value;
+    if (typeof csvCode !== 'string') {
+        csvCode = '';
     }
 
     const paymentNo = order.confirmationNumber;
 
     return {
+        reservation: { id: r.id },
         payment_no: paymentNo,
-        payment_seat_index: String(paymentSeatIndex),
+        ...(typeof paymentSeatIndex === 'number') ? { payment_seat_index: paymentSeatIndex } : undefined,
         performance: {
             id: r.reservationFor.id,
-            startDay: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('YYYYMMDD'),
-            startTime: moment(r.reservationFor.startDate).tz('Asia/Tokyo').format('HHmm')
+            startDay: moment(r.reservationFor.startDate)
+                .tz('Asia/Tokyo')
+                .format('YYYYMMDD'),
+            startTime: moment(r.reservationFor.startDate)
+                .tz('Asia/Tokyo')
+                .format('HHmm')
         },
         seat: {
             code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : ''
@@ -443,17 +427,18 @@ function reservation2data(
             segment: customerSegment,
             username: username
         },
-        orderDate: moment(order.orderDate).format('YYYY/MM/DD HH:mm:ss'),
+        orderDate: moment(order.orderDate)
+            .format('YYYY/MM/DD HH:mm:ss'),
         paymentMethod: (paymentMethodStrings[paymentMethod] !== undefined)
             ? paymentMethodStrings[paymentMethod]
             : paymentMethod,
         checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
-        checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when).format('YYYY/MM/DD HH:mm:ss') : '',
+        checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when)
+            .format('YYYY/MM/DD HH:mm:ss') : '',
         reservationStatus: Status4csv.Reserved,
         status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
         price: order.price.toString(),
         cancellationFee: 0,
-        date_bucket: targetDate,
-        aggregateUnit: aggregateUnit
+        date_bucket: targetDate
     };
 }

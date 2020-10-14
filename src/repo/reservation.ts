@@ -347,11 +347,11 @@ export class MongoRepository {
                 }
 
                 // 型未対応
-                if ((<any>params.underName.identifier).$elemMatch !== undefined) {
+                if (params.underName.identifier.$elemMatch !== undefined) {
                     andConditions.push({
                         'underName.identifier': {
                             $exists: true,
-                            $elemMatch: (<any>params.underName.identifier).$elemMatch
+                            $elemMatch: params.underName.identifier.$elemMatch
                         }
                     });
                 }
@@ -399,7 +399,8 @@ export class MongoRepository {
             reservation.id,
             { $setOnInsert: reservation },
             { upsert: true }
-        ).exec();
+        )
+            .exec();
     }
 
     public async count(params: ISearchConditions): Promise<number> {
@@ -501,7 +502,8 @@ export class MongoRepository {
                 reservationStatus: factory.chevre.reservationStatusType.ReservationCancelled,
                 modifiedTime: new Date()
             }
-        ).exec();
+        )
+            .exec();
     }
 
     /**

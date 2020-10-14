@@ -54,13 +54,13 @@ const schema = new mongoose.Schema(
             updatedAt: 'updated_at'
         },
         toJSON: {
-            getters: true,
-            virtuals: true,
+            getters: false,
+            virtuals: false,
             minimize: false,
             versionKey: false
         },
         toObject: {
-            getters: true,
+            getters: false,
             virtuals: true,
             minimize: false,
             versionKey: false

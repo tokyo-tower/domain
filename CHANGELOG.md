@@ -18,6 +18,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v48.16.0 - 2020-10-14
+
+### Changed
+
+- update ts-node
+- update tslint
+- mongooseスキーマオプションを最適化
+- レポート作成処理を最適化
+- レポートのインターフェースを最適化(reservation.idを追加、aggregateUnitを削除)
+
 ## v48.15.2 - 2020-10-13
 
 ### Changed

@@ -1,7 +1,6 @@
 /**
  * 予約サービス
  */
-import * as cinerinoapi from '@cinerino/sdk';
 import * as moment from 'moment';
 
 import * as factory from '@tokyotower/factory';
@@ -63,16 +62,18 @@ export function onReservationStatusChanged(
         // 集計タスク作成
         const aggregateTask: factory.task.aggregateEventReservations.IAttributes = {
             name: <any>factory.taskName.AggregateEventReservations,
-            project: { typeOf: cinerinoapi.factory.chevre.organizationType.Project, id: params.project.id },
+            project: { typeOf: factory.chevre.organizationType.Project, id: params.project.id },
             status: factory.taskStatus.Ready,
             // Chevreの在庫解放が非同期で実行されるのでやや時間を置く
-            // tslint:disable-next-line:no-magic-numbers
-            runsAt: moment().add(10, 'seconds').toDate(),
+            runsAt: moment()
+                // tslint:disable-next-line:no-magic-numbers
+                .add(10, 'seconds')
+                .toDate(),
             remainingNumberOfTries: 3,
             numberOfTried: 0,
             executionResults: [],
             data: { id: reservation.reservationFor.id }
         };
-        await repos.task.save(<any>aggregateTask);
+        await repos.task.save(aggregateTask);
     };
 }
