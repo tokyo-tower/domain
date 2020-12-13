@@ -259,7 +259,9 @@ function aggregateCheckinCount(
     // 全予約の入場履歴をマージ
     const allUniqueCheckins: factory.performance.ICheckinWithTicketType[] = reservations.reduce(
         (a, b) => {
-            const ticketTypeCategory = <string>b.reservedTicket.ticketType.additionalProperty?.find((p) => p.name === 'category')?.value;
+            // 追加特性参照からカテゴリー参照へ変更
+            // const ticketTypeCategory = <string>b.reservedTicket.ticketType.additionalProperty?.find((p) => p.name === 'category')?.value;
+            const ticketTypeCategory = <string>b.reservedTicket.ticketType.category?.codeValue;
 
             // 同一ポイントでの重複チェックインを除外
             // チェックポイントに現れた物理的な人数を数えるのが目的なのでチェックイン行為の重複を場外
@@ -287,7 +289,9 @@ function aggregateCheckinCount(
         return {
             where: checkinGate.identifier,
             checkinCountsByTicketType: offers.map((offer) => {
-                const ticketTypeCategory = <string>offer.additionalProperty?.find((p) => p.name === 'category')?.value;
+                // 追加特性参照からカテゴリー参照へ変更
+                // const ticketTypeCategory = <string>offer.additionalProperty?.find((p) => p.name === 'category')?.value;
+                const ticketTypeCategory = <string>offer.category?.codeValue;
 
                 return {
                     ticketType: <string>offer.id,
