@@ -10,8 +10,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- オファーカテゴリーについて、オファーの追加特性参照を廃止
-
 ### Deprecated
 
 ### Removed
@@ -19,6 +17,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 ### Security
+
+## v48.16.1 - 2020-12-13
+
+### Changed
+
+- オファーカテゴリーについて、オファーの追加特性参照を廃止
 
 ## v48.16.0 - 2020-10-14
 
