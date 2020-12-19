@@ -9,8 +9,8 @@
     }
   ],
   "dependencies": {
-    "@cinerino/sdk": "^1.14.0",
-    "@tokyotower/factory": "^31.1.0",
+    "@cinerino/sdk": "1.18.1",
+    "@tokyotower/factory": "31.3.0",
     "debug": "^3.2.6",
     "http-status": "^1.4.2",
     "moment": "^2.24.0",
@@ -25,6 +25,7 @@
     "@types/moment-timezone": "^0.5.12",
     "@types/mongoose": "^5.5.11",
     "@types/power-assert": "^1.5.0",
+    "@types/request": "^2.48.5",
     "@types/sinon": "^4.3.3",
     "@types/sinon-mongoose": "^1.3.9",
     "mocha": "^3.5.3",

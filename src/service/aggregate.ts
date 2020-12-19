@@ -14,6 +14,20 @@ import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
+/**
+ * 入場ゲートインターフェース
+ */
+export interface ICheckinGate {
+    /**
+     * 識別子
+     */
+    identifier: string;
+    /**
+     * ゲート名
+     */
+    name: string;
+}
+
 const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
     domain: credentials.cinerino.authorizeServerDomain,
     clientId: credentials.cinerino.clientId,
@@ -74,7 +88,7 @@ export function aggregateEventReservations(params: {
             throw new factory.errors.NotFound('MovieTheater');
         }
 
-        let checkGates: factory.place.checkinGate.IPlace[] = [];
+        let checkGates: ICheckinGate[] = [];
         if (Array.isArray(movieTheater.hasEntranceGate)) {
             checkGates = movieTheater.hasEntranceGate.map((g) => {
                 return {
@@ -96,7 +110,7 @@ export function aggregateEventReservations(params: {
  * イベント指定で集計する
  */
 function aggregateByEvent(params: {
-    checkGates: factory.place.checkinGate.IPlace[];
+    checkGates: ICheckinGate[];
     event: factory.performance.IPerformance;
 }) {
     return async (repos: {
@@ -249,7 +263,7 @@ function aggregateRemainingAttendeeCapacity(params: {
  * 入場数の集計を行う
  */
 function aggregateCheckinCount(
-    checkinGates: factory.place.checkinGate.IPlace[],
+    checkinGates: ICheckinGate[],
     reservations: factory.reservation.event.IReservation[],
     offers: factory.chevre.event.screeningEvent.ITicketOffer[]
 ): {
