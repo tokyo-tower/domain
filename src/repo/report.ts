@@ -71,7 +71,7 @@ export enum Status4csv {
 }
 
 /**
- * 売上集計リポジトリ
+ * レポートリポジトリ
  */
 export class MongoRepository {
     public readonly aggregateSaleModel: typeof AggregateSaleModel;

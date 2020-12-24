@@ -1,11 +1,11 @@
 /**
- * 売上集計サービス
+ * 売上レポートサービス
  */
 import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment-timezone';
 
-import { IReport, MongoRepository as AggregateSaleRepo, Status4csv } from '../../repo/aggregateSale';
+import { IReport, MongoRepository as ReportRepo, Status4csv } from '../../repo/report';
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
@@ -36,7 +36,7 @@ export function createPlaceOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (
-        aggregateSaleRepo: AggregateSaleRepo
+        aggregateSaleRepo: ReportRepo
     ): Promise<void> => {
         const datas: IReport[] = [];
 
@@ -72,7 +72,7 @@ export function createReturnOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (repos: {
-        aggregateSale: AggregateSaleRepo;
+        aggregateSale: ReportRepo;
     }): Promise<void> => {
         const datas: IReport[] = [];
 
@@ -125,7 +125,7 @@ export function createRefundOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (repos: {
-        aggregateSale: AggregateSaleRepo;
+        aggregateSale: ReportRepo;
     }): Promise<void> => {
         const datas: IReport[] = [];
 
@@ -189,7 +189,7 @@ export function createRefundOrderReport(params: {
  */
 export function updateOrderReportByReservation(params: { reservation: factory.reservation.event.IReservation }) {
     return async (repos: {
-        aggregateSale: AggregateSaleRepo;
+        aggregateSale: ReportRepo;
     }): Promise<void> => {
         // const paymentSeatIndex = params.reservation.additionalProperty?.find((p) => p.name === 'paymentSeatIndex')?.value;
         // if (typeof paymentSeatIndex !== 'string') {

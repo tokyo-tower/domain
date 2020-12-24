@@ -2,17 +2,17 @@ import * as factory from '@tokyotower/factory';
 
 import { IConnectionSettings, IOperation } from '../task';
 
-import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
+import { MongoRepository as ReportRepo } from '../../repo/report';
 
-import * as AggregateService from '../aggregate';
+import * as OrderReportService from '../report/order';
 
 /**
  * タスク実行関数
  */
 export function call(data: factory.task.createReturnOrderReport.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
-        const aggregateSaleRepo = new AggregateSaleRepo(settings.connection);
-        await AggregateService.report4sales.createReturnOrderReport(data)({
+        const aggregateSaleRepo = new ReportRepo(settings.connection);
+        await OrderReportService.createReturnOrderReport(data)({
             aggregateSale: aggregateSaleRepo
         });
     };

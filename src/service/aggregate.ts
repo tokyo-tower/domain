@@ -8,8 +8,6 @@ import * as moment from 'moment';
 
 import * as repository from '../repository';
 
-import * as Report4SalesService from './aggregate/report4sales';
-
 import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
@@ -47,10 +45,6 @@ const placeService = new cinerinoapi.service.Place({
     auth: cinerinoAuthClient,
     project: { id: <string>process.env.PROJECT_ID }
 });
-
-export {
-    Report4SalesService as report4sales
-};
 
 /**
  * 特定のイベントに関する予約集計を行う

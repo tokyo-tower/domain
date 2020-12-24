@@ -2,20 +2,20 @@
 /**
  * リポジトリ
  */
-import { MongoRepository as AggregateSaleRepo } from './repo/aggregateSale';
 import { MongoRepository as PerformanceRepo } from './repo/performance';
+import { MongoRepository as ReportRepo } from './repo/report';
 import { MongoRepository as ReservationRepo } from './repo/reservation';
 import { MongoRepository as TaskRepo } from './repo/task';
-
-/**
- * 売上集計リポジトリ
- */
-export class AggregateSale extends AggregateSaleRepo { }
 
 /**
  * パフォーマンスリポジトリ
  */
 export class Performance extends PerformanceRepo { }
+
+/**
+ * レポートリポジトリ
+ */
+export class Report extends ReportRepo { }
 
 /**
  * 予約リポジトリ
