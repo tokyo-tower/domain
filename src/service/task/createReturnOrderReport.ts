@@ -12,8 +12,8 @@ import * as AggregateService from '../aggregate';
 export function call(data: factory.task.createReturnOrderReport.IData): IOperation<void> {
     return async (settings: IConnectionSettings) => {
         const aggregateSaleRepo = new AggregateSaleRepo(settings.connection);
-        await AggregateService.report4sales.createReturnOrderReport(data)(
-            aggregateSaleRepo
-        );
+        await AggregateService.report4sales.createReturnOrderReport(data)({
+            aggregateSale: aggregateSaleRepo
+        });
     };
 }

@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+- レポート作成処理を最適化
+- レポートへの入場連携を予約IDで実行するように変更(元は、イベントID+確認番号+購入座席インデックス)
+
 ### Deprecated
 
 ### Removed

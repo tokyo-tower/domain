@@ -3,97 +3,11 @@
  */
 import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
-import * as moment from 'moment';
+import * as moment from 'moment-timezone';
 
-import { MongoRepository as AggregateSaleRepo } from '../../repo/aggregateSale';
+import { IReport, MongoRepository as AggregateSaleRepo, Status4csv } from '../../repo/aggregateSale';
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
-
-/**
- * 購入者区分
- */
-export enum PurchaserGroup {
-    /**
-     * 一般
-     */
-    Customer = 'Customer'
-}
-
-const purchaserGroupStrings: any = {
-    Customer: '01',
-    Staff: '04'
-};
-const paymentMethodStrings: any = {
-    CreditCard: '0'
-};
-
-/**
- * CSVデータインターフェース
- */
-interface IData {
-    reservation: { id: string };
-    // 購入番号
-    payment_no: string;
-    payment_seat_index?: number;
-    performance: {
-        // パフォーマンスID
-        id: string;
-        // 入塔予約年月日
-        startDay: string;
-        // 入塔予約時刻
-        startTime: string;
-    };
-    customer: {
-        // 購入者（名）
-        givenName: string;
-        // 購入者（姓）
-        familyName: string;
-        // 購入者メール
-        email: string;
-        // 購入者電話
-        telephone: string;
-        // 購入者区分
-        group: string;
-        // ユーザーネーム
-        username: string;
-        // 客層
-        segment: string;
-    };
-    // 購入日時
-    orderDate: string;
-    // 決済方法
-    paymentMethod: string;
-    seat: {
-        // 座席コード
-        code: string;
-    };
-    ticketType: {
-        // 券種名称
-        name: string;
-        // チケットコード
-        csvCode: string;
-        // 券種料金
-        charge: string;
-    };
-    // 入場フラグ
-    checkedin: 'TRUE' | 'FALSE';
-    // 入場日時
-    checkinDate: string;
-    status_sort: string;
-    cancellationFee: number;
-    // 予約単位料金
-    price: string;
-    // 予約ステータス
-    reservationStatus: Status4csv;
-    date_bucket: Date;
-}
-// CSV用のステータスコード
-enum Status4csv {
-    Reserved = 'RESERVED',
-    Cancelled = 'CANCELLED',
-    // キャンセル行ステータス
-    CancellationFee = 'CANCELLATION_FEE'
-}
 
 function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedOffer<any>) {
     let unitPrice: number = 0;
@@ -104,11 +18,11 @@ function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedO
             const unitPriceSpec = priceSpecification.priceComponent.find(
                 (c) => c.typeOf === factory.chevre.priceSpecificationType.UnitPriceSpecification
             );
-            if (unitPriceSpec !== undefined && unitPriceSpec.price !== undefined && Number.isInteger(unitPriceSpec.price)) {
+            if (typeof unitPriceSpec?.price === 'number') {
                 unitPrice = unitPriceSpec.price;
             }
         }
-    } else if (offer.price !== undefined && Number.isInteger(offer.price)) {
+    } else if (typeof offer.price === 'number') {
         unitPrice = offer.price;
     }
 
@@ -124,31 +38,21 @@ export function createPlaceOrderReport(params: {
     return async (
         aggregateSaleRepo: AggregateSaleRepo
     ): Promise<void> => {
-        const datas: IData[] = [];
-        const order = params.order;
-
-        let purchaserGroup: string = PurchaserGroup.Customer;
-        if (Array.isArray(order.customer.identifier)) {
-            const customerGroupValue = order.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
-            if (typeof customerGroupValue === 'string') {
-                purchaserGroup = customerGroupValue;
-            }
-        }
+        const datas: IReport[] = [];
 
         datas.push(
-            ...order.acceptedOffers
+            ...params.order.acceptedOffers
                 .map((o, index) => {
                     const unitPrice = getUnitPriceByAcceptedOffer(o);
 
-                    return reservation2data(
+                    return reservation2report(
                         {
                             ...<cinerinoapi.factory.order.IReservation>o.itemOffered,
                             checkins: []
                         },
                         unitPrice,
-                        order,
-                        order.orderDate,
-                        purchaserGroup,
+                        params.order,
+                        params.order.orderDate,
                         index
                     );
                 })
@@ -156,7 +60,7 @@ export function createPlaceOrderReport(params: {
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
-            await saveReport(data)(aggregateSaleRepo);
+            await aggregateSaleRepo.saveReport(data);
         }));
     };
 }
@@ -167,59 +71,49 @@ export function createPlaceOrderReport(params: {
 export function createReturnOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
-    // tslint:disable-next-line:max-func-body-length
-    return async (
-        aggregateSaleRepo: AggregateSaleRepo
-    ): Promise<void> => {
-        const datas: IData[] = [];
-        const order = params.order;
+    return async (repos: {
+        aggregateSale: AggregateSaleRepo;
+    }): Promise<void> => {
+        const datas: IReport[] = [];
 
-        let purchaserGroup: string = PurchaserGroup.Customer;
-        if (Array.isArray(order.customer.identifier)) {
-            const customerGroupValue = order.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
-            if (typeof customerGroupValue === 'string') {
-                purchaserGroup = customerGroupValue;
-            }
-        }
-
-        const dateReturned = moment(<Date>order.dateReturned)
+        const dateReturned = moment(<Date>params.order.dateReturned)
             .toDate();
         let cancellationFee = 0;
-        if (Array.isArray(order.returner?.identifier)) {
-            const cancellationFeeValue = order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
+        if (Array.isArray(params.order.returner?.identifier)) {
+            const cancellationFeeValue = params.order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
             if (cancellationFeeValue !== undefined) {
                 cancellationFee = Number(cancellationFeeValue);
             }
         }
 
-        order.acceptedOffers.forEach((o, reservationIndex) => {
+        params.order.acceptedOffers.forEach((o, reservationIndex) => {
             const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
             const unitPrice = getUnitPriceByAcceptedOffer(o);
 
             // 座席分のキャンセルデータ
             datas.push({
-                ...reservation2data(
+                ...reservation2report(
                     {
                         ...r,
                         checkins: []
                     },
                     unitPrice,
-                    order,
-                    <Date>order.dateReturned,
-                    purchaserGroup,
+                    params.order,
+                    <Date>params.order.dateReturned,
                     reservationIndex
                 ),
                 reservationStatus: Status4csv.Cancelled,
                 status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
                 cancellationFee: cancellationFee,
                 orderDate: moment(dateReturned)
+                    .tz('Asia/Tokyo')
                     .format('YYYY/MM/DD HH:mm:ss')
             });
         });
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
-            await saveReport(data)(aggregateSaleRepo);
+            await repos.aggregateSale.saveReport(data);
         }));
     };
 }
@@ -230,47 +124,36 @@ export function createReturnOrderReport(params: {
 export function createRefundOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
-    // tslint:disable-next-line:max-func-body-length
-    return async (
-        aggregateSaleRepo: AggregateSaleRepo
-    ): Promise<void> => {
-        const datas: IData[] = [];
-        const order = params.order;
+    return async (repos: {
+        aggregateSale: AggregateSaleRepo;
+    }): Promise<void> => {
+        const datas: IReport[] = [];
 
-        let purchaserGroup: string = PurchaserGroup.Customer;
-        if (Array.isArray(order.customer.identifier)) {
-            const customerGroupValue = order.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
-            if (typeof customerGroupValue === 'string') {
-                purchaserGroup = customerGroupValue;
-            }
-        }
-
-        const dateReturned = moment(<Date>order.dateReturned)
+        const dateReturned = moment(<Date>params.order.dateReturned)
             .toDate();
         let cancellationFee = 0;
-        if (Array.isArray(order.returner?.identifier)) {
-            const cancellationFeeValue = order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
+        if (Array.isArray(params.order.returner?.identifier)) {
+            const cancellationFeeValue = params.order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
             if (cancellationFeeValue !== undefined) {
                 cancellationFee = Number(cancellationFeeValue);
             }
         }
 
-        order.acceptedOffers.forEach((o, reservationIndex) => {
+        params.order.acceptedOffers.forEach((o, reservationIndex) => {
             const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
             const unitPrice = getUnitPriceByAcceptedOffer(o);
 
             // 購入分のキャンセル料データ
             if (reservationIndex === 0) {
                 datas.push({
-                    ...reservation2data(
+                    ...reservation2report(
                         {
                             ...r,
                             checkins: []
                         },
                         unitPrice,
-                        order,
-                        dateReturned,
-                        purchaserGroup
+                        params.order,
+                        dateReturned
                         // reservationIndex // 返品手数料行にはpayment_seat_indexなし
                     ),
                     seat: {
@@ -287,6 +170,7 @@ export function createRefundOrderReport(params: {
                     cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
                     orderDate: moment(dateReturned)
+                        .tz('Asia/Tokyo')
                         .format('YYYY/MM/DD HH:mm:ss')
                 });
             }
@@ -294,29 +178,8 @@ export function createRefundOrderReport(params: {
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
-            await saveReport(data)(aggregateSaleRepo);
+            await repos.aggregateSale.saveReport(data);
         }));
-    };
-}
-
-/**
- * レポートを保管する
- */
-function saveReport(data: IData) {
-    return async (
-        aggregateSaleRepo: AggregateSaleRepo
-    ): Promise<void> => {
-        await aggregateSaleRepo.aggregateSaleModel.findOneAndUpdate(
-            {
-                'performance.id': data.performance.id,
-                payment_no: data.payment_no,
-                payment_seat_index: data.payment_seat_index,
-                reservationStatus: data.reservationStatus
-            },
-            data,
-            { new: true, upsert: true }
-        )
-            .exec();
     };
 }
 
@@ -325,35 +188,33 @@ function saveReport(data: IData) {
  * 何かしらの操作で予約データ更新時に連動される(入場時など)
  */
 export function updateOrderReportByReservation(params: { reservation: factory.reservation.event.IReservation }) {
-    return async (
-        aggregateSaleRepo: AggregateSaleRepo
-    ): Promise<void> => {
-        let paymentSeatIndex = params.reservation.additionalProperty?.find((p) => p.name === 'paymentSeatIndex')?.value;
-        if (typeof paymentSeatIndex !== 'string') {
-            paymentSeatIndex = 'NoValue';
-        }
+    return async (repos: {
+        aggregateSale: AggregateSaleRepo;
+    }): Promise<void> => {
+        // const paymentSeatIndex = params.reservation.additionalProperty?.find((p) => p.name === 'paymentSeatIndex')?.value;
+        // if (typeof paymentSeatIndex !== 'string') {
+        //     throw new Error('paymentSeatIndex undefined');
+        // }
 
-        let paymentNo = params.reservation.underName?.identifier?.find((p) => p.name === 'paymentNo')?.value;
-        if (typeof paymentNo !== 'string') {
-            paymentNo = 'NoValue';
-        }
+        // const paymentNo = params.reservation.underName?.identifier?.find((p) => p.name === 'paymentNo')?.value;
+        // if (typeof paymentNo !== 'string') {
+        //     throw new Error('paymentSeatIndex paymentNo');
+        // }
 
-        await aggregateSaleRepo.aggregateSaleModel.update(
-            {
-                'performance.id': params.reservation.reservationFor.id,
-                payment_no: paymentNo,
-                payment_seat_index: paymentSeatIndex
-            },
-            {
-                checkedin: params.reservation.checkins.length > 0 ? 'TRUE' : 'FALSE',
-                checkinDate: params.reservation.checkins.length > 0
-                    ? moment(params.reservation.checkins[0].when)
-                        .format('YYYY/MM/DD HH:mm:ss')
-                    : ''
-            },
-            { multi: true }
-        )
-            .exec();
+        await repos.aggregateSale.updateAttendStatus({
+            // performance+payment_no+payment_seat_index の指定については、予約IDで更新に変更、でよいのでは？
+            reservation: { id: params.reservation.id },
+            // performance: { id: params.reservation.reservationFor.id },
+            // payment_no: paymentNo,
+            // payment_seat_index: Number(paymentSeatIndex),
+            checkedin: params.reservation.checkins.length > 0 ? 'TRUE' : 'FALSE',
+            checkinDate: params.reservation.checkins.length > 0
+                ? moment(params.reservation.checkins[0].when)
+                    .tz('Asia/Tokyo')
+                    .format('YYYY/MM/DD HH:mm:ss')
+                : ''
+
+        });
     };
 }
 
@@ -361,27 +222,25 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
  * 予約データをcsvデータ型に変換する
  */
 // tslint:disable-next-line:cyclomatic-complexity
-function reservation2data(
+function reservation2report(
     r: factory.reservation.event.IReservation,
     unitPrice: number,
     order: cinerinoapi.factory.order.IOrder,
     targetDate: Date,
-    purchaserGroup: string,
     paymentSeatIndex?: number
-): IData {
+): IReport {
     const age = (typeof order.customer.age === 'string') ? order.customer.age : '';
 
     let username = '';
-    if (order.customer.memberOf !== undefined && typeof order.customer.memberOf.membershipNumber === 'string') {
+    if (typeof order.customer.memberOf?.membershipNumber === 'string') {
         username = order.customer.memberOf.membershipNumber;
     }
 
-    let paymentMethod = '';
+    let paymentMethodName = '';
     if (Array.isArray(order.paymentMethods) && order.paymentMethods.length > 0) {
-        paymentMethod = order.paymentMethods[0].name;
+        paymentMethodName = order.paymentMethods[0].name;
     }
 
-    // 客層取得 (購入者居住国：2桁、年代：2桁、性別：1桁)
     const locale = (typeof order.customer.address === 'string') ? order.customer.address : '';
     const gender = (typeof order.customer.gender === 'string') ? order.customer.gender : '';
     const customerSegment = (locale !== '' ? locale : '__') + (age !== '' ? age : '__') + (gender !== '' ? gender : '_');
@@ -391,11 +250,11 @@ function reservation2data(
         csvCode = '';
     }
 
-    const paymentNo = order.confirmationNumber;
+    const customerGroup: string = order2customerGroup(order);
 
     return {
         reservation: { id: r.id },
-        payment_no: paymentNo,
+        payment_no: order.confirmationNumber,
         ...(typeof paymentSeatIndex === 'number') ? { payment_seat_index: paymentSeatIndex } : undefined,
         performance: {
             id: r.reservationFor.id,
@@ -412,14 +271,11 @@ function reservation2data(
         ticketType: {
             name: (typeof r.reservedTicket.ticketType.name !== 'string'
                 && typeof r.reservedTicket.ticketType.name?.ja === 'string') ? r.reservedTicket.ticketType.name.ja : '',
-            // リリース当初の間違ったマスターデータをカバーするため
-            csvCode: (csvCode === '0000000000231') ? '10031' : csvCode,
+            csvCode,
             charge: unitPrice.toString()
         },
         customer: {
-            group: (purchaserGroupStrings[purchaserGroup] !== undefined)
-                ? purchaserGroupStrings[purchaserGroup]
-                : purchaserGroup,
+            group: customerGroup2reportString({ group: customerGroup }),
             givenName: (typeof order.customer.givenName === 'string') ? order.customer.givenName : '',
             familyName: (typeof order.customer.familyName === 'string') ? order.customer.familyName : '',
             email: (typeof order.customer.email === 'string') ? order.customer.email : '',
@@ -428,12 +284,12 @@ function reservation2data(
             username: username
         },
         orderDate: moment(order.orderDate)
+            .tz('Asia/Tokyo')
             .format('YYYY/MM/DD HH:mm:ss'),
-        paymentMethod: (paymentMethodStrings[paymentMethod] !== undefined)
-            ? paymentMethodStrings[paymentMethod]
-            : paymentMethod,
+        paymentMethod: paymentMethodName2reportString({ name: paymentMethodName }),
         checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
         checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when)
+            .tz('Asia/Tokyo')
             .format('YYYY/MM/DD HH:mm:ss') : '',
         reservationStatus: Status4csv.Reserved,
         status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
@@ -441,4 +297,34 @@ function reservation2data(
         cancellationFee: 0,
         date_bucket: targetDate
     };
+}
+
+function order2customerGroup(params: cinerinoapi.factory.order.IOrder) {
+    let customerGroup: string = 'Customer';
+    if (Array.isArray(params.customer.identifier)) {
+        const customerGroupValue = params.customer.identifier.find((i) => i.name === 'customerGroup')?.value;
+        if (typeof customerGroupValue === 'string') {
+            customerGroup = customerGroupValue;
+        }
+    }
+
+    return customerGroup;
+}
+
+function paymentMethodName2reportString(params: { name: string }) {
+    if (params.name === 'CreditCard') {
+        return '0';
+    }
+
+    return params.name;
+}
+
+function customerGroup2reportString(params: { group: string }) {
+    if (params.group === 'Customer') {
+        return '01';
+    } else if (params.group === 'Staff') {
+        return '04';
+    }
+
+    return params.group;
 }
