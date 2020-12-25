@@ -162,17 +162,18 @@ function aggregateByEvent(params: {
 
             aggregation = {
                 id: performance.id,
-                maximumAttendeeCapacity: <number>maximumAttendeeCapacity,
-                remainingAttendeeCapacity: <number>remainingAttendeeCapacity,
-                remainingAttendeeCapacityForWheelchair: <number>remainingAttendeeCapacityForWheelchair,
-                reservationCount: <number>event.aggregateReservation?.reservationCount,
+                aggregateOffer,
+                maximumAttendeeCapacity: maximumAttendeeCapacity,
+                remainingAttendeeCapacity: remainingAttendeeCapacity,
+                remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
+                reservationCount: event.aggregateReservation?.reservationCount,
                 checkinCount: checkinCountAggregation.checkinCount,
                 reservationCountsByTicketType: offers.map((offer) => {
                     const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
 
                     return {
                         ticketType: <string>offer.id,
-                        count: <number>aggregationByOffer?.aggregateReservation?.reservationCount
+                        count: aggregationByOffer?.aggregateReservation?.reservationCount
                     };
                 }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere
@@ -180,7 +181,7 @@ function aggregateByEvent(params: {
             debug('aggregated!', aggregation);
 
             // パフォーマンスリポジトリにも保管
-            await saveAggregation2performance(aggregation, checkedReservations, aggregateOffer)(repos);
+            await saveAggregation2performance(aggregation, checkedReservations)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error('couldn\'t create aggregation on event', performance.id, error);
@@ -193,8 +194,7 @@ function aggregateByEvent(params: {
  */
 function saveAggregation2performance(
     params: factory.performance.IPerformanceAggregation,
-    checkedReservations: factory.reservation.event.IReservation[],
-    aggregateOffer?: cinerinoapi.factory.chevre.event.screeningEvent.IAggregateOffer
+    checkedReservations: factory.reservation.event.IReservation[]
 ) {
     return async (repos: {
         performance: repository.Performance;
@@ -206,8 +206,8 @@ function saveAggregation2performance(
                 checkinCount: params.checkinCount,
                 reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
-                ...(Array.isArray(aggregateOffer?.offers))
-                    ? { aggregateOffer }
+                ...(Array.isArray(params.aggregateOffer?.offers))
+                    ? { aggregateOffer: params.aggregateOffer }
                     : undefined,
                 ...(typeof params.reservationCount === 'number')
                     ? { reservationCount: params.reservationCount }
