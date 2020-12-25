@@ -148,6 +148,7 @@ function aggregateByEvent(params: {
             });
 
             const {
+                aggregateOffer,
                 maximumAttendeeCapacity,
                 remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair
@@ -179,7 +180,7 @@ function aggregateByEvent(params: {
             debug('aggregated!', aggregation);
 
             // パフォーマンスリポジトリにも保管
-            await saveAggregation2performance(aggregation, checkedReservations)(repos);
+            await saveAggregation2performance(aggregation, checkedReservations, aggregateOffer)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error('couldn\'t create aggregation on event', performance.id, error);
@@ -192,7 +193,8 @@ function aggregateByEvent(params: {
  */
 function saveAggregation2performance(
     params: factory.performance.IPerformanceAggregation,
-    checkedReservations: factory.reservation.event.IReservation[]
+    checkedReservations: factory.reservation.event.IReservation[],
+    aggregateOffer?: cinerinoapi.factory.chevre.event.screeningEvent.IAggregateOffer
 ) {
     return async (repos: {
         performance: repository.Performance;
@@ -204,6 +206,9 @@ function saveAggregation2performance(
                 checkinCount: params.checkinCount,
                 reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
+                ...(Array.isArray(aggregateOffer?.offers))
+                    ? { aggregateOffer }
+                    : undefined,
                 ...(typeof params.reservationCount === 'number')
                     ? { reservationCount: params.reservationCount }
                     : undefined,
@@ -249,7 +254,7 @@ function aggregateRemainingAttendeeCapacity(params: {
         const remainingAttendeeCapacityForWheelchair =
             aggregateOffer?.offers?.find((o) => o.identifier === '004')?.remainingAttendeeCapacity;
 
-        return { maximumAttendeeCapacity, remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
+        return { aggregateOffer, maximumAttendeeCapacity, remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
     };
 }
 
