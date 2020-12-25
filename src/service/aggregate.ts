@@ -163,6 +163,7 @@ function aggregateByEvent(params: {
             aggregation = {
                 id: performance.id,
                 aggregateOffer,
+                aggregateReservation: event.aggregateReservation,
                 maximumAttendeeCapacity: maximumAttendeeCapacity,
                 remainingAttendeeCapacity: remainingAttendeeCapacity,
                 remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
@@ -180,7 +181,7 @@ function aggregateByEvent(params: {
             };
             debug('aggregated!', aggregation);
 
-            // パフォーマンスリポジトリにも保管
+            // パフォーマンスリポジトリに保管
             await saveAggregation2performance(aggregation, checkedReservations)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
@@ -208,6 +209,9 @@ function saveAggregation2performance(
                 checkinCountsByWhere: params.checkinCountsByWhere,
                 ...(Array.isArray(params.aggregateOffer?.offers))
                     ? { aggregateOffer: params.aggregateOffer }
+                    : undefined,
+                ...(typeof params.aggregateReservation?.typeOf === 'string')
+                    ? { aggregateReservation: params.aggregateReservation }
                     : undefined,
                 ...(typeof params.reservationCount === 'number')
                     ? { reservationCount: params.reservationCount }
