@@ -147,12 +147,11 @@ function aggregateByEvent(params: {
                 store: { id: credentials.cinerino.clientId }
             });
 
-            const {
-                aggregateOffer,
-                maximumAttendeeCapacity,
-                remainingAttendeeCapacity,
-                remainingAttendeeCapacityForWheelchair
-            } = await aggregateRemainingAttendeeCapacity({ event })();
+            // const {
+            //     maximumAttendeeCapacity,
+            //     remainingAttendeeCapacity,
+            //     remainingAttendeeCapacityForWheelchair
+            // } = await aggregateRemainingAttendeeCapacity({ event })();
 
             // 入場数の集計を行う
             const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
@@ -162,21 +161,21 @@ function aggregateByEvent(params: {
 
             aggregation = {
                 id: performance.id,
-                aggregateOffer,
+                aggregateOffer: event.aggregateOffer,
                 aggregateReservation: event.aggregateReservation,
-                maximumAttendeeCapacity: maximumAttendeeCapacity,
-                remainingAttendeeCapacity: remainingAttendeeCapacity,
-                remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
-                reservationCount: event.aggregateReservation?.reservationCount,
+                // maximumAttendeeCapacity: maximumAttendeeCapacity,
+                // remainingAttendeeCapacity: remainingAttendeeCapacity,
+                // remainingAttendeeCapacityForWheelchair: remainingAttendeeCapacityForWheelchair,
+                // reservationCount: event.aggregateReservation?.reservationCount,
                 checkinCount: checkinCountAggregation.checkinCount,
-                reservationCountsByTicketType: offers.map((offer) => {
-                    const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
+                // reservationCountsByTicketType: offers.map((offer) => {
+                //     const aggregationByOffer = event.aggregateOffer?.offers?.find((o) => o.id === offer.id);
 
-                    return {
-                        ticketType: <string>offer.id,
-                        count: aggregationByOffer?.aggregateReservation?.reservationCount
-                    };
-                }),
+                //     return {
+                //         ticketType: <string>offer.id,
+                //         count: aggregationByOffer?.aggregateReservation?.reservationCount
+                //     };
+                // }),
                 checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere
             };
             debug('aggregated!', aggregation);
@@ -205,7 +204,7 @@ function saveAggregation2performance(
             $set: {
                 updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
                 checkinCount: params.checkinCount,
-                reservationCountsByTicketType: params.reservationCountsByTicketType,
+                // reservationCountsByTicketType: params.reservationCountsByTicketType,
                 checkinCountsByWhere: params.checkinCountsByWhere,
                 ...(Array.isArray(params.aggregateOffer?.offers))
                     ? { aggregateOffer: params.aggregateOffer }
@@ -213,18 +212,18 @@ function saveAggregation2performance(
                 ...(typeof params.aggregateReservation?.typeOf === 'string')
                     ? { aggregateReservation: params.aggregateReservation }
                     : undefined,
-                ...(typeof params.reservationCount === 'number')
-                    ? { reservationCount: params.reservationCount }
-                    : undefined,
-                ...(typeof params.maximumAttendeeCapacity === 'number')
-                    ? { maximumAttendeeCapacity: params.maximumAttendeeCapacity }
-                    : undefined,
-                ...(typeof params.remainingAttendeeCapacity === 'number')
-                    ? { remainingAttendeeCapacity: params.remainingAttendeeCapacity }
-                    : undefined,
-                ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
-                    ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
-                    : undefined,
+                // ...(typeof params.reservationCount === 'number')
+                //     ? { reservationCount: params.reservationCount }
+                //     : undefined,
+                // ...(typeof params.maximumAttendeeCapacity === 'number')
+                //     ? { maximumAttendeeCapacity: params.maximumAttendeeCapacity }
+                //     : undefined,
+                // ...(typeof params.remainingAttendeeCapacity === 'number')
+                //     ? { remainingAttendeeCapacity: params.remainingAttendeeCapacity }
+                //     : undefined,
+                // ...(typeof params.remainingAttendeeCapacityForWheelchair === 'number')
+                //     ? { remainingAttendeeCapacityForWheelchair: params.remainingAttendeeCapacityForWheelchair }
+                //     : undefined,
                 'ttts_extension.checkedReservations': checkedReservations.map((r) => {
                     return {
                         id: r.id,
@@ -245,22 +244,22 @@ function saveAggregation2performance(
 /**
  * 残席数を集計する
  */
-function aggregateRemainingAttendeeCapacity(params: {
-    event: factory.chevre.event.screeningEvent.IEvent;
-}) {
-    return async () => {
-        const event = params.event;
+// function aggregateRemainingAttendeeCapacity(params: {
+//     event: factory.chevre.event.screeningEvent.IEvent;
+// }) {
+//     return async () => {
+//         const event = params.event;
 
-        // Chevreのオファーごと集計を利用する場合は↓
-        const aggregateOffer = event.aggregateOffer;
-        const maximumAttendeeCapacity = aggregateOffer?.offers?.find((o) => o.identifier === '001')?.maximumAttendeeCapacity;
-        const remainingAttendeeCapacity = aggregateOffer?.offers?.find((o) => o.identifier === '001')?.remainingAttendeeCapacity;
-        const remainingAttendeeCapacityForWheelchair =
-            aggregateOffer?.offers?.find((o) => o.identifier === '004')?.remainingAttendeeCapacity;
+//         // Chevreのオファーごと集計を利用する場合は↓
+//         const aggregateOffer = event.aggregateOffer;
+//         const maximumAttendeeCapacity = aggregateOffer?.offers?.find((o) => o.identifier === '001')?.maximumAttendeeCapacity;
+//         const remainingAttendeeCapacity = aggregateOffer?.offers?.find((o) => o.identifier === '001')?.remainingAttendeeCapacity;
+//         const remainingAttendeeCapacityForWheelchair =
+//             aggregateOffer?.offers?.find((o) => o.identifier === '004')?.remainingAttendeeCapacity;
 
-        return { aggregateOffer, maximumAttendeeCapacity, remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
-    };
-}
+//         return { aggregateOffer, maximumAttendeeCapacity, remainingAttendeeCapacity, remainingAttendeeCapacityForWheelchair };
+//     };
+// }
 
 /**
  * 入場数の集計を行う
