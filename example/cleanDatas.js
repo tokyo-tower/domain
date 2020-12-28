@@ -12,13 +12,13 @@ async function main() {
 
     console.log('deleting...createdThrough:', createdThrough);
 
-    const aggregateSaleRepo = new domain.repository.AggregateSale(mongoose.connection);
+    const reportRepo = new domain.repository.Report(mongoose.connection);
     const performanceRepo = new domain.repository.Performance(mongoose.connection);
     const reservationRepo = new domain.repository.Reservation(mongoose.connection);
 
     let result;
 
-    result = await aggregateSaleRepo.aggregateSaleModel.deleteMany({
+    result = await reportRepo.aggregateSaleModel.deleteMany({
         created_at: { $lt: createdThrough }
     })
         .exec();

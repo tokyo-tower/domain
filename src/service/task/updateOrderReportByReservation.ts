@@ -13,7 +13,7 @@ export function call(data: factory.task.updateOrderReportByReservation.IData): I
     return async (settings: IConnectionSettings) => {
         const aggregateSaleRepo = new ReportRepo(settings.connection);
         await OrderReportService.updateOrderReportByReservation(data)({
-            aggregateSale: aggregateSaleRepo
+            report: aggregateSaleRepo
         });
     };
 }

@@ -12,10 +12,16 @@ async function main() {
     const result = await performanceRepo.performanceModel.updateMany(
         {
             _id: { $exists: true },
-            tourNumber: { $exists: true }
+            // tourNumber: { $exists: true }
         },
         {
-            $unset: { tourNumber: 1 }
+            $unset: {
+                maximumAttendeeCapacity: 1,
+                remainingAttendeeCapacity: 1,
+                remainingAttendeeCapacityForWheelchair: 1,
+                reservationCount: 1,
+                reservationCountsByTicketType: 1
+            }
         }
     )
         .exec();

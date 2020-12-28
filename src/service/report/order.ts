@@ -35,9 +35,7 @@ function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedO
 export function createPlaceOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
-    return async (
-        aggregateSaleRepo: ReportRepo
-    ): Promise<void> => {
+    return async (repos: { report: ReportRepo }): Promise<void> => {
         const datas: IReport[] = [];
 
         datas.push(
@@ -60,7 +58,7 @@ export function createPlaceOrderReport(params: {
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
-            await aggregateSaleRepo.saveReport(data);
+            await repos.report.saveReport(data);
         }));
     };
 }
@@ -71,9 +69,7 @@ export function createPlaceOrderReport(params: {
 export function createReturnOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
-    return async (repos: {
-        aggregateSale: ReportRepo;
-    }): Promise<void> => {
+    return async (repos: { report: ReportRepo }): Promise<void> => {
         const datas: IReport[] = [];
 
         const dateReturned = moment(<Date>params.order.dateReturned)
@@ -113,7 +109,7 @@ export function createReturnOrderReport(params: {
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
-            await repos.aggregateSale.saveReport(data);
+            await repos.report.saveReport(data);
         }));
     };
 }
@@ -124,9 +120,7 @@ export function createReturnOrderReport(params: {
 export function createRefundOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
-    return async (repos: {
-        aggregateSale: ReportRepo;
-    }): Promise<void> => {
+    return async (repos: { report: ReportRepo }): Promise<void> => {
         const datas: IReport[] = [];
 
         const dateReturned = moment(<Date>params.order.dateReturned)
@@ -178,7 +172,7 @@ export function createRefundOrderReport(params: {
 
         // 冪等性の確保!
         await Promise.all(datas.map(async (data) => {
-            await repos.aggregateSale.saveReport(data);
+            await repos.report.saveReport(data);
         }));
     };
 }
@@ -188,9 +182,7 @@ export function createRefundOrderReport(params: {
  * 何かしらの操作で予約データ更新時に連動される(入場時など)
  */
 export function updateOrderReportByReservation(params: { reservation: factory.reservation.event.IReservation }) {
-    return async (repos: {
-        aggregateSale: ReportRepo;
-    }): Promise<void> => {
+    return async (repos: { report: ReportRepo }): Promise<void> => {
         // const paymentSeatIndex = params.reservation.additionalProperty?.find((p) => p.name === 'paymentSeatIndex')?.value;
         // if (typeof paymentSeatIndex !== 'string') {
         //     throw new Error('paymentSeatIndex undefined');
@@ -201,7 +193,7 @@ export function updateOrderReportByReservation(params: { reservation: factory.re
         //     throw new Error('paymentSeatIndex paymentNo');
         // }
 
-        await repos.aggregateSale.updateAttendStatus({
+        await repos.report.updateAttendStatus({
             // performance+payment_no+payment_seat_index の指定については、予約IDで更新に変更、でよいのでは？
             reservation: { id: params.reservation.id },
             // performance: { id: params.reservation.reservationFor.id },
