@@ -176,7 +176,10 @@ function aggregateByEvent(params: {
                 //         count: aggregationByOffer?.aggregateReservation?.reservationCount
                 //     };
                 // }),
-                checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere
+                checkinCountsByWhere: checkinCountAggregation.checkinCountsByWhere,
+                ...{
+                    aggregateEntranceGate: (<any>event).aggregateEntranceGate
+                }
             };
             debug('aggregated!', aggregation);
 
@@ -211,6 +214,9 @@ function saveAggregation2performance(
                     : undefined,
                 ...(typeof params.aggregateReservation?.typeOf === 'string')
                     ? { aggregateReservation: params.aggregateReservation }
+                    : undefined,
+                ...(Array.isArray((<any>params).aggregateEntranceGate?.places))
+                    ? { aggregateEntranceGate: (<any>params).aggregateEntranceGate }
                     : undefined,
                 // ...(typeof params.reservationCount === 'number')
                 //     ? { reservationCount: params.reservationCount }
@@ -332,15 +338,8 @@ function aggregateUncheckedReservations(
     let checkedReservations: factory.reservation.event.IReservation[] = [];
 
     // 入場予約を検索
-    // const targetReservationIds = reservationsAtLastUpdateDate.map((r) => r.id);
     checkedReservations = reservations
-        // .filter((r) => targetReservationIds.includes(r.id))
         .filter((r) => r.checkins.length > 0);
-    // uncheckedReservations = await repos.re.search({
-    //     typeOf: factory.chevre.reservationType.EventReservation,
-    //     ids: targetReservationIds,
-    //     checkins: { $size: 0 } // $sizeが0より大きい、という検索は現時点ではMongoDBが得意ではない
-    // });
 
     return {
         checkedReservations
