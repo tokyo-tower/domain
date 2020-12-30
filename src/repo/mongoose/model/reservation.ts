@@ -15,7 +15,8 @@ const schema = new mongoose.Schema(
                 when: Date, // いつ
                 where: String, // どこで
                 why: String, // 何のために
-                how: String // どうやって
+                how: String, // どうやって
+                id: String
             }],
             default: []
         },

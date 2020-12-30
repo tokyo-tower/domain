@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - イベントの予約集計時に、Chevreからオファー集計を保管するように調整
 - イベントの予約集計時に、Chevreから予約集計を保管するように調整
 - イベントの予約集計時に、Chevreから入場ゲート集計を保管するように調整
+- 予約のcheckinsにアクションIDを追加
 
 ### Deprecated
 
