@@ -138,14 +138,14 @@ function aggregateByEvent(params: {
             const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: performance.id });
 
             // オファーリストをchevreで検索
-            const offers = await eventService.searchTicketOffers({
-                event: { id: performance.id },
-                seller: {
-                    typeOf: <factory.chevre.organizationType>event.offers?.seller?.typeOf,
-                    id: <string>event.offers?.seller?.id
-                },
-                store: { id: credentials.cinerino.clientId }
-            });
+            // const offers = await eventService.searchTicketOffers({
+            //     event: { id: performance.id },
+            //     seller: {
+            //         typeOf: <factory.chevre.organizationType>event.offers?.seller?.typeOf,
+            //         id: <string>event.offers?.seller?.id
+            //     },
+            //     store: { id: credentials.cinerino.clientId }
+            // });
 
             // const {
             //     maximumAttendeeCapacity,
@@ -154,10 +154,11 @@ function aggregateByEvent(params: {
             // } = await aggregateRemainingAttendeeCapacity({ event })();
 
             // 入場数の集計を行う
-            const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
+            // const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, offers);
+            const checkinCountAggregation = aggregateCheckinCount(checkGates, reservations, event);
 
             // イベントステータス最終更新時の予約について未入場数を算出する
-            const { checkedReservations } = aggregateUncheckedReservations(reservations, event);
+            const { checkedReservations } = aggregateUncheckedReservations(reservations);
 
             aggregation = {
                 id: performance.id,
@@ -273,7 +274,8 @@ function saveAggregation2performance(
 function aggregateCheckinCount(
     checkinGates: ICheckinGate[],
     reservations: factory.reservation.event.IReservation[],
-    offers: factory.chevre.event.screeningEvent.ITicketOffer[]
+    event: factory.performance.IPerformance
+    // offers: factory.chevre.event.screeningEvent.ITicketOffer[]
 ): {
     checkinCount: number;
     checkinCountsByWhere: factory.performance.ICheckinCountByWhere[];
@@ -303,6 +305,8 @@ function aggregateCheckinCount(
         []
     );
 
+    const offers = event.aggregateOffer?.offers;
+
     // 入場ゲートごとに、券種ごとの入場者数を算出する
     const checkinCountsByWhere = checkinGates.map((checkinGate) => {
         // この入場ゲートの入場履歴
@@ -310,18 +314,17 @@ function aggregateCheckinCount(
 
         return {
             where: checkinGate.identifier,
-            checkinCountsByTicketType: offers.map((offer) => {
-                // 追加特性参照からカテゴリー参照へ変更
-                // const ticketTypeCategory = <string>offer.additionalProperty?.find((p) => p.name === 'category')?.value;
-                const ticketTypeCategory = <string>offer.category?.codeValue;
-
-                return {
-                    ticketType: <string>offer.id,
-                    ticketCategory: ticketTypeCategory,
-                    // この券種の入場履歴数を集計
-                    count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
-                };
-            })
+            // checkinCountsByTicketType: offers.map((offer) => {
+            checkinCountsByTicketType: (Array.isArray(offers))
+                ? offers.map((offer) => {
+                    return {
+                        ticketType: <string>offer.id,
+                        ticketCategory: <string>offer.category?.codeValue,
+                        // この券種の入場履歴数を集計
+                        count: uniqueCheckins4where.filter((c) => c.ticketType === offer.id).length
+                    };
+                })
+                : []
         };
     });
 
@@ -331,10 +334,7 @@ function aggregateCheckinCount(
     };
 }
 
-function aggregateUncheckedReservations(
-    reservations: factory.reservation.event.IReservation[],
-    __: factory.performance.IPerformance
-) {
+function aggregateUncheckedReservations(reservations: factory.reservation.event.IReservation[]) {
     let checkedReservations: factory.reservation.event.IReservation[] = [];
 
     // 入場予約を検索
