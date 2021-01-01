@@ -1,3 +1,5 @@
+import * as factory from '@tokyotower/factory';
+
 import { Connection } from 'mongoose';
 import AggregateSaleModel from './mongoose/model/aggregateSale';
 
@@ -5,6 +7,7 @@ import AggregateSaleModel from './mongoose/model/aggregateSale';
  * レポートインターフェース
  */
 export interface IReport {
+    project: factory.chevre.project.IProject;
     reservation: { id: string };
     // 購入番号
     payment_no: string;

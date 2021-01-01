@@ -245,6 +245,7 @@ function reservation2report(
     const customerGroup: string = order2customerGroup(order);
 
     return {
+        project: { typeOf: order.project.typeOf, id: order.project.id },
         reservation: { id: r.id },
         payment_no: order.confirmationNumber,
         ...(typeof paymentSeatIndex === 'number') ? { payment_seat_index: paymentSeatIndex } : undefined,
