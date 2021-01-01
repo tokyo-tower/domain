@@ -3,7 +3,7 @@ const ttts = require('../lib/index');
 const moment = require('moment-timezone');
 const mongoose = require('mongoose');
 
-const project = { typeOf: 'Project', id: '' };
+const project = { typeOf: 'Project', id: 'ttts-production' };
 
 async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
@@ -16,7 +16,11 @@ async function main() {
             // _id: { $eq: '200728001001012200' },
             startDate: {
                 $gte: moment()
-                    .add(-1, 'week')
+                    .add(-1, 'day')
+                    // .add(+88, 'days')
+                    .toDate(),
+                $lte: moment()
+                    .add(1, 'day')
                     // .add(+88, 'days')
                     .toDate()
             },
