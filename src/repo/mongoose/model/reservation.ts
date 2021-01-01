@@ -35,6 +35,7 @@ const schema = new mongoose.Schema(
         price: mongoose.SchemaTypes.Mixed,
         priceCurrency: String,
         programMembershipUsed: String,
+        project: mongoose.SchemaTypes.Mixed,
         reservationFor: mongoose.SchemaTypes.Mixed,
         reservationNumber: String,
         reservationStatus: String,
@@ -93,6 +94,16 @@ schema.index(
 schema.index(
     { modifiedTime: -1 },
     { name: 'searchByModifiedTime-v2' }
+);
+
+schema.index(
+    { 'project.id': 1, modifiedTime: -1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
 );
 
 schema.index(
