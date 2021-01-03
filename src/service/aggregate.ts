@@ -1,30 +1,30 @@
 /**
  * 集計サービス
  */
-import * as cinerinoapi from '@cinerino/sdk';
+// import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
 import * as createDebug from 'debug';
 // import * as moment from 'moment';
 
 import * as repository from '../repository';
 
-import { credentials } from '../credentials';
+// import { credentials } from '../credentials';
 
 const debug = createDebug('ttts-domain:service');
 
-const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
-    domain: credentials.cinerino.authorizeServerDomain,
-    clientId: credentials.cinerino.clientId,
-    clientSecret: credentials.cinerino.clientSecret,
-    scopes: [],
-    state: ''
-});
+// const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
+//     domain: credentials.cinerino.authorizeServerDomain,
+//     clientId: credentials.cinerino.clientId,
+//     clientSecret: credentials.cinerino.clientSecret,
+//     scopes: [],
+//     state: ''
+// });
 
-const eventService = new cinerinoapi.service.Event({
-    endpoint: credentials.cinerino.endpoint,
-    auth: cinerinoAuthClient,
-    project: { id: <string>process.env.PROJECT_ID }
-});
+// const eventService = new cinerinoapi.service.Event({
+//     endpoint: credentials.cinerino.endpoint,
+//     auth: cinerinoAuthClient,
+//     project: { id: <string>process.env.PROJECT_ID }
+// });
 
 /**
  * 特定のイベントに関する予約集計を行う
@@ -36,8 +36,9 @@ export function aggregateEventReservations(params: {
         performance: repository.Performance;
         reservation: repository.Reservation;
     }) => {
-        const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: params.id });
-        debug('event', event.id, 'found');
+        const event = { id: params.id };
+        // const event = await eventService.findById<factory.chevre.eventType.ScreeningEvent>({ id: params.id });
+        // debug('event', event.id, 'found');
 
         // 同日の、同時刻隊のツアーに関しても集計する(車椅子残席数が影響し合うため)
         // const startFrom = moment(event.startDate)
@@ -67,7 +68,7 @@ export function aggregateEventReservations(params: {
  * イベント指定で集計する
  */
 function aggregateByEvent(params: {
-    event: factory.performance.IPerformance;
+    event: { id: string };
 }) {
     return async (repos: {
         reservation: repository.Reservation;
@@ -89,20 +90,12 @@ function aggregateByEvent(params: {
         );
         debug(reservations.length, 'reservations found');
 
-        debug('creating aggregation...');
-        let aggregation: factory.performance.IPerformanceAggregation;
-
         try {
             // イベントステータス最終更新時の予約について未入場数を算出する
             const { checkedReservations } = aggregateUncheckedReservations(reservations);
 
-            aggregation = {
-                id: params.event.id
-            };
-            debug('aggregated!', aggregation);
-
             // パフォーマンスリポジトリに保管
-            await saveAggregation2performance(aggregation, checkedReservations)(repos);
+            await saveAggregation2performance(params.event, checkedReservations)(repos);
         } catch (error) {
             // tslint:disable-next-line:no-console
             console.error('couldn\'t create aggregation on event', params.event.id, error);
@@ -114,7 +107,7 @@ function aggregateByEvent(params: {
  * パフォーマンスコレクションに集計データを保管する
  */
 function saveAggregation2performance(
-    params: factory.performance.IPerformanceAggregation,
+    params: { id: string },
     checkedReservations: factory.reservation.event.IReservation[]
 ) {
     return async (repos: {
