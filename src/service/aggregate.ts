@@ -83,9 +83,9 @@ function aggregateByEvent(params: {
             },
             // 集計作業はデータ量次第で時間コストを気にする必要があるので、必要なフィールドのみ取得
             {
-                checkins: 1,
+                checkins: 1
                 // reservedTicket: 1,
-                underName: 1
+                // underName: 1
             }
         );
         debug(reservations.length, 'reservations found');
@@ -119,8 +119,8 @@ function saveAggregation2performance(
                 updated_at: new Date(), // $setオブジェクトが空だとMongoエラーになるので
                 'ttts_extension.checkedReservations': checkedReservations.map((r) => {
                     return {
-                        id: r.id,
-                        underName: r.underName
+                        id: r.id
+                        // underName: r.underName
                     };
                 })
             },
