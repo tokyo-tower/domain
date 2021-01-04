@@ -12,6 +12,8 @@ import * as repository from '../repository';
 
 const debug = createDebug('ttts-domain:service');
 
+const DISABLE_ASYNCHRONOUS_CHECKED_RESERVATION = process.env.DISABLE_ASYNCHRONOUS_CHECKED_RESERVATION === '1';
+
 // const cinerinoAuthClient = new cinerinoapi.auth.ClientCredentials({
 //     domain: credentials.cinerino.authorizeServerDomain,
 //     clientId: credentials.cinerino.clientId,
@@ -74,6 +76,11 @@ function aggregateByEvent(params: {
         reservation: repository.Reservation;
         performance: repository.Performance;
     }) => {
+        // 非同期集計が無効であれば何もしない
+        if (DISABLE_ASYNCHRONOUS_CHECKED_RESERVATION) {
+            return;
+        }
+
         // 予約情報取得
         const reservations = await repos.reservation.search(
             {

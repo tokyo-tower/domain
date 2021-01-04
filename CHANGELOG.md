@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 全コレクションにproject属性を追加
 - イベントの予約集計時処理から、入場済予約数以外の集計を削除
 - イベントの予約集計時、同時刻隊のツアーに関しての集計を実行しないように調整
+- DISABLE_ASYNCHRONOUS_CHECKED_RESERVATION設定を追加
 
 ### Deprecated
 
