@@ -102,8 +102,7 @@ export function createReturnOrderReport(params: {
                 status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
                 cancellationFee: cancellationFee,
                 orderDate: moment(dateReturned)
-                    .tz('Asia/Tokyo')
-                    .format('YYYY/MM/DD HH:mm:ss')
+                    .toDate()
             });
         });
 
@@ -164,8 +163,7 @@ export function createRefundOrderReport(params: {
                     cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
                     orderDate: moment(dateReturned)
-                        .tz('Asia/Tokyo')
-                        .format('YYYY/MM/DD HH:mm:ss')
+                        .toDate()
                 });
             }
         });
@@ -277,8 +275,7 @@ function reservation2report(
             username: username
         },
         orderDate: moment(order.orderDate)
-            .tz('Asia/Tokyo')
-            .format('YYYY/MM/DD HH:mm:ss'),
+            .toDate(),
         paymentMethod: paymentMethodName2reportString({ name: paymentMethodName }),
         checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
         checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when)

@@ -37,7 +37,7 @@ export interface IReport {
         segment: string;
     };
     // 購入日時
-    orderDate: string;
+    orderDate: Date;
     // 決済方法
     paymentMethod: string;
     seat: {
