@@ -23,6 +23,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
+- イベント予約集計タスクを削除
+- 注文取引レポート作成タスクを削除
+- 注文返品取引レポート作成タスクを削除
+- Cinerinoイベントインポートタスクを削除
+
 ### Fixed
 
 ### Security
