@@ -21,15 +21,9 @@ var ttts = require("@tokyo-tower/domain");
 
 ### Environment variables
 
-| Name                               | Required | Value         | Purpose                 |
-| ---------------------------------- | -------- | ------------- | ----------------------- |
-| `CINERINO_AUTHORIZE_SERVER_DOMAIN` | true     |               | Chevre API Settings     |
-| `CINERINO_CLIENT_ID`               | true     |               | Chevre API Settings     |
-| `CINERINO_CLIENT_SECRET`           | true     |               | Chevre API Settings     |
-| `DEBUG`                            | false    | ttts-domain:* | Debug                   |
-| `LINE_NOTIFY_ACCESS_TOKEN`         | true     |               | LINE Notify Credentials |
-| `LINE_NOTIFY_URL`                  | true     |               | LINE Notify Credentials |
-| `PROJECT_ID`                       | true     |               | Project ID              |
+| Name    | Required | Value         | Purpose |
+| ------- | -------- | ------------- | ------- |
+| `DEBUG` | false    | ttts-domain:* | Debug   |
 
 ## License
 

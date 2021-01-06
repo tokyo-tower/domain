@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 注文返品取引レポート作成タスクを削除
 - Cinerinoイベントインポートタスクを削除
 - タスクの仕組みを削除
+- 通知サービスを削除
 
 ### Fixed
 
