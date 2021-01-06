@@ -3,7 +3,6 @@
  */
 import * as NotificationService from './service/notification';
 import * as OrderReportService from './service/report/order';
-import * as TaskService from './service/task';
 
 import * as factory from '@tokyotower/factory';
 
@@ -14,7 +13,6 @@ export namespace service {
     export namespace report {
         export import order = OrderReportService;
     }
-    export import task = TaskService;
 }
 
 export import factory = factory;

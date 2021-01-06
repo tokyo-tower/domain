@@ -176,42 +176,8 @@ export function createRefundOrderReport(params: {
 }
 
 /**
- * 予約データからレポートを更新する
- * 何かしらの操作で予約データ更新時に連動される(入場時など)
- */
-export function updateOrderReportByReservation(params: { reservation: factory.reservation.event.IReservation }) {
-    return async (repos: { report: ReportRepo }): Promise<void> => {
-        // const paymentSeatIndex = params.reservation.additionalProperty?.find((p) => p.name === 'paymentSeatIndex')?.value;
-        // if (typeof paymentSeatIndex !== 'string') {
-        //     throw new Error('paymentSeatIndex undefined');
-        // }
-
-        // const paymentNo = params.reservation.underName?.identifier?.find((p) => p.name === 'paymentNo')?.value;
-        // if (typeof paymentNo !== 'string') {
-        //     throw new Error('paymentSeatIndex paymentNo');
-        // }
-
-        await repos.report.updateAttendStatus({
-            // performance+payment_no+payment_seat_index の指定については、予約IDで更新に変更、でよいのでは？
-            reservation: { id: params.reservation.id },
-            // performance: { id: params.reservation.reservationFor.id },
-            // payment_no: paymentNo,
-            // payment_seat_index: Number(paymentSeatIndex),
-            checkedin: params.reservation.checkins.length > 0 ? 'TRUE' : 'FALSE',
-            checkinDate: params.reservation.checkins.length > 0
-                ? moment(params.reservation.checkins[0].when)
-                    .tz('Asia/Tokyo')
-                    .format('YYYY/MM/DD HH:mm:ss')
-                : ''
-
-        });
-    };
-}
-
-/**
  * 予約データをcsvデータ型に変換する
  */
-// tslint:disable-next-line:cyclomatic-complexity
 function reservation2report(
     r: factory.reservation.event.IReservation,
     unitPrice: number,
@@ -277,10 +243,8 @@ function reservation2report(
         orderDate: moment(order.orderDate)
             .toDate(),
         paymentMethod: paymentMethodName2reportString({ name: paymentMethodName }),
-        checkedin: r.checkins.length > 0 ? 'TRUE' : 'FALSE',
-        checkinDate: r.checkins.length > 0 ? moment(r.checkins[0].when)
-            .tz('Asia/Tokyo')
-            .format('YYYY/MM/DD HH:mm:ss') : '',
+        checkedin: 'FALSE', // デフォルトはFALSE
+        checkinDate: '', // デフォルトは空文字
         reservationStatus: Status4csv.Reserved,
         status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
         price: order.price.toString(),
