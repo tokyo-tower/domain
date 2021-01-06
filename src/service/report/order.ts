@@ -5,7 +5,7 @@ import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment-timezone';
 
-import { IReport, MongoRepository as ReportRepo, Status4csv } from '../../repo/report';
+import { MongoRepository as ReportRepo } from '../../repo/report';
 
 export type ICompoundPriceSpecification = factory.chevre.compoundPriceSpecification.IPriceSpecification<any>;
 
@@ -30,13 +30,13 @@ function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedO
 }
 
 /**
- * 注文取引からレポートを作成する
+ * 注文からレポートを作成する
  */
 export function createPlaceOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (repos: { report: ReportRepo }): Promise<void> => {
-        const datas: IReport[] = [];
+        const datas: factory.report.order.IReport[] = [];
 
         datas.push(
             ...params.order.acceptedOffers
@@ -44,10 +44,7 @@ export function createPlaceOrderReport(params: {
                     const unitPrice = getUnitPriceByAcceptedOffer(o);
 
                     return reservation2report(
-                        {
-                            ...<cinerinoapi.factory.order.IReservation>o.itemOffered,
-                            checkins: []
-                        },
+                        <cinerinoapi.factory.order.IReservation>o.itemOffered,
                         unitPrice,
                         params.order,
                         params.order.orderDate,
@@ -64,19 +61,20 @@ export function createPlaceOrderReport(params: {
 }
 
 /**
- * 注文返品取引からレポートを作成する
+ * 返品された注文からレポートを作成する
  */
 export function createReturnOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (repos: { report: ReportRepo }): Promise<void> => {
-        const datas: IReport[] = [];
+        const datas: factory.report.order.IReport[] = [];
 
         const dateReturned = moment(<Date>params.order.dateReturned)
             .toDate();
         let cancellationFee = 0;
-        if (Array.isArray(params.order.returner?.identifier)) {
-            const cancellationFeeValue = params.order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
+        const returnerIdentifier = params.order.returner?.identifier;
+        if (Array.isArray(returnerIdentifier)) {
+            const cancellationFeeValue = returnerIdentifier.find((p) => p.name === 'cancellationFee')?.value;
             if (cancellationFeeValue !== undefined) {
                 cancellationFee = Number(cancellationFeeValue);
             }
@@ -89,16 +87,13 @@ export function createReturnOrderReport(params: {
             // 座席分のキャンセルデータ
             datas.push({
                 ...reservation2report(
-                    {
-                        ...r,
-                        checkins: []
-                    },
+                    r,
                     unitPrice,
                     params.order,
                     <Date>params.order.dateReturned,
                     reservationIndex
                 ),
-                reservationStatus: Status4csv.Cancelled,
+                reservationStatus: factory.report.order.ReportCategory.Cancelled,
                 status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
                 cancellationFee: cancellationFee,
                 orderDate: moment(dateReturned)
@@ -114,19 +109,20 @@ export function createReturnOrderReport(params: {
 }
 
 /**
- * 注文返金レポートを作成する
+ * 返金された注文からレポートを作成する
  */
 export function createRefundOrderReport(params: {
     order: cinerinoapi.factory.order.IOrder;
 }) {
     return async (repos: { report: ReportRepo }): Promise<void> => {
-        const datas: IReport[] = [];
+        const datas: factory.report.order.IReport[] = [];
 
         const dateReturned = moment(<Date>params.order.dateReturned)
             .toDate();
         let cancellationFee = 0;
-        if (Array.isArray(params.order.returner?.identifier)) {
-            const cancellationFeeValue = params.order.returner?.identifier.find((p: any) => p.name === 'cancellationFee')?.value;
+        const returnerIdentifier = params.order.returner?.identifier;
+        if (Array.isArray(returnerIdentifier)) {
+            const cancellationFeeValue = returnerIdentifier.find((p) => p.name === 'cancellationFee')?.value;
             if (cancellationFeeValue !== undefined) {
                 cancellationFee = Number(cancellationFeeValue);
             }
@@ -140,10 +136,7 @@ export function createRefundOrderReport(params: {
             if (reservationIndex === 0) {
                 datas.push({
                     ...reservation2report(
-                        {
-                            ...r,
-                            checkins: []
-                        },
+                        r,
                         unitPrice,
                         params.order,
                         dateReturned
@@ -157,8 +150,7 @@ export function createRefundOrderReport(params: {
                         charge: cancellationFee.toString(),
                         csvCode: ''
                     },
-                    // payment_seat_index: '',
-                    reservationStatus: Status4csv.CancellationFee,
+                    reservationStatus: factory.report.order.ReportCategory.CancellationFee,
                     status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
                     cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
@@ -179,12 +171,12 @@ export function createRefundOrderReport(params: {
  * 予約データをcsvデータ型に変換する
  */
 function reservation2report(
-    r: factory.reservation.event.IReservation,
+    r: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>,
     unitPrice: number,
     order: cinerinoapi.factory.order.IOrder,
     targetDate: Date,
     paymentSeatIndex?: number
-): IReport {
+): factory.report.order.IReport {
     const age = (typeof order.customer.age === 'string') ? order.customer.age : '';
 
     let username = '';
@@ -245,7 +237,7 @@ function reservation2report(
         paymentMethod: paymentMethodName2reportString({ name: paymentMethodName }),
         checkedin: 'FALSE', // デフォルトはFALSE
         checkinDate: '', // デフォルトは空文字
-        reservationStatus: Status4csv.Reserved,
+        reservationStatus: factory.report.order.ReportCategory.Reserved,
         status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
         price: order.price.toString(),
         cancellationFee: 0,
