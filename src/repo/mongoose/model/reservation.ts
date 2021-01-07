@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 
+const modelName = 'Reservation';
+
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 /**
@@ -286,7 +288,7 @@ schema.index(
     }
 );
 
-export default mongoose.model('Reservation', schema)
+mongoose.model(modelName, schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
@@ -295,3 +297,5 @@ export default mongoose.model('Reservation', schema)
             console.error(error);
         }
     });
+
+export { modelName, schema };
