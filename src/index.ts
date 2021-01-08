@@ -1,22 +1,16 @@
 /**
  * index module
  */
-import * as AggregateService from './service/aggregate';
-import * as NotificationService from './service/notification';
-import * as PerformanceService from './service/performance';
-import * as ReserveService from './service/reserve';
-import * as TaskService from './service/task';
+import * as OrderReportService from './service/report/order';
 
 import * as factory from '@tokyotower/factory';
 
 import * as repository from './repository';
 
 export namespace service {
-    export import notification = NotificationService;
-    export import performance = PerformanceService;
-    export import reserve = ReserveService;
-    export import aggregate = AggregateService;
-    export import task = TaskService;
+    export namespace report {
+        export import order = OrderReportService;
+    }
 }
 
 export import factory = factory;

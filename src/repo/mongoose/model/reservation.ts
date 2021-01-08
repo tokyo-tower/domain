@@ -1,5 +1,7 @@
 import * as mongoose from 'mongoose';
 
+const modelName = 'Reservation';
+
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 /**
@@ -15,7 +17,8 @@ const schema = new mongoose.Schema(
                 when: Date, // いつ
                 where: String, // どこで
                 why: String, // 何のために
-                how: String // どうやって
+                how: String, // どうやって
+                id: String
             }],
             default: []
         },
@@ -34,6 +37,7 @@ const schema = new mongoose.Schema(
         price: mongoose.SchemaTypes.Mixed,
         priceCurrency: String,
         programMembershipUsed: String,
+        project: mongoose.SchemaTypes.Mixed,
         reservationFor: mongoose.SchemaTypes.Mixed,
         reservationNumber: String,
         reservationStatus: String,
@@ -92,6 +96,16 @@ schema.index(
 schema.index(
     { modifiedTime: -1 },
     { name: 'searchByModifiedTime-v2' }
+);
+
+schema.index(
+    { 'project.id': 1, modifiedTime: -1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
 );
 
 schema.index(
@@ -274,7 +288,7 @@ schema.index(
     }
 );
 
-export default mongoose.model('Reservation', schema)
+mongoose.model(modelName, schema)
     .on('index', (error) => {
         // tslint:disable-next-line:no-single-line-block-comment
         /* istanbul ignore next */
@@ -283,3 +297,5 @@ export default mongoose.model('Reservation', schema)
             console.error(error);
         }
     });
+
+export { modelName, schema };

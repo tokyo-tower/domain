@@ -9,8 +9,8 @@
     }
   ],
   "dependencies": {
-    "@cinerino/sdk": "1.18.1",
-    "@tokyotower/factory": "31.3.0",
+    "@cinerino/sdk": "1.20.1",
+    "@tokyotower/factory": "^32.0.0",
     "debug": "^3.2.6",
     "http-status": "^1.4.2",
     "moment": "^2.24.0",
@@ -81,5 +81,5 @@
     "postversion": "git push origin --tags",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "version": "48.16.2"
+  "version": "49.0.0"
 }

@@ -7,6 +7,7 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
  */
 const schema = new mongoose.Schema(
     {
+        project: mongoose.SchemaTypes.Mixed,
         /**
          * 予約ID
          */
@@ -101,11 +102,31 @@ schema.index(
 );
 
 schema.index(
+    { 'reservation.id': 1, date_bucket: 1 },
+    {
+        name: 'searchByReservationId',
+        partialFilterExpression: {
+            'reservation.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'customer.group': 1, date_bucket: 1 },
     {
         name: 'searchByCustomerGroup',
         partialFilterExpression: {
             'customer.group': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'project.id': 1, date_bucket: 1 },
+    {
+        name: 'searchByProjectId',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
         }
     }
 );
