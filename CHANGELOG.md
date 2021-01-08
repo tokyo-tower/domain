@@ -10,6 +10,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## v49.0.0 - 2021-01-08
+
+### Changed
+
 - 売上レポートサービスを最適化
 - レポートへの入場連携を予約IDで実行するように変更(元は、イベントID+確認番号+購入座席インデックス)
 - パフォーマンスサービスを削除
@@ -17,9 +29,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - 全コレクションにproject属性を追加
 - イベントの予約集計時処理から、入場済予約数以外の集計を削除
 - イベントの予約集計時、同時刻隊のツアーに関しての集計を実行しないように調整
-- DISABLE_ASYNCHRONOUS_CHECKED_RESERVATION設定を追加
-
-### Deprecated
 
 ### Removed
 
@@ -29,10 +38,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Cinerinoイベントインポートタスクを削除
 - タスクの仕組みを削除
 - 通知サービスを削除
-
-### Fixed
-
-### Security
 
 ## v48.16.2 - 2020-12-19
 
