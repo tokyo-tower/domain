@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v49.0.1 - 2021-01-12
+
+### Changed
+
+- update @cinerino/sdk
+- update @tokyotower/factory
+
 ## v49.0.0 - 2021-01-08
 
 ### Changed
