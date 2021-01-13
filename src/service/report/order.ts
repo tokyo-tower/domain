@@ -170,6 +170,7 @@ export function createRefundOrderReport(params: {
 /**
  * 予約データをcsvデータ型に変換する
  */
+// tslint:disable-next-line:cyclomatic-complexity
 function reservation2report(
     r: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>,
     unitPrice: number,
@@ -199,10 +200,28 @@ function reservation2report(
     }
 
     const customerGroup: string = order2customerGroup(order);
+    const seatNumber = r.reservedTicket.ticketedSeat?.seatNumber;
+    const offerUnitPrice = r.reservedTicket.ticketType.priceSpecification?.price;
 
     return {
         project: { typeOf: order.project.typeOf, id: order.project.id },
-        reservation: { id: r.id },
+        reservation: {
+            id: r.id,
+            reservationFor: {
+                id: r.reservationFor.id,
+                startDate: moment(r.reservationFor.startDate)
+                    .toDate()
+            },
+            reservedTicket: {
+                ticketType: {
+                    csvCode,
+                    name: <any>r.reservedTicket.ticketType.name,
+                    priceSpecification: (typeof offerUnitPrice === 'number') ? { price: offerUnitPrice } : undefined
+                },
+                ticketedSeat: (typeof seatNumber === 'string') ? { seatNumber } : undefined
+            }
+        },
+        confirmationNumber: order.confirmationNumber,
         payment_no: order.confirmationNumber,
         ...(typeof paymentSeatIndex === 'number') ? { payment_seat_index: paymentSeatIndex } : undefined,
         performance: {
