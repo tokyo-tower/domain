@@ -119,7 +119,10 @@ export function createReturnOrderReport(params: {
                 status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
                 cancellationFee: cancellationFee,
                 orderDate: moment(dateReturned)
-                    .toDate()
+                    .toDate(),
+                ...{
+                    category: factory.report.order.ReportCategory.Cancelled
+                }
             });
         });
 
@@ -180,7 +183,10 @@ export function createRefundOrderReport(params: {
                     cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
                     orderDate: moment(dateReturned)
-                        .toDate()
+                        .toDate(),
+                    ...{
+                        category: factory.report.order.ReportCategory.CancellationFee
+                    }
                 });
             }
         });
@@ -288,6 +294,7 @@ function reservation2report(
         price: order.price.toString(),
         cancellationFee: 0,
         date_bucket: targetDate,
+        ...{ category: factory.report.order.ReportCategory.Reserved },
         ...(typeof sortBy === 'string' && sortBy.length > 0) ? { sortBy } : undefined
     };
 }

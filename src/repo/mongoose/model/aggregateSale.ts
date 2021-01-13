@@ -3,12 +3,13 @@ import * as mongoose from 'mongoose';
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 /**
- * 売上集計スキーマ
+ * 注文レポートスキーマ
  */
 const schema = new mongoose.Schema(
     {
         project: mongoose.SchemaTypes.Mixed,
         reservation: mongoose.SchemaTypes.Mixed,
+        category: String,
         confirmationNumber: String,
         /**
          * 購入番号
