@@ -39,9 +39,9 @@ function getSortBy(order: cinerinoapi.factory.order.IOrder, reservation: cinerin
             .unix()}`
             // tslint:disable-next-line:no-magic-numbers
             .slice(-20),
-        `0000000000000000000000000${order.orderNumber}`
+        `00000000000000000000${order.confirmationNumber}`
             // tslint:disable-next-line:no-magic-numbers
-            .slice(-25),
+            .slice(-20),
         status,
         (typeof seatNumber === 'string') ? seatNumber : reservation.id
     );
