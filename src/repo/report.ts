@@ -19,9 +19,13 @@ export class MongoRepository {
     public async saveReport(params: factory.report.order.IReport): Promise<void> {
         await this.aggregateSaleModel.findOneAndUpdate(
             {
-                'performance.id': params.performance.id,
-                payment_no: params.payment_no,
-                payment_seat_index: params.payment_seat_index,
+                'reservation.id': {
+                    $exists: true,
+                    $eq: params.reservation.id
+                },
+                // 'performance.id': params.performance.id,
+                // payment_no: params.payment_no,
+                // payment_seat_index: params.payment_seat_index,
                 reservationStatus: params.reservationStatus
             },
             params,
@@ -35,9 +39,6 @@ export class MongoRepository {
      */
     public async updateAttendStatus(params: {
         reservation: { id: string };
-        // performance: { id: string };
-        // payment_no: string;
-        // payment_seat_index: number;
         checkedin: string;
         checkinDate: string;
     }): Promise<void> {
@@ -47,9 +48,6 @@ export class MongoRepository {
                     $exists: true,
                     $eq: params.reservation.id
                 }
-                // 'performance.id': params.performance.id,
-                // payment_no: params.payment_no,
-                // payment_seat_index: params.payment_seat_index
             },
             {
                 checkedin: params.checkedin,

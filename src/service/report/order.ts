@@ -201,7 +201,6 @@ function reservation2report(
 
     const customerGroup: string = order2customerGroup(order);
     const seatNumber = r.reservedTicket.ticketedSeat?.seatNumber;
-    const offerUnitPrice = r.reservedTicket.ticketType.priceSpecification?.price;
 
     return {
         project: { typeOf: order.project.typeOf, id: order.project.id },
@@ -216,7 +215,9 @@ function reservation2report(
                 ticketType: {
                     csvCode,
                     name: <any>r.reservedTicket.ticketType.name,
-                    priceSpecification: (typeof offerUnitPrice === 'number') ? { price: offerUnitPrice } : undefined
+                    ...(typeof unitPrice === 'number')
+                        ? { priceSpecification: { price: unitPrice } }
+                        : undefined
                 },
                 ticketedSeat: (typeof seatNumber === 'string') ? { seatNumber } : undefined
             }

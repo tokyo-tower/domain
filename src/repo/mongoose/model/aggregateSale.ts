@@ -8,12 +8,11 @@ const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 const schema = new mongoose.Schema(
     {
         project: mongoose.SchemaTypes.Mixed,
-        /**
-         * 予約ID
-         */
         reservation: mongoose.SchemaTypes.Mixed,
+        confirmationNumber: String,
         /**
          * 購入番号
+         * @deprecated
          */
         payment_no: String,
         /**
