@@ -1,8 +1,8 @@
 
-const cinerino = require('@cinerino/sdk');
 const ttts = require('../lib/index');
 const moment = require('moment-timezone');
 const mongoose = require('mongoose');
+const util = require('util');
 
 async function main() {
     await mongoose.connect(process.env.MONGOLAB_URI);
@@ -31,30 +31,32 @@ async function main() {
         i += 1;
         const report = doc.toObject();
 
-        if (report.reservation === undefined
-            || report.reservation === null
-            || report.reservation.reservationFor === undefined
-            || report.reservation.reservationFor === null) {
-            const startDate = moment(`${report.performance.startDay}${report.performance.startTime}00+09:00`, 'YYYYMMDDHHmmssZ')
-                .toDate();
+        if (report.sortBy === undefined
+            || report.sortBy === null) {
+            let status = '00';
+            if (report.reservationStatus === 'CANCELLED') {
+                status = '01';
+            } else if (report.reservationStatus === 'CANCELLATION_FEE') {
+                status = '02';
+            }
+
+            const sortBy = util.format(
+                '%s:%s:%s:%s',
+                `00000000000000000000${moment(report.reservation.reservationFor.startDate)
+                    .unix()}`
+                    // tslint:disable-next-line:no-magic-numbers
+                    .slice(-20),
+                `00000000000000000000${report.confirmationNumber}`
+                    // tslint:disable-next-line:no-magic-numbers
+                    .slice(-20),
+                status,
+                report.reservation.reservedTicket.ticketedSeat.seatNumber
+            );
 
             const update = {
-                confirmationNumber: String(report.payment_no),
-                'reservation.reservationFor': {
-                    id: String(report.performance.id),
-                    startDate
-                },
-                'reservation.reservedTicket': {
-                    ticketedSeat: { seatNumber: String(report.seat.code) },
-                    ticketType: {
-                        csvCode: String(report.ticketType.csvCode),
-                        name: { ja: String(report.ticketType.name) },
-                        priceSpecification: { price: Number(report.ticketType.charge) }
-                    }
-
-                },
+                sortBy: sortBy
             };
-            console.log('updating...', report.date_bucket, startDate);
+            console.log('updating...', report.date_bucket, sortBy);
             updateCount += 1;
 
             await reportRepo.aggregateSaleModel.findByIdAndUpdate(
