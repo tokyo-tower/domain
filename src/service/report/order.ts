@@ -4,6 +4,7 @@
 import * as cinerinoapi from '@cinerino/sdk';
 import * as factory from '@tokyotower/factory';
 import * as moment from 'moment-timezone';
+import * as util from 'util';
 
 import { MongoRepository as ReportRepo } from '../../repo/report';
 
@@ -29,6 +30,23 @@ function getUnitPriceByAcceptedOffer(offer: cinerinoapi.factory.order.IAcceptedO
     return unitPrice;
 }
 
+function getSortBy(order: cinerinoapi.factory.order.IOrder, reservation: cinerinoapi.factory.order.IReservation, status: string) {
+    const seatNumber = reservation.reservedTicket.ticketedSeat?.seatNumber;
+
+    return util.format(
+        '%s:%s:%s:%s',
+        `00000000000000000000${moment(reservation.reservationFor.startDate)
+            .unix()}`
+            // tslint:disable-next-line:no-magic-numbers
+            .slice(-20),
+        `0000000000000000000000000${order.orderNumber}`
+            // tslint:disable-next-line:no-magic-numbers
+            .slice(-25),
+        status,
+        (typeof seatNumber === 'string') ? seatNumber : reservation.id
+    );
+}
+
 /**
  * 注文からレポートを作成する
  */
@@ -42,13 +60,15 @@ export function createPlaceOrderReport(params: {
             ...params.order.acceptedOffers
                 .map((o, index) => {
                     const unitPrice = getUnitPriceByAcceptedOffer(o);
+                    const sortBy = getSortBy(params.order, <cinerinoapi.factory.order.IReservation>o.itemOffered, '00');
 
                     return reservation2report(
                         <cinerinoapi.factory.order.IReservation>o.itemOffered,
                         unitPrice,
                         params.order,
                         params.order.orderDate,
-                        index
+                        index,
+                        sortBy
                     );
                 })
         );
@@ -83,6 +103,7 @@ export function createReturnOrderReport(params: {
         params.order.acceptedOffers.forEach((o, reservationIndex) => {
             const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
             const unitPrice = getUnitPriceByAcceptedOffer(o);
+            const sortBy = getSortBy(params.order, r, '01');
 
             // 座席分のキャンセルデータ
             datas.push({
@@ -91,7 +112,8 @@ export function createReturnOrderReport(params: {
                     unitPrice,
                     params.order,
                     <Date>params.order.dateReturned,
-                    reservationIndex
+                    reservationIndex,
+                    sortBy
                 ),
                 reservationStatus: factory.report.order.ReportCategory.Cancelled,
                 status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
@@ -131,6 +153,7 @@ export function createRefundOrderReport(params: {
         params.order.acceptedOffers.forEach((o, reservationIndex) => {
             const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
             const unitPrice = getUnitPriceByAcceptedOffer(o);
+            const sortBy = getSortBy(params.order, r, '02');
 
             // 購入分のキャンセル料データ
             if (reservationIndex === 0) {
@@ -139,8 +162,10 @@ export function createRefundOrderReport(params: {
                         r,
                         unitPrice,
                         params.order,
-                        dateReturned
-                        // reservationIndex // 返品手数料行にはpayment_seat_indexなし
+                        dateReturned,
+                        // 返品手数料行にはpayment_seat_indexなし
+                        undefined,
+                        sortBy
                     ),
                     seat: {
                         code: ''
@@ -176,7 +201,8 @@ function reservation2report(
     unitPrice: number,
     order: cinerinoapi.factory.order.IOrder,
     targetDate: Date,
-    paymentSeatIndex?: number
+    paymentSeatIndex?: number,
+    sortBy?: string
 ): factory.report.order.IReport {
     const age = (typeof order.customer.age === 'string') ? order.customer.age : '';
 
@@ -261,7 +287,8 @@ function reservation2report(
         status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
         price: order.price.toString(),
         cancellationFee: 0,
-        date_bucket: targetDate
+        date_bucket: targetDate,
+        ...(typeof sortBy === 'string' && sortBy.length > 0) ? { sortBy } : undefined
     };
 }
 

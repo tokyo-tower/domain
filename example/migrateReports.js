@@ -14,7 +14,7 @@ async function main() {
             // _id: { $eq: '200728001001012200' },
             date_bucket: {
                 $gte: moment()
-                    .add(-3, 'month')
+                    .add(-2, 'years')
                     .toDate()
             },
         },
@@ -31,18 +31,35 @@ async function main() {
         i += 1;
         const report = doc.toObject();
 
-        // if (report.reservationStatus === 'RESERVED') {
-        // }
-        if (!moment(report.date_bucket).isSame(moment(report.orderDate))) {
-            console.log('updating...', report.date_bucket);
+        if (report.reservation === undefined
+            || report.reservation === null
+            || report.reservation.reservationFor === undefined
+            || report.reservation.reservationFor === null) {
+            const startDate = moment(`${report.performance.startDay}${report.performance.startTime}00+09:00`, 'YYYYMMDDHHmmssZ')
+                .toDate();
+
+            const update = {
+                confirmationNumber: String(report.payment_no),
+                'reservation.reservationFor': {
+                    id: String(report.performance.id),
+                    startDate
+                },
+                'reservation.reservedTicket': {
+                    ticketedSeat: { seatNumber: String(report.seat.code) },
+                    ticketType: {
+                        csvCode: String(report.ticketType.csvCode),
+                        name: { ja: String(report.ticketType.name) },
+                        priceSpecification: { price: Number(report.ticketType.charge) }
+                    }
+
+                },
+            };
+            console.log('updating...', report.date_bucket, startDate);
             updateCount += 1;
 
             await reportRepo.aggregateSaleModel.findByIdAndUpdate(
                 report.id,
-                {
-                    orderDate: moment(report.date_bucket)
-                        .toDate()
-                }
+                update
             )
                 .exec();
             console.log('updated', report.date_bucket, i);

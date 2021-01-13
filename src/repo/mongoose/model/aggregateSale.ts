@@ -32,7 +32,8 @@ const schema = new mongoose.Schema(
         status_sort: String,
         price: String,
         cancellationFee: Number,
-        date_bucket: Date
+        date_bucket: Date,
+        sortBy: String
     },
     {
         collection: 'aggregateSales',
