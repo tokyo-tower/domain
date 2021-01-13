@@ -59,11 +59,6 @@ const schema = new mongoose.Schema(
     }
 );
 
-schema.index(
-    { sortBy: 1 },
-    { name: 'searchBySortBy' }
-);
-
 // 検索
 schema.index(
     { date_bucket: 1 },
