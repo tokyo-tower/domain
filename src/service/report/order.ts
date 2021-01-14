@@ -91,14 +91,6 @@ export function createReturnOrderReport(params: {
 
         const dateReturned = moment(<Date>params.order.dateReturned)
             .toDate();
-        let cancellationFee = 0;
-        const returnerIdentifier = params.order.returner?.identifier;
-        if (Array.isArray(returnerIdentifier)) {
-            const cancellationFeeValue = returnerIdentifier.find((p) => p.name === 'cancellationFee')?.value;
-            if (cancellationFeeValue !== undefined) {
-                cancellationFee = Number(cancellationFeeValue);
-            }
-        }
 
         params.order.acceptedOffers.forEach((o, reservationIndex) => {
             const r = <cinerinoapi.factory.order.IReservation>o.itemOffered;
@@ -115,14 +107,13 @@ export function createReturnOrderReport(params: {
                     reservationIndex,
                     sortBy
                 ),
-                reservationStatus: factory.report.order.ReportCategory.Cancelled,
-                status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`,
-                cancellationFee: cancellationFee,
+                ...{
+                    reservationStatus: factory.report.order.ReportCategory.Cancelled,
+                    status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_1`
+                },
                 orderDate: moment(dateReturned)
                     .toDate(),
-                ...{
-                    category: factory.report.order.ReportCategory.Cancelled
-                }
+                category: factory.report.order.ReportCategory.Cancelled
             });
         });
 
@@ -170,23 +161,22 @@ export function createRefundOrderReport(params: {
                         undefined,
                         sortBy
                     ),
-                    seat: {
-                        code: ''
+                    ...{
+                        seat: {
+                            code: ''
+                        },
+                        ticketType: {
+                            name: '',
+                            charge: cancellationFee.toString(),
+                            csvCode: ''
+                        },
+                        reservationStatus: factory.report.order.ReportCategory.CancellationFee,
+                        status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`
                     },
-                    ticketType: {
-                        name: '',
-                        charge: cancellationFee.toString(),
-                        csvCode: ''
-                    },
-                    reservationStatus: factory.report.order.ReportCategory.CancellationFee,
-                    status_sort: `${factory.chevre.reservationStatusType.ReservationConfirmed}_2`,
-                    cancellationFee: cancellationFee,
                     price: cancellationFee.toString(),
                     orderDate: moment(dateReturned)
                         .toDate(),
-                    ...{
-                        category: factory.report.order.ReportCategory.CancellationFee
-                    }
+                    category: factory.report.order.ReportCategory.CancellationFee
                 });
             }
         });
@@ -255,26 +245,7 @@ function reservation2report(
             }
         },
         confirmationNumber: order.confirmationNumber,
-        payment_no: order.confirmationNumber,
         ...(typeof paymentSeatIndex === 'number') ? { payment_seat_index: paymentSeatIndex } : undefined,
-        performance: {
-            id: r.reservationFor.id,
-            startDay: moment(r.reservationFor.startDate)
-                .tz('Asia/Tokyo')
-                .format('YYYYMMDD'),
-            startTime: moment(r.reservationFor.startDate)
-                .tz('Asia/Tokyo')
-                .format('HHmm')
-        },
-        seat: {
-            code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : ''
-        },
-        ticketType: {
-            name: (typeof r.reservedTicket.ticketType.name !== 'string'
-                && typeof r.reservedTicket.ticketType.name?.ja === 'string') ? r.reservedTicket.ticketType.name.ja : '',
-            csvCode,
-            charge: unitPrice.toString()
-        },
         customer: {
             group: customerGroup2reportString({ group: customerGroup }),
             givenName: (typeof order.customer.givenName === 'string') ? order.customer.givenName : '',
@@ -289,13 +260,33 @@ function reservation2report(
         paymentMethod: paymentMethodName2reportString({ name: paymentMethodName }),
         checkedin: 'FALSE', // デフォルトはFALSE
         checkinDate: '', // デフォルトは空文字
-        reservationStatus: factory.report.order.ReportCategory.Reserved,
-        status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
         price: order.price.toString(),
-        cancellationFee: 0,
-        date_bucket: targetDate,
-        ...{ category: factory.report.order.ReportCategory.Reserved },
-        ...(typeof sortBy === 'string' && sortBy.length > 0) ? { sortBy } : undefined
+        category: factory.report.order.ReportCategory.Reserved,
+        ...(typeof sortBy === 'string' && sortBy.length > 0) ? { sortBy } : undefined,
+        ...{
+            date_bucket: targetDate,
+            payment_no: order.confirmationNumber,
+            performance: {
+                id: r.reservationFor.id,
+                startDay: moment(r.reservationFor.startDate)
+                    .tz('Asia/Tokyo')
+                    .format('YYYYMMDD'),
+                startTime: moment(r.reservationFor.startDate)
+                    .tz('Asia/Tokyo')
+                    .format('HHmm')
+            },
+            reservationStatus: factory.report.order.ReportCategory.Reserved,
+            seat: {
+                code: (r.reservedTicket.ticketedSeat !== undefined) ? r.reservedTicket.ticketedSeat.seatNumber : ''
+            },
+            status_sort: factory.chevre.reservationStatusType.ReservationConfirmed,
+            ticketType: {
+                name: (typeof r.reservedTicket.ticketType.name !== 'string'
+                    && typeof r.reservedTicket.ticketType.name?.ja === 'string') ? r.reservedTicket.ticketType.name.ja : '',
+                csvCode,
+                charge: unitPrice.toString()
+            }
+        }
     };
 }
 

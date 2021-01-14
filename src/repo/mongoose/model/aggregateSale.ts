@@ -32,7 +32,6 @@ const schema = new mongoose.Schema(
         reservationStatus: String,
         status_sort: String,
         price: String,
-        cancellationFee: Number,
         date_bucket: Date,
         sortBy: String
     },
@@ -65,6 +64,72 @@ schema.index(
     { name: 'searchBySortBy' }
 );
 
+schema.index(
+    { 'customer.group': 1, sortBy: 1 },
+    {
+        name: 'searchByCustomerGroup-v2',
+        partialFilterExpression: {
+            'customer.group': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { category: 1, sortBy: 1 },
+    { name: 'searchByCategory' }
+);
+
+schema.index(
+    { confirmationNumber: 1, sortBy: 1 },
+    { name: 'searchByConfirmationNumber' }
+);
+
+schema.index(
+    { orderDate: 1, sortBy: 1 },
+    { name: 'searchByOrderDate' }
+);
+
+schema.index(
+    { 'reservation.id': 1, sortBy: 1 },
+    {
+        name: 'searchByReservationId-v2',
+        partialFilterExpression: {
+            'reservation.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'reservation.reservationFor.id': 1, sortBy: 1 },
+    {
+        name: 'searchByReservationReservationForId',
+        partialFilterExpression: {
+            'reservation.reservationFor.id': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'reservation.reservationFor.startDate': 1, sortBy: 1 },
+    {
+        name: 'searchByReservationReservationForStartDate',
+        partialFilterExpression: {
+            'reservation.reservationFor.startDate': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'project.id': 1, sortBy: 1 },
+    {
+        name: 'searchByProjectId-v2',
+        partialFilterExpression: {
+            'project.id': { $exists: true }
+        }
+    }
+);
+
+// ↓以下インデックスは非推奨
 // 検索
 schema.index(
     { date_bucket: 1 },

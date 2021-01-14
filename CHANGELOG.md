@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- 注文レポート検索のソーティングを最適化
+- 売上レポート検索のソーティングを最適化
+- 売上レポートを最適化
 
 ### Deprecated
 
