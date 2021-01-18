@@ -14,7 +14,6 @@ async function main() {
 
     const reportRepo = new domain.repository.Report(mongoose.connection);
     const performanceRepo = new domain.repository.Performance(mongoose.connection);
-    const reservationRepo = new domain.repository.Reservation(mongoose.connection);
 
     let result;
 
@@ -29,12 +28,6 @@ async function main() {
     })
         .exec();
     console.log('performances deleted', result);
-
-    result = await reservationRepo.reservationModel.deleteMany({
-        created_at: { $lt: createdThrough }
-    })
-        .exec();
-    console.log('reservations deleted', result);
 
     // await mongoose.disconnect();
 }
