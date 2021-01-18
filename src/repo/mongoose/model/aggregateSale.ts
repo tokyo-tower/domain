@@ -22,7 +22,10 @@ const schema = new mongoose.Schema(
         price: String,
         sortBy: String,
         checkedin: String,
-        checkinDate: String
+        checkinDate: String,
+        mainEntity: mongoose.SchemaTypes.Mixed,
+        amount: Number,
+        dateRecorded: Date
     },
     {
         collection: 'aggregateSales',

@@ -141,7 +141,7 @@ export function createRefundOrderReport(params: {
 /**
  * 予約データをcsvデータ型に変換する
  */
-// tslint:disable-next-line:cyclomatic-complexity
+// tslint:disable-next-line:cyclomatic-complexity max-func-body-length
 function reservation2report(params: {
     category: factory.report.order.ReportCategory;
     r: factory.chevre.reservation.IReservation<factory.chevre.reservationType.EventReservation>;
@@ -176,7 +176,7 @@ function reservation2report(params: {
     const customerGroup: string = order2customerGroup(order);
     const seatNumber = params.r.reservedTicket.ticketedSeat?.seatNumber;
 
-    let price: string = String(order.price);
+    let price: number = Number(order.price);
     let sortBy: string;
     switch (params.category) {
         case factory.report.order.ReportCategory.CancellationFee:
@@ -188,7 +188,7 @@ function reservation2report(params: {
                     cancellationFee = Number(cancellationFeeValue);
                 }
             }
-            price = String(cancellationFee);
+            price = cancellationFee;
 
             sortBy = getSortBy(params.order, params.r, '02');
             break;
@@ -204,6 +204,18 @@ function reservation2report(params: {
         default:
             throw new Error(`category ${params.category} not implemented`);
     }
+
+    const customer: factory.report.order.ICustomer = {
+        group: customerGroup2reportString({ group: customerGroup }),
+        givenName: (typeof order.customer.givenName === 'string') ? order.customer.givenName : '',
+        familyName: (typeof order.customer.familyName === 'string') ? order.customer.familyName : '',
+        email: (typeof order.customer.email === 'string') ? order.customer.email : '',
+        telephone: (typeof order.customer.telephone === 'string') ? order.customer.telephone : '',
+        segment: customerSegment,
+        username: username
+    };
+
+    const paymentMethod: string = paymentMethodName2reportString({ name: paymentMethodName });
 
     return {
         category: params.category,
@@ -227,22 +239,26 @@ function reservation2report(params: {
             }
         },
         confirmationNumber: order.confirmationNumber,
-        customer: {
-            group: customerGroup2reportString({ group: customerGroup }),
-            givenName: (typeof order.customer.givenName === 'string') ? order.customer.givenName : '',
-            familyName: (typeof order.customer.familyName === 'string') ? order.customer.familyName : '',
-            email: (typeof order.customer.email === 'string') ? order.customer.email : '',
-            telephone: (typeof order.customer.telephone === 'string') ? order.customer.telephone : '',
-            segment: customerSegment,
-            username: username
-        },
+        customer: customer,
         orderDate: params.salesDate,
-        paymentMethod: paymentMethodName2reportString({ name: paymentMethodName }),
-        price,
+        paymentMethod: paymentMethod,
+        price: String(price),
         checkedin: 'FALSE', // デフォルトはFALSE
         checkinDate: '', // デフォルトは空文字
         ...(typeof params.paymentSeatIndex === 'number') ? { payment_seat_index: params.paymentSeatIndex } : undefined,
-        ...{ sortBy }
+        ...{
+            sortBy,
+            amount: price,
+            dateRecorded: params.salesDate,
+            mainEntity: {
+                confirmationNumber: order.confirmationNumber,
+                customer: customer,
+                orderDate: moment(order.orderDate)
+                    .toDate(),
+                paymentMethod: paymentMethod,
+                price: order.price
+            }
+        }
     };
 }
 
