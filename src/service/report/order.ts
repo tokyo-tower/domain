@@ -218,7 +218,23 @@ function reservation2report(params: {
     const paymentMethod: string = paymentMethodName2reportString({ name: paymentMethodName });
 
     return {
+        amount: price,
         category: params.category,
+        checkedin: 'FALSE', // デフォルトはFALSE
+        checkinDate: '', // デフォルトは空文字
+        dateRecorded: params.salesDate,
+        mainEntity: {
+            confirmationNumber: order.confirmationNumber,
+            customer: customer,
+            orderDate: moment(order.orderDate)
+                .toDate(),
+            paymentMethod: paymentMethod,
+            price: order.price,
+            ...{
+                orderNumber: order.orderNumber,
+                typeOf: order.typeOf
+            }
+        },
         project: { typeOf: order.project.typeOf, id: order.project.id },
         reservation: {
             id: params.r.id,
@@ -238,28 +254,15 @@ function reservation2report(params: {
                 ticketedSeat: (typeof seatNumber === 'string') ? { seatNumber } : undefined
             }
         },
-        confirmationNumber: order.confirmationNumber,
-        customer: customer,
-        orderDate: params.salesDate,
-        paymentMethod: paymentMethod,
-        price: String(price),
-        checkedin: 'FALSE', // デフォルトはFALSE
-        checkinDate: '', // デフォルトは空文字
+        sortBy,
         ...(typeof params.paymentSeatIndex === 'number') ? { payment_seat_index: params.paymentSeatIndex } : undefined,
         ...{
-            sortBy,
-            amount: price,
-            dateRecorded: params.salesDate,
-            mainEntity: {
-                typeOf: order.typeOf,
-                confirmationNumber: order.confirmationNumber,
-                customer: customer,
-                orderDate: moment(order.orderDate)
-                    .toDate(),
-                orderNumber: order.orderNumber,
-                paymentMethod: paymentMethod,
-                price: order.price
-            }
+            // 以下不要になれば削除
+            confirmationNumber: order.confirmationNumber,
+            customer: customer,
+            orderDate: params.salesDate,
+            paymentMethod: paymentMethod,
+            price: String(price)
         }
     };
 }
