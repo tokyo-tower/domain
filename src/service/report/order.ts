@@ -251,10 +251,12 @@ function reservation2report(params: {
             amount: price,
             dateRecorded: params.salesDate,
             mainEntity: {
+                typeOf: order.typeOf,
                 confirmationNumber: order.confirmationNumber,
                 customer: customer,
                 orderDate: moment(order.orderDate)
                     .toDate(),
+                orderNumber: order.orderNumber,
                 paymentMethod: paymentMethod,
                 price: order.price
             }

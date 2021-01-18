@@ -12,7 +12,7 @@ async function main() {
     const cursor = await reportRepo.aggregateSaleModel.find(
         {
             // _id: { $eq: '200728001001012200' },
-            date_bucket: {
+            orderDate: {
                 $gte: moment()
                     .add(-2, 'years')
                     .toDate()
@@ -31,32 +31,23 @@ async function main() {
         i += 1;
         const report = doc.toObject();
 
-        if (report.reservation === undefined
-            || report.reservation === null
-            || report.reservation.reservationFor === undefined
-            || report.reservation.reservationFor === null
-            || report.confirmationNumber === undefined
-            || report.confirmationNumber === null) {
-            const startDate = moment(`${report.performance.startDay}${report.performance.startTime}00+09:00`, 'YYYYMMDDHHmmssZ')
-                .toDate();
-
+        if (report.mainEntity === undefined
+            || report.mainEntity === null) {
             const update = {
-                confirmationNumber: String(report.payment_no),
-                'reservation.reservationFor': {
-                    id: String(report.performance.id),
-                    startDate
+                mainEntity: {
+                    typeOf: 'Order',
+                    confirmationNumber: report.confirmationNumber,
+                    customer: report.customer,
+                    orderDate: moment(report.orderDate)
+                        .toDate(),
+                    paymentMethod: report.paymentMethod,
+                    price: Number(report.price)
                 },
-                'reservation.reservedTicket': {
-                    ticketedSeat: { seatNumber: String(report.seat.code) },
-                    ticketType: {
-                        csvCode: String(report.ticketType.csvCode),
-                        name: { ja: String(report.ticketType.name) },
-                        priceSpecification: { price: Number(report.ticketType.charge) }
-                    }
-
-                },
+                amount: Number(report.price),
+                dateRecorded: moment(report.orderDate)
+                    .toDate()
             };
-            console.log('updating...', report.date_bucket, startDate);
+            console.log('updating...', report.orderDate, update);
             updateCount += 1;
 
             await reportRepo.aggregateSaleModel.findByIdAndUpdate(
@@ -64,9 +55,9 @@ async function main() {
                 update
             )
                 .exec();
-            console.log('updated', report.date_bucket, i);
+            console.log('updated', report.orderDate, i);
         } else {
-            console.log('already migrated', report.date_bucket);
+            console.log('already migrated', report.orderDate);
         }
     });
 
