@@ -83,6 +83,31 @@ schema.index(
 );
 
 schema.index(
+    { dateRecorded: 1, sortBy: 1 },
+    { name: 'searchByDateRecorded' }
+);
+
+schema.index(
+    { 'mainEntity.customer.group': 1, sortBy: 1 },
+    {
+        name: 'searchByMainEntityCustomerGroup',
+        partialFilterExpression: {
+            'mainEntity.customer.group': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'mainEntity.confirmationNumber': 1, sortBy: 1 },
+    {
+        name: 'searchByMainEntityConfirmationNumber',
+        partialFilterExpression: {
+            'mainEntity.confirmationNumber': { $exists: true }
+        }
+    }
+);
+
+schema.index(
     { 'reservation.id': 1, sortBy: 1 },
     {
         name: 'searchByReservationId-v2',
