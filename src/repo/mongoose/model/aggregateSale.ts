@@ -10,22 +10,22 @@ const schema = new mongoose.Schema(
         project: mongoose.SchemaTypes.Mixed,
         reservation: mongoose.SchemaTypes.Mixed,
         category: String,
-        confirmationNumber: String,
         /**
          * 購入座席インデックス
          * @deprecated
          */
         payment_seat_index: Number, // 購入座席インデックス
-        customer: mongoose.SchemaTypes.Mixed,
-        orderDate: Date,
-        paymentMethod: String,
-        price: String,
         sortBy: String,
         checkedin: String,
         checkinDate: String,
         mainEntity: mongoose.SchemaTypes.Mixed,
         amount: Number,
         dateRecorded: Date
+        // confirmationNumber: String,
+        // customer: mongoose.SchemaTypes.Mixed,
+        // orderDate: Date,
+        // paymentMethod: String,
+        // price: String
     },
     {
         collection: 'aggregateSales',

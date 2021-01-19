@@ -176,7 +176,7 @@ function reservation2report(params: {
     const customerGroup: string = order2customerGroup(order);
     const seatNumber = params.r.reservedTicket.ticketedSeat?.seatNumber;
 
-    let price: number = Number(order.price);
+    let amount: number = Number(order.price);
     let sortBy: string;
     switch (params.category) {
         case factory.report.order.ReportCategory.CancellationFee:
@@ -188,7 +188,7 @@ function reservation2report(params: {
                     cancellationFee = Number(cancellationFeeValue);
                 }
             }
-            price = cancellationFee;
+            amount = cancellationFee;
 
             sortBy = getSortBy(params.order, params.r, '02');
             break;
@@ -217,53 +217,47 @@ function reservation2report(params: {
 
     const paymentMethod: string = paymentMethodName2reportString({ name: paymentMethodName });
 
+    const mainEntity: factory.report.order.IMainEntity = {
+        confirmationNumber: order.confirmationNumber,
+        customer: customer,
+        orderDate: moment(order.orderDate)
+            .toDate(),
+        orderNumber: order.orderNumber,
+        paymentMethod: paymentMethod,
+        price: order.price,
+        typeOf: order.typeOf
+    };
+
+    const reservation: factory.report.order.IReservation = {
+        id: params.r.id,
+        reservationFor: {
+            id: params.r.reservationFor.id,
+            startDate: moment(params.r.reservationFor.startDate)
+                .toDate()
+        },
+        reservedTicket: {
+            ticketType: {
+                csvCode,
+                name: <any>params.r.reservedTicket.ticketType.name,
+                ...(typeof params.unitPrice === 'number')
+                    ? { priceSpecification: { price: params.unitPrice } }
+                    : undefined
+            },
+            ticketedSeat: (typeof seatNumber === 'string') ? { seatNumber } : undefined
+        }
+    };
+
     return {
-        amount: price,
+        amount: amount,
         category: params.category,
         checkedin: 'FALSE', // デフォルトはFALSE
         checkinDate: '', // デフォルトは空文字
         dateRecorded: params.salesDate,
-        mainEntity: {
-            confirmationNumber: order.confirmationNumber,
-            customer: customer,
-            orderDate: moment(order.orderDate)
-                .toDate(),
-            paymentMethod: paymentMethod,
-            price: order.price,
-            ...{
-                orderNumber: order.orderNumber,
-                typeOf: order.typeOf
-            }
-        },
+        mainEntity: mainEntity,
         project: { typeOf: order.project.typeOf, id: order.project.id },
-        reservation: {
-            id: params.r.id,
-            reservationFor: {
-                id: params.r.reservationFor.id,
-                startDate: moment(params.r.reservationFor.startDate)
-                    .toDate()
-            },
-            reservedTicket: {
-                ticketType: {
-                    csvCode,
-                    name: <any>params.r.reservedTicket.ticketType.name,
-                    ...(typeof params.unitPrice === 'number')
-                        ? { priceSpecification: { price: params.unitPrice } }
-                        : undefined
-                },
-                ticketedSeat: (typeof seatNumber === 'string') ? { seatNumber } : undefined
-            }
-        },
+        reservation: reservation,
         sortBy,
-        ...(typeof params.paymentSeatIndex === 'number') ? { payment_seat_index: params.paymentSeatIndex } : undefined,
-        ...{
-            // 以下不要になれば削除
-            confirmationNumber: order.confirmationNumber,
-            customer: customer,
-            orderDate: params.salesDate,
-            paymentMethod: paymentMethod,
-            price: String(price)
-        }
+        ...(typeof params.paymentSeatIndex === 'number') ? { payment_seat_index: params.paymentSeatIndex } : undefined
     };
 }
 
