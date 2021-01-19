@@ -58,28 +58,8 @@ schema.index(
 );
 
 schema.index(
-    { 'customer.group': 1, sortBy: 1 },
-    {
-        name: 'searchByCustomerGroup-v2',
-        partialFilterExpression: {
-            'customer.group': { $exists: true }
-        }
-    }
-);
-
-schema.index(
     { category: 1, sortBy: 1 },
     { name: 'searchByCategory' }
-);
-
-schema.index(
-    { confirmationNumber: 1, sortBy: 1 },
-    { name: 'searchByConfirmationNumber' }
-);
-
-schema.index(
-    { orderDate: 1, sortBy: 1 },
-    { name: 'searchByOrderDate' }
 );
 
 schema.index(
