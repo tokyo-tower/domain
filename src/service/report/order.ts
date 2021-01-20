@@ -250,8 +250,6 @@ function reservation2report(params: {
     return {
         amount: amount,
         category: params.category,
-        checkedin: 'FALSE', // デフォルトはFALSE
-        checkinDate: '', // デフォルトは空文字
         dateRecorded: params.salesDate,
         mainEntity: mainEntity,
         project: { typeOf: order.project.typeOf, id: order.project.id },

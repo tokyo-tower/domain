@@ -8,7 +8,7 @@ async function main() {
     const reportRepo = new ttts.repository.Report(mongoose.connection);
 
     const result = await reportRepo.aggregateSaleModel.updateMany(
-        { confirmationNumber: { $exists: true } },
+        { _id: { $exists: true } },
         {
             $unset: {
                 cancellationFee: 1,
