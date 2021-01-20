@@ -12,7 +12,7 @@ async function main() {
     const cursor = await reportRepo.aggregateSaleModel.find(
         {
             // _id: { $eq: '200728001001012200' },
-            orderDate: {
+            dateRecorded: {
                 $gte: moment()
                     .add(-2, 'years')
                     .toDate()
@@ -31,33 +31,30 @@ async function main() {
         i += 1;
         const report = doc.toObject();
 
-        if (report.mainEntity === undefined
-            || report.mainEntity === null) {
-            const update = {
-                mainEntity: {
-                    typeOf: 'Order',
-                    confirmationNumber: report.confirmationNumber,
-                    customer: report.customer,
-                    orderDate: moment(report.orderDate)
-                        .toDate(),
-                    paymentMethod: report.paymentMethod,
-                    price: Number(report.price)
-                },
-                amount: Number(report.price),
-                dateRecorded: moment(report.orderDate)
-                    .toDate()
-            };
-            console.log('updating...', report.orderDate, update);
-            updateCount += 1;
+        if (typeof report.checkinDate === 'string' && report.checkinDate.length > 0) {
+            if (report.reservation.reservedTicket === undefined
+                || report.reservation.reservedTicket === null
+                || report.reservation.reservedTicket.dateUsed === undefined
+                || report.reservation.reservedTicket.dateUsed === null) {
+                const dateUsed = moment(`${report.checkinDate}+09:00`, 'YYYY/MM/DD HH:mm:ssZ')
+                    .toDate();
+                const update = {
+                    'reservation.reservedTicket.dateUsed': dateUsed
+                };
+                console.log('updating...', report.dateRecorded, update);
+                updateCount += 1;
 
-            await reportRepo.aggregateSaleModel.findByIdAndUpdate(
-                report.id,
-                update
-            )
-                .exec();
-            console.log('updated', report.orderDate, i);
+                await reportRepo.aggregateSaleModel.findByIdAndUpdate(
+                    report.id,
+                    update
+                )
+                    .exec();
+                console.log('updated', report.dateRecorded, i);
+            } else {
+                console.log('already migrated', report.dateRecorded);
+            }
         } else {
-            console.log('already migrated', report.orderDate);
+            console.log('not attended', report.dateRecorded);
         }
     });
 

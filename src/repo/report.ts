@@ -30,32 +30,4 @@ export class MongoRepository {
         )
             .exec();
     }
-
-    /**
-     * 入場状態を更新する
-     */
-    public async updateAttendStatus(params: {
-        reservation: {
-            id: string;
-            reservedTicket: {
-                dateUsed: Date;
-            };
-        };
-        checkinDate: string;
-    }): Promise<void> {
-        await this.aggregateSaleModel.update(
-            {
-                'reservation.id': {
-                    $exists: true,
-                    $eq: params.reservation.id
-                }
-            },
-            {
-                'reservation.reservedTicket.dateUsed': params.reservation.reservedTicket.dateUsed,
-                checkinDate: params.checkinDate
-            },
-            { multi: true }
-        )
-            .exec();
-    }
 }
