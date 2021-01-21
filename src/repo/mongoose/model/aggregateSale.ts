@@ -16,11 +16,11 @@ const schema = new mongoose.Schema(
          */
         payment_seat_index: Number, // 購入座席インデックス
         sortBy: String,
-        checkedin: String,
-        checkinDate: String,
         mainEntity: mongoose.SchemaTypes.Mixed,
         amount: Number,
         dateRecorded: Date
+        // checkedin: String,
+        // checkinDate: String,
         // confirmationNumber: String,
         // customer: mongoose.SchemaTypes.Mixed,
         // orderDate: Date,
