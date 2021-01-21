@@ -23,37 +23,10 @@ export class MongoRepository {
                     $exists: true,
                     $eq: params.reservation.id
                 },
-                // 'performance.id': params.performance.id,
-                // payment_no: params.payment_no,
-                // payment_seat_index: params.payment_seat_index,
-                reservationStatus: params.reservationStatus
+                category: params.category
             },
             params,
             { new: true, upsert: true }
-        )
-            .exec();
-    }
-
-    /**
-     * 入場状態を更新する
-     */
-    public async updateAttendStatus(params: {
-        reservation: { id: string };
-        checkedin: string;
-        checkinDate: string;
-    }): Promise<void> {
-        await this.aggregateSaleModel.update(
-            {
-                'reservation.id': {
-                    $exists: true,
-                    $eq: params.reservation.id
-                }
-            },
-            {
-                checkedin: params.checkedin,
-                checkinDate: params.checkinDate
-            },
-            { multi: true }
         )
             .exec();
     }

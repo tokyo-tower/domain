@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Security
 
+## v50.0.0 - 2021-01-21
+
+### Changed
+
+- 売上レポート検索のソーティングを最適化
+- 売上レポートを最適化
+
+### Removed
+
+- 予約リポジトリを削除
+
 ## v49.2.0 - 2021-01-13
 
 ### Changed

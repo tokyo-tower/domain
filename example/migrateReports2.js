@@ -31,32 +31,12 @@ async function main() {
         i += 1;
         const report = doc.toObject();
 
-        if (report.sortBy === undefined
-            || report.sortBy === null) {
-            let status = '00';
-            if (report.reservationStatus === 'CANCELLED') {
-                status = '01';
-            } else if (report.reservationStatus === 'CANCELLATION_FEE') {
-                status = '02';
-            }
-
-            const sortBy = util.format(
-                '%s:%s:%s:%s',
-                `00000000000000000000${moment(report.reservation.reservationFor.startDate)
-                    .unix()}`
-                    // tslint:disable-next-line:no-magic-numbers
-                    .slice(-20),
-                `00000000000000000000${report.confirmationNumber}`
-                    // tslint:disable-next-line:no-magic-numbers
-                    .slice(-20),
-                status,
-                report.reservation.reservedTicket.ticketedSeat.seatNumber
-            );
-
+        if (report.category === undefined
+            || report.category === null) {
             const update = {
-                sortBy: sortBy
+                category: report.reservationStatus
             };
-            console.log('updating...', report.date_bucket, sortBy);
+            console.log('updating...', report.date_bucket, update.category);
             updateCount += 1;
 
             await reportRepo.aggregateSaleModel.findByIdAndUpdate(

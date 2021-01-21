@@ -19,6 +19,13 @@ export class MongoRepository {
     public static CREATE_MONGO_CONDITIONS(params: ISearchConditions) {
         const andConditions: any[] = [];
 
+        const projectIdEq = params.project?.id?.$eq;
+        if (typeof projectIdEq === 'string') {
+            andConditions.push({
+                'project.id': { $exists: true, $eq: projectIdEq }
+            });
+        }
+
         if (Array.isArray(params.ids)) {
             andConditions.push({
                 _id: { $in: params.ids }
@@ -102,62 +109,6 @@ export class MongoRepository {
         return query.setOptions({ maxTimeMS: 10000 })
             .exec()
             .then((docs) => docs.map((doc) => doc.toObject()));
-    }
-
-    public async distinct(field: string, params: ISearchConditions): Promise<any[]> {
-        const andConditions = MongoRepository.CREATE_MONGO_CONDITIONS(params);
-
-        const query = this.performanceModel.distinct(
-            field,
-            (andConditions.length > 0) ? { $and: andConditions } : {}
-        );
-
-        return query.setOptions({ maxTimeMS: 10000 })
-            .exec();
-    }
-
-    public async findById(id: string): Promise<factory.performance.IPerformance> {
-        const doc = await this.performanceModel.findById(id, {
-            __v: 0,
-            created_at: 0,
-            updated_at: 0
-        })
-            .exec();
-
-        if (doc === null) {
-            throw new factory.errors.NotFound('performance');
-        }
-
-        return doc.toObject();
-    }
-
-    /**
-     * まだなければ保管する
-     */
-    public async saveIfNotExists(performance: factory.performance.IPerformance) {
-        const update: any = {
-            startDate: performance.startDate,
-            endDate: performance.endDate,
-            additionalProperty: performance.additionalProperty
-        };
-
-        const setOnInsert = performance;
-        delete setOnInsert.startDate;
-        delete setOnInsert.endDate;
-        delete setOnInsert.additionalProperty;
-
-        await this.performanceModel.findByIdAndUpdate(
-            performance.id,
-            {
-                $setOnInsert: setOnInsert,
-                $set: update
-            },
-            {
-                upsert: true,
-                new: true
-            }
-        )
-            .exec();
     }
 
     public async updateOne(conditions: any, update: any) {

@@ -3,42 +3,36 @@ import * as mongoose from 'mongoose';
 const safe: any = { j: 1, w: 'majority', wtimeout: 10000 };
 
 /**
- * 売上集計スキーマ
+ * 売上レポートスキーマ
  */
 const schema = new mongoose.Schema(
     {
         project: mongoose.SchemaTypes.Mixed,
         reservation: mongoose.SchemaTypes.Mixed,
-        confirmationNumber: String,
-        /**
-         * 購入番号
-         * @deprecated
-         */
-        payment_no: String,
+        category: String,
         /**
          * 購入座席インデックス
          * @deprecated
          */
         payment_seat_index: Number, // 購入座席インデックス
-        performance: mongoose.SchemaTypes.Mixed,
-        seat: mongoose.SchemaTypes.Mixed,
-        ticketType: mongoose.SchemaTypes.Mixed,
-        customer: mongoose.SchemaTypes.Mixed,
-        orderDate: Date,
-        paymentMethod: String,
-        checkedin: String,
-        checkinDate: String,
-        reservationStatus: String,
-        status_sort: String,
-        price: String,
-        cancellationFee: Number,
-        date_bucket: Date
+        sortBy: String,
+        mainEntity: mongoose.SchemaTypes.Mixed,
+        amount: Number,
+        dateRecorded: Date
+        // checkedin: String,
+        // checkinDate: String,
+        // confirmationNumber: String,
+        // customer: mongoose.SchemaTypes.Mixed,
+        // orderDate: Date,
+        // paymentMethod: String,
+        // price: String
     },
     {
         collection: 'aggregateSales',
         id: true,
         read: 'primaryPreferred',
         safe: safe,
+        strict: true,
         timestamps: {
             createdAt: 'created_at',
             updatedAt: 'updated_at'
@@ -58,52 +52,45 @@ const schema = new mongoose.Schema(
     }
 );
 
-// 検索
 schema.index(
-    { date_bucket: 1 },
-    { name: 'searchByDateBucket' }
+    { sortBy: 1 },
+    { name: 'searchBySortBy' }
 );
 
 schema.index(
-    { 'performance.startDay': 1 },
-    { name: 'searchByPerformanceStartDay' }
+    { category: 1, sortBy: 1 },
+    { name: 'searchByCategory' }
 );
 
-// ソートindex
 schema.index(
+    { dateRecorded: 1, sortBy: 1 },
+    { name: 'searchByDateRecorded' }
+);
+
+schema.index(
+    { 'mainEntity.customer.group': 1, sortBy: 1 },
     {
-        'performance.startDay': 1, // トライ回数の少なさ優先
-        'performance.startTime': 1, // 実行予定日時の早さ優先
-        payment_no: 1,
-        reservationStatus: -1,
-        'seat.code': 1,
-        status_sort: 1
-    },
-    {
-        name: 'sort4report'
+        name: 'searchByMainEntityCustomerGroup',
+        partialFilterExpression: {
+            'mainEntity.customer.group': { $exists: true }
+        }
     }
 );
+
 schema.index(
-    { 'performance.id': 1 },
-    { name: 'searchByPerformanceId' }
-);
-schema.index(
-    { payment_no: 1 },
-    { name: 'searchByPaymentNo' }
-);
-schema.index(
-    { payment_seat_index: 1 },
-    { name: 'searchByPaymentSeatIndex' }
-);
-schema.index(
-    { reservationStatus: 1 },
-    { name: 'searchByReservationStatus' }
+    { 'mainEntity.confirmationNumber': 1, sortBy: 1 },
+    {
+        name: 'searchByMainEntityConfirmationNumber',
+        partialFilterExpression: {
+            'mainEntity.confirmationNumber': { $exists: true }
+        }
+    }
 );
 
 schema.index(
-    { 'reservation.id': 1, date_bucket: 1 },
+    { 'reservation.id': 1, sortBy: 1 },
     {
-        name: 'searchByReservationId',
+        name: 'searchByReservationId-v2',
         partialFilterExpression: {
             'reservation.id': { $exists: true }
         }
@@ -111,19 +98,29 @@ schema.index(
 );
 
 schema.index(
-    { 'customer.group': 1, date_bucket: 1 },
+    { 'reservation.reservationFor.id': 1, sortBy: 1 },
     {
-        name: 'searchByCustomerGroup',
+        name: 'searchByReservationReservationForId',
         partialFilterExpression: {
-            'customer.group': { $exists: true }
+            'reservation.reservationFor.id': { $exists: true }
         }
     }
 );
 
 schema.index(
-    { 'project.id': 1, date_bucket: 1 },
+    { 'reservation.reservationFor.startDate': 1, sortBy: 1 },
     {
-        name: 'searchByProjectId',
+        name: 'searchByReservationReservationForStartDate',
+        partialFilterExpression: {
+            'reservation.reservationFor.startDate': { $exists: true }
+        }
+    }
+);
+
+schema.index(
+    { 'project.id': 1, sortBy: 1 },
+    {
+        name: 'searchByProjectId-v2',
         partialFilterExpression: {
             'project.id': { $exists: true }
         }
